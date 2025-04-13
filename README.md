@@ -7,13 +7,13 @@
 ## Todo
 
 - [ ] Setup project
-  - [ ] Setup client go project (makefile,logging)
-  - [ ] Setup server go project (fiber,air,makefile,logging)
-  - [ ] Setup frontend nuxt project (with shadcnui, tailwindcss, typescript, eslint, alias path)
-  - [ ] Docker base config
+  - [ ] Setup client go project (makefile,logging) - F
+  - [ ] Setup server go project (fiber,air,makefile,logging) - F
+  - [ ] Setup frontend nuxt project (with shadcnui, tailwindcss, typescript, eslint, alias path) - J
+  - [ ] Docker base config - F
 - [ ] Setup repository
-  - [ ] Setup .gitignore
-  - [ ] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval)
+  - [ ] Setup .gitignore - FJ
+  - [ ] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval) - J
 
 
 ## Schema

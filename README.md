@@ -19,3 +19,10 @@
 ## Schema
 
 ![Schema](images/schema.png)
+
+
+# Versions
+
+- Bun: 1.2.9
+- Go: 1.24.2
+- Docker: 28.0.4

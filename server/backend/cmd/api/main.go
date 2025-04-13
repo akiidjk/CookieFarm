@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ByteTheCookies/cookiefarm-backend/internal/logger"
-	"github.com/ByteTheCookies/cookiefarm-backend/internal/server"
+	"github.com/ByteTheCookies/backend/internal/logger"
+	"github.com/ByteTheCookies/backend/internal/server"
 
 	_ "github.com/joho/godotenv/autoload"
 )

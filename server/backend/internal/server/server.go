@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/ByteTheCookies/cookiefarm-backend/internal/database"
+	"github.com/ByteTheCookies/backend/internal/database"
 )
 
 type FiberServer struct {

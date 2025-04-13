@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unique"
 
-	"github.com/ByteTheCookies/cookiefarm-backend/internal/utils"
+	"github.com/ByteTheCookies/backend/internal/utils"
 )
 
 // Log levels

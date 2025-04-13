@@ -1,4 +1,4 @@
-module github.com/ByteTheCookies/cookiefarm-backend
+module github.com/ByteTheCookies/backend
 
 go 1.24.2
 

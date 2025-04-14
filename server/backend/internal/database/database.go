@@ -7,20 +7,24 @@ import (
 	"strconv"
 	"time"
 
+	_ "embed"
+
 	"github.com/ByteTheCookies/backend/internal/logger"
+	"github.com/ByteTheCookies/backend/internal/models"
 	"github.com/ByteTheCookies/backend/internal/utils"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Service represents a service that interacts with a database.
-type Service interface {
-	// Health returns a map of health status information.
-	// The keys and values in the map are service-specific.
-	Health() map[string]string
+//go:embed schema.sql
+var sql_schema string
 
-	// Close terminates the database connection.
-	// It returns an error if the connection cannot be closed.
+type Service interface {
+	Health() map[string]string
+	AddFlags(flags []models.Flag) error
+	GetFlags() ([]models.Flag, error)
+	GetFlagsCode() ([]string, error)
+	InitDB() error
 	Close() error
 }
 
@@ -32,6 +36,18 @@ var (
 	dburl      = utils.GetEnv("DB_URL", "internal/database/cookiefarm.db")
 	dbInstance *service
 )
+
+func (s *service) InitDB() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	logger.Info("Initializing database")
+	_, err := s.db.ExecContext(ctx, sql_schema)
+	if err != nil {
+		return err
+	}
+	logger.Info("Database initialized")
+	return nil
+}
 
 func New() Service {
 	// Reuse Connection
@@ -49,7 +65,90 @@ func New() Service {
 	dbInstance = &service{
 		db: db,
 	}
+
+	if err := dbInstance.InitDB(); err != nil {
+		logger.Fatal("InitDB failed: %v", err)
+	}
 	return dbInstance
+}
+
+func (s *service) GetFlags() ([]models.Flag, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	flags := []models.Flag{}
+
+	query := "SELECT id, flag_code, service_name, submit_time, status, team_id FROM flags"
+	stmt, err := s.db.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var flag models.Flag
+		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.Status, &flag.TeamID); err != nil {
+			return nil, err
+		}
+		flags = append(flags, flag)
+	}
+
+	return flags, nil
+}
+
+func (s *service) GetFlagsCode() ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	flags := []string{}
+
+	query := "SELECT flag_code FROM flags"
+	stmt, err := s.db.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var flag string
+		if err := rows.Scan(&flag); err != nil {
+			return nil, err
+		}
+		flags = append(flags, flag)
+	}
+
+	return flags, nil
+}
+
+func (s *service) AddFlags(flags []models.Flag) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	query := "INSERT INTO flags (id, flag_code, service_name, submit_time, status, team_id) VALUES (?, ?, ?, ?, ?, ?)"
+	stmt, err := s.db.PrepareContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, flag := range flags {
+		_, err := stmt.ExecContext(ctx, flag.ID, flag.FlagCode, flag.ServiceName, flag.SubmitTime, flag.Status, flag.TeamID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Health checks the health of the database connection by pinging the database.

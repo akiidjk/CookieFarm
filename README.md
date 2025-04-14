@@ -6,14 +6,14 @@
 
 ## Todo
 
-- [ ] Setup project
-  - [ ] Setup client go project (makefile,logging) - @akiidjk
-  - [ ] Setup server go project (fiber,air,makefile,logging) - @akiidjk
-  - [ ] Setup frontend nuxt project (with shadcnui, tailwindcss, typescript, eslint, alias path) - @suga
-  - [ ] Docker base config - @akiidjk
-- [ ] Setup repository
-  - [ ] Setup .gitignore - @akiidjk @suga
-  - [ ] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval) - @suga
+- [x] Setup project
+  - [x] Setup client go project (makefile,logging) - @akiidjk
+  - [x] Setup server go project (fiber,air,makefile,logging) - @akiidjk
+  - [x] Setup frontend nuxt project (with shadcnui, tailwindcss, typescript, eslint, alias path) - @suga
+  - [x] Docker base config - @akiidjk
+- [x] Setup repository
+  - [x] Setup .gitignore - @akiidjk @suga
+  - [x] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval) - @suga
 
 
 ## Schema

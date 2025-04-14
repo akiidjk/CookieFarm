@@ -12,3 +12,7 @@ type Flag struct {
 
 type Config struct {
 }
+
+type FlagResponse struct {
+	Flags []Flag `json:"flags"`
+}

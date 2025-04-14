@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	_ "embed"
+
 	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/models"
 	"github.com/ByteTheCookies/backend/internal/utils"
@@ -14,16 +16,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Service represents a service that interacts with a database.
+//go:embed schema.sql
+var sql_schema string
+
 type Service interface {
-	// Health returns a map of health status information.
-	// The keys and values in the map are service-specific.
 	Health() map[string]string
 	AddFlags(flags []models.Flag) error
 	GetFlags() ([]models.Flag, error)
-
-	// Close terminates the database connection.
-	// It returns an error if the connection cannot be closed.
+	GetFlagsCode() ([]string, error)
+	InitDB() error
 	Close() error
 }
 
@@ -35,6 +36,18 @@ var (
 	dburl      = utils.GetEnv("DB_URL", "internal/database/cookiefarm.db")
 	dbInstance *service
 )
+
+func (s *service) InitDB() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	logger.Info("Initializing database")
+	_, err := s.db.ExecContext(ctx, sql_schema)
+	if err != nil {
+		return err
+	}
+	logger.Info("Database initialized")
+	return nil
+}
 
 func New() Service {
 	// Reuse Connection
@@ -52,6 +65,10 @@ func New() Service {
 	dbInstance = &service{
 		db: db,
 	}
+
+	if err := dbInstance.InitDB(); err != nil {
+		logger.Fatal("InitDB failed: %v", err)
+	}
 	return dbInstance
 }
 
@@ -60,7 +77,7 @@ func (s *service) GetFlags() ([]models.Flag, error) {
 	defer cancel()
 	flags := []models.Flag{}
 
-	query := "SELECT * FROM flags"
+	query := "SELECT id, flag_code, service_name, submit_time, status, team_id FROM flags"
 	stmt, err := s.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -76,6 +93,35 @@ func (s *service) GetFlags() ([]models.Flag, error) {
 	for rows.Next() {
 		var flag models.Flag
 		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.Status, &flag.TeamID); err != nil {
+			return nil, err
+		}
+		flags = append(flags, flag)
+	}
+
+	return flags, nil
+}
+
+func (s *service) GetFlagsCode() ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	flags := []string{}
+
+	query := "SELECT flag_code FROM flags"
+	stmt, err := s.db.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var flag string
+		if err := rows.Scan(&flag); err != nil {
 			return nil, err
 		}
 		flags = append(flags, flag)

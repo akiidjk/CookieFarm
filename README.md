@@ -14,7 +14,10 @@
 - [x] Setup repository
   - [x] Setup .gitignore - @akiidjk @suga
   - [x] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval) - @suga
+---
 
+- [ ] setup db @suga
+- [ ] client struct & server struct @akiidjk
 
 ## Schema
 

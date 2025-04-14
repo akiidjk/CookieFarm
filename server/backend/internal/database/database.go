@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	"time"
 
+	"github.com/ByteTheCookies/backend/internal/logger"
+	"github.com/ByteTheCookies/backend/internal/utils"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -29,7 +29,7 @@ type service struct {
 }
 
 var (
-	dburl      = os.Getenv("BLUEPRINT_DB_URL")
+	dburl      = utils.GetEnv("DB_URL", "internal/database/cookiefarm.db")
 	dbInstance *service
 )
 
@@ -43,7 +43,7 @@ func New() Service {
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
 		// another initialization error.
-		log.Fatal(err)
+		logger.Fatal("Failed to open database connection %v", err)
 	}
 
 	dbInstance = &service{
@@ -65,7 +65,7 @@ func (s *service) Health() map[string]string {
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Fatalf("db down: %v", err) // Log the error and terminate the program
+		logger.Fatal("Failed to ping database %v", err) // Log the error and terminate the program
 		return stats
 	}
 
@@ -108,6 +108,6 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	log.Printf("Disconnected from database: %s", dburl)
+	logger.Info("Disconnected from database: %s", dburl)
 	return s.db.Close()
 }

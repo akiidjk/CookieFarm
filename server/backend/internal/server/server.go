@@ -15,8 +15,8 @@ type FiberServer struct {
 func New() *FiberServer {
 	server := &FiberServer{
 		App: fiber.New(fiber.Config{
-			ServerHeader: "github.com/ByteTheCookies/cookiefarm-backend",
-			AppName:      "github.com/ByteTheCookies/cookiefarm-backend",
+			ServerHeader: "backend",
+			AppName:      "backend",
 		}),
 
 		db: database.New(),

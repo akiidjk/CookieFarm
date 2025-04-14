@@ -1,12 +1,3 @@
-<script setup lang="ts">
-import {
-    NavigationMenu,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-</script>
-
 <template>
     <NavigationMenu>
         <NavigationMenuList>

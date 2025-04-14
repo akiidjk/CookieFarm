@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/server"
+	"github.com/ByteTheCookies/backend/internal/utils"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -50,7 +50,7 @@ func main() {
 	done := make(chan bool, 1)
 
 	go func() {
-		port, _ := strconv.Atoi(os.Getenv("PORT"))
+		port, _ := strconv.Atoi(utils.GetEnv("PORT", "8080"))
 		err := server.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			panic(fmt.Sprintf("http server error: %s", err))

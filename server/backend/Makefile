@@ -1,7 +1,7 @@
 BIN_DIR := ./bin
 CMD_DIR := ./cmd/api
 LOGS_DIR := ./logs
-MAIN_FILE := ./main.go
+MAIN_FILE := main.go
 BINARY_NAME := clientbackend
 VERSION := 0.1.0
 
@@ -21,6 +21,7 @@ help:
 	@echo -e "  $(CYAN)make version$(RESET)   - Show the version"
 	@echo -e "  $(CYAN)make clean$(RESET)     - Remove binaries and logs"
 	@echo -e "  $(CYAN)make build-prod$(RESET) - Compile the Go project for production"
+	@echo -e "  $(CYAN)make watch$(RESET)     - Live reload"
 	@echo -e "  $(CYAN)make help$(RESET)      - Show this message"
 
 build:
@@ -61,3 +62,19 @@ clean:
 	@echo -e "$(YELLOW)[*] Cleaning logs...$(RESET)"
 	@rm -rf $(LOGS_DIR)/*
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
+
+watch:
+	@if command -v air > /dev/null; then \
+		air; \
+		echo "Watching...";\
+	else \
+		read -p "Go's 'air' is not installed on your machine. Do you want to install it? [Y/n] " choice; \
+		if [ "$$choice" != "n" ] && [ "$$choice" != "N" ]; then \
+			go install github.com/air-verse/air@latest; \
+			air; \
+			echo "Watching...";\
+		else \
+			echo "You chose not to install air. Exiting..."; \
+			exit 1; \
+		fi; \
+	fi

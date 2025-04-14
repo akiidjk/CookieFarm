@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: cookiefarm-backend/Dockerfile
+      dockerfile: backend/Dockerfile
       target: prod
     restart: unless-stopped
     ports:

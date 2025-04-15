@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
@@ -14,7 +14,7 @@ import (
 const HOST = "http://localhost:8080"
 
 func SendFlag(flags ...models.Flag) {
-	formattedBody, err := json.Marshal(models.FlagRequest{Flags: flags})
+	formattedBody, err := json.Marshal(map[string][]models.Flag{"flags": flags})
 	if err != nil {
 		fmt.Println("Errore marshalling flags:", err)
 		return
@@ -27,7 +27,7 @@ func SendFlag(flags ...models.Flag) {
 	}
 	defer resp.Body.Close()
 
-	bodyContent, err := ioutil.ReadAll(resp.Body)
+	bodyContent, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Errore lettura risposta:", err)
 		return

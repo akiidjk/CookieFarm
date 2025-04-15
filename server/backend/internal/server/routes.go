@@ -1,15 +1,12 @@
 package server
 
 import (
-	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/models"
-	"github.com/ByteTheCookies/backend/protocols"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
-	// Apply CORS middleware
 	s.App.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
@@ -38,8 +35,7 @@ func (s *FiberServer) GetConfig(c *fiber.Ctx) error {
 }
 
 func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
-	logger.Debug("SUBMITFLAG | Request received by %s", c.IP())
-	body := models.FlagResponse{}
+	body := map[string][]models.Flag{"flags": []models.Flag{}}
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
 			"errors": err.Error(),
@@ -47,18 +43,8 @@ func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
 	}
 
 	// logger.Debug("Body parsed %v", body)
-	s.db.AddFlags(body.Flags)
-	flags, err := s.db.GetFlagsCode()
-	if err != nil {
-		logger.Error("Error %v", err)
-	}
 
-	res, err := protocols.Submit(flags)
-	if err != nil {
-		logger.Error("Error %v", err)
-	}
-
-	logger.Debug("Results: %v", res)
+	s.db.AddFlags(body["flags"])
 
 	return c.JSON(fiber.Map{
 		"message": "Flag submitted successfully",
@@ -75,7 +61,6 @@ func (s *FiberServer) GetStats(c *fiber.Ctx) error {
 }
 
 func (s *FiberServer) GetFlags(c *fiber.Ctx) error {
-	logger.Debug("GETFLAGS | Request received by %s", c.IP())
 	flags, err := s.db.GetFlags()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

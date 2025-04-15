@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/ByteTheCookies/backend/internal/database"
+	"github.com/ByteTheCookies/backend/internal/utils"
 )
 
 type FiberServer struct {
@@ -12,15 +13,46 @@ type FiberServer struct {
 	db database.Service
 }
 
-func New() *FiberServer {
-	server := &FiberServer{
-		App: fiber.New(fiber.Config{
-			ServerHeader: "backend",
-			AppName:      "backend",
-		}),
+func DevConfig() fiber.Config {
+	return fiber.Config{
+		AppName:               "Backend (Development)",
+		DisableStartupMessage: false,
+		Prefork:               false,
+		CaseSensitive:         false,
+		StrictRouting:         false,
+		ServerHeader:          "Fiber",
+		EnablePrintRoutes:     true,
+	}
+}
 
-		db: database.New(),
+func ProdConfig() fiber.Config {
+	return fiber.Config{
+		AppName:               "Backend",
+		DisableStartupMessage: true,
+		Prefork:               true, // Multiprocess
+		CaseSensitive:         true,
+		StrictRouting:         true,
+		ServerHeader:          "",
+		EnablePrintRoutes:     false,
+	}
+}
+
+func New() *FiberServer {
+	var app *fiber.App
+	if utils.GetEnv("IsDevelopment", "true") == "true" {
+		app = fiber.New(DevConfig())
+	} else {
+		app = fiber.New(ProdConfig())
+	}
+
+	server := &FiberServer{
+		App: app,
+		db:  database.New(),
 	}
 
 	return server
+}
+
+func (s *FiberServer) DB() database.Service {
+	return s.db
 }

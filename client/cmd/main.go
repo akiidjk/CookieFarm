@@ -17,19 +17,17 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/api"
+	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
-	"github.com/google/uuid"
 )
-
-const CYCLE_TIME = 15
 
 func init() {
 	logger.SetLevel(logger.DebugLevel)
 }
 
-func run_exploit() {
+func main() {
 	var flags []models.Flag
 	cmd := exec.Command("../tests/exploit.py")
 
@@ -53,16 +51,11 @@ func run_exploit() {
 	go func() {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
-			fmt.Println("[stdout]", scanner.Text())
-			flag := models.Flag{
-				ID:           int64(uuid.New().ID()),
-				FlagCode:     scanner.Text(),
-				ServiceName:  "Pippo",
-				ResponseTime: time.Now().UnixNano(),
-				Status:       "BOH",
-				TeamID:       0,
-			}
+			flagCode := scanner.Text()
+			fmt.Println("[stdout]", flagCode)
+			flag := utils.GenerateFakeFlag(flagCode)
 			flags = append(flags, flag)
+			logger.Debug("Generated flag: %v", flag)
 		}
 	}()
 
@@ -75,7 +68,7 @@ func run_exploit() {
 
 	go func() {
 		for {
-			time.Sleep(CYCLE_TIME * time.Second)
+			time.Sleep(config.CYCLE_TIME * time.Second)
 			api.SendFlag(flags...)
 			flags = []models.Flag{}
 		}
@@ -84,19 +77,4 @@ func run_exploit() {
 	if err := cmd.Wait(); err != nil {
 		fmt.Println("Errore comando:", err)
 	}
-}
-
-func main() {
-	fmt.Printf(utils.Yellow + `
-	   ______            __   _      ______
-	  / ____/___  ____  / /__(_)__  / ____/___ __________ ___
-	 / /   / __ \/ __ \/ //_/ / _ \/ /_  / __ ` + `/ ___/ __` + `__ \
-	/ /___/ /_/ / /_/ / ,< / /  __/ __/ / /_/ / /  / / / / / /
-	\____/\____/\____/_/|_/_/\___/_/    \__,_/_/  /_/ /_/ /_/
-	  / ____/ (_)__  ____  / /_
-	 / /   / / / _ \/ __ \/ __/
-	/ /___/ / /  __/ / / / /_
-	\____/_/_/\___/_/ /_/\__/
- ` + utils.Reset)
-	run_exploit()
 }

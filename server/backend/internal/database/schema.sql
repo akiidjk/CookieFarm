@@ -1,9 +1,10 @@
 CREATE TABLE IF NOT EXISTS flags (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    flag_code TEXT NOT NULL UNIQUE,
-    service_name TEXT NOT NULL,
-    submit_time INTEGER, -- DEFAULT CURRENT_TIMESTAMP
-    response_time INTEGER, -- DEFAULT CURRENT_TIMESTAMP
-    status TEXT NOT NULL,
+    id VARCHAR(36) PRIMARY KEY,
+    flag_code VARCHAR(255) NOT NULL UNIQUE,
+    service_name VARCHAR(255) NOT NULL,
+    service_port INTEGER NOT NULL,
+    submit_time INTEGER,  -- Unix timestamp
+    response_time INTEGER, -- Unix timestamp
+    status VARCHAR(255) NOT NULL,
     team_id INTEGER NOT NULL
 );

@@ -37,7 +37,7 @@ def check_flags():
                     "flag": flag,
                     "status": s
                 })
-    return {"responses": responses}
+    return responses
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000)

@@ -5,13 +5,13 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"unique"
 
 	"github.com/ByteTheCookies/backend/internal/utils"
 )
 
-// Log levels
 const (
 	DebugLevel = iota
 	InfoLevel
@@ -22,36 +22,30 @@ const (
 )
 
 type Logger struct {
-	Level       int
-	lastLogged  unique.Handle[string]
-	debugLogger *log.Logger
-	infoLogger  *log.Logger
-	succeLogger *log.Logger
-	warnLogger  *log.Logger
-	errorLogger *log.Logger
+	Level         int
+	lastLogged    unique.Handle[string]
+	debugLogger   *log.Logger
+	infoLogger    *log.Logger
+	succeLogger   *log.Logger
+	warnLogger    *log.Logger
+	errorLogger   *log.Logger
+	IncludeCaller bool // <- toggle per includere info sul chiamante
 }
 
 var logger *Logger
 var logFile *os.File
 
 func init() {
-	// var err error
-	// os.MkdirAll("./logs", os.ModePerm)
-	// logFile, err = os.OpenFile(fmt.Sprintf("./logs/clientfarm-%d.log", time.Now().Unix()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	// if err != nil {
-	// log.Fatal(err
-	// }
-
-	// multiWriter := io.MultiWriter(logFile, os.Stdout)
 	multiWriter := io.Writer(os.Stdout)
 
 	logger = &Logger{
-		Level:       InfoLevel,
-		debugLogger: log.New(multiWriter, utils.Gray+"[=] DEBUG: "+utils.White, log.LstdFlags),
-		infoLogger:  log.New(multiWriter, utils.Cyan+"[*] INFO: "+utils.White, log.LstdFlags),
-		succeLogger: log.New(multiWriter, utils.Green+"[+] SUCCESS: "+utils.White, log.LstdFlags),
-		warnLogger:  log.New(multiWriter, utils.Yellow+"[/] WARN: "+utils.White, log.LstdFlags),
-		errorLogger: log.New(multiWriter, utils.Red+"[//] ERROR: "+utils.White, log.LstdFlags),
+		Level:         InfoLevel,
+		IncludeCaller: true, // Abilitato di default
+		debugLogger:   log.New(multiWriter, utils.Gray+"[=] DEBUG: "+utils.White, 0),
+		infoLogger:    log.New(multiWriter, utils.Cyan+"[*] INFO: "+utils.White, 0),
+		succeLogger:   log.New(multiWriter, utils.Green+"[+] SUCCESS: "+utils.White, 0),
+		warnLogger:    log.New(multiWriter, utils.Yellow+"[/] WARN: "+utils.White, 0),
+		errorLogger:   log.New(multiWriter, utils.Red+"[//] ERROR: "+utils.White, 0),
 	}
 }
 
@@ -80,55 +74,56 @@ func ParseLevel(level string) int {
 	}
 }
 
-// Set log level
 func SetLevel(level int) {
 	logger.Level = level
 }
 
-// Debug logs a message at debug level
+func logWithCaller(l *log.Logger, format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	if logger.IncludeCaller {
+		// Recupera chiamante
+		_, file, line, ok := runtime.Caller(2)
+		if ok {
+			shortFile := file[strings.LastIndex(file, "/")+1:]
+			msg = fmt.Sprintf("[%s:%d] %s", shortFile, line, msg)
+		}
+	}
+	l.Println(msg)
+}
+
 func Debug(format string, args ...interface{}) {
 	if logger.Level <= DebugLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.debugLogger.Println(message)
+		logWithCaller(logger.debugLogger, format, args...)
 	}
 }
 
-// Info logs a message at info level
 func Info(format string, args ...interface{}) {
 	if logger.Level <= InfoLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.infoLogger.Println(message)
+		logWithCaller(logger.infoLogger, format, args...)
 	}
 }
 
-// Success logs a message at success level
 func Success(format string, args ...interface{}) {
 	if logger.Level <= SuccessLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.succeLogger.Println(message)
+		logWithCaller(logger.succeLogger, format, args...)
 	}
 }
 
-// Warning logs a message at warning level
 func Warning(format string, args ...interface{}) {
 	if logger.Level <= WarningLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.warnLogger.Println(message)
+		logWithCaller(logger.warnLogger, format, args...)
 	}
 }
 
-// Error logs a message at error level
 func Error(format string, args ...interface{}) {
 	if logger.Level <= ErrorLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.errorLogger.Println(message)
+		logWithCaller(logger.errorLogger, format, args...)
 	}
 }
 
 func Fatal(format string, args ...interface{}) {
 	if logger.Level <= FatalLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.errorLogger.Fatal(message)
+		logWithCaller(logger.errorLogger, format, args...)
 		os.Exit(1)
 	}
 }

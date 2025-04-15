@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/ByteTheCookies/backend/internal/models"
 )
 
 var HOST string = "http://localhost:3000"
 var TEAM_TOKEN string = "4242424242424242"
 
-func Submit(flags []string) (map[string]interface{}, error) {
+func Submit(flags []string) ([]models.ResponseProtocol, error) {
 	// Codifica le flags in JSON
 	jsonData, err := json.Marshal(flags)
 	if err != nil {
@@ -43,7 +45,8 @@ func Submit(flags []string) (map[string]interface{}, error) {
 	}
 
 	// Decodifica JSON di risposta
-	var response map[string]interface{}
+	var response []models.ResponseProtocol
+	// logger.Debug("Raw body %s", string(body))
 	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, fmt.Errorf("errore nel parse della risposta: %w", err)
 	}

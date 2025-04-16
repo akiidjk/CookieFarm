@@ -50,7 +50,7 @@ install: build
 
 run: build
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
-	@$(BIN_DIR)/$(BINARY_NAME)
+	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
 version:
 	@echo -e "$(GREEN)[+] Version $(BINARY_NAME) v$(VERSION) $(RESET)"

@@ -1,18 +1,10 @@
 package main
 
-//   ____            _    _      _____
-//  / ___|___   ___ | | _(_) ___|  ___|_ _ _ __ _ __ ___
-// | |   / _ \ / _ \| |/ / |/ _ \ |_ / _` | '__| '_ ` _ \
-// | |__| (_) | (_) |   <| |  __/  _| (_| | |  | | | | | |
-//  \____\___/ \___/|_|\_\_|\___|_|__\__,_|_|  |_| |_| |_|
-//  / ___| |   |_ _| ____| \ | |_   _|
-// | |   | |    | ||  _| |  \| | | |
-// | |___| |___ | || |___| |\  | | |
-//  \____|_____|___|_____|_| \_| |_|
-
 import (
 	"bufio"
+	"flag"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
@@ -21,15 +13,50 @@ import (
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
+	"github.com/google/uuid"
 )
 
+func GenerateFakeFlag(flagCode string) models.Flag {
+	randomService := config.FAKE_SERVICES[utils.RandInt(1, len(config.FAKE_SERVICES))]
+	id, _ := uuid.NewV7()
+	return models.Flag{
+		ID:           id.String(),
+		FlagCode:     flagCode,
+		ServiceName:  randomService.Name,
+		ServicePort:  randomService.Port,
+		SubmitTime:   uint64(time.Now().UnixNano()),
+		ResponseTime: 0,
+		Status:       "UNSUBMITTED",
+		TeamID:       uint16(utils.RandInt(1, 40)),
+	}
+}
+
+var exploitPath *string
+
 func init() {
-	logger.SetLevel(logger.DebugLevel)
+	exploitPath = flag.String("exploit", "", "Percorso all'exploit da eseguire")
+	debug := flag.Bool("debug", false, "Abilita il livello di log debug")
+
+	flag.Parse()
+
+	if *exploitPath == "" {
+		fmt.Println("Errore: devi specificare il percorso dell'exploit con --exploit <path>")
+		os.Exit(1)
+	}
+
+	if *debug {
+		logger.SetLevel(logger.DebugLevel)
+	} else {
+		logger.SetLevel(logger.InfoLevel)
+	}
+
 }
 
 func main() {
 	var flags []models.Flag
-	cmd := exec.Command("../tests/exploit.py")
+	cmd := exec.Command(*exploitPath)
+
+	config.Current = api.GetConfig()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -53,7 +80,7 @@ func main() {
 		for scanner.Scan() {
 			flagCode := scanner.Text()
 			fmt.Println("[stdout]", flagCode)
-			flag := utils.GenerateFakeFlag(flagCode)
+			flag := GenerateFakeFlag(flagCode)
 			flags = append(flags, flag)
 			logger.Debug("Generated flag: %v", flag)
 		}
@@ -68,7 +95,7 @@ func main() {
 
 	go func() {
 		for {
-			time.Sleep(config.CYCLE_TIME * time.Second)
+			time.Sleep(time.Duration(config.CYCLE_TIME) * time.Second)
 			api.SendFlag(flags...)
 			flags = []models.Flag{}
 		}

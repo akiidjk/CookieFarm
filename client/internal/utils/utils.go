@@ -3,13 +3,8 @@ package utils
 import (
 	"os"
 	"runtime"
-	"time"
 
 	"math/rand"
-
-	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
-	"github.com/google/uuid"
 )
 
 func GetEnv(key, defaultValue string) string {
@@ -43,19 +38,4 @@ func CleanGC() (uint64, uint64) {
 
 func RandInt(min, max int) int {
 	return min + rand.Intn(max-min)
-}
-
-func GenerateFakeFlag(flagCode string) models.Flag {
-	randomService := config.FAKE_SERVICES[RandInt(1, len(config.FAKE_SERVICES))]
-	id, _ := uuid.NewV7()
-	return models.Flag{
-		ID:           id.String(),
-		FlagCode:     flagCode,
-		ServiceName:  randomService.Name,
-		ServicePort:  randomService.Port,
-		SubmitTime:   uint64(time.Now().UnixNano()),
-		ResponseTime: 0,
-		Status:       "UNSUBMITTED",
-		TeamID:       uint16(RandInt(1, 40)),
-	}
 }

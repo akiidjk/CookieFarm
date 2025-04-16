@@ -1,6 +1,9 @@
 package server
 
 import (
+	"context"
+
+	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -17,20 +20,42 @@ func (s *FiberServer) RegisterFiberRoutes() {
 
 	s.App.Get("/", s.GetStatus)
 	s.App.Get("/stats", s.GetStats)
-	s.App.Get("/flags", s.GetFlags)
-	s.App.Get("/get-config", s.GetConfig)
+	s.App.Get("/flags", s.GetUnsubmittedFlags)
+	s.App.Get("/config", s.GetConfig)
 	s.App.Get("/health", s.healthHandler)
 
 	s.App.Post("/submit-flags", s.SubmitFlag)
+	s.App.Post("/config", s.SetConfig)
 
 }
 
 func (s *FiberServer) GetConfig(c *fiber.Ctx) error {
+	return c.JSON(config.Current)
+}
+
+func (s *FiberServer) SetConfig(c *fiber.Ctx) error {
+	var configPayload struct {
+		Config models.Config `json:"config"`
+	}
+	if err := c.BodyParser(&configPayload); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"errors": err.Error(),
+		})
+	}
+
+	config.Current = configPayload.Config
+
+	if s.loopCancel != nil {
+		s.loopCancel()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	s.loopCancel = cancel
+
+	go s.StartLoop(ctx)
+
 	return c.JSON(fiber.Map{
-		"config": map[string]interface{}{
-			"max_flags": 10,
-			"max_users": 100,
-		},
+		"message": "Configuration updated successfully",
 	})
 }
 
@@ -41,8 +66,6 @@ func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
 			"errors": err.Error(),
 		})
 	}
-
-	// logger.Debug("Body parsed %v", body)
 
 	s.db.AddFlags(body["flags"])
 
@@ -60,8 +83,8 @@ func (s *FiberServer) GetStats(c *fiber.Ctx) error {
 	})
 }
 
-func (s *FiberServer) GetFlags(c *fiber.Ctx) error {
-	flags, err := s.db.GetFlags()
+func (s *FiberServer) GetUnsubmittedFlags(c *fiber.Ctx) error {
+	flags, err := s.db.GetUnsubmittedFlags(5)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

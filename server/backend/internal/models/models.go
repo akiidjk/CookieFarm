@@ -24,5 +24,31 @@ type Service struct {
 	Port uint16
 }
 
+type ConfigServer struct {
+	HostFlagchecker string `json:"host_flagchecker"` // example: localhost:8080
+	TeamToken       string `json:"team_token"`
+	CycleTime       uint64 `json:"cycle_time"` // Time interval for send flags to flagchecker
+}
+
+type ConfigClient struct {
+	BaseUrlServer string    `json:"base_url_server"` // Url example: http://localhost:8080
+	CycleTime     uint64    `json:"cycle_time"`      // Time interval for send flags to server
+	Services      []Service `json:"services"`
+}
+
 type Config struct {
+	Server ConfigServer `json:"server"`
+	Client ConfigClient `json:"client"`
+}
+
+func (config Config) IsEmpty() bool {
+	return config.Server.IsEmpty() && config.Client.IsEmpty()
+}
+
+func (configServer ConfigServer) IsEmpty() bool {
+	return configServer.HostFlagchecker == "" && configServer.TeamToken == "" && configServer.CycleTime == 0
+}
+
+func (configClient ConfigClient) IsEmpty() bool {
+	return configClient.BaseUrlServer == "" && configClient.CycleTime == 0 && len(configClient.Services) == 0
 }

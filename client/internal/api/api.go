@@ -7,11 +7,10 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
 )
-
-const HOST = "http://localhost:8080"
 
 func SendFlag(flags ...models.Flag) {
 	formattedBody, err := json.Marshal(map[string][]models.Flag{"flags": flags})
@@ -20,7 +19,7 @@ func SendFlag(flags ...models.Flag) {
 		return
 	}
 
-	resp, err := http.Post(HOST+"/submit-flags", "application/json", bytes.NewReader(formattedBody))
+	resp, err := http.Post(config.BASE_URL_SERVER+"/submit-flags", "application/json", bytes.NewReader(formattedBody))
 	if err != nil {
 		fmt.Println("Errore invio flags:", err)
 		return
@@ -34,4 +33,28 @@ func SendFlag(flags ...models.Flag) {
 	}
 
 	logger.Info("Response %v", string(bodyContent))
+}
+
+func GetConfig() models.Config {
+	resp, err := http.Get(config.BASE_URL_SERVER + "/config")
+	if err != nil {
+		fmt.Println("Errore download config:", err)
+		return models.Config{}
+	}
+	defer resp.Body.Close()
+
+	bodyContent, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Errore lettura risposta:", err)
+		return models.Config{}
+	}
+
+	var config models.Config
+	err = json.Unmarshal(bodyContent, &config)
+	if err != nil {
+		fmt.Println("Errore parsing config:", err)
+		return models.Config{}
+	}
+
+	return config
 }

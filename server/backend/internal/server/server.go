@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/ByteTheCookies/backend/internal/database"
@@ -9,8 +11,8 @@ import (
 
 type FiberServer struct {
 	*fiber.App
-
-	db database.Service
+	loopCancel context.CancelFunc
+	db         database.Service
 }
 
 func DevConfig() fiber.Config {

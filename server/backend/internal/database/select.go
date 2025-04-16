@@ -36,19 +36,19 @@ func (s *service) GetAllFlags() ([]models.Flag, error) {
 	return flags, nil
 }
 
-func (s *service) GetFlags() ([]models.Flag, error) {
+func (s *service) GetUnsubmittedFlags(limit int) ([]models.Flag, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	flags := []models.Flag{}
 
-	query := "SELECT id, flag_code, service_name, submit_time, status, team_id FROM flags WHERE status = 'UNSUBMITTED'"
+	query := "SELECT id, flag_code, service_name, submit_time, status, team_id FROM flags WHERE status = 'UNSUBMITTED' LIMIT ?"
 	stmt, err := s.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *service) GetAllFlagsCode() ([]string, error) {
 	defer cancel()
 	flags := []string{}
 
-	query := "SELECT flag_code FROM flags WHERE status = 'UNSUBMITTED'"
+	query := "SELECT flag_code FROM flags"
 	stmt, err := s.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -94,19 +94,19 @@ func (s *service) GetAllFlagsCode() ([]string, error) {
 	return flags, nil
 }
 
-func (s *service) GetFlagsCode() ([]string, error) {
+func (s *service) GetUnsubmittedFlagsCode(limit int) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	flags := []string{}
 
-	query := "SELECT flag_code FROM flags WHERE status = 'UNSUBMITTED'"
+	query := "SELECT flag_code FROM flags WHERE status = 'UNSUBMITTED' LIMIT ?"
 	stmt, err := s.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx, limit)
 	if err != nil {
 		return nil, err
 	}

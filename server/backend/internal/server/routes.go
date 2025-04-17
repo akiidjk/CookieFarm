@@ -5,6 +5,7 @@ import (
 
 	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/backend/protocols"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	jwtware "github.com/gofiber/jwt/v3"
@@ -100,6 +101,10 @@ func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
 	}
 
 	s.db.AddFlag(body["flag"])
+
+	flags := []string{body["flag"].FlagCode}
+
+	protocols.Submit(config.HOST, config.TEAM_TOKEN, flags)
 
 	return c.JSON(fiber.Map{
 		"message": "Flag submitted successfully",

@@ -21,6 +21,16 @@ func InitSecret() {
 	config.Secret = secret
 }
 
+func VerifyToken(token string) error {
+	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return config.Secret, nil
+	})
+	return err
+}
+
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

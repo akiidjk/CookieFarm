@@ -21,7 +21,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 
 	public := s.App.Group("/api/v1")
 	public.Get("/", s.GetStatus)
-	public.Post("/auth/login", s.Login)
+	public.Post("/auth/login", s.HandleLogin)
 
 	// Aspected Header with: `Authorization: Bearer <token>`
 	private := s.App.Group("/api/v1", jwtware.New(jwtware.Config{
@@ -31,7 +31,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	private.Get("/flags", s.GetFlags)
 	private.Get("/config", s.GetConfig)
 	private.Get("/health", s.healthHandler)
-	private.Post("/submit-flags", s.SubmitFlag)
+	private.Post("/submit-flags", s.SubmitFlags)
 	private.Post("/config", s.SetConfig)
 
 }
@@ -59,14 +59,14 @@ func (s *FiberServer) SetConfig(c *fiber.Ctx) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.loopCancel = cancel
 
-	go s.StartLoop(ctx)
+	go s.StartFlagProcessingLoop(ctx)
 
 	return c.JSON(fiber.Map{
 		"message": "Configuration updated successfully",
 	})
 }
 
-func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
+func (s *FiberServer) SubmitFlags(c *fiber.Ctx) error {
 	body := map[string][]models.Flag{"flags": []models.Flag{}}
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{

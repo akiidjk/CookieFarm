@@ -44,7 +44,7 @@ func CreateJWT() (string, int64, error) {
 	return tokenString, exp, nil
 }
 
-func (s *FiberServer) Login(c *fiber.Ctx) error {
+func (s *FiberServer) HandleLogin(c *fiber.Ctx) error {
 	req := new(models.SigninRequest)
 	if err := c.BodyParser(req); err != nil {
 		return err

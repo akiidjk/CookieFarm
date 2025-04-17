@@ -10,7 +10,7 @@ import (
 	"github.com/ByteTheCookies/backend/protocols"
 )
 
-func (s *FiberServer) StartLoop(ctx context.Context) {
+func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 	logger.Info("Starting loop")

@@ -1,16 +1,14 @@
 package models
 
 type Flag struct {
+	ID           string `json:"id"`
+	Status       string `json:"status"`
+	FlagCode     string `json:"flag_code"`
+	ServiceName  string `json:"service_name"`
+	ServicePort  uint16 `json:"service_port"`
+	TeamID       uint16 `json:"team_id"`
 	SubmitTime   uint64 `json:"submit_time"`
 	ResponseTime uint64 `json:"response_time"`
-
-	ID          string `json:"id"`
-	Status      string `json:"status"`
-	FlagCode    string `json:"flag_code"`
-	ServiceName string `json:"service_name"`
-
-	ServicePort uint16 `json:"service_port"`
-	TeamID      uint16 `json:"team_id"`
 }
 
 type ResponseProtocol struct {
@@ -20,20 +18,28 @@ type ResponseProtocol struct {
 }
 
 type Service struct {
-	Name string
-	Port uint16
+	Name string `json:"name"`
+	Port uint16 `json:"port"`
 }
 
 type ConfigServer struct {
-	HostFlagchecker string `json:"host_flagchecker"` // example: localhost:8080
+	HostFlagchecker string `json:"host_flagchecker"` // es: localhost:8080
 	TeamToken       string `json:"team_token"`
-	CycleTime       uint64 `json:"cycle_time"` // Time interval for send flags to flagchecker
+	CycleTime       uint64 `json:"cycle_time"` // intervallo per invio flag al flagchecker
+}
+
+func (s ConfigServer) IsEmpty() bool {
+	return s.HostFlagchecker == "" && s.TeamToken == "" && s.CycleTime == 0
 }
 
 type ConfigClient struct {
-	BaseUrlServer string    `json:"base_url_server"` // Url example: http://localhost:8080
-	CycleTime     uint64    `json:"cycle_time"`      // Time interval for send flags to server
+	BaseUrlServer string    `json:"base_url_server"` // es: http://localhost:8080
+	CycleTime     uint64    `json:"cycle_time"`      // intervallo per invio flag al server
 	Services      []Service `json:"services"`
+}
+
+func (c ConfigClient) IsEmpty() bool {
+	return c.BaseUrlServer == "" && c.CycleTime == 0 && len(c.Services) == 0
 }
 
 type Config struct {
@@ -41,16 +47,8 @@ type Config struct {
 	Client ConfigClient `json:"client"`
 }
 
-func (config Config) IsEmpty() bool {
-	return config.Server.IsEmpty() && config.Client.IsEmpty()
-}
-
-func (configServer ConfigServer) IsEmpty() bool {
-	return configServer.HostFlagchecker == "" && configServer.TeamToken == "" && configServer.CycleTime == 0
-}
-
-func (configClient ConfigClient) IsEmpty() bool {
-	return configClient.BaseUrlServer == "" && configClient.CycleTime == 0 && len(configClient.Services) == 0
+func (c Config) IsEmpty() bool {
+	return c.Server.IsEmpty() && c.Client.IsEmpty()
 }
 
 type Session struct {

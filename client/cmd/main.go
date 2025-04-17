@@ -17,7 +17,7 @@ import (
 )
 
 func GenerateFakeFlag(flagCode string) models.Flag {
-	randomService := config.FAKE_SERVICES[utils.RandInt(1, len(config.FAKE_SERVICES))]
+	randomService := config.FAKE_SERVICES[utils.RandInt(0, len(config.FAKE_SERVICES))]
 	id, _ := uuid.NewV7()
 	return models.Flag{
 		ID:           id.String(),

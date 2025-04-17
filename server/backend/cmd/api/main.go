@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
 	"time"
 
+	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/server"
+	s "github.com/ByteTheCookies/backend/internal/server"
 	"github.com/ByteTheCookies/backend/internal/utils"
 
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
@@ -38,6 +41,17 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 
 func init() {
 	logger.SetLevel(0)
+
+	s.InitSecret()
+	logger.Debug("Password before %s", config.Password)
+
+	var err error
+	config.Password, err = s.HashPassword(config.Password)
+	if err != nil {
+		logger.Error("Error hashing password: %v", err)
+		os.Exit(1)
+	}
+	logger.Debug("Password after %s", config.Password)
 }
 
 func main() {

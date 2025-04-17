@@ -7,6 +7,7 @@ import (
 	"github.com/ByteTheCookies/backend/internal/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	jwtware "github.com/gofiber/jwt/v3"
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
@@ -18,14 +19,20 @@ func (s *FiberServer) RegisterFiberRoutes() {
 		MaxAge:           300,
 	}))
 
-	s.App.Get("/", s.GetStatus)
-	s.App.Get("/stats", s.GetStats)
-	s.App.Get("/flags", s.GetUnsubmittedFlags)
-	s.App.Get("/config", s.GetConfig)
-	s.App.Get("/health", s.healthHandler)
+	public := s.App.Group("/api/v1")
+	public.Get("/", s.GetStatus)
+	public.Post("/auth/login", s.Login)
 
-	s.App.Post("/submit-flags", s.SubmitFlag)
-	s.App.Post("/config", s.SetConfig)
+	// Aspected Header with: `Authorization: Bearer <token>`
+	private := s.App.Group("/api/v1", jwtware.New(jwtware.Config{
+		SigningKey: config.Secret,
+	}))
+	private.Get("/stats", s.GetStats)
+	private.Get("/flags", s.GetFlags)
+	private.Get("/config", s.GetConfig)
+	private.Get("/health", s.healthHandler)
+	private.Post("/submit-flags", s.SubmitFlag)
+	private.Post("/config", s.SetConfig)
 
 }
 
@@ -83,8 +90,8 @@ func (s *FiberServer) GetStats(c *fiber.Ctx) error {
 	})
 }
 
-func (s *FiberServer) GetUnsubmittedFlags(c *fiber.Ctx) error {
-	flags, err := s.db.GetUnsubmittedFlags(5)
+func (s *FiberServer) GetFlags(c *fiber.Ctx) error {
+	flags, err := s.db.GetAllFlags()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

@@ -37,10 +37,10 @@ func (s *service) UpdateFlagsStatus(flagsCode []string, status string) error {
 	placeholders := strings.Repeat("?,", len(flagsCode))
 	placeholders = placeholders[:len(placeholders)-1]
 
-	query := fmt.Sprintf("UPDATE flags SET status = ? WHERE flag_code IN (%s)", placeholders)
+	query := fmt.Sprintf("UPDATE flags SET status = ?,response_time = ? WHERE flag_code IN (%s)", placeholders)
 
-	args := make([]interface{}, 0, len(flagsCode)+1)
-	args = append(args, status)
+	args := make([]interface{}, 0, len(flagsCode)+2)
+	args = append(args, status, uint64(time.Now().Unix()))
 	for _, code := range flagsCode {
 		args = append(args, code)
 	}

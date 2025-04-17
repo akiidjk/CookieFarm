@@ -52,3 +52,11 @@ func (configServer ConfigServer) IsEmpty() bool {
 func (configClient ConfigClient) IsEmpty() bool {
 	return configClient.BaseUrlServer == "" && configClient.CycleTime == 0 && len(configClient.Services) == 0
 }
+
+type Session struct {
+	Password string `json:"password"`
+}
+
+type SigninRequest struct {
+	Password string `json:"password"`
+}

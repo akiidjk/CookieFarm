@@ -15,3 +15,10 @@ var Current models.Config = models.Config{
 	Server: models.ConfigServer{},
 	Client: models.ConfigClient{},
 }
+
+var Session models.Session = models.Session{
+	Password: "",
+}
+
+var Secret = make([]byte, 32)
+var Password = utils.GetEnv("PASSWORD", "password")

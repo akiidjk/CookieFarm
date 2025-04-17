@@ -40,3 +40,8 @@ type Config struct {
 	Server ConfigServer `json:"server"`
 	Client ConfigClient `json:"client"`
 }
+
+type TokenResponse struct {
+	Exp   int64  `json:"exp"`
+	Token string `json:"token"`
+}

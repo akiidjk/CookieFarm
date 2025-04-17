@@ -12,7 +12,7 @@ func (s *service) GetAllFlags() ([]models.Flag, error) {
 	defer cancel()
 	flags := []models.Flag{}
 
-	query := "SELECT id, flag_code, service_name, submit_time, status, team_id FROM flags"
+	query := "SELECT id, flag_code, service_name, submit_time, response_time, status, team_id FROM flags"
 	stmt, err := s.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (s *service) GetAllFlags() ([]models.Flag, error) {
 
 	for rows.Next() {
 		var flag models.Flag
-		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.Status, &flag.TeamID); err != nil {
+		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.ResponseTime, &flag.Status, &flag.TeamID); err != nil {
 			return nil, err
 		}
 		flags = append(flags, flag)
@@ -41,7 +41,7 @@ func (s *service) GetUnsubmittedFlags(limit int) ([]models.Flag, error) {
 	defer cancel()
 	flags := []models.Flag{}
 
-	query := "SELECT id, flag_code, service_name, submit_time, status, team_id FROM flags WHERE status = 'UNSUBMITTED' LIMIT ?"
+	query := "SELECT id, flag_code, service_name, submit_time, response_time, status, team_id FROM flags WHERE status = 'UNSUBMITTED' LIMIT ?"
 	stmt, err := s.db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (s *service) GetUnsubmittedFlags(limit int) ([]models.Flag, error) {
 
 	for rows.Next() {
 		var flag models.Flag
-		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.Status, &flag.TeamID); err != nil {
+		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.ResponseTime, &flag.Status, &flag.TeamID); err != nil {
 			return nil, err
 		}
 		flags = append(flags, flag)

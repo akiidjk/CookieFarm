@@ -17,3 +17,4 @@ var FAKE_SERVICES = []models.Service{
 var BASE_URL_SERVER = utils.GetEnv("BASE_URL_SERVER", "http://localhost:8080")
 
 var Current models.Config
+var Token string

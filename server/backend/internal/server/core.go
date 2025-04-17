@@ -26,6 +26,11 @@ func (s *FiberServer) StartLoop(ctx context.Context) {
 				continue
 			}
 
+			if len(flags) == 0 {
+				logger.Debug("No flags to submit")
+				continue
+			}
+
 			res, err := protocols.Submit(config.HOST, config.TEAM_TOKEN, flags)
 			if err != nil {
 				logger.Error("Submit error: %v", err)
@@ -33,8 +38,6 @@ func (s *FiberServer) StartLoop(ctx context.Context) {
 			}
 
 			s.UpdateFlags(res)
-
-			// logger.Debug("Submit results: %v", res)
 		}
 	}
 }
@@ -43,20 +46,28 @@ func (s *FiberServer) UpdateFlags(flags []models.ResponseProtocol) {
 	flagsAccepted := make([]string, 0)
 	flagsDenied := make([]string, 0)
 	flagsError := make([]string, 0)
-	logger.Debug("Total flag submitted: %d", len(flags))
 	for key, value := range flags {
-		if value.Status == "ACCEPTED" {
-			logger.Debug("Flag %d accepted = %v", key, value.Flag)
+		switch value.Status {
+		case "ACCEPTED":
 			flagsAccepted = append(flagsAccepted, value.Flag)
-		} else if value.Status == "DENIED" {
-			logger.Debug("Flag %d denied = %v", key, value.Flag)
+			logger.Debug("Flag %d accepted = %v", key, value.Flag)
+		case "DENIED":
 			flagsDenied = append(flagsDenied, value.Flag)
-		} else {
-			logger.Debug("Flag %d error = %v", key, value.Flag)
+			logger.Debug("Flag %d denied = %v", key, value.Flag)
+		default:
 			flagsError = append(flagsError, value.Flag)
+			logger.Debug("Flag %d error = %v", key, value.Flag)
 		}
 	}
-	s.db.UpdateFlagsStatus(flagsAccepted, "ACCEPTED")
-	s.db.UpdateFlagsStatus(flagsDenied, "DENIED")
-	s.db.UpdateFlagsStatus(flagsError, "ERROR")
+	if len(flagsAccepted) > 0 {
+		s.db.UpdateFlagsStatus(flagsAccepted, "ACCEPTED")
+	}
+	if len(flagsDenied) > 0 {
+		s.db.UpdateFlagsStatus(flagsDenied, "DENIED")
+	}
+	if len(flagsError) > 0 {
+		s.db.UpdateFlagsStatus(flagsError, "ERROR")
+	}
+	logger.Info("Flags updated. Accepted: %d, Denied: %d, Error: %d", len(flagsAccepted), len(flagsDenied), len(flagsError))
+
 }

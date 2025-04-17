@@ -24,7 +24,7 @@ func GenerateFakeFlag(flagCode string) models.Flag {
 		FlagCode:     flagCode,
 		ServiceName:  randomService.Name,
 		ServicePort:  randomService.Port,
-		SubmitTime:   uint64(time.Now().UnixNano()),
+		SubmitTime:   uint64(time.Now().Unix()),
 		ResponseTime: 0,
 		Status:       "UNSUBMITTED",
 		TeamID:       uint16(utils.RandInt(1, 40)),
@@ -32,10 +32,12 @@ func GenerateFakeFlag(flagCode string) models.Flag {
 }
 
 var exploitPath *string
+var password *string
 
 func init() {
 	exploitPath = flag.String("exploit", "", "Percorso all'exploit da eseguire")
 	debug := flag.Bool("debug", false, "Abilita il livello di log debug")
+	password = flag.String("password", "", "Password per l'accesso")
 
 	flag.Parse()
 
@@ -44,10 +46,22 @@ func init() {
 		os.Exit(1)
 	}
 
+	if *password == "" {
+		fmt.Println("Errore: devi specificare la password con --password <password>")
+		os.Exit(1)
+	}
+
 	if *debug {
 		logger.SetLevel(logger.DebugLevel)
 	} else {
 		logger.SetLevel(logger.InfoLevel)
+	}
+
+	var err error
+	config.Token, err = api.Login(*password)
+	if err != nil {
+		fmt.Println("Errore login:", err)
+		os.Exit(1)
 	}
 
 }

@@ -17,13 +17,17 @@ import (
 )
 
 //go:embed schema.sql
-var sql_schema string
+var sqlSchema string
 
 type Service interface {
 	Health() map[string]string
 	AddFlags(flags []models.Flag) error
-	GetFlags() ([]models.Flag, error)
-	GetFlagsCode() ([]string, error)
+	GetUnsubmittedFlags(limit int) ([]models.Flag, error)
+	GetAllFlags() ([]models.Flag, error)
+	GetUnsubmittedFlagsCode(limit int) ([]string, error)
+	GetAllFlagsCode() ([]string, error)
+	UpdateFlagStatus(flag_code string, status string) error
+	UpdateFlagsStatus(flags []string, status string) error
 	InitDB() error
 	Close() error
 }
@@ -41,7 +45,7 @@ func (s *service) InitDB() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	logger.Info("Initializing database")
-	_, err := s.db.ExecContext(ctx, sql_schema)
+	_, err := s.db.ExecContext(ctx, sqlSchema)
 	if err != nil {
 		return err
 	}
@@ -50,15 +54,12 @@ func (s *service) InitDB() error {
 }
 
 func New() Service {
-	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
 	}
 
 	db, err := sql.Open("sqlite3", dburl)
 	if err != nil {
-		// This will not be a connection error, but a DSN parse error or
-		// another initialization error.
 		logger.Fatal("Failed to open database connection %v", err)
 	}
 
@@ -72,94 +73,12 @@ func New() Service {
 	return dbInstance
 }
 
-func (s *service) GetFlags() ([]models.Flag, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	flags := []models.Flag{}
-
-	query := "SELECT id, flag_code, service_name, submit_time, status, team_id FROM flags"
-	stmt, err := s.db.PrepareContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.QueryContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var flag models.Flag
-		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.Status, &flag.TeamID); err != nil {
-			return nil, err
-		}
-		flags = append(flags, flag)
-	}
-
-	return flags, nil
-}
-
-func (s *service) GetFlagsCode() ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	flags := []string{}
-
-	query := "SELECT flag_code FROM flags"
-	stmt, err := s.db.PrepareContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.QueryContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var flag string
-		if err := rows.Scan(&flag); err != nil {
-			return nil, err
-		}
-		flags = append(flags, flag)
-	}
-
-	return flags, nil
-}
-
-func (s *service) AddFlags(flags []models.Flag) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
-	query := "INSERT INTO flags (id, flag_code, service_name, submit_time, status, team_id) VALUES (?, ?, ?, ?, ?, ?)"
-	stmt, err := s.db.PrepareContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	for _, flag := range flags {
-		_, err := stmt.ExecContext(ctx, flag.ID, flag.FlagCode, flag.ServiceName, flag.SubmitTime, flag.Status, flag.TeamID)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Health checks the health of the database connection by pinging the database.
-// It returns a map with keys indicating various health statistics.
 func (s *service) Health() map[string]string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	stats := make(map[string]string)
 
-	// Ping the database
 	err := s.db.PingContext(ctx)
 	if err != nil {
 		stats["status"] = "down"
@@ -168,11 +87,9 @@ func (s *service) Health() map[string]string {
 		return stats
 	}
 
-	// Database is up, add more statistics
 	stats["status"] = "up"
 	stats["message"] = "It's healthy"
 
-	// Get database stats (like open connections, in use, idle, etc.)
 	dbStats := s.db.Stats()
 	stats["open_connections"] = strconv.Itoa(dbStats.OpenConnections)
 	stats["in_use"] = strconv.Itoa(dbStats.InUse)
@@ -182,8 +99,7 @@ func (s *service) Health() map[string]string {
 	stats["max_idle_closed"] = strconv.FormatInt(dbStats.MaxIdleClosed, 10)
 	stats["max_lifetime_closed"] = strconv.FormatInt(dbStats.MaxLifetimeClosed, 10)
 
-	// Evaluate stats to provide a health message
-	if dbStats.OpenConnections > 40 { // Assuming 50 is the max for this example
+	if dbStats.OpenConnections > 40 {
 		stats["message"] = "The database is experiencing heavy load."
 	}
 
@@ -202,10 +118,6 @@ func (s *service) Health() map[string]string {
 	return stats
 }
 
-// Close closes the database connection.
-// It logs a message indicating the disconnection from the specific database.
-// If the connection is successfully closed, it returns nil.
-// If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
 	logger.Info("Disconnected from database: %s", dburl)
 	return s.db.Close()

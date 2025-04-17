@@ -1,37 +1,76 @@
 package main
 
-//   ____            _    _      _____
-//  / ___|___   ___ | | _(_) ___|  ___|_ _ _ __ _ __ ___
-// | |   / _ \ / _ \| |/ / |/ _ \ |_ / _` | '__| '_ ` _ \
-// | |__| (_) | (_) |   <| |  __/  _| (_| | |  | | | | | |
-//  \____\___/ \___/|_|\_\_|\___|_|__\__,_|_|  |_| |_| |_|
-//  / ___| |   |_ _| ____| \ | |_   _|
-// | |   | |    | ||  _| |  \| | | |
-// | |___| |___ | || |___| |\  | | |
-//  \____|_____|___|_____|_| \_| |_|
-
 import (
 	"bufio"
+	"flag"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/api"
+	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
 	"github.com/google/uuid"
 )
 
-const CYCLE_TIME = 15
-
-func init() {
-	logger.SetLevel(logger.DebugLevel)
+func FakeFlag(flagCode string) models.Flag {
+	randomService := config.FAKE_SERVICES[utils.RandInt(0, len(config.FAKE_SERVICES))]
+	id, _ := uuid.NewV7()
+	return models.Flag{
+		ID:           id.String(),
+		FlagCode:     flagCode,
+		ServiceName:  randomService.Name,
+		ServicePort:  randomService.Port,
+		SubmitTime:   uint64(time.Now().Unix()),
+		ResponseTime: 0,
+		Status:       "UNSUBMITTED",
+		TeamID:       uint16(utils.RandInt(1, 40)),
+	}
 }
 
-func run_exploit() {
+var exploitPath *string
+var password *string
+
+func init() {
+	exploitPath = flag.String("exploit", "", "Percorso all'exploit da eseguire")
+	debug := flag.Bool("debug", false, "Abilita il livello di log debug")
+	password = flag.String("password", "", "Password per l'accesso")
+
+	flag.Parse()
+
+	if *exploitPath == "" {
+		fmt.Println("Errore: devi specificare il percorso dell'exploit con --exploit <path>")
+		os.Exit(1)
+	}
+
+	if *password == "" {
+		fmt.Println("Errore: devi specificare la password con --password <password>")
+		os.Exit(1)
+	}
+
+	if *debug {
+		logger.SetLevel(logger.DebugLevel)
+	} else {
+		logger.SetLevel(logger.InfoLevel)
+	}
+
+	var err error
+	config.Token, err = api.Login(*password)
+	if err != nil {
+		fmt.Println("Errore login:", err)
+		os.Exit(1)
+	}
+
+}
+
+func main() {
 	var flags []models.Flag
-	cmd := exec.Command("../tests/exploit.py")
+	cmd := exec.Command(*exploitPath)
+
+	config.Current = api.GetConfig()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -53,16 +92,11 @@ func run_exploit() {
 	go func() {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
-			fmt.Println("[stdout]", scanner.Text())
-			flag := models.Flag{
-				ID:           int64(uuid.New().ID()),
-				FlagCode:     scanner.Text(),
-				ServiceName:  "Pippo",
-				ResponseTime: time.Now().UnixNano(),
-				Status:       "BOH",
-				TeamID:       0,
-			}
+			flagCode := scanner.Text()
+			fmt.Println("[stdout]", flagCode)
+			flag := FakeFlag(flagCode)
 			flags = append(flags, flag)
+			logger.Debug("Generated flag: %v", flag)
 		}
 	}()
 
@@ -75,7 +109,7 @@ func run_exploit() {
 
 	go func() {
 		for {
-			time.Sleep(CYCLE_TIME * time.Second)
+			time.Sleep(time.Duration(config.CYCLE_TIME) * time.Second)
 			api.SendFlag(flags...)
 			flags = []models.Flag{}
 		}
@@ -84,19 +118,4 @@ func run_exploit() {
 	if err := cmd.Wait(); err != nil {
 		fmt.Println("Errore comando:", err)
 	}
-}
-
-func main() {
-	fmt.Printf(utils.Yellow + `
-	   ______            __   _      ______
-	  / ____/___  ____  / /__(_)__  / ____/___ __________ ___
-	 / /   / __ \/ __ \/ //_/ / _ \/ /_  / __ ` + `/ ___/ __` + `__ \
-	/ /___/ /_/ / /_/ / ,< / /  __/ __/ / /_/ / /  / / / / / /
-	\____/\____/\____/_/|_/_/\___/_/    \__,_/_/  /_/ /_/ /_/
-	  / ____/ (_)__  ____  / /_
-	 / /   / / / _ \/ __ \/ __/
-	/ /___/ / /  __/ / / / /_
-	\____/_/_/\___/_/ /_/\__/
- ` + utils.Reset)
-	run_exploit()
 }

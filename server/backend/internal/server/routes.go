@@ -1,15 +1,16 @@
 package server
 
 import (
-	"github.com/ByteTheCookies/backend/internal/logger"
+	"context"
+
+	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/models"
-	"github.com/ByteTheCookies/backend/protocols"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	jwtware "github.com/gofiber/jwt/v3"
 )
 
 func (s *FiberServer) RegisterFiberRoutes() {
-	// Apply CORS middleware
 	s.App.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
@@ -18,47 +19,62 @@ func (s *FiberServer) RegisterFiberRoutes() {
 		MaxAge:           300,
 	}))
 
-	s.App.Get("/", s.GetStatus)
-	s.App.Get("/stats", s.GetStats)
-	s.App.Get("/flags", s.GetFlags)
-	s.App.Get("/get-config", s.GetConfig)
-	s.App.Get("/health", s.healthHandler)
+	public := s.App.Group("/api/v1")
+	public.Get("/", s.GetStatus)
+	public.Post("/auth/login", s.HandleLogin)
 
-	s.App.Post("/submit-flags", s.SubmitFlag)
+	// Aspected Header with: `Authorization: Bearer <token>`
+	private := s.App.Group("/api/v1", jwtware.New(jwtware.Config{
+		SigningKey: config.Secret,
+	}))
+	private.Get("/stats", s.GetStats)
+	private.Get("/flags", s.GetFlags)
+	private.Get("/config", s.GetConfig)
+	private.Get("/health", s.healthHandler)
+	private.Post("/submit-flags", s.SubmitFlags)
+	private.Post("/config", s.SetConfig)
 
 }
 
 func (s *FiberServer) GetConfig(c *fiber.Ctx) error {
+	return c.JSON(config.Current)
+}
+
+func (s *FiberServer) SetConfig(c *fiber.Ctx) error {
+	var configPayload struct {
+		Config models.Config `json:"config"`
+	}
+	if err := c.BodyParser(&configPayload); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"errors": err.Error(),
+		})
+	}
+
+	config.Current = configPayload.Config
+
+	if s.loopCancel != nil {
+		s.loopCancel()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	s.loopCancel = cancel
+
+	go s.StartFlagProcessingLoop(ctx)
+
 	return c.JSON(fiber.Map{
-		"config": map[string]interface{}{
-			"max_flags": 10,
-			"max_users": 100,
-		},
+		"message": "Configuration updated successfully",
 	})
 }
 
-func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
-	logger.Debug("SUBMITFLAG | Request received by %s", c.IP())
-	body := models.FlagResponse{}
+func (s *FiberServer) SubmitFlags(c *fiber.Ctx) error {
+	body := map[string][]models.Flag{"flags": []models.Flag{}}
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
 			"errors": err.Error(),
 		})
 	}
 
-	// logger.Debug("Body parsed %v", body)
-	s.db.AddFlags(body.Flags)
-	flags, err := s.db.GetFlagsCode()
-	if err != nil {
-		logger.Error("Error %v", err)
-	}
-
-	res, err := protocols.Submit(flags)
-	if err != nil {
-		logger.Error("Error %v", err)
-	}
-
-	logger.Debug("Results: %v", res)
+	s.db.AddFlags(body["flags"])
 
 	return c.JSON(fiber.Map{
 		"message": "Flag submitted successfully",
@@ -75,8 +91,7 @@ func (s *FiberServer) GetStats(c *fiber.Ctx) error {
 }
 
 func (s *FiberServer) GetFlags(c *fiber.Ctx) error {
-	logger.Debug("GETFLAGS | Request received by %s", c.IP())
-	flags, err := s.db.GetFlags()
+	flags, err := s.db.GetAllFlags()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/ByteTheCookies/backend/internal/models"
 )
 
-var HOST string = "http://localhost:3000"
-var TEAM_TOKEN string = "4242424242424242"
-
-func Submit(flags []string) (map[string]interface{}, error) {
+func Submit(host string, team_token string, flags []string) ([]models.ResponseProtocol, error) {
 	// Codifica le flags in JSON
 	jsonData, err := json.Marshal(flags)
 	if err != nil {
@@ -19,14 +18,15 @@ func Submit(flags []string) (map[string]interface{}, error) {
 	}
 
 	// Crea la request
-	req, err := http.NewRequest(http.MethodPut, HOST+"/submit", bytes.NewBuffer(jsonData))
+	url := "http://" + host + "/submit"
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("errore nella creazione della richiesta: %w", err)
 	}
 
 	// Aggiungi header
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Team-Token", TEAM_TOKEN)
+	req.Header.Set("X-Team-Token", team_token)
 
 	// Esegui la richiesta
 	client := &http.Client{}
@@ -43,7 +43,8 @@ func Submit(flags []string) (map[string]interface{}, error) {
 	}
 
 	// Decodifica JSON di risposta
-	var response map[string]interface{}
+	var response []models.ResponseProtocol
+	// logger.Debug("Raw body %s", string(body))
 	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, fmt.Errorf("errore nel parse della risposta: %w", err)
 	}

@@ -3,6 +3,8 @@ package utils
 import (
 	"os"
 	"runtime"
+
+	"math/rand"
 )
 
 func GetEnv(key, defaultValue string) string {
@@ -32,4 +34,8 @@ func CleanGC() (uint64, uint64) {
 	runtime.ReadMemStats(&mem)
 	after := mem.Alloc / 1_048_576
 	return before, after
+}
+
+func RandInt(min, max int) int {
+	return min + rand.Intn(max-min)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateFakeFlag(flagCode string) models.Flag {
+func FakeFlag(flagCode string) models.Flag {
 	randomService := config.FAKE_SERVICES[utils.RandInt(0, len(config.FAKE_SERVICES))]
 	id, _ := uuid.NewV7()
 	return models.Flag{
@@ -94,7 +94,7 @@ func main() {
 		for scanner.Scan() {
 			flagCode := scanner.Text()
 			fmt.Println("[stdout]", flagCode)
-			flag := GenerateFakeFlag(flagCode)
+			flag := FakeFlag(flagCode)
 			flags = append(flags, flag)
 			logger.Debug("Generated flag: %v", flag)
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/backend/protocols"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	jwtware "github.com/gofiber/jwt/v3"
@@ -32,6 +33,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	private.Get("/config", s.GetConfig)
 	private.Get("/health", s.healthHandler)
 	private.Post("/submit-flags", s.SubmitFlags)
+	private.Post("/submit-flag", s.SubmitFlag)
 	private.Post("/config", s.SetConfig)
 
 }
@@ -87,6 +89,31 @@ func (s *FiberServer) GetStats(c *fiber.Ctx) error {
 			"total_flags": 0,
 			"total_users": 0,
 		},
+	})
+}
+
+func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
+	body := map[string]models.Flag{"flag": models.Flag{}}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"errors": err.Error(),
+		})
+	}
+
+	if err := s.db.AddFlag(body["flag"]); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to add flag: " + err.Error(),
+		})
+	}
+	flags := []string{body["flag"].FlagCode}
+	if err := protocols.Submit(config.HOST, config.TEAM_TOKEN, flags); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to submit flag",
+			"details": err.Error(),
+		})
+	}
+	return c.JSON(fiber.Map{
+		"message": "Flag submitted successfully",
 	})
 }
 

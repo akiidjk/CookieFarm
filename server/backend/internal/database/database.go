@@ -22,6 +22,7 @@ var sqlSchema string
 type Service interface {
 	Health() map[string]string
 	AddFlags(flags []models.Flag) error
+	AddFlag(flag models.Flag) error
 	GetUnsubmittedFlags(limit int) ([]models.Flag, error)
 	GetAllFlags() ([]models.Flag, error)
 	GetUnsubmittedFlagsCode(limit int) ([]string, error)

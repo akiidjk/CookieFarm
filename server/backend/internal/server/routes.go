@@ -32,6 +32,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	private.Get("/config", s.GetConfig)
 	private.Get("/health", s.healthHandler)
 	private.Post("/submit-flags", s.SubmitFlags)
+	private.Post("/submit-flag", s.SubmitFlag)
 	private.Post("/config", s.SetConfig)
 
 }
@@ -87,6 +88,21 @@ func (s *FiberServer) GetStats(c *fiber.Ctx) error {
 			"total_flags": 0,
 			"total_users": 0,
 		},
+	})
+}
+
+func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
+	body := map[string]models.Flag{"flag": models.Flag{}}
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"errors": err.Error(),
+		})
+	}
+
+	s.db.AddFlag(body["flag"])
+
+	return c.JSON(fiber.Map{
+		"message": "Flag submitted successfully",
 	})
 }
 

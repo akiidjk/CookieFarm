@@ -103,9 +103,12 @@ func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
 	s.db.AddFlag(body["flag"])
 
 	flags := []string{body["flag"].FlagCode}
-
-	protocols.Submit(config.HOST, config.TEAM_TOKEN, flags)
-
+	if err := protocols.Submit(config.HOST, config.TEAM_TOKEN, flags); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to submit flag",
+			"details": err.Error(),
+		})
+	}
 	return c.JSON(fiber.Map{
 		"message": "Flag submitted successfully",
 	})

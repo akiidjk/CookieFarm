@@ -16,6 +16,7 @@ help:
 	@echo -e "$(BOLD)Available commands:$(RESET)"
 	@echo -e "  $(CYAN)make build$(RESET)     - Compile the Go project"
 	@echo -e "  $(CYAN)make run$(RESET)       - Compile and run the binary"
+	@echo -e "  $(CYAN)make run-prod$(RESET)  - Compile and run the binary for production"
 	@echo -e "  $(CYAN)make test$(RESET)      - Run tests"
 	@echo -e "  $(CYAN)make install$(RESET)   - Install the binary locally"
 	@echo -e "  $(CYAN)make version$(RESET)   - Show the version"
@@ -43,14 +44,18 @@ build-prod:
 test:
 	@go test ./...
 
-install: build
+install: build-prod
 	@echo -e "$(CYAN)[*] Installing $(BOLD)...$(RESET)"
 	@go install .
 	@echo -e "$(GREEN)[+] Install complete!$(RESET)"
 
 run: build
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
-	@$(BIN_DIR)/$(BINARY_NAME)
+	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
+
+run-prod: build-prod
+	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
+	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
 version:
 	@echo -e "$(GREEN)[+] Version $(BINARY_NAME) v$(VERSION) $(RESET)"

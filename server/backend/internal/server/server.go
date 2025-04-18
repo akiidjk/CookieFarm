@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/database"
-	"github.com/ByteTheCookies/backend/internal/utils"
 )
 
 type FiberServer struct {
@@ -31,7 +31,7 @@ func ProdConfig() fiber.Config {
 	return fiber.Config{
 		AppName:               "Backend",
 		DisableStartupMessage: true,
-		Prefork:               true, // Multiprocess
+		Prefork:               false, // Multiprocess
 		CaseSensitive:         true,
 		StrictRouting:         true,
 		ServerHeader:          "",
@@ -41,7 +41,7 @@ func ProdConfig() fiber.Config {
 
 func New() *FiberServer {
 	var app *fiber.App
-	if utils.GetEnv("IsDevelopment", "true") == "true" {
+	if *config.Debug {
 		app = fiber.New(DevConfig())
 	} else {
 		app = fiber.New(ProdConfig())

@@ -18,7 +18,9 @@ export default defineNuxtConfig({
     "shadcn-nuxt",
     "@nuxtjs/color-mode",
   ],
-
+  nitro: {
+    preset: 'bun',
+  },
   colorMode: {
     preference: 'dark',
     fallback: 'dark',

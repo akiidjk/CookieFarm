@@ -13,9 +13,14 @@ COPY . .
 # Compilare il binario principale
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o main cmd/api/main.go
 
+RUN for file in $(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
+    sed -i "1s|^|// |" "$file"; \
+    sed -i "2s|^// ||" "$file"; \
+done
+
 # Compilare tutti i plugin tranne protocols.go
-RUN for file in $(find . -name '*.go' ! -name 'protocols.go'); do \
-    go build -buildmode=plugin -o "protocols/$(basename ${file%.go}.so)" $file; \
+RUN for file in $(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
+    go build -buildmode=plugin -o "protocols/$(basename ${file%.go}.so)" "$file"; \
 done
 
 FROM alpine:3.20.1 AS prod

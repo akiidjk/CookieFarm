@@ -9,7 +9,8 @@ This document describes the communication protocol used to interact with the **F
 Create the file in the `server/backend/protocols` directory and use the following template as a starting point:
 
 ```go
-package main
+package protocols
+//package main
 
 import (
 	"github.com/ByteTheCookies/backend/internal/models"
@@ -83,7 +84,8 @@ The function returns:
 Here is an example of how you might implement the `Submit` function using an HTTP request to interact with the Flag Checker service:
 
 ```go
-package main
+package protocols
+//package main
 
 import (
 	"bytes"

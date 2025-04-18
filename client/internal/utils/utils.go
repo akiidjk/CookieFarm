@@ -1,8 +1,11 @@
 package utils
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
+	"syscall"
 
 	"math/rand"
 )
@@ -12,6 +15,33 @@ func GetEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func Detach() {
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+
+	filteredArgs := []string{}
+	for _, arg := range os.Args[1:] {
+		if arg != "--detach" && arg != "-d" {
+			filteredArgs = append(filteredArgs, arg)
+		}
+	}
+	cmd = exec.Command(os.Args[0], filteredArgs...)
+
+	// Scollega input/output/terminal
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("Errore nel detach:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Processo staccato con PID:", cmd.Process.Pid)
+	os.Exit(0)
 }
 
 const (

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 	"unique"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
@@ -35,15 +36,15 @@ var logger *Logger
 var logFile *os.File
 
 func init() {
-	// var err error
-	// os.MkdirAll("./logs", os.ModePerm)
-	// logFile, err = os.OpenFile(fmt.Sprintf("./logs/clientfarm-%d.log", time.Now().Unix()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	// if err != nil {
-	// log.Fatal(err
-	// }
+	var err error
+	os.Mkdir("./logs", os.ModePerm)
+	logFile, err = os.OpenFile(fmt.Sprintf("./logs/clientfarm-%d.log", time.Now().Unix()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// multiWriter := io.MultiWriter(logFile, os.Stdout)
-	multiWriter := io.Writer(os.Stdout)
+	multiWriter := io.MultiWriter(logFile, os.Stdout)
+	// multiWriter := io.Writer(os.Stdout)
 
 	logger = &Logger{
 		Level:       InfoLevel,

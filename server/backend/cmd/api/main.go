@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -40,7 +41,14 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 }
 
 func init() {
-	logger.SetLevel(0)
+	config.Debug = flag.Bool("debug", false, "Abilita il livello di log debug")
+	flag.Parse()
+
+	if *config.Debug {
+		logger.SetLevel(0)
+	} else {
+		logger.SetLevel(1)
+	}
 
 	s.InitSecret()
 	logger.Debug("Password before %s", config.Password)
@@ -57,7 +65,7 @@ func init() {
 func main() {
 	server := server.New()
 
-	if utils.GetEnv("IsDevelopment", "true") == "true" {
+	if *config.Debug {
 		server.Use(flogger.New(flogger.Config{
 			Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
 			TimeFormat: "2006-01-02 15:04:05",

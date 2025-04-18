@@ -1,5 +1,7 @@
 package protocols
 
+// package main
+
 import (
 	"bytes"
 	"encoding/json"
@@ -11,24 +13,20 @@ import (
 )
 
 func Submit(host string, team_token string, flags []string) ([]models.ResponseProtocol, error) {
-	// Codifica le flags in JSON
 	jsonData, err := json.Marshal(flags)
 	if err != nil {
 		return nil, fmt.Errorf("errore nel marshalling: %w", err)
 	}
 
-	// Crea la request
 	url := "http://" + host + "/submit"
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("errore nella creazione della richiesta: %w", err)
 	}
 
-	// Aggiungi header
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Team-Token", team_token)
 
-	// Esegui la richiesta
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -36,13 +34,11 @@ func Submit(host string, team_token string, flags []string) ([]models.ResponsePr
 	}
 	defer resp.Body.Close()
 
-	// Leggi la risposta
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("errore nella lettura della risposta: %w", err)
 	}
 
-	// Decodifica JSON di risposta
 	var response []models.ResponseProtocol
 	// logger.Debug("Raw body %s", string(body))
 	if err := json.Unmarshal(body, &response); err != nil {

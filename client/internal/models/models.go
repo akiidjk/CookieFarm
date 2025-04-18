@@ -23,15 +23,20 @@ type Service struct {
 }
 
 type ConfigServer struct {
-	HostFlagchecker string `json:"host_flagchecker"` // es: localhost:8080
-	TeamToken       string `json:"team_token"`
-	CycleTime       uint64 `json:"cycle_time"` // intervallo per invio flag al flagchecker
+	CycleTime        uint64 `json:"cycle_time"`       // intervallo per invio flag al flagchecker
+	HostFlagchecker  string `json:"host_flagchecker"` // es: localhost:3000
+	TeamToken        string `json:"team_token"`
+	MaxFlagBatchSize uint16 `json:"max_flag_batch_size"`
+	Protocol         string `json:"protocol"` // Name of SO file protocol without extension
 }
 
 type ConfigClient struct {
 	BaseUrlServer string    `json:"base_url_server"` // es: http://localhost:8080
 	CycleTime     uint64    `json:"cycle_time"`      // intervallo per invio flag al server
 	Services      []Service `json:"services"`
+	RangeIpTeams  string    `json:"range_ip_teams"`  // min-max
+	FormatIpTeams string    `json:"format_ip_teams"` // 10.0.0.{}
+	MyTeamIp      string    `json:"my_team_ip"`      // Your IP in the A/D
 }
 
 type Config struct {

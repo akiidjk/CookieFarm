@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -38,7 +39,7 @@ type service struct {
 }
 
 var (
-	dburl      = utils.GetEnv("DB_URL", "internal/database/cookiefarm.db")
+	dburl      = utils.GetEnv("DB_URL", filepath.Join(utils.GetExecutableDir(), "cookiefarm.db"))
 	dbInstance *service
 )
 

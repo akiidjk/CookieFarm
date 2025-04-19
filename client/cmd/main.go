@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/api"
@@ -37,6 +38,8 @@ var (
 	password        = pflag.StringP("password", "p", "", "Password for authentication")
 	base_url_server = pflag.StringP("base_url_server", "b", "", "Base URL of the target server (e.g. http://localhost:8080)")
 	detach          = pflag.BoolP("detach", "d", false, "Run the exploit in the background") // alias -d
+	threadsNumber   = pflag.IntP("threads", "t", 1, "Number of threads to use")
+	tickTime        = pflag.IntP("tick", "i", 120, "Interval in seconds between run exploits ")
 )
 
 func init() {
@@ -80,7 +83,7 @@ func init() {
 
 func main() {
 	var flags []models.Flag
-	cmd := exec.Command(*exploitPath, config.Current.ConfigClient.BaseUrlServer, *password)
+	cmd := exec.Command(*exploitPath, config.Current.ConfigClient.BaseUrlServer, *password, strconv.Itoa(*tickTime), strconv.Itoa(*threadsNumber))
 
 	config.Current = api.GetConfig()
 

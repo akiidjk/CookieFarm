@@ -37,21 +37,18 @@ chmod +x shitcurl.py
 
 echo "✅ Configurazione inviata!"
 
-
+# Run FE
 echo "🌐 Start frontend"
-
-cd ../frontend/
+cd ../server/frontend/
 kitty --title "frontend" bash -c "/bin/bun run dev; exec bash" &
-cd ..
-
 echo "🌐 Frontend started"
 
 # Run Services
 echo "🚀 Avvio Servizi..."
 
-chmod +x ../tests/start_container.sh $1
-
-kitty --title "service" bash -c "${activate_venv} && ../tests/start_container.sh; exec bash" &
+cd ../../tests
+chmod +x ./start_container.sh
+kitty --title "service" bash -c "./start_containers.sh $1; exec bash" &
 
 echo "🚀 Servizi avviati!"
 

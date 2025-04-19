@@ -30,4 +30,4 @@ s+="          gateway: 10.10.0.254\n"
 printf "$s" > ./docker-compose.yml
 
 docker compose build
-docker compose up -d
+docker compose up

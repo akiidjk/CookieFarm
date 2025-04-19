@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"math/rand"
+
+	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
 )
 
 func GetEnv(key, defaultValue string) string {
@@ -68,4 +70,13 @@ func CleanGC() (uint64, uint64) {
 
 func RandInt(min, max int) int {
 	return min + rand.Intn(max-min)
+}
+
+func MapPortToService(port uint16) string {
+	for _, service := range config.Current.ConfigClient.Services {
+		if service.Port == port {
+			return service.Name
+		}
+	}
+	return ""
 }

@@ -34,9 +34,10 @@ type ConfigClient struct {
 	BaseUrlServer        string    `json:"base_url_server"`         // es: http://localhost:8080
 	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"` // intervallo per invio flag al server
 	Services             []Service `json:"services"`
-	RangeIpTeams         string    `json:"range_ip_teams"`  // min-max
+	RangeIpTeams         uint8     `json:"range_ip_teams"`  // min-max
 	FormatIpTeams        string    `json:"format_ip_teams"` // 10.0.0.{}
 	MyTeamIp             string    `json:"my_team_ip"`      // Your IP in the A/D
+	RegexFlag            string    `json:"regex_flag"`      // Regex per validazione flag
 }
 
 type Config struct {
@@ -48,4 +49,10 @@ type Config struct {
 type TokenResponse struct {
 	Exp   int64  `json:"exp"`
 	Token string `json:"token"`
+}
+
+type StdoutFormat struct {
+	TeamId      uint16 `json:"team_id"`
+	ServicePort uint16 `json:"service_port"`
+	FlagCode    string `json:"flag_code"`
 }

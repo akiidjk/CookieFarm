@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import requests
 import json
 import logging
@@ -80,14 +82,12 @@ if __name__ == '__main__':
                     "base_url_server": "http://localhost:8080",
                     "submit_flag_server_time": 15,
                     "services": [
-                        {"name": "CCApp", "port": 80},
-                       	{"name": "Ticket", "port": 1337},
-                       	{"name": "Poll", "port": 8080},
-                       	{"name": "COOKIEFLAG", "port": 6969},
+                        {"name": "CookieService", "port": 8081},
                     ],
-                    "range_ip_teams": "80",
-                    "format_ip_teams": "10.0.0.{}",
-                    "my_team_ip": "10.0.0.1"
+                    "range_ip_teams": "0",
+                    "format_ip_teams": "127.0.0.1",
+                    "my_team_ip": "10.0.0.1",
+                    "regex_flag": "^[A-Z0-9]{31}=$"
                 },
                 "configured": True
             }

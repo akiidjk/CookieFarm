@@ -70,6 +70,8 @@ func GetConfig() models.Config {
 		logger.Fatal("Error parsing config: %v", err)
 	}
 
+	logger.Debug("%v", config)
+
 	return config
 }
 

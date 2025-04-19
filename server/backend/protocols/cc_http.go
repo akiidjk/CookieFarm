@@ -1,6 +1,6 @@
-package protocols
+//go:build ignore
 
-// package main
+package main
 
 import (
 	"bytes"

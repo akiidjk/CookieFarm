@@ -13,7 +13,10 @@ interface Config {
   client: {
     base_url_server: string;
     submit_flag_server_time: number;
-    services: string[] | null;
+    services: {
+      name: string;
+      port: number;
+    }[];
     range_ip_teams: string;
     format_ip_teams: string;
     my_team_ip: string;

@@ -40,6 +40,7 @@ type ConfigClient struct {
 }
 
 type Config struct {
+	Configured   bool         `json:"configured"`
 	ConfigServer ConfigServer `json:"server"`
 	ConfigClient ConfigClient `json:"client"`
 }

@@ -48,12 +48,13 @@ func (c ConfigClient) IsEmpty() bool {
 }
 
 type Config struct {
-	Server ConfigServer `json:"server"`
-	Client ConfigClient `json:"client"`
+	Configured   bool         `json:"configured"`
+	ConfigServer ConfigServer `json:"server"`
+	ConfigClient ConfigClient `json:"client"`
 }
 
 func (c Config) IsEmpty() bool {
-	return c.Server.IsEmpty() && c.Client.IsEmpty()
+	return c.ConfigServer.IsEmpty() && c.ConfigClient.IsEmpty()
 }
 
 type Session struct {

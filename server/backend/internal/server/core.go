@@ -11,7 +11,7 @@ import (
 )
 
 func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
-	ticker := time.NewTicker(time.Duration(config.Current.Server.SubmitFlagCheckerTime) * time.Second)
+	ticker := time.NewTicker(time.Duration(config.Current.ConfigServer.SubmitFlagCheckerTime) * time.Second)
 	defer ticker.Stop()
 	logger.Info("Starting loop")
 
@@ -29,7 +29,7 @@ func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 			logger.Info("Loop terminated")
 			return
 		case <-ticker.C:
-			flags, err := s.db.GetUnsubmittedFlagsCode(int(config.Current.Server.MaxFlagBatchSize))
+			flags, err := s.db.GetUnsubmittedFlagsCode(int(config.Current.ConfigServer.MaxFlagBatchSize))
 			if err != nil {
 				logger.Error("GetUnsubmittedFlagsCode error: %v", err)
 				continue
@@ -40,7 +40,7 @@ func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 				continue
 			}
 
-			res, err := config.Submit(config.Current.Server.HostFlagchecker, config.Current.Server.TeamToken, flags)
+			res, err := config.Submit(config.Current.ConfigServer.HostFlagchecker, config.Current.ConfigServer.TeamToken, flags)
 			if err != nil {
 				logger.Error("Submit error: %v", err)
 				continue

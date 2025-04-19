@@ -13,7 +13,8 @@ services:
       PORT: ${PORT}
       BLUEPRINT_DB_URL: ${BLUEPRINT_DB_URL}
     volumes:
-      - sqlite_bp:/app/db
+      - sqlite_bp:/app/database
+
   frontend:
     build:
       context: ./frontend

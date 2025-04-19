@@ -80,7 +80,7 @@ func init() {
 
 func main() {
 	var flags []models.Flag
-	cmd := exec.Command(*exploitPath)
+	cmd := exec.Command(*exploitPath, config.Current.ConfigClient.BaseUrlServer, *password)
 
 	config.Current = api.GetConfig()
 
@@ -121,7 +121,7 @@ func main() {
 
 	go func() {
 		for {
-			time.Sleep(time.Duration(config.Current.ConfigClient.CycleTime) * time.Second)
+			time.Sleep(time.Duration(config.Current.ConfigClient.SubmitFlagServerTime) * time.Second)
 			api.SendFlag(flags...)
 			flags = []models.Flag{}
 		}

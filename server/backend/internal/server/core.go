@@ -11,7 +11,7 @@ import (
 )
 
 func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(time.Duration(config.Current.Server.SubmitFlagCheckerTime) * time.Second)
 	defer ticker.Stop()
 	logger.Info("Starting loop")
 

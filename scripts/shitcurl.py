@@ -72,13 +72,13 @@ if __name__ == '__main__':
                 "server": {
                     "host_flagchecker": "localhost:3000",
                     "team_token": "4242424242424242424",
-                    "cycle_time": 15,
+                    "submit_flag_checker_time": 15,
                     "max_flag_batch_size": 1000,
                     "protocol": "cc_http"
                 },
                 "client": {
                     "base_url_server": "http://localhost:8080",
-                    "cycle_time": 15,
+                    "submit_flag_server_time": 15,
                     "services": [
                         {"name": "CCApp", "port": 80},
                        	{"name": "Ticket", "port": 1337},
@@ -87,7 +87,7 @@ if __name__ == '__main__':
                     ],
                     "range_ip_teams": "80",
                     "format_ip_teams": "10.0.0.{}",
-                    "team_ip": "10.0.0.1"
+                    "my_team_ip": "10.0.0.1"
                 }
             }
         }

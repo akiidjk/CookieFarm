@@ -19,12 +19,11 @@ import (
 )
 
 func Flag(stdoutFlag models.StdoutFormat) models.Flag {
-	randomService := config.Current.ConfigClient.Services[utils.RandInt(0, len(config.Current.ConfigClient.Services))]
 	id, _ := uuid.NewV7()
 	return models.Flag{
 		ID:           id.String(),
 		FlagCode:     stdoutFlag.FlagCode,
-		ServiceName:  randomService.Name,
+		ServiceName:  utils.MapPortToService(uint16(stdoutFlag.ServicePort)),
 		ServicePort:  stdoutFlag.ServicePort,
 		SubmitTime:   uint64(time.Now().Unix()),
 		ResponseTime: 0,

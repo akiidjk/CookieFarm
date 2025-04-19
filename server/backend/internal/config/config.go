@@ -6,8 +6,9 @@ import (
 )
 
 var Current models.Config = models.Config{
-	Server: models.ConfigServer{},
-	Client: models.ConfigClient{},
+	Configured:   false,
+	ConfigClient: models.ConfigClient{},
+	ConfigServer: models.ConfigServer{},
 }
 var Debug *bool
 var Secret = make([]byte, 32)

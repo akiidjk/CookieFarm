@@ -127,7 +127,7 @@ func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
 		})
 	}
 	flags := []string{body["flag"].FlagCode}
-	response, err := config.Submit(config.Current.Server.HostFlagchecker, config.Current.Server.TeamToken, flags)
+	response, err := config.Submit(config.Current.ConfigServer.HostFlagchecker, config.Current.ConfigServer.TeamToken, flags)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   "Failed to submit flag",

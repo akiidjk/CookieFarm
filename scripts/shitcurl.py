@@ -88,7 +88,8 @@ if __name__ == '__main__':
                     "range_ip_teams": "80",
                     "format_ip_teams": "10.0.0.{}",
                     "my_team_ip": "10.0.0.1"
-                }
+                },
+                "configured": True
             }
         }
         configure(token, config_data)

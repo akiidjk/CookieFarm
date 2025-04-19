@@ -40,7 +40,7 @@ func Detach() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Processo staccato con PID:", cmd.Process.Pid)
+	fmt.Println("Process detached with PID:", cmd.Process.Pid)
 	os.Exit(0)
 }
 

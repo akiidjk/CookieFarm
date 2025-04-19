@@ -84,6 +84,7 @@ func init() {
 
 func main() {
 	var flags []models.Flag
+
 	cmd := exec.Command(*exploitPath, config.Current.ConfigClient.BaseUrlServer, *password, strconv.Itoa(*tickTime), strconv.Itoa(*threadsNumber), config.Current.ConfigClient.RegexFlag)
 
 	stdout, err := cmd.StdoutPipe()

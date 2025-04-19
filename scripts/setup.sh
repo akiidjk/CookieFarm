@@ -32,6 +32,15 @@ chmod +x shitcurl.py
 
 echo "✅ Configurazione inviata!"
 
+
+echo "🌐 Start frontend"
+
+cd ../frontend/
+kitty --title "frontend" bash -c "/bin/bun run dev; exec bash" &
+cd ..
+
+echo "🌐 Frontend started"
+
 # Run Services
 echo "🚀 Avvio Servizi..."
 

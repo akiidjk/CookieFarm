@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -11,6 +11,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog'
 import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input'
+
 import { checkConfig, sendConfig } from '@/lib/config'
 import {
     Form,
@@ -30,19 +31,20 @@ import { Toaster } from '@/components/ui/sonner'
 const formSchema = toTypedSchema(z.object({
     submit_flag_checker_time: z.number().min(0, 'Submit Flag Checker Time must be a positive number').default(120),
     host_flagchecker: z.string().min(1, 'Host Flag Checker is required').default(''),
+    regex_flag: z.string().min(1, 'Regex Flag is required').default(''),
     team_token: z.string().min(1, 'Team Token is required').default(''),
     max_flag_batch_size: z.number().min(1, 'Max Flag Batch Size must be a positive number').default(500),
     protocol: z.string().min(1, 'Protocol is required').default(''),
     base_url_server: z.string().url('Base URL Server must be a valid URL').default(''),
     submit_flag_server_time: z.number().min(0, 'Submit Flag Server Time must be a positive number').default(120),
-    services: z.string().default(''),
-    range_ip_teams: z.number().min(1, 'IP Range for Teams is required').default(""),
+    range_ip_teams: z.number().min(1, 'IP Range for Teams is required').default(1),
     format_ip_teams: z.string().min(1, 'IP Format for Teams is required').default(''),
     my_team_ip: z.string().ip('My Team IP must be a valid IP address').default(''),
 }));
 
 const dialogOpen = ref(false)
 const modelValue = ref([])
+
 
 function onSubmit(values) {
     const config = {
@@ -69,19 +71,19 @@ function onSubmit(values) {
             range_ip_teams: values.range_ip_teams,
             format_ip_teams: values.format_ip_teams,
             my_team_ip: values.my_team_ip,
+            regex_flag: values.regex_flag,
         },
     };
 
     try {
         sendConfig(config);
-        dialogOpen.value = false;
-        toast.success("Config sent successfully", {
-        });
+        dialogOpen.value = false
+        toast.success("Config sent successfully")
     } catch (e) {
-        console.error(e);
+        console.error(e)
         toast.error("Error sending config", {
-            description: "Error sending config: " + JSON.stringify(e, null, 2)
-        });
+            description: "Error details: " + JSON.stringify(e, null, 2),
+        })
     }
 }
 
@@ -186,9 +188,9 @@ onMounted(async () => {
                         </FormField>
 
                         <!-- Services -->
-                        <FormField v-slot="{ componentField }" name="services">
+                        <FormField v-slot="{ }" name="services">
                             <FormItem>
-                                <FormLabel>Services (comma separated) <span class="text-red-500">*</span></FormLabel>
+                                <FormLabel>Services <span class="text-red-500">*</span></FormLabel>
                                 <FormControl>
                                     <TagsInput v-model="modelValue">
                                         <TagsInputItem v-for="item in modelValue" :key="item" :value="item">
@@ -231,6 +233,16 @@ onMounted(async () => {
                                 <FormLabel>My Team IP <span class="text-red-500">*</span></FormLabel>
                                 <FormControl>
                                     <Input type="text" placeholder="192.168.1.1" v-bind="componentField" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        </FormField>
+
+                        <FormField v-slot="{ componentField }" name="regex_flag">
+                            <FormItem>
+                                <FormLabel>Regex Flag <span class="text-red-500">*</span></FormLabel>
+                                <FormControl>
+                                    <Input type="text" placeholder="^[A-Z0-9]{31}=$" v-bind="componentField" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

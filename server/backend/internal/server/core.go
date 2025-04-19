@@ -16,7 +16,7 @@ func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 	logger.Info("Starting loop")
 
 	var err error
-	config.Submit, err = protocols.LoadProtocol("cc_http")
+	config.Submit, err = protocols.LoadProtocol(config.Current.ConfigServer.Protocol)
 
 	if err != nil {
 		logger.Error("LoadProtocol error: %v", err)

@@ -72,7 +72,7 @@ if __name__ == '__main__':
         config_data = {
             "config": {
                 "server": {
-                    "host_flagchecker": "localhost:3000",
+                    "host_flagchecker": "localhost:5000",
                     "team_token": "4242424242424242424",
                     "submit_flag_checker_time": 15,
                     "max_flag_batch_size": 1000,

@@ -17,9 +17,10 @@ interface Config {
       name: string;
       port: number;
     }[];
-    range_ip_teams: string;
+    range_ip_teams: number;
     format_ip_teams: string;
     my_team_ip: string;
+    regex_flag: string;
   };
 }
 

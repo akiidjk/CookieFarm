@@ -50,3 +50,9 @@ type TokenResponse struct {
 	Exp   int64  `json:"exp"`
 	Token string `json:"token"`
 }
+
+type StdoutFormat struct {
+	TeamId      uint16 `json:"team_id"`
+	ServicePort uint16 `json:"service_port"`
+	FlagCode    string `json:"flag_code"`
+}

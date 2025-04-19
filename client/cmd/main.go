@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -17,18 +18,18 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func FakeFlag(flagCode string) models.Flag {
+func Flag(stdoutFlag models.StdoutFormat) models.Flag {
 	randomService := config.Current.ConfigClient.Services[utils.RandInt(0, len(config.Current.ConfigClient.Services))]
 	id, _ := uuid.NewV7()
 	return models.Flag{
 		ID:           id.String(),
-		FlagCode:     flagCode,
+		FlagCode:     stdoutFlag.FlagCode,
 		ServiceName:  randomService.Name,
-		ServicePort:  randomService.Port,
+		ServicePort:  stdoutFlag.ServicePort,
 		SubmitTime:   uint64(time.Now().Unix()),
 		ResponseTime: 0,
 		Status:       "UNSUBMITTED",
-		TeamID:       uint16(utils.RandInt(1, 40)),
+		TeamID:       stdoutFlag.TeamId,
 	}
 }
 
@@ -79,13 +80,13 @@ func init() {
 		os.Exit(1)
 	}
 
-	config.Current = api.GetConfig()
 }
 
 func main() {
 	var flags []models.Flag
+	cmd := exec.Command(*exploitPath, config.Current.ConfigClient.BaseUrlServer, *password, strconv.Itoa(*tickTime), strconv.Itoa(*threadsNumber))
 
-	cmd := exec.Command(*exploitPath, config.Current.ConfigClient.BaseUrlServer, *password, strconv.Itoa(*tickTime), strconv.Itoa(*threadsNumber), config.Current.ConfigClient.RegexFlag)
+	config.Current = api.GetConfig()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -107,9 +108,11 @@ func main() {
 	go func() {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
-			flagCode := scanner.Text()
-			fmt.Println("[stdout]", flagCode)
-			flag := FakeFlag(flagCode)
+			flagJson := scanner.Text()
+			flagStdout := models.StdoutFormat{}
+			json.Unmarshal([]byte(flagJson), &flagStdout)
+			fmt.Println("[stdout]", flagJson)
+			flag := Flag(flagStdout)
 			flags = append(flags, flag)
 			logger.Debug("Generated flag: %v", flag)
 		}

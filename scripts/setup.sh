@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ $# -ne 1 ]]; then
+	printf "Usage:\n  ./setup.sh <num_containers>"
+	exit
+fi
+
 # Install requirements
 pip install --upgrade pip > /dev/null
 pip install -r ../requirements.txt > /dev/null
@@ -44,9 +49,9 @@ echo "🌐 Frontend started"
 # Run Services
 echo "🚀 Avvio Servizi..."
 
-chmod +x ../tests/service.py
+chmod +x ../tests/start_container.sh $1
 
-kitty --title "service" bash -c "${activate_venv} && ../tests/service.py; exec bash" &
+kitty --title "service" bash -c "${activate_venv} && ../tests/start_container.sh; exec bash" &
 
 echo "🚀 Servizi avviati!"
 

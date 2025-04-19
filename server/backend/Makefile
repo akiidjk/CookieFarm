@@ -2,8 +2,11 @@ BIN_DIR := ./bin
 CMD_DIR := ./cmd/api
 LOGS_DIR := ./logs
 MAIN_FILE := main.go
-BINARY_NAME := clientbackend
-VERSION := 0.1.0
+BINARY_NAME := serverbackend
+VERSION := 1.0.0
+GOOS ?= linux
+GOARCH ?= amd64
+
 
 RESET := \033[0m
 BOLD := \033[1m
@@ -22,6 +25,8 @@ help:
 	@echo -e "  $(CYAN)make version$(RESET)   - Show the version"
 	@echo -e "  $(CYAN)make clean$(RESET)     - Remove binaries and logs"
 	@echo -e "  $(CYAN)make build-prod$(RESET) - Compile the Go project for production"
+	@echo -e "  $(CYAN)make build-plugins$(RESET) - Compile the plugins"
+	@echo -e "  $(CYAN)make build-plugins-prod$(RESET) - Compile the plugins for production"
 	@echo -e "  $(CYAN)make watch$(RESET)     - Live reload"
 	@echo -e "  $(CYAN)make help$(RESET)      - Show this message"
 
@@ -30,6 +35,15 @@ build:
 	@mkdir -p $(BIN_DIR)
 	@go build -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
 	@echo -e "$(GREEN)[+] Build complete!$(RESET)"
+
+build-plugins-prod:
+	@echo -e "$(GREEN)[*] Building plugins in production for $(GOOS)/$(GOARCH)$(RESET)"
+	@for file in $$(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
+		filename=$$(basename $$file); \
+		pluginname=$${filename%.go}; \
+		GOOS=$(GOOS) GOARCH=$(GOARCH) go build -buildmode=plugin -ldflags="-s -w" -o "protocols/$$pluginname.so" "$$file"; \
+		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
+	done
 
 build-plugins:
 	@for file in $$(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
@@ -42,7 +56,7 @@ build-plugins:
 build-prod:
 	@echo -e "$(CYAN)[*] Building $(BOLD)for production...$(RESET)"
 	@mkdir -p $(BIN_DIR)
-	GOOS=linux GOARCH=amd64 \
+	GOOS=$(GOOS) GOARCH=$(GOARCH) \
 		go build \
 		-trimpath \
 		-ldflags="-s -w" \
@@ -52,7 +66,7 @@ build-prod:
 test:
 	@go test ./...
 
-install: build-prod
+install: build-prod build-plugins
 	@echo -e "$(CYAN)[*] Installing $(BOLD)...$(RESET)"
 	@go install .
 	@echo -e "$(GREEN)[+] Install complete!$(RESET)"
@@ -61,7 +75,7 @@ run: build build-plugins
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
-run-prod: build-prod
+run-prod: build-prod build-plugins-prod
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
@@ -69,7 +83,7 @@ version:
 	@echo -e "$(GREEN)[+] Version $(BINARY_NAME) v$(VERSION) $(RESET)"
 
 clean:
-	@echo -e "$(YELLOW)[*] Cleaning binaries...$(RESET)"
+	@echo -e "$(YELLOW)[*] Cleaning binaries and db...$(RESET)"
 	@rm -rf $(BIN_DIR)/*
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
 	@echo -e "$(YELLOW)[*] Cleaning logs...$(RESET)"

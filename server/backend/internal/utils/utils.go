@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
 )
 
@@ -32,4 +33,12 @@ func CleanGC() (uint64, uint64) {
 	runtime.ReadMemStats(&mem)
 	after := mem.Alloc / 1_048_576
 	return before, after
+}
+
+func GetExecutableDir() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		panic("impossibile determinare il path del binario: " + err.Error())
+	}
+	return filepath.Dir(exePath)
 }

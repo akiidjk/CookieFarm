@@ -23,28 +23,28 @@ type Service struct {
 }
 
 type ConfigServer struct {
-	CycleTime        uint64 `json:"cycle_time"`       // intervallo per invio flag al flagchecker
-	HostFlagchecker  string `json:"host_flagchecker"` // es: localhost:3000
-	TeamToken        string `json:"team_token"`
-	MaxFlagBatchSize uint16 `json:"max_flag_batch_size"`
-	Protocol         string `json:"protocol"` // Name of SO file protocol without extension
+	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time"` // intervallo per invio flag al flagchecker
+	HostFlagchecker       string `json:"host_flagchecker"`         // es: localhost:3000
+	TeamToken             string `json:"team_token"`
+	MaxFlagBatchSize      uint16 `json:"max_flag_batch_size"`
+	Protocol              string `json:"protocol"` // Name of SO file protocol without extension
 }
 
 type ConfigClient struct {
-	BaseUrlServer string    `json:"base_url_server"` // es: http://localhost:8080
-	CycleTime     uint64    `json:"cycle_time"`      // intervallo per invio flag al server
-	Services      []Service `json:"services"`
-	RangeIpTeams  string    `json:"range_ip_teams"`  // min-max
-	FormatIpTeams string    `json:"format_ip_teams"` // 10.0.0.{}
-	MyTeamIp      string    `json:"my_team_ip"`      // Your IP in the A/D
+	BaseUrlServer        string    `json:"base_url_server"`         // es: http://localhost:8080
+	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"` // intervallo per invio flag al server
+	Services             []Service `json:"services"`
+	RangeIpTeams         string    `json:"range_ip_teams"`  // min-max
+	FormatIpTeams        string    `json:"format_ip_teams"` // 10.0.0.{}
+	MyTeamIp             string    `json:"my_team_ip"`      // Your IP in the A/D
 }
 
 func (s ConfigServer) IsEmpty() bool {
-	return s.HostFlagchecker == "" && s.TeamToken == "" && s.CycleTime == 0
+	return s.HostFlagchecker == "" && s.TeamToken == "" && s.SubmitFlagCheckerTime == 0
 }
 
 func (c ConfigClient) IsEmpty() bool {
-	return c.BaseUrlServer == "" && c.CycleTime == 0 && len(c.Services) == 0
+	return c.BaseUrlServer == "" && c.SubmitFlagServerTime == 0 && len(c.Services) == 0
 }
 
 type Config struct {

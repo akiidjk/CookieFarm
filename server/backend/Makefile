@@ -31,6 +31,14 @@ build:
 	@go build -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
 	@echo -e "$(GREEN)[+] Build complete!$(RESET)"
 
+build-plugins:
+	@for file in $$(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
+		filename=$$(basename $$file); \
+		pluginname=$${filename%.go}; \
+		go build -buildmode=plugin -o "protocols/$$pluginname.so" "$$file"; \
+		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
+	done
+
 build-prod:
 	@echo -e "$(CYAN)[*] Building $(BOLD)for production...$(RESET)"
 	@mkdir -p $(BIN_DIR)
@@ -49,7 +57,7 @@ install: build-prod
 	@go install .
 	@echo -e "$(GREEN)[+] Install complete!$(RESET)"
 
-run: build
+run: build build-plugins
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 

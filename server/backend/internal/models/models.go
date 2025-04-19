@@ -37,6 +37,7 @@ type ConfigClient struct {
 	RangeIpTeams         string    `json:"range_ip_teams"`  // min-max
 	FormatIpTeams        string    `json:"format_ip_teams"` // 10.0.0.{}
 	MyTeamIp             string    `json:"my_team_ip"`      // Your IP in the A/D
+	RegexFlag            string    `json:"regex_flag"`      // Regex per validazione flag
 }
 
 func (s ConfigServer) IsEmpty() bool {

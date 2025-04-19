@@ -87,9 +87,10 @@ if __name__ == '__main__':
                        	{"name": "Poll", "port": 8080},
                        	{"name": "COOKIEFLAG", "port": 6969},
                     ],
-                    "range_ip_teams": "80",
-                    "format_ip_teams": "10.0.0.{}",
-                    "my_team_ip": "10.0.0.1"
+                    "range_ip_teams": "1",
+                    "format_ip_teams": "127.0.0.1",
+                    "my_team_ip": "10.0.0.1",
+                    "regex_flag": "^[A-Z0-9]{31}=$"
                 }
             }
         }

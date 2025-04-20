@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"time"
 
@@ -33,7 +34,7 @@ func Flag(stdoutFlag models.StdoutFormat) models.Flag {
 }
 
 var (
-	exploitPath     = pflag.StringP("exploit", "e", "", "Path to the exploit to execute")
+	exploitName     = pflag.StringP("exploit", "e", "", "Name of the exploit file")
 	debug           = pflag.Bool("debug", false, "Enable debug log level")
 	password        = pflag.StringP("password", "p", "", "Password for authentication")
 	base_url_server = pflag.StringP("base_url_server", "b", "", "Base URL of the target server (e.g. http://localhost:8080)")
@@ -49,8 +50,8 @@ func init() {
 		utils.Detach()
 	}
 
-	if *exploitPath == "" {
-		fmt.Println("Errore: devi specificare il percorso dell'exploit con --exploit <path>")
+	if *exploitName == "" {
+		fmt.Println("Errore: devi specificare il nome del file dell'exploit con --exploit <nome>")
 		os.Exit(1)
 	}
 
@@ -80,12 +81,19 @@ func init() {
 	}
 
 	config.Current = api.GetConfig()
+	if !config.Current.Configured {
+		fmt.Println("Errore: devi configurare CookieFarm prima di utilizzare il client")
+		os.Exit(1)
+	}
 }
 
 func main() {
 	var flags []models.Flag
 
-	cmd := exec.Command(*exploitPath, config.Current.ConfigClient.BaseUrlServer, *password, strconv.Itoa(*tickTime), strconv.Itoa(*threadsNumber), config.Current.ConfigClient.RegexFlag)
+	exploitPath := path.Join(utils.GetExecutableDir(), "..", "exploits", *exploitName)
+	logger.Debug("Exploit path: %s", exploitPath)
+
+	cmd := exec.Command(exploitPath, config.Current.ConfigClient.BaseUrlServer, *password, strconv.Itoa(*tickTime), strconv.Itoa(*threadsNumber), config.Current.ConfigClient.RegexFlag)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

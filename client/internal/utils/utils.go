@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"syscall"
 
@@ -79,4 +80,12 @@ func MapPortToService(port uint16) string {
 		}
 	}
 	return ""
+}
+
+func GetExecutableDir() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		panic("impossibile determinare il path del binario: " + err.Error())
+	}
+	return filepath.Dir(exePath)
 }

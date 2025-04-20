@@ -84,7 +84,7 @@ if __name__ == '__main__':
                     "services": [
                         {"name": "CookieService", "port": 8081},
                     ],
-                    "range_ip_teams": "0",
+                    "range_ip_teams": 0,
                     "format_ip_teams": "127.0.0.1",
                     "my_team_ip": "10.0.0.1",
                     "regex_flag": "^[A-Z0-9]{31}=$"

@@ -69,28 +69,9 @@ if __name__ == '__main__':
     token = login(password)
 
     if token:
+        config_data = json.load(open('config.json', 'r'))
         config_data = {
-            "config": {
-                "server": {
-                    "host_flagchecker": "localhost:5000",
-                    "team_token": "4242424242424242424",
-                    "submit_flag_checker_time": 15,
-                    "max_flag_batch_size": 1000,
-                    "protocol": "cc_http"
-                },
-                "client": {
-                    "base_url_server": "http://localhost:8080",
-                    "submit_flag_server_time": 15,
-                    "services": [
-                        {"name": "CookieService", "port": 8081},
-                    ],
-                    "range_ip_teams": 0,
-                    "format_ip_teams": "127.0.0.1",
-                    "my_team_ip": "10.0.0.1",
-                    "regex_flag": "^[A-Z0-9]{31}=$"
-                },
-                "configured": True
-            }
+            "config": config_data
         }
         configure(token, config_data)
         verify_token(token)

@@ -14,15 +14,25 @@
 - [x] Setup repository
   - [x] Setup .gitignore - @akiidjk @suga
   - [x] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval) - @suga
----
 
-- [ ] setup db @suga
-- [ ] client struct & server struct @akiidjk
+---
 
 ## Schema
 
 ![Schema](images/schema.png)
 
+
+## Feature
+
+- [x] Dispaching flag client to server
+- [x] Dispaching flag server to flag_checker
+- [x] Centralized config
+- [x] Authentication
+- [x] Simplified config setup from web interface
+- [x] Flags storing for stats and analytics
+- [x] Dockerization
+- [x] Runtime protocol loading using SO (Base for custom plugins)
+- [x] Exploit manager
 
 # Versions
 

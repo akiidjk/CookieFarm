@@ -61,5 +61,7 @@ read -p "🔻 Premi INVIO per chiudere tutti i terminali avviati dallo script...
 kitty @ close-window --match title:flagchecker
 kitty @ close-window --match title:cookieserver
 kitty @ close-window --match title:service
+kitty @ close-window --match title:frontend
+docker compose down
 
 echo "🧹 Tutti i terminali sono stati chiusi!"

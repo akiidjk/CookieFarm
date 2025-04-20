@@ -97,18 +97,18 @@ func main() {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Println("Errore pipe stdout:", err)
+		logger.Error("Errore pipe stdout: %v", err)
 		return
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		fmt.Println("Errore pipe stderr:", err)
+		logger.Error("Errore pipe stderr: %v", err)
 		return
 	}
 
 	if err := cmd.Start(); err != nil {
-		fmt.Println("Errore start:", err)
+		logger.Error("Errore start: %v", err)
 		return
 	}
 
@@ -117,10 +117,15 @@ func main() {
 		for scanner.Scan() {
 			flagJson := scanner.Text()
 			flagStdout := models.StdoutFormat{}
-			json.Unmarshal([]byte(flagJson), &flagStdout)
+			err := json.Unmarshal([]byte(flagJson), &flagStdout)
 			fmt.Println("[stdout]", flagJson)
+			if err != nil {
+				logger.Warning("Errore parsing stdout: %v with %s", err, flagJson)
+				continue
+			}
 			flag := Flag(flagStdout)
 			flags = append(flags, flag)
+
 			logger.Debug("Generated flag: %v", flag)
 		}
 	}()
@@ -141,6 +146,6 @@ func main() {
 	}()
 
 	if err := cmd.Wait(); err != nil {
-		fmt.Println("Errore comando:", err)
+		logger.Error("Errore comando: %v", err)
 	}
 }

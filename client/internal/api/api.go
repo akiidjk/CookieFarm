@@ -70,7 +70,11 @@ func GetConfig() models.Config {
 		logger.Fatal("Error parsing config: %v", err)
 	}
 
-	logger.Debug("%v", config)
+	config_json, err := json.Marshal(config)
+	if err != nil {
+		logger.Fatal("Error marshaling config: %v", err)
+	}
+	logger.Debug("%s", config_json)
 
 	return config
 }

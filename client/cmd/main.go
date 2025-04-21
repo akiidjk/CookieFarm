@@ -34,13 +34,13 @@ func Flag(stdoutFlag models.StdoutFormat) models.Flag {
 }
 
 var (
-	exploitName     = pflag.StringP("exploit", "e", "", "Name of the exploit file")
-	debug           = pflag.Bool("debug", false, "Enable debug log level")
-	password        = pflag.StringP("password", "p", "", "Password for authentication")
-	base_url_server = pflag.StringP("base_url_server", "b", "", "Base URL of the target server (e.g. http://localhost:8080)")
-	detach          = pflag.BoolP("detach", "d", false, "Run the exploit in the background") // alias -d
-	threadsNumber   = pflag.IntP("threads", "t", 1, "Number of threads to use")
-	tickTime        = pflag.IntP("tick", "i", 120, "Interval in seconds between run exploits ")
+	exploitName   = pflag.StringP("exploit", "e", "", "Name of the exploit file")
+	debug         = pflag.Bool("debug", false, "Enable debug log level")
+	password      = pflag.StringP("password", "p", "", "Password for authentication")
+	baseUrlServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server (e.g. http://localhost:8080)")
+	detach        = pflag.BoolP("detach", "d", false, "Run the exploit in the background") // alias -d
+	threadsNumber = pflag.IntP("threads", "t", 1, "Number of threads to use")
+	tickTime      = pflag.IntP("tick", "i", 120, "Interval in seconds between run exploits ")
 )
 
 func init() {
@@ -55,12 +55,12 @@ func init() {
 		os.Exit(1)
 	}
 
-	if *base_url_server == "" {
+	if *baseUrlServer == "" {
 		fmt.Println("Errore: devi specificare il base_url_server con --base_url_server <url>")
 		os.Exit(1)
 	}
 
-	config.Current.ConfigClient.BaseUrlServer = *base_url_server
+	config.Current.ConfigClient.BaseUrlServer = *baseUrlServer
 
 	if *password == "" {
 		fmt.Println("Errore: devi specificare la password con --password <password>")

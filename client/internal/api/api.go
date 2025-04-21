@@ -10,20 +10,30 @@ import (
 	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
+	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
+	"github.com/rs/zerolog/log"
 )
 
-func SendFlag(flags ...models.Flag) {
-	client := &http.Client{}
-	formattedBody, err := json.Marshal(map[string][]models.Flag{"flags": flags})
+var (
+	client = &http.Client{}
+)
+
+func SendFlag(flags ...models.Flag) error {
+	err := utils.CheckUrl()
 	if err != nil {
-		fmt.Println("Errore marshalling flags:", err)
-		return
+		return err
+	}
+	body, err := json.Marshal(map[string][]models.Flag{"flags": flags})
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Errore durante il marshalling delle flags")
+		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, config.Current.ConfigClient.BaseUrlServer+"/api/v1/submit-flags", bytes.NewReader(formattedBody))
+	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/submit-flags"
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
-		fmt.Println("Errore creazione richiesta:", err)
-		return
+		log.Error().Err(err).Str("url", url).Msg("Errore creazione richiesta")
+		return err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+config.Token)
@@ -31,72 +41,89 @@ func SendFlag(flags ...models.Flag) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Errore invio flags:", err)
-		return
+		logger.Log.Error().Err(err).Str("url", url).Msg("Errore durante la richiesta di invio flags")
+		return err
 	}
 	defer resp.Body.Close()
 
-	bodyContent, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Errore lettura risposta:", err)
-		return
+		logger.Log.Error().Err(err).Msg("Errore lettura risposta server")
+		return err
 	}
 
-	logger.Info("Response %v", string(bodyContent))
+	logger.Log.Info().
+		Int("status", resp.StatusCode).
+		Msgf("Risposta server invio flags: %s", string(respBody))
+	return nil
 }
 
-func GetConfig() models.Config {
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, config.Current.ConfigClient.BaseUrlServer+"/api/v1/config", nil)
+func GetConfig() (models.Config, error) {
+	err := utils.CheckUrl()
 	if err != nil {
-		logger.Fatal("Error creating request: %v", err)
+		return models.Config{}, err
+	}
+	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/config"
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return models.Config{}, fmt.Errorf("errore creazione richiesta config: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+config.Token)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Fatal("Error sending request: %v", err)
+		return models.Config{}, fmt.Errorf("errore invio richiesta config: %w", err)
 	}
 	defer resp.Body.Close()
 
-	bodyContent, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Fatal("Error reading response: %v", err)
+		return models.Config{}, fmt.Errorf("errore lettura risposta config: %w", err)
 	}
 
-	var config models.Config
-	err = json.Unmarshal(bodyContent, &config)
-	if err != nil {
-		logger.Fatal("Error parsing config: %v", err)
+	var parsedConfig models.Config
+	if err := json.Unmarshal(respBody, &parsedConfig); err != nil {
+		return models.Config{}, fmt.Errorf("errore parsing config: %w", err)
 	}
 
-	config_json, err := json.Marshal(config)
-	if err != nil {
-		logger.Fatal("Error marshaling config: %v", err)
+	if jsonOut, err := json.Marshal(parsedConfig); err == nil {
+		logger.Log.Debug().Msgf("Configurazione ricevuta dal server: %s", string(jsonOut))
 	}
-	logger.Debug("%s", config_json)
 
-	return config
+	return parsedConfig, nil
 }
 
 func Login(password string) (string, error) {
-	logger.Debug("%s", config.Current.ConfigClient.BaseUrlServer+"/api/v1/auth/login")
-	resp, err := http.Post(config.Current.ConfigClient.BaseUrlServer+"/api/v1/auth/login", "application/x-www-form-urlencoded", bytes.NewBufferString(fmt.Sprintf(`password=%s`, password)))
+	err := utils.CheckUrl()
 	if err != nil {
-		fmt.Println("Errore login:", err)
+		return "", err
+	}
+	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/auth/login"
+	logger.Log.Debug().Str("url", url).Msg("Tentativo di login")
+
+	resp, err := http.Post(
+		url,
+		"application/x-www-form-urlencoded",
+		bytes.NewBufferString(fmt.Sprintf(`password=%s`, password)),
+	)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Errore invio login")
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	bodyContent, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Errore lettura risposta:", err)
+		logger.Log.Error().Err(err).Msg("Errore lettura risposta login")
 		return "", err
 	}
 
 	var result models.TokenResponse
-	err = json.Unmarshal(bodyContent, &result)
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		logger.Log.Error().Err(err).Msg("Errore parsing risposta login")
+		return "", err
+	}
 
-	logger.Info("Response %v", string(bodyContent))
-	return string(result.Token), nil
+	logger.Log.Info().Str("token", result.Token).Msg("Login effettuato con successo")
+	return result.Token, nil
 }

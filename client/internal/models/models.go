@@ -1,43 +1,43 @@
 package models
 
 type Flag struct {
-	ID           string `json:"id"`
-	Status       string `json:"status"`
-	FlagCode     string `json:"flag_code"`
-	ServiceName  string `json:"service_name"`
-	ServicePort  uint16 `json:"service_port"`
-	TeamID       uint16 `json:"team_id"`
 	SubmitTime   uint64 `json:"submit_time"`
 	ResponseTime uint64 `json:"response_time"`
+	ServicePort  uint16 `json:"service_port"`
+	TeamID       uint16 `json:"team_id"`
+	ID           string `json:"id"`
+	FlagCode     string `json:"flag_code"`
+	ServiceName  string `json:"service_name"`
+	Status       string `json:"status"`
 }
 
 type ResponseProtocol struct {
-	Msg    string `json:"msg"`
 	Flag   string `json:"flag"`
+	Msg    string `json:"msg"`
 	Status string `json:"status"`
 }
 
 type Service struct {
-	Name string `json:"name"`
 	Port uint16 `json:"port"`
+	Name string `json:"name"`
 }
 
 type ConfigServer struct {
-	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time"` // intervallo per invio flag al flagchecker
-	HostFlagchecker       string `json:"host_flagchecker"`         // es: localhost:3000
+	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time"`
+	HostFlagchecker       string `json:"host_flagchecker"`
 	TeamToken             string `json:"team_token"`
 	MaxFlagBatchSize      uint16 `json:"max_flag_batch_size"`
-	Protocol              string `json:"protocol"` // Name of SO file protocol without extension
+	Protocol              string `json:"protocol"`
 }
 
 type ConfigClient struct {
-	BaseUrlServer        string    `json:"base_url_server"`         // es: http://localhost:8080
-	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"` // intervallo per invio flag al server
+	BaseUrlServer        string    `json:"base_url_server"`
+	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"`
 	Services             []Service `json:"services"`
-	RangeIpTeams         uint8     `json:"range_ip_teams"`  // min-max
-	FormatIpTeams        string    `json:"format_ip_teams"` // 10.0.0.{}
-	MyTeamIp             string    `json:"my_team_ip"`      // Your IP in the A/D
-	RegexFlag            string    `json:"regex_flag"`      // Regex per validazione flag
+	TeamsIPRange         uint8     `json:"range_ip_teams"`  // formerly RangeIpTeams
+	TeamIPFormat         string    `json:"format_ip_teams"` // formerly FormatIpTeams
+	MyTeamIP             string    `json:"my_team_ip"`
+	RegexFlag            string    `json:"regex_flag"`
 }
 
 type Config struct {
@@ -47,12 +47,12 @@ type Config struct {
 }
 
 type TokenResponse struct {
-	Exp   int64  `json:"exp"`
 	Token string `json:"token"`
+	Exp   int64  `json:"exp"`
 }
 
-type StdoutFormat struct {
-	TeamId      uint16 `json:"team_id"`
+type ParsedFlagOutput struct {
+	TeamID      uint16 `json:"team_id"`
 	ServicePort uint16 `json:"service_port"`
 	FlagCode    string `json:"flag_code"`
 }

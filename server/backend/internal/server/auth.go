@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/backend/internal/config"
+	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
@@ -14,17 +15,17 @@ import (
 
 func InitSecret() {
 	secret := make([]byte, 32)
-	_, err := rand.Read(secret)
-	if err != nil {
+	if _, err := rand.Read(secret); err != nil {
 		panic(fmt.Sprintf("failed to generate secret: %v", err))
 	}
 	config.Secret = secret
+	logger.Log.Info().Msg("JWT secret generated")
 }
 
 func VerifyToken(token string) error {
-	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	_, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return config.Secret, nil
 	})
@@ -40,7 +41,7 @@ func HashPassword(password string) (string, error) {
 }
 
 func CreateJWT() (string, int64, error) {
-	exp := time.Now().Add(time.Hour * 24).Unix()
+	exp := time.Now().Add(24 * time.Hour).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": "cookie",
 		"exp":      exp,
@@ -50,28 +51,32 @@ func CreateJWT() (string, int64, error) {
 	if err != nil {
 		return "", 0, err
 	}
-
 	return tokenString, exp, nil
 }
 
 func (s *FiberServer) HandleLogin(c *fiber.Ctx) error {
 	req := new(models.SigninRequest)
 	if err := c.BodyParser(req); err != nil {
-		return err
+		logger.Log.Warn().Err(err).Msg("Invalid login payload")
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request format")
 	}
 
 	if req.Password == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid credentials")
+		logger.Log.Warn().Msg("Missing password in login")
+		return fiber.NewError(fiber.StatusBadRequest, "Password is required")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(config.Password), []byte(req.Password)); err != nil {
-		return err
+		logger.Log.Warn().Msg("Login failed: invalid password")
+		return fiber.NewError(fiber.StatusUnauthorized, "Invalid credentials")
 	}
 
 	token, exp, err := CreateJWT()
 	if err != nil {
-		return err
+		logger.Log.Error().Err(err).Msg("Failed to generate JWT")
+		return fiber.NewError(fiber.StatusInternalServerError, "JWT generation error")
 	}
 
+	logger.Log.Info().Int64("exp", exp).Msg("Login successful, JWT issued")
 	return c.JSON(fiber.Map{"token": token, "exp": exp})
 }

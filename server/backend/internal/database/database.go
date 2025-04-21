@@ -3,12 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"path/filepath"
 	"strconv"
 	"time"
-
-	_ "embed"
 
 	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/models"
@@ -39,19 +38,21 @@ type service struct {
 }
 
 var (
-	dburl      = utils.GetEnv("DB_URL", filepath.Join(utils.GetExecutableDir(), "cookiefarm.db"))
+	dbPath     = utils.GetEnv("DB_URL", filepath.Join(utils.GetExecutableDir(), "cookiefarm.db"))
 	dbInstance *service
 )
 
 func (s *service) InitDB() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	logger.Info("Initializing database")
+
+	logger.Log.Info().Msg("Initializing database schema")
 	_, err := s.db.ExecContext(ctx, sqlSchema)
 	if err != nil {
 		return err
 	}
-	logger.Info("Database initialized")
+
+	logger.Log.Info().Msg("Database schema initialized successfully")
 	return nil
 }
 
@@ -60,9 +61,9 @@ func New() Service {
 		return dbInstance
 	}
 
-	db, err := sql.Open("sqlite3", dburl)
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		logger.Fatal("Failed to open database connection %v", err)
+		logger.Log.Fatal().Err(err).Str("path", dbPath).Msg("Failed to open database")
 	}
 
 	dbInstance = &service{
@@ -70,8 +71,9 @@ func New() Service {
 	}
 
 	if err := dbInstance.InitDB(); err != nil {
-		logger.Fatal("InitDB failed: %v", err)
+		logger.Log.Fatal().Err(err).Msg("Database initialization failed")
 	}
+
 	return dbInstance
 }
 
@@ -85,7 +87,7 @@ func (s *service) Health() map[string]string {
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		logger.Fatal("Failed to ping database %v", err) // Log the error and terminate the program
+		logger.Log.Error().Err(err).Msg("Database ping failed")
 		return stats
 	}
 
@@ -110,17 +112,17 @@ func (s *service) Health() map[string]string {
 	}
 
 	if dbStats.MaxIdleClosed > int64(dbStats.OpenConnections)/2 {
-		stats["message"] = "Many idle connections are being closed, consider revising the connection pool settings."
+		stats["message"] = "Many idle connections are being closed. Consider revising the connection pool settings."
 	}
 
 	if dbStats.MaxLifetimeClosed > int64(dbStats.OpenConnections)/2 {
-		stats["message"] = "Many connections are being closed due to max lifetime, consider increasing max lifetime or revising the connection usage pattern."
+		stats["message"] = "Many connections are being closed due to max lifetime. Consider increasing it."
 	}
 
 	return stats
 }
 
 func (s *service) Close() error {
-	logger.Info("Disconnected from database: %s", dburl)
+	logger.Log.Info().Str("path", dbPath).Msg("Disconnected from database")
 	return s.db.Close()
 }

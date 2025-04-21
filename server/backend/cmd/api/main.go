@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
@@ -13,80 +12,72 @@ import (
 	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/server"
-	s "github.com/ByteTheCookies/backend/internal/server"
 	"github.com/ByteTheCookies/backend/internal/utils"
 
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
-
-	_ "github.com/joho/godotenv/autoload"
 )
 
-func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	<-ctx.Done()
-
-	logger.Warning("shutting down gracefully, press Ctrl+C again to force")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := fiberServer.ShutdownWithContext(ctx); err != nil {
-		logger.Error("Server forced to shutdown with error: %v", err)
-	}
-
-	logger.Warning("Server exiting")
-
-	done <- true
-}
-
-func init() {
-	config.Debug = flag.Bool("debug", false, "Abilita il livello di log debug")
+func main() {
+	config.Debug = flag.Bool("debug", false, "Abilita log livello debug")
 	flag.Parse()
 
 	if *config.Debug {
-		logger.SetLevel(0)
+		logger.Setup("debug")
 	} else {
-		logger.SetLevel(1)
+		logger.Setup("info")
 	}
+	defer logger.Close()
 
-	s.InitSecret()
-	logger.Debug("Password before %s", config.Password)
+	server.InitSecret()
+	logger.Log.Debug().Str("password_plain", config.Password).Msg("Password before hash")
 
 	var err error
-	config.Password, err = s.HashPassword(config.Password)
+	config.Password, err = server.HashPassword(config.Password)
 	if err != nil {
-		logger.Error("Error hashing password: %v", err)
-		os.Exit(1)
+		logger.Log.Fatal().Err(err).Msg("Failed to hash password")
 	}
-	logger.Debug("Password after %s", config.Password)
-}
+	logger.Log.Debug().Str("password_hash", config.Password).Msg("Password after hash")
 
-func main() {
-	server := server.New()
+	app := server.New()
 
 	if *config.Debug {
-		server.Use(flogger.New(flogger.Config{
+		app.Use(flogger.New(flogger.Config{
 			Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
 			TimeFormat: "2006-01-02 15:04:05",
 			TimeZone:   "Local",
 		}))
 	}
 
-	server.RegisterFiberRoutes()
+	app.RegisterFiberRoutes()
 
 	done := make(chan bool, 1)
+	go gracefulShutdown(app, done)
 
+	port, _ := strconv.Atoi(utils.GetEnv("PORT", "8080"))
 	go func() {
-		port, _ := strconv.Atoi(utils.GetEnv("PORT", "8080"))
-		err := server.Listen(fmt.Sprintf(":%d", port))
-		if err != nil {
-			panic(fmt.Sprintf("http server error: %s", err))
+		addr := fmt.Sprintf(":%d", port)
+		logger.Log.Info().Str("addr", addr).Msg("Starting HTTP server")
+		if err := app.Listen(addr); err != nil {
+			logger.Log.Fatal().Err(err).Msg("Failed to start HTTP server")
 		}
 	}()
 
-	go gracefulShutdown(server, done)
-
 	<-done
-	logger.Info("Graceful shutdown complete.")
+	logger.Log.Info().Msg("Graceful shutdown complete.")
+}
+
+func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	<-ctx.Done()
+	logger.Log.Warn().Msg("Shutting down gracefully...")
+
+	ctxTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := fiberServer.ShutdownWithContext(ctxTimeout); err != nil {
+		logger.Log.Error().Err(err).Msg("Forced server shutdown")
+	}
+
+	done <- true
 }

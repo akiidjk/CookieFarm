@@ -1,49 +1,31 @@
 package main
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
-	"path"
-	"strconv"
-	"time"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/api"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
+	"github.com/ByteTheCookies/cookiefarm-client/internal/executor"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
+	"github.com/ByteTheCookies/cookiefarm-client/internal/submitter"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
-	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+
 	"github.com/spf13/pflag"
 )
-
-func Flag(stdoutFlag models.StdoutFormat) models.Flag {
-	id, _ := uuid.NewV7()
-	return models.Flag{
-		ID:           id.String(),
-		FlagCode:     stdoutFlag.FlagCode,
-		ServiceName:  utils.MapPortToService(uint16(stdoutFlag.ServicePort)),
-		ServicePort:  stdoutFlag.ServicePort,
-		SubmitTime:   uint64(time.Now().Unix()),
-		ResponseTime: 0,
-		Status:       "UNSUBMITTED",
-		TeamID:       stdoutFlag.TeamId,
-	}
-}
 
 var (
 	exploitName   = pflag.StringP("exploit", "e", "", "Name of the exploit file")
 	debug         = pflag.Bool("debug", false, "Enable debug log level")
 	password      = pflag.StringP("password", "p", "", "Password for authentication")
-	baseUrlServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server (e.g. http://localhost:8080)")
-	detach        = pflag.BoolP("detach", "d", false, "Run the exploit in the background") // alias -d
+	baseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server")
+	detach        = pflag.BoolP("detach", "d", false, "Run the exploit in the background")
 	threadsNumber = pflag.IntP("threads", "t", 1, "Number of threads to use")
-	tickTime      = pflag.IntP("tick", "i", 120, "Interval in seconds between run exploits ")
+	tickTime      = pflag.IntP("tick", "i", 120, "Interval in seconds between run exploits")
 )
 
-func init() {
+func setupClient() error {
 	pflag.Parse()
 
 	if *detach {
@@ -51,101 +33,64 @@ func init() {
 	}
 
 	if *exploitName == "" {
-		fmt.Println("Errore: devi specificare il nome del file dell'exploit con --exploit <nome>")
-		os.Exit(1)
+		return fmt.Errorf("missing required --exploit argument")
 	}
-
-	if *baseUrlServer == "" {
-		fmt.Println("Errore: devi specificare il base_url_server con --base_url_server <url>")
-		os.Exit(1)
+	if *baseURLServer == "" {
+		return fmt.Errorf("missing required --base_url_server argument")
 	}
-
-	config.Current.ConfigClient.BaseUrlServer = *baseUrlServer
-
 	if *password == "" {
-		fmt.Println("Errore: devi specificare la password con --password <password>")
-		os.Exit(1)
+		return fmt.Errorf("missing required --password argument")
 	}
 
 	if *debug {
-		logger.SetLevel(logger.DebugLevel)
+		logger.Setup("debug")
 	} else {
-		logger.SetLevel(logger.InfoLevel)
+		logger.Setup("info")
 	}
+
+	config.Current.ConfigClient.BaseUrlServer = *baseURLServer
 
 	var err error
 	config.Token, err = api.Login(*password)
 	if err != nil {
-		fmt.Println("Errore login:", err)
-		os.Exit(1)
+		return fmt.Errorf("login failed: %w", err)
 	}
 
-	config.Current = api.GetConfig()
-	if !config.Current.Configured {
-		fmt.Println("Errore: devi configurare CookieFarm prima di utilizzare il client")
-		os.Exit(1)
+	config.Current, err = api.GetConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get config: %w", err)
 	}
+
+	logger.Log.Info().Msgf("Configurazione corrente: %+v", config.Current)
+
+	if !config.Current.Configured {
+		logger.Log.Fatal().Msg("Client not configured. Please run the configurator before using the client")
+	}
+
+	logger.Log.Info().Msg("Client initialized successfully")
+	return nil
 }
 
 func main() {
-	var flags []models.Flag
+	if err := setupClient(); err != nil {
+		if logger.LogLevel != zerolog.Disabled {
+			logger.Log.Fatal().Err(err).Msg("Initialization error")
+			logger.Close()
+		} else {
+			fmt.Println("Errore inizializzazione:", err)
+		}
+		os.Exit(1)
+	}
+	defer logger.Close()
 
-	exploitPath := path.Join(utils.GetExecutableDir(), "..", "exploits", *exploitName)
-	logger.Debug("Exploit path: %s", exploitPath)
-
-	cmd := exec.Command(exploitPath, config.Current.ConfigClient.BaseUrlServer, *password, strconv.Itoa(*tickTime), strconv.Itoa(*threadsNumber), config.Current.ConfigClient.RegexFlag)
-
-	stdout, err := cmd.StdoutPipe()
+	result, err := executor.Start(*exploitName, *password, *tickTime, *threadsNumber)
 	if err != nil {
-		logger.Error("Errore pipe stdout: %v", err)
-		return
+		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}
 
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		logger.Error("Errore pipe stderr: %v", err)
-		return
-	}
+	go submitter.Start(result.FlagsChan)
 
-	if err := cmd.Start(); err != nil {
-		logger.Error("Errore start: %v", err)
-		return
-	}
-
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			flagJson := scanner.Text()
-			flagStdout := models.StdoutFormat{}
-			err := json.Unmarshal([]byte(flagJson), &flagStdout)
-			fmt.Println("[stdout]", flagJson)
-			if err != nil {
-				logger.Warning("Errore parsing stdout: %v with %s", err, flagJson)
-				continue
-			}
-			flag := Flag(flagStdout)
-			flags = append(flags, flag)
-
-			logger.Debug("Generated flag: %v", flag)
-		}
-	}()
-
-	go func() {
-		scanner := bufio.NewScanner(stderr)
-		for scanner.Scan() {
-			fmt.Println("[stderr]", scanner.Text())
-		}
-	}()
-
-	go func() {
-		for {
-			time.Sleep(time.Duration(config.Current.ConfigClient.SubmitFlagServerTime) * time.Second)
-			api.SendFlag(flags...)
-			flags = []models.Flag{}
-		}
-	}()
-
-	if err := cmd.Wait(); err != nil {
-		logger.Error("Errore comando: %v", err)
+	if err := result.Cmd.Wait(); err != nil {
+		logger.Log.Error().Err(err).Msg("Exploit process exited with error")
 	}
 }

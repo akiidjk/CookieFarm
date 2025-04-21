@@ -6,10 +6,10 @@ services:
       target: prod
     restart: unless-stopped
     ports:
-      - ${PORT}:${PORT}
+      - ${BACKEND_PORT}:${BACKEND_PORT}
     environment:
-      dev: ${dev}
-      PORT: ${PORT}
+      PASSWORD: ${PASSWORD}
+      PORT: ${BACKEND_PORT}
     volumes:
       - sqlite_bp:/app/database
 

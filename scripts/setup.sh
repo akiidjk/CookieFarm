@@ -47,7 +47,7 @@ echo "🌐 Frontend started"
 echo "🚀 Avvio Servizi..."
 
 cd ../../tests
-chmod +x ./start_container.sh
+chmod +x ./start_containers.sh
 kitty --title "service" bash -c "./start_containers.sh $1; exec bash" &
 
 echo "🚀 Servizi avviati!"

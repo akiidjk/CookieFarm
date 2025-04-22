@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +18,7 @@ var (
 	logFile  *os.File
 )
 
-func Setup(level string) {
+func Setup(level string) string {
 	parsedLevel, err := zerolog.ParseLevel(strings.ToLower(level))
 	if err != nil {
 		parsedLevel = zerolog.InfoLevel
@@ -25,7 +26,7 @@ func Setup(level string) {
 	LogLevel = parsedLevel
 
 	_ = os.MkdirAll("./logs", 0755)
-	logPath := filepath.Join("logs", "clientfarm-"+time.Now().Format("20060102-150405")+".log")
+	logPath := filepath.Join("logs", "clientfarm-"+strconv.Itoa(int(time.Now().UnixMilli()))) + ".log"
 
 	logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
@@ -67,6 +68,8 @@ func Setup(level string) {
 
 	Log = zerolog.New(multi).With().Timestamp().Caller().Logger()
 	zerolog.SetGlobalLevel(parsedLevel)
+
+	return logPath
 }
 
 func Close() {

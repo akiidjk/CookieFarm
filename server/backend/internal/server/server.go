@@ -3,21 +3,21 @@ package server
 import (
 	"context"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/database"
+	"github.com/ByteTheCookies/backend/internal/logger"
+	"github.com/gofiber/fiber/v2"
 )
 
 type FiberServer struct {
 	*fiber.App
-	loopCancel context.CancelFunc
-	db         database.Service
+	shutdownCancel context.CancelFunc
+	db             database.Service
 }
 
 func DevConfig() fiber.Config {
 	return fiber.Config{
-		AppName:               "Backend (Development)",
+		AppName:               "CookieFarm Backend (Dev)",
 		DisableStartupMessage: false,
 		Prefork:               false,
 		CaseSensitive:         false,
@@ -29,9 +29,9 @@ func DevConfig() fiber.Config {
 
 func ProdConfig() fiber.Config {
 	return fiber.Config{
-		AppName:               "Backend",
+		AppName:               "CookieFarm Backend",
 		DisableStartupMessage: true,
-		Prefork:               false, // Multiprocess
+		Prefork:               false,
 		CaseSensitive:         true,
 		StrictRouting:         true,
 		ServerHeader:          "",
@@ -47,12 +47,13 @@ func New() *FiberServer {
 		app = fiber.New(ProdConfig())
 	}
 
-	server := &FiberServer{
-		App: app,
-		db:  database.New(),
-	}
+	db := database.New()
+	logger.Log.Info().Msg("Database initialized")
 
-	return server
+	return &FiberServer{
+		App: app,
+		db:  db,
+	}
 }
 
 func (s *FiberServer) DB() database.Service {

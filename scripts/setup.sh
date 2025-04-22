@@ -25,10 +25,10 @@ echo "🍪 Avvio CookieFarm Server..."
 
 cd ../server/backend/
 
-kitty --title "cookieserver" bash -c "make build && make run ARGS='--debug'; exec bash" &
+kitty --title "cookieserver" bash -c "make build && make run ARGS=''; exec bash" &
 
 echo "✅ Server avviato!"
-sleep 2
+sleep 3
 echo "📡 Invio configurazione..."
 
 cd ../../scripts/

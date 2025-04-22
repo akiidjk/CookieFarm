@@ -31,7 +31,6 @@ func Detach() {
 	}
 	cmd = exec.Command(os.Args[0], filteredArgs...)
 
-	// Scollega input/output/terminal
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	cmd.Stdin = nil
@@ -88,4 +87,11 @@ func GetExecutableDir() string {
 		panic("impossibile determinare il path del binario: " + err.Error())
 	}
 	return filepath.Dir(exePath)
+}
+
+func CheckUrl() error {
+	if config.Current.ConfigClient.BaseUrlServer == "" {
+		return fmt.Errorf("baseUrlServer non impostato")
+	}
+	return nil
 }

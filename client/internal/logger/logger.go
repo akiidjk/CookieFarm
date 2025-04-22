@@ -2,134 +2,75 @@ package logger
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
-	"unique"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
+	"github.com/rs/zerolog"
 )
 
-// Log levels
-const (
-	DebugLevel = iota
-	InfoLevel
-	SuccessLevel
-	WarningLevel
-	ErrorLevel
-	FatalLevel
+var (
+	LogLevel zerolog.Level
+	Log      zerolog.Logger
+	logFile  *os.File
 )
 
-type Logger struct {
-	Level       int
-	lastLogged  unique.Handle[string]
-	debugLogger *log.Logger
-	infoLogger  *log.Logger
-	succeLogger *log.Logger
-	warnLogger  *log.Logger
-	errorLogger *log.Logger
-}
-
-var logger *Logger
-var logFile *os.File
-
-func init() {
-	var err error
-	os.Mkdir("./logs", os.ModePerm)
-	logFile, err = os.OpenFile(fmt.Sprintf("./logs/clientfarm-%d.log", time.Now().Unix()), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+func Setup(level string) {
+	parsedLevel, err := zerolog.ParseLevel(strings.ToLower(level))
 	if err != nil {
-		log.Fatal(err)
+		parsedLevel = zerolog.InfoLevel
+	}
+	LogLevel = parsedLevel
+
+	_ = os.MkdirAll("./logs", 0755)
+	logPath := filepath.Join("logs", "clientfarm-"+time.Now().Format("20060102-150405")+".log")
+
+	logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		panic("cannot create log file: " + err.Error())
 	}
 
-	multiWriter := io.MultiWriter(logFile, os.Stdout)
-	// multiWriter := io.Writer(os.Stdout)
-
-	logger = &Logger{
-		Level:       InfoLevel,
-		debugLogger: log.New(multiWriter, utils.Gray+"[=] DEBUG: "+utils.White, log.LstdFlags),
-		infoLogger:  log.New(multiWriter, utils.Cyan+"[*] INFO: "+utils.White, log.LstdFlags),
-		succeLogger: log.New(multiWriter, utils.Green+"[+] SUCCESS: "+utils.White, log.LstdFlags),
-		warnLogger:  log.New(multiWriter, utils.Yellow+"[/] WARN: "+utils.White, log.LstdFlags),
-		errorLogger: log.New(multiWriter, utils.Red+"[//] ERROR: "+utils.White, log.LstdFlags),
+	consoleWriter := zerolog.ConsoleWriter{
+		Out:        os.Stdout,
+		TimeFormat: "15:04:05",
+		FormatLevel: func(i any) string {
+			level := strings.ToLower(fmt.Sprintf("%s", i))
+			switch level {
+			case "debug":
+				return utils.Gray + "[DEBUG]" + utils.Reset
+			case "info":
+				return utils.Cyan + "[INFO]" + utils.Reset
+			case "warn":
+				return utils.Yellow + "[WARN]" + utils.Reset
+			case "error":
+				return utils.Red + "[ERROR]" + utils.Reset
+			case "fatal":
+				return utils.Magenta + "[FATAL]" + utils.Reset
+			default:
+				return level
+			}
+		},
+		FormatMessage: func(i interface{}) string {
+			return fmt.Sprintf("%s", i)
+		},
+		FormatFieldName: func(i interface{}) string {
+			return utils.White + fmt.Sprintf("%s=", i)
+		},
+		FormatFieldValue: func(i interface{}) string {
+			return fmt.Sprintf("%v", i) + utils.Reset
+		},
 	}
+
+	multi := zerolog.MultiLevelWriter(consoleWriter, logFile)
+
+	Log = zerolog.New(multi).With().Timestamp().Caller().Logger()
+	zerolog.SetGlobalLevel(parsedLevel)
 }
 
-func CloseLogFile() {
+func Close() {
 	if logFile != nil {
-		logFile.Close()
-	}
-}
-
-func ParseLevel(level string) int {
-	switch strings.ToLower(level) {
-	case "debug":
-		return DebugLevel
-	case "info":
-		return InfoLevel
-	case "success":
-		return SuccessLevel
-	case "warning":
-		return WarningLevel
-	case "error":
-		return ErrorLevel
-	case "fatal":
-		return FatalLevel
-	default:
-		return InfoLevel
-	}
-}
-
-// Set log level
-func SetLevel(level int) {
-	logger.Level = level
-}
-
-// Debug logs a message at debug level
-func Debug(format string, args ...interface{}) {
-	if logger.Level <= DebugLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.debugLogger.Println(message)
-	}
-}
-
-// Info logs a message at info level
-func Info(format string, args ...interface{}) {
-	if logger.Level <= InfoLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.infoLogger.Println(message)
-	}
-}
-
-// Success logs a message at success level
-func Success(format string, args ...interface{}) {
-	if logger.Level <= SuccessLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.succeLogger.Println(message)
-	}
-}
-
-// Warning logs a message at warning level
-func Warning(format string, args ...interface{}) {
-	if logger.Level <= WarningLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.warnLogger.Println(message)
-	}
-}
-
-// Error logs a message at error level
-func Error(format string, args ...interface{}) {
-	if logger.Level <= ErrorLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.errorLogger.Println(message)
-	}
-}
-
-func Fatal(format string, args ...interface{}) {
-	if logger.Level <= FatalLevel {
-		message := fmt.Sprintf(format, args...)
-		logger.errorLogger.Fatal(message)
-		os.Exit(1)
+		_ = logFile.Close()
 	}
 }

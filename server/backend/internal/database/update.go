@@ -5,52 +5,67 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/ByteTheCookies/backend/internal/logger"
+)
+
+const (
+	updateFlagStatusQuery = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code = ?`
 )
 
 func (s *service) UpdateFlagStatus(flagCode string, status string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	query := "UPDATE flags SET status = ? WHERE flag_code = ?"
-	stmt, err := s.db.PrepareContext(ctx, query)
+	stmt, err := s.db.PrepareContext(ctx, updateFlagStatusQuery)
 	if err != nil {
+		logger.Log.Error().Err(err).Str("flag_code", flagCode).Msg("Failed to prepare UpdateFlagStatus statement")
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, status, flagCode)
+	_, err = stmt.ExecContext(ctx, status, uint64(time.Now().Unix()), flagCode)
 	if err != nil {
+		logger.Log.Error().Err(err).Str("flag_code", flagCode).Msg("Failed to execute UpdateFlagStatus")
 		return err
 	}
 
+	logger.Log.Debug().Str("flag_code", flagCode).Str("status", status).Msg("Updated flag status")
 	return nil
 }
 
-func (s *service) UpdateFlagsStatus(flagsCode []string, status string) error {
-	if len(flagsCode) == 0 {
+func (s *service) UpdateFlagsStatus(flagCodes []string, status string) error {
+	if len(flagCodes) == 0 {
 		return nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	placeholders := strings.Repeat("?,", len(flagsCode))
+	placeholders := strings.Repeat("?,", len(flagCodes))
 	placeholders = placeholders[:len(placeholders)-1]
 
-	query := fmt.Sprintf("UPDATE flags SET status = ?,response_time = ? WHERE flag_code IN (%s)", placeholders)
+	query := fmt.Sprintf("UPDATE flags SET status = ?, response_time = ? WHERE flag_code IN (%s)", placeholders)
 
-	args := make([]interface{}, 0, len(flagsCode)+2)
+	args := make([]interface{}, 0, len(flagCodes)+2)
 	args = append(args, status, uint64(time.Now().Unix()))
-	for _, code := range flagsCode {
+	for _, code := range flagCodes {
 		args = append(args, code)
 	}
 
 	stmt, err := s.db.PrepareContext(ctx, query)
 	if err != nil {
+		logger.Log.Error().Err(err).Int("count", len(flagCodes)).Msg("Failed to prepare UpdateFlagsStatus statement")
 		return err
 	}
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx, args...)
-	return err
+	if err != nil {
+		logger.Log.Error().Err(err).Int("count", len(flagCodes)).Msg("Failed to execute UpdateFlagsStatus")
+		return err
+	}
+
+	logger.Log.Debug().Int("count", len(flagCodes)).Str("status", status).Msg("Updated statuses for multiple flags")
+	return nil
 }

@@ -112,3 +112,5 @@ ipython_config.py
 # compose useless
 
 ./tests/docker-compose.yml
+
+tailwindcss

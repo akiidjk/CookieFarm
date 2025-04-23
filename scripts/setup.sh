@@ -1,9 +1,21 @@
 #!/bin/bash
 
 if [[ $# -ne 1 ]]; then
-	printf "Usage:\n  ./setup.sh <num_containers>"
-	exit
+    printf "Usage:\n  ./setup.sh <num_containers>"
+    exit
 fi
+
+cleanup() {
+    echo "🧹 Pulizia in corso... Chiudo terminali e Docker..."
+    kitty @ close-window --match title:flagchecker
+    kitty @ close-window --match title:cookieserver
+    kitty @ close-window --match title:service
+    kitty @ close-window --match title:frontend
+    docker compose down
+    exit
+}
+
+trap cleanup SIGINT
 
 # Install requirements
 pip install --upgrade pip > /dev/null
@@ -57,11 +69,6 @@ echo "🎯 Cookie Farm Server pronto all'uso!"
 # Attendi input per terminare tutti i terminali kitty
 read -p "🔻 Premi INVIO per chiudere tutti i terminali avviati dallo script..."
 
-# Chiudi le finestre kitty con i titoli assegnati
-kitty @ close-window --match title:flagchecker
-kitty @ close-window --match title:cookieserver
-kitty @ close-window --match title:service
-kitty @ close-window --match title:frontend
-docker compose down
+cleanup()
 
 echo "🧹 Tutti i terminali sono stati chiusi!"

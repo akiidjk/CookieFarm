@@ -58,25 +58,43 @@ func (s *FiberServer) HandleLogin(c *fiber.Ctx) error {
 	req := new(models.SigninRequest)
 	if err := c.BodyParser(req); err != nil {
 		logger.Log.Warn().Err(err).Msg("Invalid login payload")
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request format")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request format",
+		})
 	}
 
 	if req.Password == "" {
 		logger.Log.Warn().Msg("Missing password in login")
-		return fiber.NewError(fiber.StatusBadRequest, "Password is required")
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Password is required",
+		})
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(config.Password), []byte(req.Password)); err != nil {
 		logger.Log.Warn().Msg("Login failed: invalid password")
-		return fiber.NewError(fiber.StatusUnauthorized, "Invalid credentials")
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid credentials",
+		})
 	}
 
 	token, exp, err := CreateJWT()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to generate JWT")
-		return fiber.NewError(fiber.StatusInternalServerError, "JWT generation error")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "JWT generation error",
+		})
 	}
 
 	logger.Log.Info().Int64("exp", exp).Msg("Login successful, JWT issued")
-	return c.JSON(fiber.Map{"token": token, "exp": exp})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    token,
+		MaxAge:   60 * 60 * 24, // 1 giorno
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Strict",
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
 }

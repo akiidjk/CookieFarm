@@ -14,10 +14,10 @@ import (
 
 func (s *FiberServer) RegisterFiberRoutes() {
 	s.App.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",
+		AllowOrigins:     "http://localhost:8080",
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
 		AllowHeaders:     "Accept,Authorization,Content-Type",
-		AllowCredentials: false, // credentials require explicit origins
+		AllowCredentials: true, // credentials require explicit origins
 		MaxAge:           300,
 	}))
 
@@ -32,7 +32,8 @@ func (s *FiberServer) RegisterFiberRoutes() {
 
 	// Aspected Header with: `Authorization: Bearer <token>`
 	privateApi := s.App.Group("/api/v1", jwtware.New(jwtware.Config{
-		SigningKey: config.Secret,
+		SigningKey:  config.Secret,
+		TokenLookup: "header:Authorization,cookie:token",
 	}))
 	privateApi.Get("/stats", s.GetStats)
 	privateApi.Get("/flags", s.GetAllFlags)
@@ -46,6 +47,12 @@ func (s *FiberServer) RegisterFiberRoutes() {
 }
 
 func (s *FiberServer) HandleIndexPage(c *fiber.Ctx) error {
+	token := c.Cookies("token")
+
+	if err := VerifyToken(token); err != nil || token == "" {
+		return c.Redirect("/login")
+	}
+
 	return c.Render("pages/dashboard", fiber.Map{
 		"title": "Dashboard",
 	}, "layouts/main")

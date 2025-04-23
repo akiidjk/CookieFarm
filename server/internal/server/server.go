@@ -56,7 +56,7 @@ func New() *FiberServer {
 
 	app.Static("/css", "./public/css")
 	app.Static("/js", "./public/js")
-	app.Static("/static", "./public")
+	app.Static("/images", "./public/images")
 
 	if *config.Debug {
 		app.Use(func(c *fiber.Ctx) error {

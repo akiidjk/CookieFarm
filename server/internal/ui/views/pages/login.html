@@ -1,7 +1,82 @@
-{{template "partials/header" .}}
-  <div>
-      <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\'size-\'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3">
-          Bottone
+{{ template "partials/header" . }}
+
+<div class="w-full h-[80vh] flex items-center justify-center px-4">
+  <div class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm w-full max-w-sm">
+    <div class="grid gap-1.5 px-6">
+      <div class="flex flex-col items-center justify-center">
+        <img src="/images/logo.png" alt="Logo" class="w-16 h-16 mb-2">
+        <h1 class="text-2xl font-bold">Cookie Farm</h1>
+      </div>
+      <h3 class="leading-none text-2xl font-semibold">Login</h3>
+      <p class="text-muted-foreground text-sm">Enter the password below to login.</p>
+    </div>
+
+    <form
+      hx-post="/api/v1/auth/login"
+      hx-trigger="submit"
+      id="loginForm"
+      hx-target="#invisible"
+      hx-swap="innerHTML"
+      class="px-6 grid gap-4"
+      onsubmit="return false">
+      <div class="grid gap-2">
+        <label for="password" class="text-sm font-medium">Password</label>
+        <div class="flex gap-2">
+          <input id="password" name="password" type="password" required placeholder="Enter password"
+                 class="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]" />
+          <button type="button" onclick="togglePasswordVisibility()"
+                  class="w-10 h-10 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center justify-center">
+            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="#33210F">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+          <span id="invisible" style="display: none;"></span>
+        </div>
+      </div>
+      <div id="error" class="text-sm text-red-500"></div>
+      <button type="submit"
+              class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-primary/90">
+        Sign in
       </button>
+    </form>
   </div>
-{{template "partials/footer" .}}
+</div>
+
+<script>
+document.body.addEventListener("htmx:afterRequest", function (event) {
+   if (event.detail.requestConfig.elt.id === "loginForm") {
+     try {
+       const responseText = event.detail.xhr.responseText;
+       const data = JSON.parse(responseText);
+
+       if (event.detail.xhr.status !== 200){
+         document.querySelector("#error").textContent = data.error;
+         return;
+       }
+       window.location.href = "/dashboard";
+     } catch (err) {
+       console.error("Failed to parse response", err);
+       document.querySelector("#error").textContent = "Errore nel login";
+     }
+   }
+ });
+
+  function togglePasswordVisibility() {
+    const input = document.getElementById('password');
+    const icon = document.getElementById('eye-icon');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+
+    icon.innerHTML = isHidden
+      ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.05 10.05 0 011.51-2.472m3.11-2.826A9.99 9.99 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.053 10.053 0 01-4.143 5.067M15 12a3 3 0 11-6 0 3 3 0 016 0z" />`
+      : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+  }
+
+</script>
+
+
+{{ template "partials/footer" . }}

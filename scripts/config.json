@@ -15,7 +15,7 @@
         "port": 8081
       }
     ],
-    "range_ip_teams": 29,
+    "range_ip_teams": 4,
     "format_ip_teams": "10.10.{}.1",
     "my_team_ip": "10.10.0.1",
     "regex_flag": "^[A-Z0-9]{31}=$"

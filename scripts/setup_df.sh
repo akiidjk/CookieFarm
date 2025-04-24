@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [[ $# -ne 1 ]]; then
-    printf "Usage:\n  ./setup.sh <num_containers>"
+if [[ $# -ne 2 ]]; then
+    printf "Usage:\n  ./setup.sh <num_containers> <path_df>"
     exit
 fi
 
@@ -11,7 +11,9 @@ cleanup() {
     kitty @ close-window --match title:cookieserver
     kitty @ close-window --match title:service
     kitty @ close-window --match title:frontend
+    cd ../tests/
     docker compose down
+    cd ../scripts/
     exit
 }
 
@@ -32,39 +34,26 @@ kitty --title "flagchecker" bash -c "${activate_venv} && ../tests/flagchecker.py
 echo "✅ Flagchecker lanciato in un terminale separato! 🎉"
 echo ""
 
-# Run Server
-echo "🍪 Avvio CookieFarm Server..."
-
-cd ../server/backend/
-
-kitty --title "cookieserver" bash -c "make build && make run ARGS='--debug'; exec bash" &
-
-echo "✅ Server avviato!"
-sleep 3
-echo "📡 Invio configurazione..."
-
-cd ../../scripts/
-chmod +x shitcurl.py
-./shitcurl.py
-
-echo "✅ Configurazione inviata!"
-
-# Run FE
-echo "🌐 Start frontend"
-cd ../server
-kitty --title "frontend" bash -c "make tailwindcss; exec bash" &
-echo "🌐 Frontend started"
-
 # Run Services
 echo "🚀 Avvio Servizi..."
 
-cd ../../tests
+cd ../tests
 chmod +x ./start_containers.sh
 kitty --title "service" bash -c "./start_containers.sh $1; exec bash" &
 
 echo "🚀 Servizi avviati!"
 
-echo "🎯 Cookie Farm Server pronto all'uso!"
+# Run DestructiveFarm
+echo "🚀 Avvio DestructiveFarm..."
+
+cd ../scripts/
+cat ./config_df.py > $2/server/config.py
+chmod +x $2/server/start_server.sh
+kitty --title "destructivefarm" bash -c "$2/server/start_server.sh; exec bash" &
+
+echo "🚀 DestructiveFarm avviato!"
+
+echo "🎯 Ambiente per DF pronto all'uso!"
 
 # Attendi input per terminare tutti i terminali kitty
 read -p "🔻 Premi INVIO per chiudere tutti i terminali avviati dallo script..."

@@ -21,8 +21,7 @@ var (
 	password      = pflag.StringP("password", "p", "", "Password for authentication")
 	baseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server")
 	detach        = pflag.BoolP("detach", "d", false, "Run the exploit in the background")
-	threadsNumber = pflag.IntP("threads", "t", 1, "Number of threads to use")
-	tickTime      = pflag.IntP("tick", "i", 120, "Interval in seconds between run exploits")
+	tickTime      = pflag.IntP("tick", "t", 120, "Interval in seconds between run exploits")
 	logPath       string
 )
 
@@ -85,7 +84,7 @@ func main() {
 	}
 	defer logger.Close()
 
-	result, err := executor.Start(*exploitName, *password, *tickTime, *threadsNumber, logPath)
+	result, err := executor.Start(*exploitName, *password, *tickTime, logPath)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

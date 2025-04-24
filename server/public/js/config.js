@@ -1,23 +1,22 @@
 const HOST = 'http://localhost:8080'
 
 export async function checkConfig() {
-  const data = await getConfig();
-
-  if (data.error) {
+  try {
+    const data = await getConfig();
+    if (data.error) {
+      return false;
+    }
+    if (!data.configured) {
+      return false;
+    }
+  } catch (error) {
+    console.error(error);
     return false;
   }
-
-  if (!data.configured) {
-    return false;
-  }
-
   return true;
 }
 
 export async function sendConfig(config) {
-  console.log(JSON.stringify({
-    config: config,
-  }))
   const res = await fetch(HOST + "/api/v1/config", {
     method: 'POST',
     headers: {
@@ -30,21 +29,23 @@ export async function sendConfig(config) {
   });
 
   if (!res.ok) {
-    return false;
+    return res.status;
   }
-
 }
 
 export async function getConfig() {
-  const res = await fetch(HOST + "/api/v1/config", {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  });
-
-  const data = await res.json();
-
-  return data;
+  try {
+    const res = await fetch(HOST + "/api/v1/config", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return { "error": error.message };
+  }
 }

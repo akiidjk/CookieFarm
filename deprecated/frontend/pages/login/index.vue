@@ -44,7 +44,7 @@ function togglePasswordVisibility() {
         <Card class="w-full max-w-sm">
             <CardHeader>
                 <div class="flex flex-col items-center justify-center">
-                    <img src="/assets/logo/logo.png" alt="Logo" class="w-16 h-16 mb-2">
+                    <!-- <img src="/assets/logo/logo.png" alt="Logo" class="w-16 h-16 mb-2"> -->
                     <h1 class="text-2xl font-bold">Cookie Farm</h1>
                 </div>
                 <CardTitle class="text-2xl">Login</CardTitle>

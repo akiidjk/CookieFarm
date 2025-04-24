@@ -1,176 +1,164 @@
 {{template "partials/header" .}}
 <style>
-  .input {
-    @apply w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
-  }
+.customLook {
+  --tags-border-color: var(--border);
+  --tag-bg: var(--secondary);
+  --tag-hover: var(--secondary);
+  --tag-text-color: var(--foreground);
+  --tag-text-color--edit: var(--foreground);
+  --tag-remove-bg: var(--secondary);
+  --tag-remove-btn-color: var(--destructive-foreground);
+  --tag-remove-btn-bg: transparent;
+  --input-color: var(--foreground);
+  --placeholder-color: var(--muted-foreground);
+  --placeholder-color-focus: var(--foreground);
+  --tag-invalid-color: var(--destructive);
+  --tag-invalid-bg: var(--destructive-foreground);
+  --tag-invalid-remove-bg: var(--destructive);
+  --tag-invalid-remove-color: var(--destructive-foreground);
+  --tag-border-radius: 12px;
+  --tag-pad: 2px 8px 2px 8px;
+}
 </style>
-  <h1 class="text-xl font-bold">Benvenuto su CookieFarm!</h1>
 
-  <div class="relative z-10 hidden" aria-labelledby="modal-title" id="dialog" role="dialog" aria-modal="true">
-    <!--
-      Background backdrop, show/hide based on modal state.
+<!-- Modal Config Dialog -->
+<div class="relative z-10 hidden" aria-labelledby="modal-title" id="dialog" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-black/60 transition-opacity backdrop-blur-sm" aria-hidden="true"></div>
 
-      Entering: "ease-out duration-300"
-        From: "opacity-0"
-        To: "opacity-100"
-      Leaving: "ease-in duration-200"
-        From: "opacity-100"
-        To: "opacity-0"
-    -->
-    <div class="fixed inset-0 bg-gray-500/75 transition-opacity" aria-hidden="true"></div>
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div class="flex items-end justify-center min-h-full p-8 text-center sm:items-center sm:p-0">
+      <div class="relative transform overflow-hidden rounded-lg bg-[var(--background)] text-[var(--foreground)] text-left shadow-xl transition-all sm:my-8 w-full max-w-4xl">
 
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        <!--
-          Modal panel, show/hide based on modal state.
-
-          Entering: "ease-out duration-300"
-            From: "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            To: "opacity-100 translate-y-0 sm:scale-100"
-          Leaving: "ease-in duration-200"
-            From: "opacity-100 translate-y-0 sm:scale-100"
-            To: "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        -->`
-        <div class="relative transform overflow-hidden rounded-lg bg-[var(--background)] text-[var(--foreground)] text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-          <div class="bg-[var(--background)] text-[var(--foreground)] px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <form id="configForm"
-                    hx-post="/api/v1/config"
-                    hx-trigger="submit"
-                    hx-target="#config-result"
-                    hx-swap="innerHTML"
-                    onsubmit="return validateConfigForm()"
-                    class="grid gap-6">
-
-                <div class="grid gap-4">
-                  <h3 class="text-lg font-semibold">Server Configuration</h3>
-
-                  <div class="grid gap-2">
-                    <label for="team_token" class="font-medium">Team Token <span class="text-red-500">*</span></label>
-                    <input id="team_token" name="config.team_token" type="text" required
-                           placeholder="your-team-token"
-                           class="input"/>
-                  </div>
-
-                  <div class="grid gap-2">
-                    <label for="host_flagchecker" class="font-medium">Host Flag Checker <span class="text-red-500">*</span></label>
-                    <input id="host_flagchecker" name="config.host_flagchecker" type="text" required
-                           placeholder="flagchecker.example.com"
-                           class="input"/>
-                  </div>
-
-                  <div class="grid gap-2">
-                    <label for="protocol" class="font-medium">Protocol (.so) <span class="text-red-500">*</span></label>
-                    <input id="protocol" name="config.protocol" type="text" required
-                           placeholder="name_without_extension"
-                           class="input"/>
-                  </div>
-
-                  <div class="grid gap-2">
-                    <label for="submit_flag_checker_time" class="font-medium">Submit Flag Checker Time (sec)</label>
-                    <input id="submit_flag_checker_time" name="config.submit_flag_checker_time" type="number" min="0"
-                           placeholder="120"
-                           class="input"/>
-                  </div>
-                </div>
-
-                <div class="grid gap-4 mt-6">
-                  <h3 class="text-lg font-semibold">Client Configuration</h3>
-
-                  <div class="grid gap-2">
-                    <label for="base_url_server" class="font-medium">Base URL Server <span class="text-red-500">*</span></label>
-                    <input id="base_url_server" name="config.base_url_server" type="url" required
-                           placeholder="http://localhost:8080"
-                           class="input"/>
-                  </div>
-
-                  <div class="grid gap-2">
-                    <label for="range_ip_teams" class="font-medium">IP Range for Teams</label>
-                    <input id="range_ip_teams" name="config.range_ip_teams" type="number" min="1"
-                           placeholder="10"
-                           class="input"/>
-                  </div>
-
-                  <div class="grid gap-2">
-                    <label for="my_team_ip" class="font-medium">My Team IP <span class="text-red-500">*</span></label>
-                    <input id="my_team_ip" name="config.my_team_ip" type="text" required
-                           placeholder="192.168.1.1"
-                           class="input"/>
-                  </div>
-
-                  <div class="grid gap-2">
-                    <label for="regex_flag" class="font-medium">Regex Flag <span class="text-red-500">*</span></label>
-                    <input id="regex_flag" name="config.regex_flag" type="text" required
-                           placeholder="^[A-Z0-9]{31}=$"
-                           class="input"/>
-                  </div>
-                </div>
-
-                <div id="config-result" class="text-sm text-green-500"></div>
-
-                <div class="flex justify-end">
-                  <button type="submit" class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90">
-                    Save configuration
-                  </button>
-                </div>
-              </form>
+        <form id="configForm" class="px-6 py-4 space-y-6">
+          <div class="text-center sm:text-left">
+            <h1 class="text-lg font-semibold">Setup config</h1>
+            <p class="text-sm text-muted-foreground">Init the config by providing the necessary information.</p>
           </div>
-          <div class="bg-[var(--background)] text-[var(--foreground)] px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            <button type="button" class="inline-flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-xs sm:ml-3 sm:w-auto hover:bg-primary/90" onclick="closeDialog()">Close</button>
+
+          <!-- SERVER CONFIGURATION -->
+          <div>
+            <h3 class="text-lg font-semibold mb-3">Server Configuration</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div class="grid gap-2">
+                <label for="team_token">Team Token <span class="text-red-500">*</span></label>
+                <input id="team_token" name="team_token" type="text" required placeholder="your-team-token" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="host_flagchecker">Host Flag Checker <span class="text-red-500">*</span></label>
+                <input id="host_flagchecker" name="host_flagchecker" type="text" required placeholder="flagchecker.example.com" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="protocol">Protocol (.so) <span class="text-red-500">*</span></label>
+                <input id="protocol" name="protocol" type="text" required placeholder="name_without_extension" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="submit_flag_checker_time">Submit Flag Checker Time (sec)</label>
+                <input id="submit_flag_checker_time" name="submit_flag_checker_time" type="number" min="0" placeholder="120" value="120" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="max_flag_batch_size">Max Flag Batch Size</label>
+                <input id="max_flag_batch_size" name="max_flag_batch_size" type="number" min="1" placeholder="500" value="500" class="input" />
+              </div>
+            </div>
           </div>
-        </div>
+
+          <!-- CLIENT CONFIGURATION -->
+          <div>
+            <h3 class="text-lg font-semibold mb-3">Client Configuration</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div class="grid gap-2">
+                <label for="base_url_server">Base URL Server <span class="text-red-500">*</span></label>
+                <input id="base_url_server" name="base_url_server" type="url" required placeholder="http://localhost:8080" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="services">Services <span class="text-red-500">*</span></label>
+                <input id="services" type="text" placeholder="name:port" class="input customLook" minlength="2" />
+                <input type="hidden" id="services-hidden" name="services" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="range_ip_teams">IP Range for Teams <span class="text-red-500">*</span></label>
+                <input id="range_ip_teams" name="range_ip_teams" type="number" min="1" placeholder="10" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="format_ip_teams">IP Format for Teams <span class="text-red-500">*</span></label>
+                <input id="format_ip_teams" name="format_ip_teams" type="text" placeholder="10.10.{}.1" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="my_team_ip">My Team IP <span class="text-red-500">*</span></label>
+                <input id="my_team_ip" name="my_team_ip" type="text" placeholder="192.168.1.1" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="regex_flag">Regex Flag <span class="text-red-500">*</span></label>
+                <input id="regex_flag" name="regex_flag" type="text" placeholder="^[A-Z0-9]{31}=$" class="input" />
+              </div>
+
+              <div class="grid gap-2">
+                <label for="submit_flag_server_time">Submit Flag Server Time</label>
+                <input id="submit_flag_server_time" name="submit_flag_server_time" type="number" min="0" placeholder="120" value="120" class="input" />
+              </div>
+            </div>
+          </div>
+
+          <div id="config-result" class="text-sm"></div>
+
+          <div class="flex justify-end">
+            <button type="button" onclick="handleConfigSubmit(event)" class="bg-primary text-primary-foreground px-4 py-2 rounded-md shadow-sm hover:bg-primary/90">
+              Save configuration
+            </button>
+          </div>
+        </form>
+
       </div>
     </div>
   </div>
-
+</div>
 
 {{template "partials/footer" .}}
 
-
 <script type="module" defer>
-import { checkConfig,  } from '/js/config.js';
+import { checkConfig, sendConfig } from '/js/config.js';
+import {getServiceEntries, validateConfigForm, buildConfigFromDOM} from '/js/utils.js';
 
-var element = document.getElementById("dialog");
+let tagify = new Tagify(document.getElementById('services'));
 
-function openDialog() {
-  element.classList.remove("hidden");
-}
+async function handleSubmit(event) {
+  event.preventDefault();
+  if (!validateConfigForm(document,tagify)) return;
 
-function closeDialog() {
-  element.classList.add("hidden");
-}
+  const config = buildConfigFromDOM(document, tagify);
 
-function toggleDialog() {
-  element.classList.toggle("hidden");
-}
-
-window.openDialog = openDialog;
-window.closeDialog = closeDialog;
-window.toggleDialog = toggleDialog;
-window.validateConfigForm = function () {
-  const requiredFields = [
-    "team_token",
-    "host_flagchecker",
-    "protocol",
-    "base_url_server",
-    "my_team_ip",
-    "regex_flag"
-  ];
-
-  for (const id of requiredFields) {
-    const input = document.getElementById(id);
-    if (!input.value.trim()) {
-      input.focus();
-      document.querySelector("#config-result").textContent = `Missing required field: ${id.replaceAll("_", " ")}`;
-      return false;
+  try {
+    let err = await sendConfig(config);
+    if (!err) {
+      const resultBox = document.getElementById("config-result");
+      resultBox.classList.add("text-green-500");
+      resultBox.textContent = "Config sent successfully";
+    } else {
+      const resultBox = document.getElementById("config-result");
+      resultBox.classList.add("text-red-500");
+      resultBox.textContent = "Error sending config: " + err;
     }
+  } catch (e) {
+    const resultBox = document.getElementById("config-result");
+    resultBox.classList.add("text-red-500");
+    resultBox.textContent = "Error sending config: " + e;
   }
+}
 
-  return true;
-};
+window.handleConfigSubmit = handleSubmit;
 
 (async () => {
   if (!(await checkConfig())) {
-    openDialog();
+    document.getElementById("dialog").classList.remove("hidden");
   }
 })();
 

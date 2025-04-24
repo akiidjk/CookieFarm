@@ -78,7 +78,7 @@ function onSubmit(values: { [key: string]: string | number }) {
 
     try {
         sendConfig(config);
-        dialogOpen.value = false
+        dialogOpen.value = true
         toast.success("Config sent successfully")
     } catch (e) {
         console.error(e)
@@ -91,9 +91,8 @@ function onSubmit(values: { [key: string]: string | number }) {
 
 
 onMounted(async () => {
-    if (!await checkConfig()) {
-        dialogOpen.value = true
-    }
+    dialogOpen.value = true;
+
 })
 
 </script>

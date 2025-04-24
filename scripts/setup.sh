@@ -35,7 +35,7 @@ echo ""
 # Run Server
 echo "🍪 Avvio CookieFarm Server..."
 
-cd ../server/backend/
+cd ../server
 
 kitty --title "cookieserver" bash -c "make build && make run ARGS='--debug'; exec bash" &
 
@@ -43,7 +43,7 @@ echo "✅ Server avviato!"
 sleep 3
 echo "📡 Invio configurazione..."
 
-cd ../../scripts/
+cd ../scripts/
 chmod +x shitcurl.py
 ./shitcurl.py
 
@@ -52,13 +52,13 @@ echo "✅ Configurazione inviata!"
 # Run FE
 echo "🌐 Start frontend"
 cd ../server
-kitty --title "frontend" bash -c "make tailwindcss; exec bash" &
+kitty --title "frontend" bash -c "make tailwindcss-build; exec bash" &
 echo "🌐 Frontend started"
 
 # Run Services
 echo "🚀 Avvio Servizi..."
 
-cd ../../tests
+cd ../tests
 chmod +x ./start_containers.sh
 kitty --title "service" bash -c "./start_containers.sh $1; exec bash" &
 

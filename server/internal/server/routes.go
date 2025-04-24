@@ -28,7 +28,6 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	publicApi := s.App.Group("/api/v1")
 	publicApi.Get("/", s.GetStatus)
 	publicApi.Post("/auth/login", NewLimiter(), s.HandleLogin)
-	publicApi.Post("/auth/verify", NewLimiter(), s.HandleVerify)
 
 	// Aspected Header with: `Authorization: Bearer <token>`
 	privateApi := s.App.Group("/api/v1", jwtware.New(jwtware.Config{
@@ -66,27 +65,6 @@ func (s *FiberServer) HandleLoginPage(c *fiber.Ctx) error {
 
 func (s *FiberServer) GetConfig(c *fiber.Ctx) error {
 	return c.JSON(config.Current)
-}
-
-func (s *FiberServer) HandleVerify(c *fiber.Ctx) error {
-	var verifyPayload struct {
-		Token string `json:"token"`
-	}
-	if err := c.BodyParser(&verifyPayload); err != nil {
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
-			"errors": err.Error(),
-		})
-	}
-
-	if err := VerifyToken(verifyPayload.Token); err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"errors": err.Error(),
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Token verified successfully",
-	})
 }
 
 func (s *FiberServer) SetConfig(c *fiber.Ctx) error {

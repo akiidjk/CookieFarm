@@ -77,15 +77,13 @@ func (s *FiberServer) HandleLogin(c *fiber.Ctx) error {
 		})
 	}
 
-	token, exp, err := CreateJWT()
+	token, _, err := CreateJWT()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to generate JWT")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "JWT generation error",
 		})
 	}
-
-	logger.Log.Info().Int64("exp", exp).Msg("Login successful, JWT issued")
 
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",

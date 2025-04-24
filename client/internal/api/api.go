@@ -36,7 +36,7 @@ func SendFlag(flags ...models.Flag) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+config.Token)
+	req.Header.Set("Cookie", "token="+config.Token)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
@@ -68,7 +68,7 @@ func GetConfig() (models.Config, error) {
 	if err != nil {
 		return models.Config{}, fmt.Errorf("errore creazione richiesta config: %w", err)
 	}
-	req.Header.Set("Authorization", "Bearer "+config.Token)
+	req.Header.Set("Cookie", "token="+config.Token)
 
 	resp, err := client.Do(req)
 	if err != nil {

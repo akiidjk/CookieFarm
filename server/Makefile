@@ -28,6 +28,8 @@ help:
 	@echo -e "  $(CYAN)make build-plugins$(RESET) - Compile the plugins"
 	@echo -e "  $(CYAN)make build-plugins-prod$(RESET) - Compile the plugins for production"
 	@echo -e "  $(CYAN)make watch$(RESET)     - Live reload"
+	@echo -e "  $(CYAN)make tailwindcss-build$(RESET)     - Build Tailwind CSS minified"
+	@echo -e "  $(CYAN)make tailwindcss-watch$(RESET)     - Tailwind CSS watch"
 	@echo -e "  $(CYAN)make help$(RESET)      - Show this message"
 
 build:
@@ -41,7 +43,7 @@ build-plugins-prod:
 	@for file in $$(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
 		filename=$$(basename $$file); \
 		pluginname=$${filename%.go}; \
-		GOOS=$(GOOS) GOARCH=$(GOARCH) go build -buildmode=plugin -ldflags="-s -w" -o "protocols/$$pluginname.so" "$$file"; \
+		GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath -buildmode=plugin -ldflags="-s -w" -o "protocols/$$pluginname.so" "$$file"; \
 		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
 	done
 
@@ -53,7 +55,7 @@ build-plugins:
 		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
 	done
 
-build-prod:
+build-prod: build-plugins-prod
 	@echo -e "$(CYAN)[*] Building $(BOLD)for production...$(RESET)"
 	@mkdir -p $(BIN_DIR)
 	GOOS=$(GOOS) GOARCH=$(GOARCH) \
@@ -66,7 +68,7 @@ build-prod:
 test:
 	@go test ./...
 
-install: build-prod build-plugins
+install: build-prod build-plugins-prod
 	@echo -e "$(CYAN)[*] Installing $(BOLD)...$(RESET)"
 	@go install .
 	@echo -e "$(GREEN)[+] Install complete!$(RESET)"
@@ -75,7 +77,7 @@ run: build build-plugins
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
-run-prod: build-prod build-plugins-prod
+run-prod: build-prod
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
@@ -90,7 +92,7 @@ clean:
 	@rm -rf $(LOGS_DIR)/*
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
 
-tailwindcss:
+tailwindcss-build:
 	./tailwindcss -i ./assets/css/global.css -o ./public/css/output.css --minify
 
 tailwindcss-watch:

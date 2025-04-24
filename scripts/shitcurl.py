@@ -4,6 +4,7 @@ import requests
 import json
 import logging
 
+s = requests.Session()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 BASE_URL = "http://localhost:8080"
@@ -12,7 +13,7 @@ def send_post_request(endpoint, headers=None, data=None, files=None):
     url = f"{BASE_URL}/{endpoint}"
     try:
         logging.info(f"Sending POST request to {url} with data: {data}")
-        response = requests.post(url, headers=headers, data=data, files=files)
+        response = s.post(url, headers=headers, data=data, files=files,cookies=s.cookies)
         response.raise_for_status()
         logging.info(f"Response received: {response.status_code}")
         return response
@@ -29,49 +30,36 @@ def login(password):
     response = send_post_request('api/v1/auth/login', headers=headers, data=payload)
 
     if response:
-        try:
-            token = response.json().get('token')
-            if token:
-                logging.info("Login successful, token received.")
-                return token
-            else:
-                logging.warning("Token not found in the response.")
-        except json.JSONDecodeError:
-            logging.error("Failed to decode JSON response.")
-    return None
+        if response.status_code == 200:
+            logging.info("Login successful, token received.")
+        else:
+            logging.warning("Token not found in the response.")
+            return None
+    else:
+        logging.error("Failed to send login request.")
+        return None
 
-def configure(token, config_data):
+def configure(config_data):
     logging.info("Configuring the system with provided configuration data...")
     headers = {
-        'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
+        'Cookie': f"token={s.cookies['token']}"
     }
     payload = json.dumps(config_data)
     response = send_post_request('api/v1/config', headers=headers, data=payload)
 
     if response:
         logging.info("Configuration updated successfully.")
-        return response.text
-    return None
-
-def verify_token(token):
-    logging.info("Verifying token...")
-    payload = {"token": token}
-    response = send_post_request('api/v1/auth/verify', data=payload)
-
-    if response:
-        logging.info("Token verification completed.")
-        return response.text
+        return response.json()
     return None
 
 if __name__ == '__main__':
     password = 'password'
-    token = login(password)
+    login(password)
 
-    if token:
-        config_data = json.load(open('config.json', 'r'))
-        config_data = {
-            "config": config_data
-        }
-        configure(token, config_data)
-        verify_token(token)
+
+    config_data = json.load(open('config.json', 'r'))
+    config_data = {
+        "config": config_data
+    }
+    configure(config_data)

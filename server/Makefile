@@ -20,7 +20,6 @@ help:
 	@echo -e "  $(CYAN)make build$(RESET)     - Compile the Go project"
 	@echo -e "  $(CYAN)make run$(RESET)       - Compile and run the binary"
 	@echo -e "  $(CYAN)make run-prod$(RESET)  - Compile and run the binary for production"
-	@echo -e "  $(CYAN)make test$(RESET)      - Run tests"
 	@echo -e "  $(CYAN)make install$(RESET)   - Install the binary locally"
 	@echo -e "  $(CYAN)make version$(RESET)   - Show the version"
 	@echo -e "  $(CYAN)make clean$(RESET)     - Remove binaries and logs"
@@ -55,7 +54,7 @@ build-plugins:
 		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
 	done
 
-build-prod: build-plugins-prod
+build-prod: build-plugins-prod tailwindcss-build
 	@echo -e "$(CYAN)[*] Building $(BOLD)for production...$(RESET)"
 	@mkdir -p $(BIN_DIR)
 	GOOS=$(GOOS) GOARCH=$(GOARCH) \
@@ -65,10 +64,7 @@ build-prod: build-plugins-prod
 		-o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
 	@echo -e "$(GREEN)[+] Production build complete!$(RESET)"
 
-test:
-	@go test ./...
-
-install: build-prod build-plugins-prod
+install: tailwindcss-build build-prod build-plugins-prod
 	@echo -e "$(CYAN)[*] Installing $(BOLD)...$(RESET)"
 	@go install .
 	@echo -e "$(GREEN)[+] Install complete!$(RESET)"
@@ -77,7 +73,7 @@ run: build build-plugins
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
-run-prod: build-prod
+run-prod: build-prod tailwindcss-build
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 

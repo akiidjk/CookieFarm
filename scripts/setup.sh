@@ -37,7 +37,7 @@ echo "🍪 Avvio CookieFarm Server..."
 
 cd ../server/backend/
 
-kitty --title "cookieserver" bash -c "make build && make run ARGS=''; exec bash" &
+kitty --title "cookieserver" bash -c "make build && make run ARGS='--debug'; exec bash" &
 
 echo "✅ Server avviato!"
 sleep 3
@@ -51,8 +51,8 @@ echo "✅ Configurazione inviata!"
 
 # Run FE
 echo "🌐 Start frontend"
-cd ../server/frontend/
-kitty --title "frontend" bash -c "/bin/bun run dev; exec bash" &
+cd ../server
+kitty --title "frontend" bash -c "make tailwindcss; exec bash" &
 echo "🌐 Frontend started"
 
 # Run Services

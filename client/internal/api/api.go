@@ -112,18 +112,14 @@ func Login(password string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Errore lettura risposta login")
-		return "", err
+	cookies := resp.Cookies()
+	for _, c := range cookies {
+		if c.Name == "token" {
+			logger.Log.Info().Str("token", c.Value).Msg("Login effettuato con successo via cookie")
+			return c.Value, nil
+		}
 	}
 
-	var result models.TokenResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		logger.Log.Error().Err(err).Msg("Errore parsing risposta login")
-		return "", err
-	}
-
-	logger.Log.Info().Str("token", result.Token).Msg("Login effettuato con successo")
-	return result.Token, nil
+	logger.Log.Warn().Msg("Token non trovato nei cookie")
+	return "", fmt.Errorf("token non trovato nel Set-Cookie")
 }

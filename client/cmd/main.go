@@ -8,6 +8,7 @@ import (
 	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/executor"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
+	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/submitter"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
 	"github.com/rs/zerolog"
@@ -16,43 +17,40 @@ import (
 )
 
 var (
-	exploitName   = pflag.StringP("exploit", "e", "", "Name of the exploit file")
-	debug         = pflag.Bool("debug", false, "Enable debug log level")
-	password      = pflag.StringP("password", "p", "", "Password for authentication")
-	baseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server")
-	detach        = pflag.BoolP("detach", "d", false, "Run the exploit in the background")
-	tickTime      = pflag.IntP("tick", "t", 120, "Interval in seconds between run exploits")
-	logPath       string
+	args    models.Args = models.Args{}
+	logPath string
 )
 
-func setupClient() error {
+func init() {
+	args.ExploitName = pflag.StringP("exploit", "e", "", "Name of the exploit file")
+	args.Debug = pflag.Bool("debug", false, "Enable debug log level")
+	args.Password = pflag.StringP("password", "p", "", "Password for authentication")
+	args.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server")
+	args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background")
+	args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between run exploits")
+}
 
+func setupClient() error {
 	pflag.Parse()
 
-	if *detach {
+	if *args.Detach {
 		utils.Detach()
 	}
 
-	if *exploitName == "" {
-		return fmt.Errorf("missing required --exploit argument")
-	}
-	if *baseURLServer == "" {
-		return fmt.Errorf("missing required --base_url_server argument")
-	}
-	if *password == "" {
-		return fmt.Errorf("missing required --password argument")
-	}
-
-	if *debug {
+	if *args.Debug {
 		logPath = logger.Setup("debug")
 	} else {
 		logPath = logger.Setup("info")
 	}
 
-	config.Current.ConfigClient.BaseUrlServer = *baseURLServer
+	err := utils.ValidateArgs(args)
+	if err != nil {
+		return fmt.Errorf("invalid arguments: %w", err)
+	}
 
-	var err error
-	config.Token, err = api.Login(*password)
+	config.Current.ConfigClient.BaseUrlServer = *args.BaseURLServer
+
+	config.Token, err = api.Login(*args.Password)
 	if err != nil {
 		return fmt.Errorf("login failed: %w", err)
 	}
@@ -73,6 +71,7 @@ func setupClient() error {
 }
 
 func main() {
+
 	if err := setupClient(); err != nil {
 		if logger.LogLevel != zerolog.Disabled {
 			logger.Log.Fatal().Err(err).Msg("Initialization error")
@@ -84,7 +83,7 @@ func main() {
 	}
 	defer logger.Close()
 
-	result, err := executor.Start(*exploitName, *password, *tickTime, logPath)
+	result, err := executor.Start(*args.ExploitName, *args.Password, *args.TickTime, logPath)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

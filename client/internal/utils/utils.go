@@ -5,13 +5,17 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"syscall"
 
 	"math/rand"
 
 	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
+	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
 )
+
+const regexUrl = `^http://(localhost|127\.0\.0\.1):[0-9]{1,5}$`
 
 func GetEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
@@ -89,9 +93,31 @@ func GetExecutableDir() string {
 	return filepath.Dir(exePath)
 }
 
-func CheckUrl() error {
-	if config.Current.ConfigClient.BaseUrlServer == "" {
-		return fmt.Errorf("baseUrlServer non impostato")
+func ValidateArgs(args models.Args) error {
+
+	if *args.ExploitName == "" {
+		return fmt.Errorf("missing required --exploit argument")
 	}
+	if *args.BaseURLServer == "" {
+		return fmt.Errorf("missing required --base_url_server argument")
+	}
+	if *args.Password == "" {
+		return fmt.Errorf("missing required --password argument")
+	}
+
+	if !regexp.MustCompile(regexUrl).MatchString(*args.BaseURLServer) {
+		return fmt.Errorf("invalid base URL server")
+	}
+
+	if *args.TickTime < 1 {
+		return fmt.Errorf("tick time must be at least 1")
+	}
+
+	exploitPath := filepath.Join(GetExecutableDir(), "..", "exploits", *args.ExploitName)
+
+	if _, err := os.Stat(exploitPath); os.IsNotExist(err) {
+		return fmt.Errorf("exploit not found in the exploits directory")
+	}
+
 	return nil
 }

@@ -38,8 +38,8 @@ type ConfigClient struct {
 	BaseUrlServer        string    `json:"base_url_server"`
 	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"`
 	Services             []Service `json:"services"`
-	TeamsIPRange         uint8     `json:"range_ip_teams"`
-	TeamIPFormat         string    `json:"format_ip_teams"`
+	RangeIPTeams         uint8     `json:"range_ip_teams"`
+	FormatIPTeams        string    `json:"format_ip_teams"`
 	MyTeamIP             string    `json:"my_team_ip"`
 	RegexFlag            string    `json:"regex_flag"`
 }

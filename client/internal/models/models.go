@@ -34,8 +34,8 @@ type ConfigClient struct {
 	BaseUrlServer        string    `json:"base_url_server"`
 	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"`
 	Services             []Service `json:"services"`
-	TeamsIPRange         uint8     `json:"range_ip_teams"`  // formerly RangeIpTeams
-	TeamIPFormat         string    `json:"format_ip_teams"` // formerly FormatIpTeams
+	RangeIPTeams         uint8     `json:"range_ip_teams"`
+	FormatIPTeams        string    `json:"format_ip_teams"`
 	MyTeamIP             string    `json:"my_team_ip"`
 	RegexFlag            string    `json:"regex_flag"`
 }
@@ -44,6 +44,15 @@ type Config struct {
 	Configured   bool         `json:"configured"`
 	ConfigServer ConfigServer `json:"server"`
 	ConfigClient ConfigClient `json:"client"`
+}
+
+type Args struct {
+	ExploitName   *string `json:"exploit_name"`
+	Password      *string `json:"password"`
+	BaseURLServer *string `json:"base_url_server"`
+	TickTime      *int    `json:"tick_time"`
+	Debug         *bool   `json:"debug"`
+	Detach        *bool   `json:"detach"`
 }
 
 type TokenResponse struct {

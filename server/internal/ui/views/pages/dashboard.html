@@ -1,4 +1,7 @@
-{{template "partials/header" .}}
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js" defer></script>
+<link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css"  defer/>
+
 <style>
 .customLook {
   --tags-border-color: var(--border);
@@ -20,6 +23,8 @@
   --tag-pad: 2px 8px 2px 8px;
 }
 </style>
+
+{{template "partials/header" .}}
 
 <!-- Modal Config Dialog -->
 <div class="relative z-10 hidden" aria-labelledby="modal-title" id="dialog" role="dialog" aria-modal="true">
@@ -77,8 +82,7 @@
 
               <div class="grid gap-2">
                 <label for="services">Services <span class="text-red-500">*</span></label>
-                <input id="services" type="text" placeholder="name:port" class="input customLook" minlength="2" />
-                <input type="hidden" id="services-hidden" name="services" />
+                <input id="services" type="text" pattern='^[a-zA-Z_-]+:([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$' placeholder="name:port" class="input customLook" minlength="2" />
               </div>
 
               <div class="grid gap-2">
@@ -116,7 +120,6 @@
             </button>
           </div>
         </form>
-
       </div>
     </div>
   </div>
@@ -125,9 +128,7 @@
 {{template "partials/footer" .}}
 
 <script type="module" defer>
-import { checkConfig, sendConfig } from '/js/config.js';
-import {getServiceEntries, validateConfigForm, buildConfigFromDOM} from '/js/utils.js';
-
+import {getServiceEntries, buildConfigFromDOM, sendConfig, checkConfig, validateConfigForm} from '/js/output.min.js';
 let tagify = new Tagify(document.getElementById('services'));
 
 async function handleSubmit(event) {

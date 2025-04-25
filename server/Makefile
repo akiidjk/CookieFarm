@@ -29,6 +29,7 @@ help:
 	@echo -e "  $(CYAN)make watch$(RESET)     - Live reload"
 	@echo -e "  $(CYAN)make tailwindcss-build$(RESET)     - Build Tailwind CSS minified"
 	@echo -e "  $(CYAN)make tailwindcss-watch$(RESET)     - Tailwind CSS watch"
+	@echo -e "  $(CYAN)make minify$(RESET)    - Minify the JS files"
 	@echo -e "  $(CYAN)make help$(RESET)      - Show this message"
 
 build:
@@ -54,7 +55,7 @@ build-plugins:
 		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
 	done
 
-build-prod: build-plugins-prod tailwindcss-build
+build-prod: build-plugins-prod tailwindcss-build minify
 	@echo -e "$(CYAN)[*] Building $(BOLD)for production...$(RESET)"
 	@mkdir -p $(BIN_DIR)
 	GOOS=$(GOOS) GOARCH=$(GOARCH) \
@@ -69,11 +70,11 @@ install: tailwindcss-build build-prod build-plugins-prod
 	@go install .
 	@echo -e "$(GREEN)[+] Install complete!$(RESET)"
 
-run: build build-plugins
+run: build build-plugins minify
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
-run-prod: build-prod tailwindcss-build
+run-prod: build-prod tailwindcss-build minify
 	@echo -e "$(CYAN)[*] Running $(BOLD)...$(RESET)"
 	@$(BIN_DIR)/$(BINARY_NAME) $(ARGS)
 
@@ -109,3 +110,8 @@ watch:
 			exit 1; \
 		fi; \
 	fi
+
+minify:
+	@echo -e "$(CYAN)[*] Minifying $(BOLD)...$(RESET)"
+	@uglifyjs assets/js/*.js -o public/js/output.min.js -c -m
+	@echo -e "$(GREEN)[+] Minification complete!$(RESET)"

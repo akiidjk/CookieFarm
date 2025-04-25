@@ -10,7 +10,6 @@ import (
 	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
 	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,10 +18,6 @@ var (
 )
 
 func SendFlag(flags ...models.Flag) error {
-	err := utils.CheckUrl()
-	if err != nil {
-		return err
-	}
 	body, err := json.Marshal(map[string][]models.Flag{"flags": flags})
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Errore durante il marshalling delle flags")
@@ -59,10 +54,6 @@ func SendFlag(flags ...models.Flag) error {
 }
 
 func GetConfig() (models.Config, error) {
-	err := utils.CheckUrl()
-	if err != nil {
-		return models.Config{}, err
-	}
 	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/config"
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -94,10 +85,6 @@ func GetConfig() (models.Config, error) {
 }
 
 func Login(password string) (string, error) {
-	err := utils.CheckUrl()
-	if err != nil {
-		return "", err
-	}
 	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/auth/login"
 	logger.Log.Debug().Str("url", url).Msg("Tentativo di login")
 

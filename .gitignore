@@ -113,4 +113,5 @@ ipython_config.py
 
 ./tests/docker-compose.yml
 
+# Binaries
 tailwindcss

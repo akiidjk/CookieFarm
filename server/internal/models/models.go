@@ -30,6 +30,10 @@ type ConfigServer struct {
 	Protocol              string `json:"protocol"`
 }
 
+func (s ConfigServer) IsEmpty() bool {
+	return s.HostFlagchecker == "" && s.TeamToken == "" && s.SubmitFlagCheckerTime == 0
+}
+
 type ConfigClient struct {
 	BaseUrlServer        string    `json:"base_url_server"`
 	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"`
@@ -40,28 +44,24 @@ type ConfigClient struct {
 	RegexFlag            string    `json:"regex_flag"`
 }
 
+func (c ConfigClient) IsEmpty() bool {
+	return c.BaseUrlServer == "" && c.SubmitFlagServerTime == 0 && len(c.Services) == 0
+}
+
 type Config struct {
 	Configured   bool         `json:"configured"`
 	ConfigServer ConfigServer `json:"server"`
 	ConfigClient ConfigClient `json:"client"`
 }
 
-type Args struct {
-	ExploitName   *string `json:"exploit_name"`
-	Password      *string `json:"password"`
-	BaseURLServer *string `json:"base_url_server"`
-	TickTime      *int    `json:"tick_time"`
-	Debug         *bool   `json:"debug"`
-	Detach        *bool   `json:"detach"`
+func (c Config) IsEmpty() bool {
+	return c.ConfigServer.IsEmpty() && c.ConfigClient.IsEmpty()
 }
 
-type TokenResponse struct {
-	Token string `json:"token"`
-	Exp   int64  `json:"exp"`
+type Session struct {
+	Password string `json:"password"`
 }
 
-type ParsedFlagOutput struct {
-	TeamID      uint16 `json:"team_id"`
-	ServicePort uint16 `json:"service_port"`
-	FlagCode    string `json:"flag_code"`
+type SigninRequest struct {
+	Password string `json:"password"`
 }

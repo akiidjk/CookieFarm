@@ -24,6 +24,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 	publicView := s.App.Group("/")
 	publicView.Get("/dashboard", s.HandleIndexPage)
 	publicView.Get("/login", s.HandleLoginPage)
+	publicView.Get("/flags/:limit", s.HandlePaginatedFlags)
 
 	publicApi := s.App.Group("/api/v1")
 	publicApi.Get("/", s.GetStatus)
@@ -49,10 +50,19 @@ func (s *FiberServer) HandleIndexPage(c *fiber.Ctx) error {
 	token := c.Cookies("token")
 
 	if err := VerifyToken(token); err != nil || token == "" {
-		return c.Redirect("/login")
+		// return c.Redirect("/login")
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "100"))
+	if err != nil {
+		limit = 100
 	}
 
 	return c.Render("pages/dashboard", fiber.Map{
+		"Pagination": models.Pagination{
+			Limit: limit,
+			Pages: s.db.FlagsNumber(context.Background()) / limit,
+		},
 		"title": "Dashboard",
 	}, "layouts/main")
 }
@@ -221,4 +231,32 @@ func (s *FiberServer) GetStatus(c *fiber.Ctx) error {
 
 func (s *FiberServer) healthHandler(c *fiber.Ctx) error {
 	return c.JSON(s.db.Health())
+}
+
+func (s *FiberServer) HandlePaginatedFlags(c *fiber.Ctx) error {
+	limitStr := c.Params("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Parametro limit non valido")
+	}
+
+	offsetStr := c.Query("offset", "0")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Parametro offset non valido")
+	}
+
+	logger.Log.Debug().Int("offset", offset).Int("limit", limit).Msg("Paginated flags request")
+
+	flags, err := s.db.GetPagedFlags(limit, offset)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Errore nel recupero dei dati")
+	}
+
+	logger.Log.Debug().Int("n_flags", len(flags)).Msg("Paginated flags response")
+
+	return c.Render("partials/flags_rows", fiber.Map{
+		"Flags": flags,
+	})
+
 }

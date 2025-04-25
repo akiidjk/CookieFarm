@@ -180,3 +180,11 @@
 .tag-close {
     @apply text-red-500 cursor-pointer hover:text-red-700;
 }
+
+.htmx-request #spinner {
+    @apply block
+}
+
+.htmx-request #flag-table-body {
+    @apply opacity-50
+}

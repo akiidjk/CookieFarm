@@ -51,7 +51,6 @@ export function validateConfigForm(document, tagify) {
     return false;
   }
 
-  document.getElementById("services-hidden").value = JSON.stringify(services);
   return true;
 }
 

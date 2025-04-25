@@ -65,3 +65,8 @@ type Session struct {
 type SigninRequest struct {
 	Password string `json:"password"`
 }
+
+type Pagination struct {
+	Limit int
+	Pages int
+}

@@ -38,6 +38,13 @@ func InitTemplateEngine(debug bool) *html.Engine {
 		return a + 1
 	})
 
+	engine.AddFunc("add", func(a, b int) int {
+		return a + b
+	})
+	engine.AddFunc("sub", func(a, b int) int {
+		return a - b
+	})
+
 	engine.AddFunc("rangeN", func(n int) []int {
 		out := make([]int, n)
 		for i := range n {

@@ -90,10 +90,10 @@ clean:
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
 
 tailwindcss-build:
-	./tailwindcss -i ./assets/css/global.css -o ./public/css/output.css --minify
+	./tools/tailwindcss -i ./assets/css/global.css -o ./public/css/output.css --minify
 
 tailwindcss-watch:
-	./tailwindcss -i ./assets/css/global.css -o ./public/css/output.css --watch
+	./tools/tailwindcss -i ./assets/css/global.css -o ./public/css/output.css --watch
 
 watch:
 	@if command -v air > /dev/null; then \

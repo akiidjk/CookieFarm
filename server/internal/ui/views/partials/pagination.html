@@ -1,0 +1,79 @@
+<div class="py-1 px-4 flex items-center justify-between border-t border-gray-200 dark:border-neutral-700">
+  <div class="flex-1 flex justify-between sm:hidden">
+    {{if .Pagination.HasPrev}}
+      <a href="#"
+         class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white hover:bg-gray-50 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-600"
+         data-page="{{sub .Pagination.Current 1}}">
+        Previous
+      </a>
+    {{else}}
+      <span class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white cursor-not-allowed dark:bg-neutral-800 dark:text-neutral-600 dark:border-neutral-600">
+        Previous
+      </span>
+    {{end}}
+
+    {{if .Pagination.HasNext}}
+      <a href="#"
+         class="ml-3 relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white hover:bg-gray-50 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-600"
+         data-page="{{add .Pagination.Current 1}}">
+        Next
+      </a>
+    {{else}}
+      <span class="ml-3 relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white cursor-not-allowed dark:bg-neutral-800 dark:text-neutral-600 dark:border-neutral-600">
+        Next
+      </span>
+    {{end}}
+  </div>
+
+  <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+    <div>
+      <p class="text-sm text-gray-700 dark:text-neutral-300">
+        Pagina <span class="font-medium">{{add .Pagination.Current 1}}</span> di <span class="font-medium">{{.Pagination.Pages}}</span>
+      </p>
+    </div>
+
+    <div>
+      <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+        {{if .Pagination.HasPrev}}
+          <a href="#"
+             class="relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-600"
+             data-page="{{sub .Pagination.Current 1}}">
+            <span class="sr-only">Precedente</span>
+            &laquo;
+          </a>
+        {{else}}
+          <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium bg-white cursor-not-allowed dark:bg-neutral-800 dark:text-neutral-600 dark:border-neutral-600">
+            &laquo;
+          </span>
+        {{end}}
+
+        {{range .Pagination.PageList}}
+          {{if eq . $.Pagination.Current}}
+            <span class="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-blue-500 text-white dark:bg-blue-600">
+              {{add . 1}}
+            </span>
+          {{else}}
+            <a href="#"
+               class="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-600"
+               data-page="{{.}}">
+              {{add . 1}}
+            </a>
+          {{end}}
+        {{end}}
+
+        {{if .Pagination.HasNext}}
+          <a href="#"
+             class="relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-600"
+             data-page="{{add .Pagination.Current 1}}">
+            <span class="sr-only">Successiva</span>
+            &raquo;
+          </a>
+        {{else}}
+          <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium bg-white cursor-not-allowed dark:bg-neutral-800 dark:text-neutral-600 dark:border-neutral-600">
+            &raquo;
+          </span>
+        {{end}}
+      </nav>
+    </div>
+  </div>
+</div>

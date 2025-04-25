@@ -33,7 +33,7 @@ type Service interface {
 	GetFirstNFlagCodeList(limit int) ([]string, error)
 	UpdateFlagStatus(flag_code string, status string) error
 	UpdateFlagsStatus(flags []string, status string) error
-	FlagsNumber(ctx context.Context) int
+	FlagsNumber(ctx context.Context) (int, error)
 	InitDB() error
 	Close() error
 }
@@ -132,18 +132,18 @@ func (s *service) Close() error {
 	return s.db.Close()
 }
 
-func (s *service) FlagsNumber(ctx context.Context) int {
+func (s *service) FlagsNumber(ctx context.Context) (int, error) {
 
 	stmt, err := s.db.PrepareContext(ctx, "SELECT COUNT(*) FROM flags")
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to prepare statement")
-		return 0
+		return 0, err
 	}
 
 	rows, err := stmt.QueryContext(ctx)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to execute query")
-		return 0
+		return 0, err
 	}
 	defer rows.Close()
 
@@ -152,11 +152,11 @@ func (s *service) FlagsNumber(ctx context.Context) int {
 		err = rows.Scan(&count)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to scan result")
-			return 0
+			return 0, err
 		}
 	}
 
 	logger.Log.Debug().Int("count", count).Msg("Flags number")
 
-	return count
+	return count, nil
 }

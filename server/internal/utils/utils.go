@@ -42,3 +42,16 @@ func GetExecutableDir() string {
 	}
 	return filepath.Dir(exePath)
 }
+
+func MakePagination(current, total int) []int {
+	var pages []int
+
+	for i := 0; i < total; i++ {
+		if i <= 1 || i >= total-2 || (i >= current-1 && i <= current+1) {
+			pages = append(pages, i)
+		} else if len(pages) == 0 || pages[len(pages)-1] != -1 {
+			pages = append(pages, -1) // -1 rappresenta "..."
+		}
+	}
+	return pages
+}

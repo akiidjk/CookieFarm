@@ -17,7 +17,7 @@ headers = {
     'Cookie': f"token={s.cookies['token']}"
 }
 
-batch_size = 300
+batch_size = 4_000
 total_flags = 100_000
 
 for i in range(total_flags // batch_size):

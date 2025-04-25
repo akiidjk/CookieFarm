@@ -1,109 +1,94 @@
 {{template "partials/header" .}}
 {{template "partials/modal" .}}
-
 <div class="flex flex-col">
-  <div class="-m-1.5 overflow-x-auto">
-    <div class="p-1.5 min-w-full inline-block align-middle">
-      <div class="border border-gray-200 rounded-lg divide-y divide-gray-200 dark:border-neutral-700 dark:divide-neutral-700">
-        <div class="overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
-            <thead class="bg-gray-50 dark:bg-neutral-700">
-              <tr>
-                <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">ID</th>
-                <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Flag</th>
-                <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Service</th>
-                <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Status</th>
-                <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">SubmitTime</th>
-                <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">ResponseTime</th>
-              </tr>
-            </thead>
-            <tbody
-              class="divide-y divide-gray-200 dark:divide-neutral-700"
-              id="flag-table-body"
-              hx-get="/flags/{{$.Pagination.Limit}}?offset=0"
-              hx-trigger="load"
-              hx-target="this"
-              hx-swap="innerHTML"
-              hx-indicator="#spinner"
-            >
-              <!-- HTMX will load rows here -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Spinner -->
-        <div id="spinner" class="text-center mt-2 text-gray-500 hidden">
-          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Loading...
-        </div>
-
-        <!-- Pagination -->
-        <div id="pagination"
-             hx-get="/pagination/{{$.Pagination.Limit}}?offset=0"
-             hx-trigger="load, flagsUpdated from:body"
-             hx-target="this"
-             hx-swap="innerHTML">
-        </div>
+   <div class="-m-1.5 overflow-x-auto">
+      <div class="p-1.5 min-w-full inline-block align-middle">
+         <div class="flex flex-col max-h-[80vh] border border-gray-200 dark:border-neutral-700 rounded-lg">
+            <div class="overflow-y-auto flex-1">
+               <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 relative">
+                  <thead class="bg-gray-50 dark:bg-neutral-700 sticky top-0 ">
+                     <tr>
+                        <th class="th">ID</th>
+                        <th class="th">Flag</th>
+                        <th class="th">Service</th>
+                        <th class="th">Status</th>
+                        <th class="th">Submit Time</th>
+                        <th class="th">Response Time</th>
+                     </tr>
+                  </thead>
+                  <tbody
+                     class="divide-y divide-gray-200 dark:divide-neutral-700"
+                     id="flag-table-body"
+                     hx-get="/flags/{{$.Pagination.Limit}}?offset=0"
+                     hx-trigger="load"
+                     hx-target="this"
+                     hx-swap="innerHTML"
+                     hx-indicator="#spinner"
+                     >
+                     <!-- HTMX will load rows here -->
+                  </tbody>
+               </table>
+            </div>
+            <!-- Spinner -->
+            <div id="spinner" class="text-center mt-2 text-gray-500 hidden">
+               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-primary inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+               </svg>
+               Loading...
+            </div>
+            <!-- Pagination -->
+            <div id="pagination" class="px-4 py-2 bg-white dark:bg-accent border-t border-gray-200 dark:border-neutral-700"
+               hx-get="/pagination/{{$.Pagination.Limit}}?offset=0"
+               hx-trigger="load, flagsUpdated from:body"
+               hx-target="this"
+               hx-swap="innerHTML">
+            </div>
+         </div>
       </div>
-    </div>
-  </div>
+   </div>
 </div>
-
 {{template "partials/footer" .}}
-
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const limit = {{.Pagination.Limit}};
-    let currentPage = 0;
+   document.addEventListener("DOMContentLoaded", () => {
+     const limit = {{.Pagination.Limit}};
+     const storageKey = "flags-offset";
+     let currentPage = 0;
 
-    // Funzione per sincronizzare lo stato iniziale dall'URL
-    function syncStateFromURL() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const offset = parseInt(urlParams.get('offset')) || 0;
-      currentPage = Math.floor(offset / limit);
-    }
+     const storedOffset = parseInt(localStorage.getItem(storageKey), 10);
+     if (!isNaN(storedOffset) && storedOffset >= 0) {
+       currentPage = Math.floor(storedOffset / limit);
+     }
 
-    // Funzione unificata per gli aggiornamenti
-    function updateComponents(newPage) {
-      currentPage = newPage;
-      const offset = currentPage * limit;
+     function updateComponents(newPage) {
+       currentPage = newPage;
+       const offset = currentPage * limit;
 
-      // Aggiorna l'URL senza ricaricare la pagina
-      history.replaceState(null, null, `?offset=${offset}`);
+       localStorage.setItem(storageKey, offset);
 
-      // Aggiorna la tabella
-      htmx.ajax('GET', `/flags/${limit}?offset=${offset}`, {
-        target: '#flag-table-body',
-        swap: 'innerHTML',
-        indicator: '#spinner'
-      });
+       htmx.ajax('GET', `/flags/${limit}?offset=${offset}`, {
+         target: '#flag-table-body',
+         swap: 'innerHTML',
+         indicator: '#spinner'
+       });
 
-      // Aggiorna la paginazione
-      htmx.ajax('GET', `/pagination/${limit}?offset=${offset}`, {
-        target: '#pagination',
-        swap: 'innerHTML'
-      });
-    }
+       htmx.ajax('GET', `/pagination/${limit}?offset=${offset}`, {
+         target: '#pagination',
+         swap: 'innerHTML'
+       });
+     }
 
-    // Sincronizza lo stato iniziale
-    syncStateFromURL();
 
-    // Caricamento iniziale
-    updateComponents(currentPage);
+     updateComponents(currentPage);
 
-    // Delegazione eventi migliorata
-    document.body.addEventListener('click', function(e) {
-      const target = e.target.closest('[data-page]');
-      if (target) {
-        e.preventDefault();
-        const targetPage = parseInt(target.dataset.page);
-        if (!isNaN(targetPage)) {
-          updateComponents(targetPage);
-        }
-      }
-    });
-  });
+
+     document.body.addEventListener('click', function(e) {
+       const tgt = e.target.closest('[data-page]');
+       if (tgt) {
+         e.preventDefault();
+         const pg = parseInt(tgt.dataset.page, 10);
+         if (!isNaN(pg)) updateComponents(pg);
+       }
+     });
+   });
 </script>

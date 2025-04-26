@@ -196,3 +196,20 @@
 .th {
     @apply px-6 py-3 text-start text-sm text-white uppercase dark:text-white sticky top-0 font-bold
 }
+
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: #888;
+    border-radius: 5px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 5px;
+}

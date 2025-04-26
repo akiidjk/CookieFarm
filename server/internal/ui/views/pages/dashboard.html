@@ -1,9 +1,24 @@
 {{template "partials/header" .}}
 {{template "partials/modal" .}}
-<div class="max-w-md space-y-3">
-  <textarea class="py-2 px-3 sm:py-3 sm:px-4 rounded-lg border-primary border-2 border-solid max-h-24 w-56" rows="3" placeholder="Enter the flag" maxlength="100"></textarea>
-  <button class="button h-8" onclick="SubmitFlag()">Submit</button>
-  <p id="flag-submission-status"></p>
+<div class="items-start md:items-center p-4">
+   <div class="flex *:lex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+      <input
+         id="flag-input"
+         class="input max-w-60"
+         rows="3"
+         placeholder="Enter the flag"
+         ></input>
+      <button
+         id="submit-flag-btn"
+         class="h-10 px-5 bg-primary text-white font-medium rounded-lg shadow hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary transition"
+         onclick="SubmitFlag()"
+         >
+      Submit
+      </button>
+      <p id="flag-submission-status" class="text-sm mt-2 ml-2 text-gray-600 dark:text-neutral-400 self-center">
+         <!-- Status -->
+      </p>
+   </div>
 </div>
 <div class="flex flex-col">
    <div class="-m-1.5 overflow-x-auto">
@@ -43,7 +58,7 @@
                Loading...
             </div>
             <!-- Pagination -->
-            <div id="pagination" class="px-4 py-2 bg-white dark:bg-accent border-t border-gray-200 dark:border-neutral-700"
+            <div id="pagination" class="px-4 py-2 bg-white dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-700"
                hx-get="/pagination/{{$.Pagination.Limit}}?offset=0"
                hx-trigger="load, flagsUpdated from:body"
                hx-target="this"
@@ -53,105 +68,91 @@
       </div>
    </div>
 </div>
-{{template "partials/footer" .}}
-<script>
 
-  function uuidv4() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-      .replace(/[xy]/g, function (c) {
-          const r = Math.random() * 16 | 0,
-              v = c == 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
-      });
-  }
+<script type="module" defer>
+   import { uuidv4, sendFlag} from '/js/output.min.js';
 
-  function submitFlag() {
-    const flagInput = document.querySelector('textarea');
-    const flag_code = flagInput.value.trim();
+   function submitFlag() {
+       const flagInput = document.getElementById('flag-input');
+       const statusEl = document.getElementById('flag-submission-status');
+       const code = flagInput.value.trim();
 
-    if (flag_code.length > 0) {
-      const flag = {
-        submit_time: Date.now(),
-        flag_code: flag_code,
-        service_port: 0,
-        service_name: "unknown",
-        team_id: 0,
-        status: "UNSUBMITTED",
-        response_time: 0,
-        id: uuidv4()
-      };
-
-      console.log("Invio il flag:", flag);
-
-      fetch('/api/v1/submit-flag', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ flag })
-      })
-      .then(response => {
-        if (!response.ok) {
-          flag_submission_status = document.getElementById('flag-submission-status');
-          flag_submission_status.textContent = 'Error during flag submission';
-          throw new Error('Error during flag submission');
-        }
-        flag_submission_status = document.getElementById('flag-submission-status');
-        flag_submission_status.textContent = 'Flag submitted successfully!';
-        return response.json();
-      })
-      .then(data => {
-        flagInput.value = '';
-        htmx.trigger(document.body, 'flagsUpdated');
-
-      })
-      .catch(error => {
-        console.error('Errore:', error);
-      });
-    }
-  }
-
-    window.SubmitFlag = submitFlag;
-
-   document.addEventListener("DOMContentLoaded", () => {
-     const limit = {{.Pagination.Limit}};
-     const storageKey = "flags-offset";
-     let currentPage = 0;
-
-     const storedOffset = parseInt(localStorage.getItem(storageKey), 10);
-     if (!isNaN(storedOffset) && storedOffset >= 0) {
-       currentPage = Math.floor(storedOffset / limit);
-     }
-
-     function updateComponents(newPage) {
-       currentPage = newPage;
-       const offset = currentPage * limit;
-
-       localStorage.setItem(storageKey, offset);
-
-       htmx.ajax('GET', `/flags/${limit}?offset=${offset}`, {
-         target: '#flag-table-body',
-         swap: 'innerHTML',
-         indicator: '#spinner'
-       });
-
-       htmx.ajax('GET', `/pagination/${limit}?offset=${offset}`, {
-         target: '#pagination',
-         swap: 'innerHTML'
-       });
-     }
-
-
-     updateComponents(currentPage);
-
-
-     document.body.addEventListener('click', function(e) {
-       const tgt = e.target.closest('[data-page]');
-       if (tgt) {
-         e.preventDefault();
-         const pg = parseInt(tgt.dataset.page, 10);
-         if (!isNaN(pg)) updateComponents(pg);
+       if (!code) {
+         statusEl.textContent = 'Please enter a flag';
+         return;
        }
-     });
-   });
+
+       const flag = {
+         id: uuidv4(),
+         flag_code: code,
+         service_name: 'unknown',
+         service_port: 0,
+         team_id: 0,
+         status: 'UNSUBMITTED',
+         submit_time: Date.now(),
+         response_time: 0,
+       };
+
+       statusEl.textContent = 'Submitting…';
+       sendFlag(flag)
+         .then(res => {
+           if (!res.ok) throw new Error('Submission failed');
+           return res.json();
+         })
+         .then(() => {
+           flagInput.value = '';
+           statusEl.textContent = 'Flag submitted successfully!';
+           htmx.trigger(document.body, 'flagsUpdated');
+         })
+         .catch(err => {
+           console.error(err);
+           statusEl.textContent = 'Error during submission';
+           statusEl.classList.add('text-red-500');
+         });
+     }
+
+
+       window.SubmitFlag = submitFlag;
+
+       document.addEventListener("DOMContentLoaded", () => {
+         const limit = {{.Pagination.Limit}};
+         const storageKey = "flags-offset";
+         let currentPage = 0;
+
+         const storedOffset = parseInt(localStorage.getItem(storageKey), 10);
+         if (!isNaN(storedOffset) && storedOffset >= 0) {
+           currentPage = Math.floor(storedOffset / limit);
+         }
+
+         function updateComponents(newPage) {
+           currentPage = newPage;
+           const offset = currentPage * limit;
+
+           localStorage.setItem(storageKey, offset);
+
+           htmx.ajax('GET', `/flags/${limit}?offset=${offset}`, {
+             target: '#flag-table-body',
+             swap: 'innerHTML',
+             indicator: '#spinner'
+           });
+
+           htmx.ajax('GET', `/pagination/${limit}?offset=${offset}`, {
+             target: '#pagination',
+             swap: 'innerHTML'
+           });
+         }
+
+
+         updateComponents(currentPage);
+
+
+         document.body.addEventListener('click', function(e) {
+           const tgt = e.target.closest('[data-page]');
+           if (tgt) {
+             e.preventDefault();
+             const pg = parseInt(tgt.dataset.page, 10);
+             if (!isNaN(pg)) updateComponents(pg);
+           }
+         });
+       });
 </script>

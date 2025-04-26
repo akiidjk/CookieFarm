@@ -1,55 +1,18 @@
 <div class="py-1 px-4 flex items-center justify-between border-t border-gray-200 dark:border-neutral-700 ">
-   <div class="flex-1 flex justify-between sm:hidden">
-      <!-- First page -->
-      <a href="#"
-         class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
-         data-page="0">
-      First
-      </a>
-      {{if .Pagination.HasPrev}}
-      <a href="#"
-         class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
-         data-page="{{ sub .Pagination.Current 1 }}">
-      Previous
-      </a>
-      {{else}}
-      <span class="relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white cursor-not-allowed dark:bg-background dark:text-neutral-600 dark:border-neutral-600">
-      Previous
-      </span>
-      {{end}}
-      {{if .Pagination.HasNext}}
-      <a href="#"
-         class="ml-3 relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
-         data-page="{{ add .Pagination.Current 1 }}">
-      Next
-      </a>
-      {{else}}
-      <span class="ml-3 relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white cursor-not-allowed dark:bg-background dark:text-neutral-600 dark:border-neutral-600">
-      Next
-      </span>
-      {{end}}
-      <!-- Last page -->
-      <a href="#"
-         class="ml-3 relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
-         data-page="{{ sub .Pagination.Pages 1 }}">
-      Last
-      </a>
-   </div>
    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-      <div>
+      <div class="flex items-between">
          <p class="text-sm text-gray-700 dark:text-neutral-300">
             Pagina <span class="font-medium">{{ add .Pagination.Current 1 }}</span> di <span class="font-medium">{{ .Pagination.Pages }}</span>
          </p>
       </div>
 
       <div>
-        <label for="hs-hidden-select" class="sr-only">Page size</label>
         <select
           id="hs-hidden-select"
           onchange="window.location.href = `?limit=${this.value}`"
-          class="py-3 px-4 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-accent dark:border-neutral-700 dark:text-white dark:placeholder-white-500 dark:focus:ring-neutral-600"
+          class="shadow-sm ml-36 border-2 border-solid border-primary py-3 px-4 pe-9 block w-full rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-700 dark:border-neutral-700 dark:text-white dark:placeholder-white-500 dark:focus:ring-neutral-600"
         >
-          <option disabled selected>Select the page size</option>
+          <option disabled selected>{{.Pagination.Limit}}</option>
           <option value="20">20</option>
           <option value="40">40</option>
           <option value="80">80</option>
@@ -62,7 +25,7 @@
          <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
             <!-- First page -->
             <a href="#"
-               class="relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
+               class="relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
                data-page="0">
                <span class="sr-only">Prima</span>
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(180)">
@@ -71,7 +34,7 @@
             </a>
             {{if .Pagination.HasPrev}}
             <a href="#"
-               class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
+               class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
                data-page="{{ sub .Pagination.Current 1 }}">
                <span class="sr-only">Precedente</span>
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(-90)">
@@ -79,7 +42,7 @@
                </svg>
             </a>
             {{else}}
-            <span class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white cursor-not-allowed dark:bg-background dark:text-neutral-600 dark:border-neutral-600">
+            <span class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white cursor-not-allowed dark:bg-neutral-700 dark:text-neutral-600 dark:border-neutral-600">
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(-90)">
                   <path fill="currentColor" d="m12 10.8l-4.6 4.6L6 14l6-6l6 6l-1.4 1.4z"/>
                </svg>
@@ -92,7 +55,7 @@
             </span>
             {{else}}
             <a href="#"
-               class="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
+               class="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
                data-page="{{ . }}">
             {{ add . 1 }}
             </a>
@@ -100,7 +63,7 @@
             {{end}}
             {{if .Pagination.HasNext}}
             <a href="#"
-               class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
+               class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
                data-page="{{ add .Pagination.Current 1 }}">
                <span class="sr-only">Successiva</span>
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(90)">
@@ -108,7 +71,7 @@
                </svg>
             </a>
             {{else}}
-            <span class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white cursor-not-allowed dark:bg-background dark:text-neutral-600 dark:border-neutral-600">
+            <span class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white cursor-not-allowed dark:bg-neutral-700 dark:text-neutral-600 dark:border-neutral-600">
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(90)">
                   <path fill="currentColor" d="m12 10.8l-4.6 4.6L6 14l6-6l6 6l-1.4 1.4z"/>
                </svg>
@@ -116,7 +79,7 @@
             {{end}}
             <!-- Last page -->
             <a href="#"
-               class="relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-background dark:text-neutral-200 dark:border-neutral-600"
+               class="relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
                data-page="{{ sub .Pagination.Pages 1 }}">
                <span class="sr-only">Ultima</span>
                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">

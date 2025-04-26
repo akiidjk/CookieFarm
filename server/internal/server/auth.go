@@ -96,3 +96,11 @@ func (s *FiberServer) HandleLogin(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
 }
+
+func CookieAuthMiddleware(c *fiber.Ctx) error {
+	token := c.Cookies("token")
+	if token == "" || VerifyToken(token) != nil {
+		return c.Redirect("/login")
+	}
+	return nil
+}

@@ -14,14 +14,6 @@ import (
 	jwtware "github.com/gofiber/jwt/v3"
 )
 
-func cookieAuthMiddleware(c *fiber.Ctx) error {
-	token := c.Cookies("token")
-	if token == "" || VerifyToken(token) != nil {
-		return c.Redirect("/login")
-	}
-	return nil
-}
-
 func (s *FiberServer) RegisterFiberRoutes() {
 	s.App.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:8080",
@@ -31,12 +23,16 @@ func (s *FiberServer) RegisterFiberRoutes() {
 		MaxAge:           300,
 	}))
 
-	publicView := s.App.Group("/")
-	publicView.Get("/", s.HandleIndexPage)
-	publicView.Get("/dashboard", s.HandleIndexPage)
-	publicView.Get("/login", s.HandleLoginPage)
-	publicView.Get("/flags/:limit", s.HandlePaginatedFlags)
-	publicView.Get("/pagination/:limit", s.HandlePagination)
+	// ---------- VIEW ----------
+
+	View := s.App.Group("/")
+	View.Get("/", s.HandleIndexPage)
+	View.Get("/dashboard", s.HandleIndexPage)
+	View.Get("/login", s.HandleLoginPage)
+	View.Get("/flags/:limit", s.HandlePaginatedFlags)
+	View.Get("/pagination/:limit", s.HandlePagination)
+
+	// ---------- API ----------
 
 	publicApi := s.App.Group("/api/v1")
 	publicApi.Get("/", s.GetStatus)
@@ -59,8 +55,7 @@ func (s *FiberServer) RegisterFiberRoutes() {
 }
 
 func (s *FiberServer) HandleIndexPage(c *fiber.Ctx) error {
-
-	if err := cookieAuthMiddleware(c); err != nil {
+	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
 
@@ -68,25 +63,20 @@ func (s *FiberServer) HandleIndexPage(c *fiber.Ctx) error {
 	if limit <= 0 {
 		limit = 100
 	}
-	totalFlags, err := s.db.FlagsNumber(context.Background())
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Errore nel recupero dei dati")
-	}
+
 	logger.Log.Info().Int("Limit", limit).Msg("Index page request")
 	return c.Render("pages/dashboard", fiber.Map{
 		"title": "Dashboard",
 		"Pagination": struct {
 			Limit int
-			Pages int
 		}{
 			Limit: limit,
-			Pages: totalFlags / limit,
 		},
 	}, "layouts/main")
 }
 
 func (s *FiberServer) HandlePagination(c *fiber.Ctx) error {
-	if err := cookieAuthMiddleware(c); err != nil {
+	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
 	limitStr := c.Params("limit")
@@ -121,7 +111,7 @@ func (s *FiberServer) HandlePagination(c *fiber.Ctx) error {
 }
 
 func (s *FiberServer) HandlePaginatedFlags(c *fiber.Ctx) error {
-	if err := cookieAuthMiddleware(c); err != nil {
+	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
 	limitStr := c.Params("limit")
@@ -207,6 +197,14 @@ func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
 	}
 
 	flags := []string{body["flag"].FlagCode}
+
+	if config.Current.ConfigServer.HostFlagchecker == "" {
+		logger.Log.Warn().Msg("Flagchecker host not configured")
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Flagchecker host not configured",
+		})
+	}
+
 	response, err := config.Submit(config.Current.ConfigServer.HostFlagchecker, config.Current.ConfigServer.TeamToken, flags)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to submit flag to external checker")

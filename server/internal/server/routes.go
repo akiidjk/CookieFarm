@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"math"
 	"strconv"
 
 	"github.com/ByteTheCookies/backend/internal/config"
 	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/backend/internal/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	jwtware "github.com/gofiber/jwt/v3"
@@ -21,9 +23,16 @@ func (s *FiberServer) RegisterFiberRoutes() {
 		MaxAge:           300,
 	}))
 
-	publicView := s.App.Group("/")
-	publicView.Get("/dashboard", s.HandleIndexPage)
-	publicView.Get("/login", s.HandleLoginPage)
+	// ---------- VIEW ----------
+
+	View := s.App.Group("/")
+	View.Get("/", s.HandleIndexPage)
+	View.Get("/dashboard", s.HandleIndexPage)
+	View.Get("/login", s.HandleLoginPage)
+	View.Get("/flags/:limit", s.HandlePaginatedFlags)
+	View.Get("/pagination/:limit", s.HandlePagination)
+
+	// ---------- API ----------
 
 	publicApi := s.App.Group("/api/v1")
 	publicApi.Get("/", s.GetStatus)
@@ -46,15 +55,91 @@ func (s *FiberServer) RegisterFiberRoutes() {
 }
 
 func (s *FiberServer) HandleIndexPage(c *fiber.Ctx) error {
-	token := c.Cookies("token")
-
-	if err := VerifyToken(token); err != nil || token == "" {
-		return c.Redirect("/login")
+	if err := CookieAuthMiddleware(c); err != nil {
+		return err
 	}
 
+	limit := c.QueryInt("limit", 100)
+	if limit <= 0 {
+		limit = 100
+	}
+
+	logger.Log.Info().Int("Limit", limit).Msg("Index page request")
 	return c.Render("pages/dashboard", fiber.Map{
 		"title": "Dashboard",
+		"Pagination": struct {
+			Limit int
+		}{
+			Limit: limit,
+		},
 	}, "layouts/main")
+}
+
+func (s *FiberServer) HandlePagination(c *fiber.Ctx) error {
+	if err := CookieAuthMiddleware(c); err != nil {
+		return err
+	}
+	limitStr := c.Params("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Parametro limit non valido")
+	}
+
+	logger.Log.Debug().Int("limit", limit).Msg("Paginated flags request")
+
+	totalFlags, err := s.db.FlagsNumber(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Errore nel recupero dei dati")
+	}
+
+	offset := c.QueryInt("offset", 0)
+
+	totalPages := int(math.Ceil(float64(totalFlags) / float64(limit)))
+	current := offset / limit
+	pageList := utils.MakePagination(current, totalPages)
+
+	return c.Render("partials/pagination", fiber.Map{
+		"Pagination": models.Pagination{
+			Limit:    limit,
+			Pages:    totalPages,
+			Current:  current,
+			HasPrev:  current > 0,
+			HasNext:  current < totalPages-1,
+			PageList: pageList,
+		},
+	})
+}
+
+func (s *FiberServer) HandlePaginatedFlags(c *fiber.Ctx) error {
+	if err := CookieAuthMiddleware(c); err != nil {
+		return err
+	}
+	limitStr := c.Params("limit")
+	limit, err := strconv.Atoi(limitStr)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Parametro limit non valido")
+	}
+
+	offsetStr := c.Query("offset", "0")
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Parametro offset non valido")
+	}
+
+	logger.Log.Debug().Int("offset", offset).Int("limit", limit).Msg("Paginated flags request")
+
+	flags, err := s.db.GetPagedFlags(limit, offset)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Errore nel recupero dei dati")
+	}
+
+	logger.Log.Debug().Int("n_flags", len(flags)).Msg("Paginated flags response")
+
+	return c.Render("partials/flags_rows", fiber.Map{
+		"Flags": flags,
+	})
+
 }
 
 func (s *FiberServer) HandleLoginPage(c *fiber.Ctx) error {
@@ -112,6 +197,14 @@ func (s *FiberServer) SubmitFlag(c *fiber.Ctx) error {
 	}
 
 	flags := []string{body["flag"].FlagCode}
+
+	if config.Current.ConfigServer.HostFlagchecker == "" {
+		logger.Log.Warn().Msg("Flagchecker host not configured")
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Flagchecker host not configured",
+		})
+	}
+
 	response, err := config.Submit(config.Current.ConfigServer.HostFlagchecker, config.Current.ConfigServer.TeamToken, flags)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to submit flag to external checker")

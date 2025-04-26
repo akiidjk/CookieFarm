@@ -9,7 +9,6 @@ import (
 	"github.com/ByteTheCookies/backend/internal/logger"
 	"github.com/ByteTheCookies/backend/internal/ui"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/template/html/v2"
 )
 
 type FiberServer struct {
@@ -27,7 +26,7 @@ func DevConfig() fiber.Config {
 		StrictRouting:         false,
 		ServerHeader:          "Fiber",
 		EnablePrintRoutes:     true,
-		Views:                 html.New(ui.GetPathView(), ".html"),
+		Views:                 ui.InitTemplateEngine(true),
 	}
 }
 
@@ -40,7 +39,7 @@ func ProdConfig() fiber.Config {
 		StrictRouting:         true,
 		ServerHeader:          "",
 		EnablePrintRoutes:     false,
-		Views:                 html.NewFileSystem(ui.ViewsFS(), ".html"),
+		Views:                 ui.InitTemplateEngine(false),
 	}
 }
 

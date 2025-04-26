@@ -32,6 +32,7 @@ def login(password):
     if response:
         if response.status_code == 200:
             logging.info("Login successful, token received.")
+            return response
         else:
             logging.warning("Token not found in the response.")
             return None

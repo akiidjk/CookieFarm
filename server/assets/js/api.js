@@ -1,5 +1,3 @@
-const HOST = 'http://localhost:8080'
-
 export async function checkConfig() {
   try {
     const data = await getConfig();
@@ -17,7 +15,7 @@ export async function checkConfig() {
 }
 
 export async function sendConfig(config) {
-  const res = await fetch(HOST + "/api/v1/config", {
+  const res = await fetch("/api/v1/config", {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -35,7 +33,7 @@ export async function sendConfig(config) {
 
 export async function getConfig() {
   try {
-    const res = await fetch(HOST + "/api/v1/config", {
+    const res = await fetch("/api/v1/config", {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -48,4 +46,19 @@ export async function getConfig() {
     console.error(error);
     return { "error": error.message };
   }
+}
+
+
+export async function sendFlag(flag) {
+  const res = await fetch("/api/v1/submit-flag", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      flag: flag,
+    }),
+  });
+  return res
 }

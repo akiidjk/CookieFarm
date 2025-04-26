@@ -1,0 +1,92 @@
+<div class="py-1 px-4 flex items-center justify-between border-t border-gray-200 dark:border-neutral-700 ">
+   <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+      <div class="flex items-between">
+         <p class="text-sm text-gray-700 dark:text-neutral-300">
+            Pagina <span class="font-medium">{{ add .Pagination.Current 1 }}</span> di <span class="font-medium">{{ .Pagination.Pages }}</span>
+         </p>
+      </div>
+
+      <div>
+        <select
+          id="hs-hidden-select"
+          onchange="window.location.href = `?limit=${this.value}`"
+          class="shadow-sm ml-36 border-2 border-solid border-primary py-3 px-4 pe-9 block w-full rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-700 dark:border-neutral-700 dark:text-white dark:placeholder-white-500 dark:focus:ring-neutral-600"
+        >
+          <option disabled selected>{{.Pagination.Limit}}</option>
+          <option value="20">20</option>
+          <option value="40">40</option>
+          <option value="80">80</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+
+
+      <div>
+         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+            <!-- First page -->
+            <a href="#"
+               class="relative inline-flex items-center px-2 py-2 rounded-l-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
+               data-page="0">
+               <span class="sr-only">Prima</span>
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(180)">
+                  <path fill="currentColor" d="m6.05 19l5-7l-5-7H8.5l5 7l-5 7zM12 19l5-7l-5-7h2.45l5 7l-5 7z"/>
+               </svg>
+            </a>
+            {{if .Pagination.HasPrev}}
+            <a href="#"
+               class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
+               data-page="{{ sub .Pagination.Current 1 }}">
+               <span class="sr-only">Precedente</span>
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(-90)">
+                  <path fill="currentColor" d="m12 10.8l-4.6 4.6L6 14l6-6l6 6l-1.4 1.4z"/>
+               </svg>
+            </a>
+            {{else}}
+            <span class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white cursor-not-allowed dark:bg-neutral-700 dark:text-neutral-600 dark:border-neutral-600">
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(-90)">
+                  <path fill="currentColor" d="m12 10.8l-4.6 4.6L6 14l6-6l6 6l-1.4 1.4z"/>
+               </svg>
+            </span>
+            {{end}}
+            {{range .Pagination.PageList}}
+            {{if eq . $.Pagination.Current}}
+            <span class="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-primary text-background dark:bg-primary">
+            {{ add . 1 }}
+            </span>
+            {{else}}
+            <a href="#"
+               class="relative inline-flex items-center px-4 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
+               data-page="{{ . }}">
+            {{ add . 1 }}
+            </a>
+            {{end}}
+            {{end}}
+            {{if .Pagination.HasNext}}
+            <a href="#"
+               class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
+               data-page="{{ add .Pagination.Current 1 }}">
+               <span class="sr-only">Successiva</span>
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(90)">
+                  <path fill="currentColor" d="m12 10.8l-4.6 4.6L6 14l6-6l6 6l-1.4 1.4z"/>
+               </svg>
+            </a>
+            {{else}}
+            <span class="relative inline-flex items-center px-2 py-2 border text-sm font-medium bg-white cursor-not-allowed dark:bg-neutral-700 dark:text-neutral-600 dark:border-neutral-600">
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" transform="rotate(90)">
+                  <path fill="currentColor" d="m12 10.8l-4.6 4.6L6 14l6-6l6 6l-1.4 1.4z"/>
+               </svg>
+            </span>
+            {{end}}
+            <!-- Last page -->
+            <a href="#"
+               class="relative inline-flex items-center px-2 py-2 rounded-r-md border text-sm font-medium bg-white hover:bg-gray-50 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600"
+               data-page="{{ sub .Pagination.Pages 1 }}">
+               <span class="sr-only">Ultima</span>
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="m6.05 19l5-7l-5-7H8.5l5 7l-5 7zM12 19l5-7l-5-7h2.45l5 7l-5 7z"/>
+               </svg>
+            </a>
+         </nav>
+      </div>
+   </div>
+</div>

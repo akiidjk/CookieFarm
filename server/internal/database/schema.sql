@@ -8,3 +8,6 @@ CREATE TABLE IF NOT EXISTS flags (
     status VARCHAR(255) NOT NULL,
     team_id INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_flags_submit_time
+  ON flags(submit_time);

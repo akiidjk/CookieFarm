@@ -9,14 +9,17 @@ import (
 )
 
 const (
-	queryAllFlags             = `SELECT id, flag_code, service_name, submit_time, response_time, status, team_id FROM flags`
-	queryAllFlagCodes         = `SELECT flag_code FROM flags`
-	queryFirstNFlags          = queryAllFlags + ` LIMIT ?`
-	queryFirstNFlagCodes      = queryAllFlagCodes + ` LIMIT ?`
-	queryUnsubmittedFlags     = queryAllFlags + ` WHERE status = 'UNSUBMITTED' LIMIT ?`
-	queryUnsubmittedFlagCodes = queryAllFlagCodes + ` WHERE status = 'UNSUBMITTED' LIMIT ?`
-	queryPagedFlags           = queryAllFlags + ` LIMIT ? OFFSET ?`
-	queryPagedFlagCodes       = queryAllFlagCodes + ` LIMIT ? OFFSET ?`
+	baseFlagQuery         = `SELECT id, flag_code, service_name, submit_time, response_time, status, team_id FROM flags`
+	queryAllFlags         = baseFlagQuery + " ORDER BY submit_time DESC"
+	queryFirstNFlags      = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ?"
+	queryUnsubmittedFlags = baseFlagQuery + " WHERE status = 'UNSUBMITTED' ORDER BY submit_time ASC LIMIT ?"
+	queryPagedFlags       = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ? OFFSET ?"
+
+	baseFlagCodeQuery         = `SELECT flag_code FROM flags`
+	queryAllFlagCodes         = baseFlagCodeQuery
+	queryFirstNFlagCodes      = baseFlagCodeQuery + " LIMIT ?"
+	queryUnsubmittedFlagCodes = baseFlagCodeQuery + " WHERE status = 'UNSUBMITTED' LIMIT ?"
+	queryPagedFlagCodes       = baseFlagCodeQuery + " LIMIT ? OFFSET ?"
 )
 
 // --------- Flag Structs ---------

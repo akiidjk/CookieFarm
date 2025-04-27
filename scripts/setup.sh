@@ -14,8 +14,10 @@ TAILWIND_URL="https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1
 MINIFY_URL="https://github.com/tdewolff/minify/releases/download/v2.23.1/minify_linux_amd64.tar.gz"
 
 # === USAGE CHECK ===
-if [[ $# -ne 1 ]]; then
-    echo -e "Usage:\n  ./setup.sh <num_containers>"
+if [[ $# -ne 2 ]]; then
+    echo -e "Usage:\n  ./setup.sh <num_containers> <production_mode>\n"
+    echo "  num_containers: Number of containers to start (1-10)"
+    echo "  production_mode: 0 for development, 1 for production"
     exit 1
 fi
 
@@ -58,7 +60,14 @@ echo "✅ Flagchecker lanciato in un terminale separato! 🎉"
 # === SERVER ===
 echo "🍪 Avvio CookieFarm Server..."
 cd "$SERVER_DIR"
-kitty --title "cookieserver" bash -c "make run ARGS='--debug'; exec bash" &
+
+if [[ $2 -eq 1 ]]; then
+    echo "🔒 Modalità produzione attivata!"
+    kitty --title "cookieserver" bash -c "make run-prod; chmod +x ./cookieserver; ./cookieserver; exec bash" &
+else
+    echo "🔓 Modalità sviluppo attivata!"
+    kitty --title "cookieserver" bash -c "make run ARGS='--debug'; exec bash" &
+fi
 echo "✅ Server avviato!"
 
 sleep 3

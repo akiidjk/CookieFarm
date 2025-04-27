@@ -1,4 +1,4 @@
-module github.com/ByteTheCookies/cookiefarm-client
+module github.com/ByteTheCookies/cookieclient
 
 go 1.24.2
 

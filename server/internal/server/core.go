@@ -2,16 +2,45 @@ package server
 
 import (
 	"context"
+	"sync"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/config"
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
-	"github.com/ByteTheCookies/backend/protocols"
+	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/protocols"
 )
 
+// ----------- FLAG GROUPS ------------
+
+type FLagGroups struct {
+	accepted []string
+	denied   []string
+	errored  []string
+	// capienza massima prevista
+	cap int
+}
+
+func newFlagGroups(cap int) *FLagGroups {
+	return &FLagGroups{
+		accepted: make([]string, 0, cap),
+		denied:   make([]string, 0, cap),
+		errored:  make([]string, 0, cap),
+		cap:      cap,
+	}
+}
+
+func (g *FLagGroups) reset() {
+	g.accepted = g.accepted[:0]
+	g.denied = g.denied[:0]
+	g.errored = g.errored[:0]
+}
+
+// ----------- END FLAG GROUPS ------------
+
 func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
-	ticker := time.NewTicker(time.Duration(config.Current.ConfigServer.SubmitFlagCheckerTime) * time.Second)
+	interval := time.Duration(config.Current.ConfigServer.SubmitFlagCheckerTime) * time.Second
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	logger.Log.Info().Msg("Starting flag processing loop")
@@ -28,16 +57,14 @@ func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 		case <-ctx.Done():
 			logger.Log.Info().Msg("Flag processing loop terminated")
 			return
-
 		case <-ticker.C:
-			flags, err := s.db.GetUnsubmittedFlagCodeList(int(config.Current.ConfigServer.MaxFlagBatchSize))
+			flags, err := s.db.GetUnsubmittedFlagCodeList(config.Current.ConfigServer.MaxFlagBatchSize)
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to get unsubmitted flags")
 				continue
 			}
-
 			if len(flags) == 0 {
-				logger.Log.Debug().Msg("No flags to submit at this time")
+				logger.Log.Debug().Msg("No flags to submit")
 				continue
 			}
 
@@ -59,46 +86,46 @@ func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 }
 
 func (s *FiberServer) UpdateFlags(flags []models.ResponseProtocol) {
-	var (
-		flagsAccepted []string
-		flagsDenied   []string
-		flagsErrored  []string
-	)
+	maxBatch := int(config.Current.ConfigServer.MaxFlagBatchSize)
+	groups := newFlagGroups(maxBatch)
+	defer groups.reset()
 
 	for _, resp := range flags {
 		switch resp.Status {
-		case "ACCEPTED":
-			flagsAccepted = append(flagsAccepted, resp.Flag)
-			logger.Log.Debug().Str("flag", resp.Flag).Msg("Flag accepted")
-		case "DENIED":
-			flagsDenied = append(flagsDenied, resp.Flag)
-			logger.Log.Debug().Str("flag", resp.Flag).Msg("Flag denied")
+		case models.StatusAccepted:
+			groups.accepted = append(groups.accepted, resp.Flag)
+		case models.StatusDenied:
+			groups.denied = append(groups.denied, resp.Flag)
 		default:
-			flagsErrored = append(flagsErrored, resp.Flag)
-			logger.Log.Debug().Str("flag", resp.Flag).Msg("Flag error")
+			groups.errored = append(groups.errored, resp.Flag)
 		}
 	}
 
-	if len(flagsAccepted) > 0 {
-		if err := s.db.UpdateFlagsStatus(flagsAccepted, "ACCEPTED"); err != nil {
-			logger.Log.Error().Err(err).Int("count", len(flagsAccepted)).Msg("Failed to update accepted flags")
+	var wg sync.WaitGroup
+	update := func(flags []string, status string) {
+		defer wg.Done()
+		if len(flags) == 0 {
+			return
 		}
-	}
-	if len(flagsDenied) > 0 {
-		if err := s.db.UpdateFlagsStatus(flagsDenied, "DENIED"); err != nil {
-			logger.Log.Error().Err(err).Int("count", len(flagsDenied)).Msg("Failed to update denied flags")
-		}
-	}
-	if len(flagsErrored) > 0 {
-		if err := s.db.UpdateFlagsStatus(flagsErrored, "ERROR"); err != nil {
-			logger.Log.Error().Err(err).Int("count", len(flagsErrored)).Msg("Failed to update errored flags")
+		if err := s.db.UpdateFlagsStatus(flags, status); err != nil {
+			logger.Log.Error().
+				Strs("flags", flags).
+				Err(err).
+				Msgf("Failed to update flags with status %s", status)
 		}
 	}
 
+	wg.Add(3)
+	go update(groups.accepted, models.StatusAccepted)
+	go update(groups.denied, models.StatusDenied)
+	go update(groups.errored, models.StatusError)
+	wg.Wait()
+
+	total := len(groups.accepted) + len(groups.denied) + len(groups.errored)
 	logger.Log.Info().
-		Int("accepted", len(flagsAccepted)).
-		Int("denied", len(flagsDenied)).
-		Int("error", len(flagsErrored)).
-		Int("total", len(flagsAccepted)+len(flagsDenied)+len(flagsErrored)).
+		Int("accepted", len(groups.accepted)).
+		Int("denied", len(groups.denied)).
+		Int("errored", len(groups.errored)).
+		Int("total", total).
 		Msg("Flags update summary")
 }

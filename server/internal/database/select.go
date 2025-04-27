@@ -4,19 +4,22 @@ import (
 	"context"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
 const (
-	queryAllFlags             = `SELECT id, flag_code, service_name, submit_time, response_time, status, team_id FROM flags`
-	queryAllFlagCodes         = `SELECT flag_code FROM flags`
-	queryFirstNFlags          = queryAllFlags + ` LIMIT ?`
-	queryFirstNFlagCodes      = queryAllFlagCodes + ` LIMIT ?`
-	queryUnsubmittedFlags     = queryAllFlags + ` WHERE status = 'UNSUBMITTED' LIMIT ?`
-	queryUnsubmittedFlagCodes = queryAllFlagCodes + ` WHERE status = 'UNSUBMITTED' LIMIT ?`
-	queryPagedFlags           = queryAllFlags + ` LIMIT ? OFFSET ?`
-	queryPagedFlagCodes       = queryAllFlagCodes + ` LIMIT ? OFFSET ?`
+	baseFlagQuery         = `SELECT id, flag_code, service_name, submit_time, response_time, status, team_id FROM flags`
+	queryAllFlags         = baseFlagQuery + " ORDER BY submit_time DESC"
+	queryFirstNFlags      = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ?"
+	queryUnsubmittedFlags = baseFlagQuery + " WHERE status = 'UNSUBMITTED' ORDER BY submit_time ASC LIMIT ?"
+	queryPagedFlags       = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ? OFFSET ?"
+
+	baseFlagCodeQuery         = `SELECT flag_code FROM flags`
+	queryAllFlagCodes         = baseFlagCodeQuery
+	queryFirstNFlagCodes      = baseFlagCodeQuery + " LIMIT ?"
+	queryUnsubmittedFlagCodes = baseFlagCodeQuery + " WHERE status = 'UNSUBMITTED' LIMIT ?"
+	queryPagedFlagCodes       = baseFlagCodeQuery + " LIMIT ? OFFSET ?"
 )
 
 // --------- Flag Structs ---------
@@ -43,7 +46,7 @@ func (s *service) GetAllFlagCodeList() ([]string, error) {
 	return s.queryFlagCodes(queryAllFlagCodes)
 }
 
-func (s *service) GetUnsubmittedFlagCodeList(limit int) ([]string, error) {
+func (s *service) GetUnsubmittedFlagCodeList(limit uint16) ([]string, error) {
 	return s.queryFlagCodes(queryUnsubmittedFlagCodes, limit)
 }
 
@@ -58,7 +61,7 @@ func (s *service) GetPagedFlagCodeList(limit, offset int) ([]string, error) {
 // --------- Shared query logic ---------
 
 func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	stmt, err := s.db.PrepareContext(ctx, query)
@@ -89,7 +92,7 @@ func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
 }
 
 func (s *service) queryFlagCodes(query string, args ...any) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	stmt, err := s.db.PrepareContext(ctx, query)

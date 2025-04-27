@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/flagparser"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
+	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/flagparser"
+	"github.com/ByteTheCookies/cookieclient/internal/logger"
+	"github.com/ByteTheCookies/cookieclient/internal/models"
+	"github.com/ByteTheCookies/cookieclient/internal/utils"
 )
 
 type ExecutionResult struct {

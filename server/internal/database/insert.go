@@ -5,15 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
-
-const insertFlagQuery = `
-	INSERT INTO flags
-	(id, flag_code, service_name, service_port, submit_time, response_time, status, team_id)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-`
 
 func (s *service) AddFlags(flags []models.Flag) error {
 	if len(flags) == 0 {

@@ -1,6 +1,6 @@
 package config
 
-import "github.com/ByteTheCookies/cookiefarm-client/internal/models"
+import "github.com/ByteTheCookies/cookieclient/internal/models"
 
 var Current models.Config
 var Token string

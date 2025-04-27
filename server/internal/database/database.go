@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
-	"github.com/ByteTheCookies/backend/internal/utils"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -28,7 +28,7 @@ type Service interface {
 	GetFirstNFlags(limit int) ([]models.Flag, error)
 	GetPagedFlags(offset int, limit int) ([]models.Flag, error)
 	GetPagedFlagCodeList(offset int, limit int) ([]string, error)
-	GetUnsubmittedFlagCodeList(limit int) ([]string, error)
+	GetUnsubmittedFlagCodeList(limit uint16) ([]string, error)
 	GetAllFlagCodeList() ([]string, error)
 	GetFirstNFlagCodeList(limit int) ([]string, error)
 	UpdateFlagStatus(flag_code string, status string) error

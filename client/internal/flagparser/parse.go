@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
+	"github.com/ByteTheCookies/cookieclient/internal/models"
+	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/google/uuid"
 )
 

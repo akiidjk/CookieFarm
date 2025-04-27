@@ -5,9 +5,9 @@ import (
 	"path"
 	"plugin"
 
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
-	"github.com/ByteTheCookies/backend/internal/utils"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/utils"
 )
 
 type SubmitFunc = func(string, string, []string) ([]models.ResponseProtocol, error)

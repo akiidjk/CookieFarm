@@ -3,10 +3,10 @@ package submitter
 import (
 	"time"
 
-	"github.com/ByteTheCookies/cookiefarm-client/internal/api"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
+	"github.com/ByteTheCookies/cookieclient/internal/api"
+	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/logger"
+	"github.com/ByteTheCookies/cookieclient/internal/models"
 )
 
 func Start(flagsChan <-chan models.Flag) {

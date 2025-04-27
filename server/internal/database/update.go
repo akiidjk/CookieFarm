@@ -6,15 +6,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
 )
 
 const (
-	updateFlagStatusQuery = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code = ?`
+	updateFlagStatusQuery  = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code = ?`
+	updateFlagsStatusQuery = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code IN (%s)`
 )
 
 func (s *service) UpdateFlagStatus(flagCode string, status string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	stmt, err := s.db.PrepareContext(ctx, updateFlagStatusQuery)
@@ -39,16 +40,16 @@ func (s *service) UpdateFlagsStatus(flagCodes []string, status string) error {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	placeholders := strings.Repeat("?,", len(flagCodes))
 	placeholders = placeholders[:len(placeholders)-1]
 
-	query := fmt.Sprintf("UPDATE flags SET status = ?, response_time = ? WHERE flag_code IN (%s)", placeholders)
+	query := fmt.Sprintf(updateFlagsStatusQuery, placeholders)
 
-	args := make([]interface{}, 0, len(flagCodes)+2)
-	args = append(args, status, uint64(time.Now().Unix()))
+	args := make([]any, 0, len(flagCodes)+2)
+	args = append(args, status, time.Now().Unix())
 	for _, code := range flagCodes {
 		args = append(args, code)
 	}

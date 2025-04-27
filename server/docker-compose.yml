@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: prod
     restart: unless-stopped
@@ -13,16 +13,5 @@ services:
     volumes:
       - sqlite_bp:/app/database
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - ${FRONTEND_PORT}:${FRONTEND_PORT}
-    environment:
-      PORT: ${FRONTEND_PORT}
-    volumes:
-      - sqlite_bp:/app/db
 volumes:
   sqlite_bp:

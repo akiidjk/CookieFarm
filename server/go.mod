@@ -1,4 +1,4 @@
-module github.com/ByteTheCookies/backend
+module github.com/ByteTheCookies/cookieserver
 
 go 1.24.2
 

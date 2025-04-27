@@ -45,24 +45,6 @@ if __name__ == "__main__":
     exploit(port=port)
 ```
 
-Or, if you want to manually specify the server IP (optional advanced usage):
-
-```python
-#!/usr/bin/env python3
-
-from utils.exploiter_manager import exploit_manager
-import sys
-
-@exploit_manager(server_ip=sys.argv[1])
-def exploit(ip: str = "", port: int = 80):
-    # Insert your exploit code here
-    return  # Return flag
-
-if __name__ == "__main__":
-    port = 8081  # Adjust to target service port
-    exploit(port=port)
-```
-
 ✅ The `exploit_manager` automatically:
 - Supplies IPs and ports
 - Sends retrieved flags to the CookieFarm server

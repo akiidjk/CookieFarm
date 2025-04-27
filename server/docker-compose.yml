@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
       target: prod
     restart: unless-stopped

@@ -6,7 +6,7 @@ This document describes the communication protocol used to interact with the **F
 
 ### 🔧 File Structure and Template
 
-Create the file in the `server/backend/protocols` directory and use the following template as a starting point:
+Create the file in the `server/protocols` directory and use the following template as a starting point:
 
 ```go
 //go:build ignore
@@ -14,7 +14,7 @@ Create the file in the `server/backend/protocols` directory and use the followin
 package main
 
 import (
-	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
 // Submit function sends flags to the Flag Checker service and returns a response.
@@ -96,7 +96,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
 func Submit(host string, team_token string, flags []string) ([]models.ResponseProtocol, error) {

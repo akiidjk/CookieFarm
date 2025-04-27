@@ -39,7 +39,7 @@
                   <tbody
                      class="divide-y divide-gray-200 dark:divide-neutral-700"
                      id="flag-table-body"
-                     hx-get="/flags/{{$.Pagination.Limit}}?offset=0"
+                     hx-get="/flags/{{.Limit}}?offset=0"
                      hx-trigger="load"
                      hx-target="this"
                      hx-swap="innerHTML"
@@ -59,7 +59,7 @@
             </div>
             <!-- Pagination -->
             <div id="pagination" class="px-4 py-2 bg-white dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-700"
-               hx-get="/pagination/{{$.Pagination.Limit}}?offset=0"
+               hx-get="/pagination/{{.Limit}}?offset=0"
                hx-trigger="load, flagsUpdated from:body"
                hx-target="this"
                hx-swap="innerHTML">
@@ -115,7 +115,7 @@
        window.SubmitFlag = submitFlag;
 
        document.addEventListener("DOMContentLoaded", () => {
-         const limit = {{.Pagination.Limit}};
+         const limit = {{.Limit}};
          const storageKey = "flags-offset";
          let currentPage = 0;
 

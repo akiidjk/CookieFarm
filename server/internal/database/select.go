@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
 const (
@@ -43,7 +43,7 @@ func (s *service) GetAllFlagCodeList() ([]string, error) {
 	return s.queryFlagCodes(queryAllFlagCodes)
 }
 
-func (s *service) GetUnsubmittedFlagCodeList(limit int) ([]string, error) {
+func (s *service) GetUnsubmittedFlagCodeList(limit uint16) ([]string, error) {
 	return s.queryFlagCodes(queryUnsubmittedFlagCodes, limit)
 }
 
@@ -58,7 +58,7 @@ func (s *service) GetPagedFlagCodeList(limit, offset int) ([]string, error) {
 // --------- Shared query logic ---------
 
 func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	stmt, err := s.db.PrepareContext(ctx, query)
@@ -89,7 +89,7 @@ func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
 }
 
 func (s *service) queryFlagCodes(query string, args ...any) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	stmt, err := s.db.PrepareContext(ctx, query)

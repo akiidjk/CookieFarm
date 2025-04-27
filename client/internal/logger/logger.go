@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ByteTheCookies/cookiefarm-client/internal/utils"
+	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/rs/zerolog"
 )
 

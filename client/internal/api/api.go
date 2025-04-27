@@ -7,9 +7,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/logger"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
+	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/logger"
+	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/rs/zerolog/log"
 )
 

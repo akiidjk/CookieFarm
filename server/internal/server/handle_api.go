@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"sync"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
@@ -69,48 +71,91 @@ func (s *FiberServer) HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
+var (
+	// pool di wrapper per il parsing JSON
+	submitFlagsPool = sync.Pool{
+		New: func() interface{} {
+			return new(models.SubmitFlagsRequest)
+		},
+	}
+	// pool di slice per i codici flag
+	flagsPool = sync.Pool{
+		New: func() interface{} {
+			return make([]models.Flag, 0, 16) // presupponiamo batch massimo di 16
+		},
+	}
+	// pool di buffer per la risposta JSON
+	jsonBufPool = sync.Pool{
+		New: func() interface{} {
+			return new(bytes.Buffer)
+		},
+	}
+)
+
 // ---------- POST ----------------
 
 func (s *FiberServer) HandlePostFlags(c *fiber.Ctx) error {
-	body := map[string][]models.Flag{"flags": {}}
-	if err := c.BodyParser(&body); err != nil {
-		logger.Log.Error().Err(err).Msg("Invalid SubmitFlags payload")
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(models.ResponseError{
-			Error: err.Error(),
-		})
+	payload := submitFlagsPool.Get().(*models.SubmitFlagsRequest)
+	defer func() {
+		*payload = models.SubmitFlagsRequest{}
+		submitFlagsPool.Put(payload)
+	}()
+
+	if err := c.BodyParser(payload); err != nil {
+		return c.Status(fiber.StatusUnprocessableEntity).
+			JSON(models.ResponseError{Error: err.Error()})
+	}
+	flags := payload.Flags
+
+	if err := s.db.AddFlags(flags); err != nil {
+		logger.Log.Error().
+			Err(err).
+			Msg("Failed to insert flags into DB")
+		return c.Status(fiber.StatusInternalServerError).
+			JSON(models.ResponseError{Error: "DB error: " + err.Error()})
 	}
 
-	if err := s.db.AddFlags(body["flags"]); err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to insert flags into DB")
-		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
-			Error: "DB error: " + err.Error(),
-		})
-	}
-
-	logger.Log.Info().Int("count", len(body["flags"])).Msg("Flags batch submitted")
+	logger.Log.Info().
+		Int("count", len(flags)).
+		Msg("Flags batch submitted")
 
 	return c.JSON(models.ResponseSuccess{
 		Message: "Flags submitted successfully",
 	})
 }
 
+var submitFlagPool = sync.Pool{
+	New: func() interface{} {
+		return new(models.SubmitFlagRequest)
+	},
+}
+
 func (s *FiberServer) HandlePostFlag(c *fiber.Ctx) error {
-	body := map[string]models.Flag{"flag": models.Flag{}}
-	if err := c.BodyParser(&body); err != nil {
+	payload := submitFlagPool.Get().(*models.SubmitFlagRequest)
+	defer func() {
+		*payload = models.SubmitFlagRequest{}
+		submitFlagPool.Put(payload)
+	}()
+
+	if err := c.BodyParser(payload); err != nil {
 		logger.Log.Error().Err(err).Msg("Invalid SubmitFlag payload")
-		return c.Status(fiber.StatusUnprocessableEntity).JSON(models.ResponseError{
-			Error: err.Error(),
-		})
+		return c.Status(fiber.StatusUnprocessableEntity).
+			JSON(models.ResponseError{Error: err.Error()})
 	}
+	f := payload.Flag
 
-	if err := s.db.AddFlag(body["flag"]); err != nil {
+	if err := s.db.AddFlag(f); err != nil {
 		logger.Log.Error().Err(err).Msg("DB insert failed in SubmitFlag")
-		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
-			Error: "Failed to add flag: " + err.Error(),
-		})
+		return c.Status(fiber.StatusInternalServerError).
+			JSON(models.ResponseError{Error: "Failed to add flag: " + err.Error()})
 	}
 
-	flags := []string{body["flag"].FlagCode}
+	flags := flagsPool.Get().([]string)
+	flags = flags[:0]
+	flags = append(flags, f.FlagCode)
+	defer func() {
+		flagsPool.Put(flags)
+	}()
 
 	if config.Current.ConfigServer.HostFlagchecker == "" {
 		logger.Log.Warn().Msg("Flagchecker host not configured")
@@ -154,7 +199,6 @@ func (s *FiberServer) HandlePostConfig(c *fiber.Ctx) error {
 	if s.shutdownCancel != nil {
 		s.shutdownCancel()
 	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	s.shutdownCancel = cancel
 

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	baseFlagQuery         = `SELECT id, flag_code, service_name, submit_time, response_time, status, team_id FROM flags`
+	baseFlagQuery         = `SELECT id, flag_code, service_name,service_port, submit_time, response_time, status, team_id FROM flags`
 	queryAllFlags         = baseFlagQuery + " ORDER BY submit_time DESC"
 	queryFirstNFlags      = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ?"
 	queryUnsubmittedFlags = baseFlagQuery + " WHERE status = 'UNSUBMITTED' ORDER BY submit_time ASC LIMIT ?"
@@ -79,13 +79,17 @@ func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
 	defer rows.Close()
 
 	var flags []models.Flag
+	flagPtr := new(models.Flag)
 	for rows.Next() {
-		var flag models.Flag
-		if err := rows.Scan(&flag.ID, &flag.FlagCode, &flag.ServiceName, &flag.SubmitTime, &flag.ResponseTime, &flag.Status, &flag.TeamID); err != nil {
+		if err := rows.Scan(
+			&flagPtr.ID, &flagPtr.FlagCode, &flagPtr.ServiceName, &flagPtr.ServicePort,
+			&flagPtr.SubmitTime, &flagPtr.ResponseTime, &flagPtr.Status,
+			&flagPtr.TeamID,
+		); err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to scan row in queryFlags")
 			return nil, err
 		}
-		flags = append(flags, flag)
+		flags = append(flags, *flagPtr)
 	}
 
 	return flags, nil
@@ -110,13 +114,13 @@ func (s *service) queryFlagCodes(query string, args ...any) ([]string, error) {
 	defer rows.Close()
 
 	var codes []string
+	codePtr := new(string)
 	for rows.Next() {
-		var code string
-		if err := rows.Scan(&code); err != nil {
+		if err := rows.Scan(codePtr); err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to scan row in queryFlagCodes")
 			return nil, err
 		}
-		codes = append(codes, code)
+		codes = append(codes, *codePtr)
 	}
 
 	return codes, nil

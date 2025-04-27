@@ -133,30 +133,19 @@ func (s *service) Close() error {
 }
 
 func (s *service) FlagsNumber(ctx context.Context) (int, error) {
-
-	stmt, err := s.db.PrepareContext(ctx, "SELECT COUNT(*) FROM flags")
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to prepare statement")
-		return 0, err
-	}
-
-	rows, err := stmt.QueryContext(ctx)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to execute query")
-		return 0, err
-	}
-	defer rows.Close()
-
 	var count int
-	for rows.Next() {
-		err = rows.Scan(&count)
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to scan result")
-			return 0, err
-		}
+	err := s.db.
+		QueryRowContext(ctx, "SELECT COUNT(*) FROM flags").
+		Scan(&count)
+	if err != nil {
+		logger.Log.Error().
+			Err(err).
+			Msg("Failed to get flags count")
+		return 0, err
 	}
 
-	logger.Log.Debug().Int("count", count).Msg("Flags number")
-
+	logger.Log.Debug().
+		Int("count", count).
+		Msg("Flags number")
 	return count, nil
 }

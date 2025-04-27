@@ -3,11 +3,13 @@ package server
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/ui"
+	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -20,7 +22,9 @@ type FiberServer struct {
 func newConfig(debug bool) fiber.Config {
 	views := ui.InitTemplateEngine(!debug)
 	common := fiber.Config{
-		Views: views,
+		Views:       views,
+		JSONEncoder: sonic.Marshal,
+		JSONDecoder: sonic.Unmarshal,
 	}
 
 	if debug {
@@ -47,9 +51,21 @@ func New() *FiberServer {
 	cfg := newConfig(*config.Debug)
 	app := fiber.New(cfg)
 
-	app.Static("/css", "./public/css")
-	app.Static("/js", "./public/js")
-	app.Static("/images", "./public/images")
+	app.Static("/css", "./public/css", fiber.Static{
+		Compress:      true,
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
+	})
+	app.Static("/js", "./public/js", fiber.Static{
+		Compress:      true,
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
+	})
+	app.Static("/images", "./public/images", fiber.Static{
+		Compress:      true,
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
+	})
 
 	if *config.Debug {
 		app.Use(func(c *fiber.Ctx) error {

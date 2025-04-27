@@ -107,3 +107,11 @@ type ResponseError struct {
 	Error   string `json:"error"`
 	Details string `json:"details"`
 }
+
+type SubmitFlagRequest struct {
+	Flag Flag `json:"flag"`
+}
+
+type SubmitFlagsRequest struct {
+	Flags []Flag `json:"flags"`
+}

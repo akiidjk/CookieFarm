@@ -12,6 +12,7 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/server"
 	"github.com/ByteTheCookies/cookieserver/internal/utils"
+	"github.com/grafana/pyroscope-go"
 
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -23,6 +24,29 @@ func main() {
 	level := "info"
 	if *config.Debug {
 		level = "debug"
+		pyroscope.Start(pyroscope.Config{
+			ApplicationName: "cookiefarm",
+			ServerAddress:   "http://pyroscope-server:4040",
+			Logger:          pyroscope.StandardLogger,
+
+			ProfileTypes: []pyroscope.ProfileType{
+				// these profile types are enabled by default:
+				pyroscope.ProfileCPU,
+				pyroscope.ProfileAllocObjects,
+				pyroscope.ProfileAllocSpace,
+				pyroscope.ProfileInuseObjects,
+				pyroscope.ProfileInuseSpace,
+				pyroscope.ProfileAllocObjects,
+				pyroscope.ProfileAllocSpace,
+
+				// these profile types are optional:
+				pyroscope.ProfileGoroutines,
+				pyroscope.ProfileMutexCount,
+				pyroscope.ProfileMutexDuration,
+				pyroscope.ProfileBlockCount,
+				pyroscope.ProfileBlockDuration,
+			},
+		})
 	}
 	logger.Setup(level)
 	defer logger.Close()

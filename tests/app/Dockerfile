@@ -1,7 +1,7 @@
 FROM python:3.13-slim
 
 WORKDIR /app
-COPY service.py .
+COPY . .
 
 EXPOSE 8081
 

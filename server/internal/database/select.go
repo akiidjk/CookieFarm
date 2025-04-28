@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	baseFlagQuery         = `SELECT id, flag_code, service_name,service_port, submit_time, response_time, status, team_id FROM flags`
+	baseFlagQuery         = `SELECT flag_code, service_name,service_port, submit_time, response_time, status, team_id FROM flags`
 	queryAllFlags         = baseFlagQuery + " ORDER BY submit_time DESC"
 	queryFirstNFlags      = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ?"
 	queryUnsubmittedFlags = baseFlagQuery + " WHERE status = 'UNSUBMITTED' ORDER BY submit_time ASC LIMIT ?"
@@ -24,47 +24,47 @@ const (
 
 // --------- Flag Structs ---------
 
-func (s *service) GetAllFlags() ([]models.Flag, error) {
-	return s.queryFlags(queryAllFlags)
+func GetAllFlags() ([]models.Flag, error) {
+	return queryFlags(queryAllFlags)
 }
 
-func (s *service) GetUnsubmittedFlags(limit int) ([]models.Flag, error) {
-	return s.queryFlags(queryUnsubmittedFlags, limit)
+func GetUnsubmittedFlags(limit int) ([]models.Flag, error) {
+	return queryFlags(queryUnsubmittedFlags, limit)
 }
 
-func (s *service) GetFirstNFlags(limit int) ([]models.Flag, error) {
-	return s.queryFlags(queryFirstNFlags, limit)
+func GetFirstNFlags(limit int) ([]models.Flag, error) {
+	return queryFlags(queryFirstNFlags, limit)
 }
 
-func (s *service) GetPagedFlags(limit, offset int) ([]models.Flag, error) {
-	return s.queryFlags(queryPagedFlags, limit, offset)
+func GetPagedFlags(limit, offset int) ([]models.Flag, error) {
+	return queryFlags(queryPagedFlags, limit, offset)
 }
 
 // --------- Flag Code Only ---------
 
-func (s *service) GetAllFlagCodeList() ([]string, error) {
-	return s.queryFlagCodes(queryAllFlagCodes)
+func GetAllFlagCodeList() ([]string, error) {
+	return queryFlagCodes(queryAllFlagCodes)
 }
 
-func (s *service) GetUnsubmittedFlagCodeList(limit uint16) ([]string, error) {
-	return s.queryFlagCodes(queryUnsubmittedFlagCodes, limit)
+func GetUnsubmittedFlagCodeList(limit uint16) ([]string, error) {
+	return queryFlagCodes(queryUnsubmittedFlagCodes, limit)
 }
 
-func (s *service) GetFirstNFlagCodeList(limit int) ([]string, error) {
-	return s.queryFlagCodes(queryFirstNFlagCodes, limit)
+func GetFirstNFlagCodeList(limit int) ([]string, error) {
+	return queryFlagCodes(queryFirstNFlagCodes, limit)
 }
 
-func (s *service) GetPagedFlagCodeList(limit, offset int) ([]string, error) {
-	return s.queryFlagCodes(queryPagedFlagCodes, limit, offset)
+func GetPagedFlagCodeList(limit, offset int) ([]string, error) {
+	return queryFlagCodes(queryPagedFlagCodes, limit, offset)
 }
 
 // --------- Shared query logic ---------
 
-func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
+func queryFlags(query string, args ...any) ([]models.Flag, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	stmt, err := s.db.PrepareContext(ctx, query)
+	stmt, err := DB.PrepareContext(ctx, query)
 	if err != nil {
 		logger.Log.Error().Err(err).Str("query", query).Msg("Failed to prepare queryFlags")
 		return nil, err
@@ -82,7 +82,7 @@ func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
 	flagPtr := new(models.Flag)
 	for rows.Next() {
 		if err := rows.Scan(
-			&flagPtr.ID, &flagPtr.FlagCode, &flagPtr.ServiceName, &flagPtr.ServicePort,
+			&flagPtr.FlagCode, &flagPtr.ServiceName, &flagPtr.ServicePort,
 			&flagPtr.SubmitTime, &flagPtr.ResponseTime, &flagPtr.Status,
 			&flagPtr.TeamID,
 		); err != nil {
@@ -95,11 +95,11 @@ func (s *service) queryFlags(query string, args ...any) ([]models.Flag, error) {
 	return flags, nil
 }
 
-func (s *service) queryFlagCodes(query string, args ...any) ([]string, error) {
+func queryFlagCodes(query string, args ...any) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	stmt, err := s.db.PrepareContext(ctx, query)
+	stmt, err := DB.PrepareContext(ctx, query)
 	if err != nil {
 		logger.Log.Error().Err(err).Str("query", query).Msg("Failed to prepare queryFlagCodes")
 		return nil, err

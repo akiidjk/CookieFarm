@@ -2,7 +2,6 @@ package executor
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -14,6 +13,7 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/ByteTheCookies/cookieclient/internal/utils"
+	json "github.com/bytedance/sonic"
 )
 
 type ExecutionResult struct {

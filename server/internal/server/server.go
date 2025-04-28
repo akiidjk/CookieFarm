@@ -6,18 +6,18 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
-	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/ui"
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 )
 
-type FiberServer struct {
-	*fiber.App
-	db             database.Service
-	shutdownCancel context.CancelFunc
-}
+//	type FiberServer struct {
+//		*fiber.App
+//		db             database.Service
+//
+// }
+var shutdownCancel context.CancelFunc
 
 func newConfig(debug bool) fiber.Config {
 	views := ui.InitTemplateEngine(!debug)
@@ -47,7 +47,7 @@ func newConfig(debug bool) fiber.Config {
 	return common
 }
 
-func New() *FiberServer {
+func New() *fiber.App {
 	cfg := newConfig(*config.Debug)
 	app := fiber.New(cfg)
 
@@ -77,15 +77,5 @@ func New() *FiberServer {
 		})
 	}
 
-	db := database.New()
-	logger.Log.Info().Msg("Database initialized")
-
-	return &FiberServer{
-		App: app,
-		db:  db,
-	}
-}
-
-func (s *FiberServer) DB() database.Service {
-	return s.db
+	return app
 }

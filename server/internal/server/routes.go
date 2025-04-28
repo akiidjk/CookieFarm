@@ -8,8 +8,8 @@ import (
 	jwtware "github.com/gofiber/jwt/v3"
 )
 
-func (s *FiberServer) RegisterRoutes() {
-	s.App.Use(cors.New(cors.Config{
+func RegisterRoutes(app *fiber.App) {
+	app.Use(cors.New(cors.Config{
 		AllowOrigins:     utils.GetEnv("ALLOW_ORIGINS", "http://localhost:8080"),
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
 		AllowHeaders:     "Accept,Authorization,Content-Type",
@@ -19,42 +19,42 @@ func (s *FiberServer) RegisterRoutes() {
 
 	// ---------- VIEW ----------
 
-	View := s.App.Group("/")
-	View.Get("/", s.HandleIndexPage)
-	View.Get("/dashboard", s.HandleIndexPage)
-	View.Get("/login", s.HandleLoginPage)
-	View.Get("/flags/:limit", s.HandlePartialsFlags)
-	View.Get("/pagination/:limit", s.HandlePartialsPagination)
+	View := app.Group("/")
+	View.Get("/", HandleIndexPage)
+	View.Get("/dashboard", HandleIndexPage)
+	View.Get("/login", HandleLoginPage)
+	View.Get("/flags/:limit", HandlePartialsFlags)
+	View.Get("/pagination/:limit", HandlePartialsPagination)
 
 	// ---------- API ----------
 
-	publicApi := s.App.Group("/api/v1")
-	publicApi.Get("/", s.GetStatus)
-	publicApi.Post("/auth/login", NewLimiter(), s.HandleLogin)
+	publicApi := app.Group("/api/v1")
+	publicApi.Get("/", GetStatus)
+	publicApi.Post("/auth/login", NewLimiter(), HandleLogin)
 
 	// Aspected Header with: `Authorization: Bearer <token>`
-	privateApi := s.App.Group("/api/v1", jwtware.New(jwtware.Config{
+	privateApi := app.Group("/api/v1", jwtware.New(jwtware.Config{
 		SigningKey:  config.Secret,
 		TokenLookup: "header:Authorization,cookie:token",
 	}))
-	privateApi.Get("/stats", s.HandleGetStats)
-	privateApi.Get("/flags", s.HandleGetAllFlags)
-	privateApi.Get("/flags/:limit", s.HandleGetPaginatedFlags)
-	privateApi.Get("/config", s.HandleGetConfig)
-	privateApi.Get("/health", s.HealthHandler)
-	privateApi.Post("/submit-flags", s.HandlePostFlags)
-	privateApi.Post("/submit-flag", s.HandlePostFlag)
-	privateApi.Post("/config", s.HandlePostConfig)
+	privateApi.Get("/stats", HandleGetStats)
+	privateApi.Get("/flags", HandleGetAllFlags)
+	privateApi.Get("/flags/:limit", HandleGetPaginatedFlags)
+	privateApi.Get("/config", HandleGetConfig)
+	privateApi.Get("/health", HealthHandler)
+	privateApi.Post("/submit-flags", HandlePostFlags)
+	privateApi.Post("/submit-flag", HandlePostFlag)
+	privateApi.Post("/config", HandlePostConfig)
 
 }
 
-func (s *FiberServer) GetStatus(c *fiber.Ctx) error {
+func GetStatus(c *fiber.Ctx) error {
 	resp := fiber.Map{
 		"message": "The cookie is up!!",
 	}
 	return c.JSON(resp)
 }
 
-func (s *FiberServer) HealthHandler(c *fiber.Ctx) error {
-	return c.JSON(s.db.Health())
+func HealthHandler(c *fiber.Ctx) error {
+	return c.JSON(GetStatus(c))
 }

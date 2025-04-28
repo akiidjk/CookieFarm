@@ -14,11 +14,11 @@ const (
 	updateFlagsStatusQuery = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code IN (%s)`
 )
 
-func (s *service) UpdateFlagStatus(flagCode string, status string) error {
+func UpdateFlagStatus(flagCode string, status string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	stmt, err := s.db.PrepareContext(ctx, updateFlagStatusQuery)
+	stmt, err := DB.PrepareContext(ctx, updateFlagStatusQuery)
 	if err != nil {
 		logger.Log.Error().Err(err).Str("flag_code", flagCode).Msg("Failed to prepare UpdateFlagStatus statement")
 		return err
@@ -35,7 +35,7 @@ func (s *service) UpdateFlagStatus(flagCode string, status string) error {
 	return nil
 }
 
-func (s *service) UpdateFlagsStatus(flagCodes []string, status string) error {
+func UpdateFlagsStatus(flagCodes []string, status string) error {
 	if len(flagCodes) == 0 {
 		return nil
 	}
@@ -54,7 +54,7 @@ func (s *service) UpdateFlagsStatus(flagCodes []string, status string) error {
 		args = append(args, code)
 	}
 
-	stmt, err := s.db.PrepareContext(ctx, query)
+	stmt, err := DB.PrepareContext(ctx, query)
 	if err != nil {
 		logger.Log.Error().Err(err).Int("count", len(flagCodes)).Msg("Failed to prepare UpdateFlagsStatus statement")
 		return err

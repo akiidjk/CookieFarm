@@ -71,7 +71,6 @@ func setupClient() error {
 }
 
 func main() {
-
 	if err := setupClient(); err != nil {
 		if logger.LogLevel != zerolog.Disabled {
 			logger.Log.Fatal().Err(err).Msg("Initialization error")

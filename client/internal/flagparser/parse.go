@@ -1,13 +1,12 @@
 package flagparser
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/ByteTheCookies/cookieclient/internal/utils"
-	"github.com/google/uuid"
+	json "github.com/bytedance/sonic"
 )
 
 func ParseLine(line string) (models.Flag, error) {
@@ -17,7 +16,6 @@ func ParseLine(line string) (models.Flag, error) {
 	}
 
 	flag := models.Flag{
-		ID:           uuid.New().String(),
 		FlagCode:     out.FlagCode,
 		ServiceName:  utils.MapPortToService(uint16(out.ServicePort)),
 		ServicePort:  out.ServicePort,

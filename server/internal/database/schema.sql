@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS flags (
-    id VARCHAR(36) PRIMARY KEY,
-    flag_code VARCHAR(255) NOT NULL UNIQUE,
+    flag_code VARCHAR(255) PRIMARY KEY,
     service_name VARCHAR(255) NOT NULL,
     service_port INTEGER NOT NULL,
     submit_time INTEGER,  -- Unix timestamp

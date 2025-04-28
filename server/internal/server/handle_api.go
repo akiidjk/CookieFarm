@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/gofiber/fiber/v2"
@@ -12,12 +13,12 @@ import (
 
 // ---------- GET ----------------
 
-func (s *FiberServer) HandleGetConfig(c *fiber.Ctx) error {
+func HandleGetConfig(c *fiber.Ctx) error {
 	return c.JSON(config.Current)
 }
 
-func (s *FiberServer) HandleGetAllFlags(c *fiber.Ctx) error {
-	flags, err := s.db.GetAllFlags()
+func HandleGetAllFlags(c *fiber.Ctx) error {
+	flags, err := database.GetAllFlags()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
 			Error: err.Error(),
@@ -33,7 +34,7 @@ func (s *FiberServer) HandleGetAllFlags(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
-func (s *FiberServer) HandleGetStats(c *fiber.Ctx) error {
+func HandleGetStats(c *fiber.Ctx) error {
 	logger.Log.Debug().Msg("Stats endpoint hit")
 	return c.JSON(fiber.Map{
 		"stats": map[string]interface{}{
@@ -43,7 +44,7 @@ func (s *FiberServer) HandleGetStats(c *fiber.Ctx) error {
 	})
 }
 
-func (s *FiberServer) HandleGetPaginatedFlags(c *fiber.Ctx) error {
+func HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	limit, err := c.ParamsInt("limit", config.LIMIT)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(models.ResponseError{
@@ -52,7 +53,7 @@ func (s *FiberServer) HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	}
 	offset := c.QueryInt("offset", config.OFFSET)
 
-	flags, err := s.db.GetPagedFlags(limit, offset)
+	flags, err := database.GetPagedFlags(limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
 			Error: err.Error(),
@@ -72,7 +73,7 @@ func (s *FiberServer) HandleGetPaginatedFlags(c *fiber.Ctx) error {
 
 // ---------- POST ----------------
 
-func (s *FiberServer) HandlePostFlags(c *fiber.Ctx) error {
+func HandlePostFlags(c *fiber.Ctx) error {
 	payload := new(models.SubmitFlagsRequest)
 
 	if err := c.BodyParser(payload); err != nil {
@@ -81,7 +82,7 @@ func (s *FiberServer) HandlePostFlags(c *fiber.Ctx) error {
 	}
 
 	flags := payload.Flags
-	if err := s.db.AddFlags(flags); err != nil {
+	if err := database.AddFlags(flags); err != nil {
 		logger.Log.Error().
 			Err(err).
 			Msg("Failed to insert flags into DB")
@@ -107,7 +108,7 @@ var submitFlagPool = sync.Pool{
 	},
 }
 
-func (s *FiberServer) HandlePostFlag(c *fiber.Ctx) error {
+func HandlePostFlag(c *fiber.Ctx) error {
 	payload := new(models.SubmitFlagRequest)
 
 	if err := c.BodyParser(payload); err != nil {
@@ -116,8 +117,7 @@ func (s *FiberServer) HandlePostFlag(c *fiber.Ctx) error {
 			JSON(models.ResponseError{Error: err.Error()})
 	}
 	f := payload.Flag
-
-	if err := s.db.AddFlag(f); err != nil {
+	if err := database.AddFlag(f); err != nil {
 		logger.Log.Error().Err(err).Msg("DB insert failed in SubmitFlag")
 		return c.Status(fiber.StatusInternalServerError).
 			JSON(models.ResponseError{Error: "Failed to add flag: " + err.Error()})
@@ -142,14 +142,14 @@ func (s *FiberServer) HandlePostFlag(c *fiber.Ctx) error {
 	}
 
 	logger.Log.Info().Strs("submitted_flags", flags).Msg("Flag submitted successfully")
-	s.UpdateFlags(response)
+	UpdateFlags(response)
 
 	return c.JSON(models.ResponseSuccess{
 		Message: "Flag submitted successfully",
 	})
 }
 
-func (s *FiberServer) HandlePostConfig(c *fiber.Ctx) error {
+func HandlePostConfig(c *fiber.Ctx) error {
 	var configPayload struct {
 		Config models.Config `json:"config"`
 	}
@@ -164,13 +164,13 @@ func (s *FiberServer) HandlePostConfig(c *fiber.Ctx) error {
 	config.Current = configPayload.Config
 	logger.Log.Info().Msg("Configuration updated via API")
 
-	if s.shutdownCancel != nil {
-		s.shutdownCancel()
+	if shutdownCancel != nil {
+		shutdownCancel()
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	s.shutdownCancel = cancel
+	shutdownCancel = cancel
 
-	go s.StartFlagProcessingLoop(ctx)
+	go StartFlagProcessingLoop(ctx)
 
 	return c.JSON(models.ResponseSuccess{
 		Message: "Configuration updated successfully",

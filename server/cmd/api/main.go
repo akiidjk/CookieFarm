@@ -8,11 +8,13 @@ import (
 	"syscall"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/server"
 	"github.com/ByteTheCookies/cookieserver/internal/utils"
-	"github.com/grafana/pyroscope-go"
 
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -24,29 +26,33 @@ func main() {
 	level := "info"
 	if *config.Debug {
 		level = "debug"
-		pyroscope.Start(pyroscope.Config{
-			ApplicationName: "cookiefarm",
-			ServerAddress:   "http://pyroscope-server:4040",
-			Logger:          pyroscope.StandardLogger,
+		// go func() {
+		// 	logger.Log.Debug().Msgf("Listening on localhost:6060")
+		// 	http.ListenAndServe("localhost:6060", nil)
+		// }()
+		/*pyroscope.Start(pyroscope.Config{
+		ApplicationName: "cookiefarm",
+		ServerAddress:   "http://pyroscope-server:4040",
+		Logger:          pyroscope.StandardLogger,
 
-			ProfileTypes: []pyroscope.ProfileType{
-				// these profile types are enabled by default:
-				pyroscope.ProfileCPU,
-				pyroscope.ProfileAllocObjects,
-				pyroscope.ProfileAllocSpace,
-				pyroscope.ProfileInuseObjects,
-				pyroscope.ProfileInuseSpace,
-				pyroscope.ProfileAllocObjects,
-				pyroscope.ProfileAllocSpace,
+		ProfileTypes: []pyroscope.ProfileType{
+			// these profile types are enabled by default:
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
 
-				// these profile types are optional:
-				pyroscope.ProfileGoroutines,
-				pyroscope.ProfileMutexCount,
-				pyroscope.ProfileMutexDuration,
-				pyroscope.ProfileBlockCount,
-				pyroscope.ProfileBlockDuration,
-			},
-		})
+			// these profile types are optional:
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+		})*/
 	}
 	logger.Setup(level)
 	defer logger.Close()
@@ -69,7 +75,8 @@ func main() {
 			TimeZone:   "Local",
 		}))
 	}
-	app.RegisterRoutes()
+
+	server.RegisterRoutes(app)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -83,6 +90,9 @@ func main() {
 			logger.Log.Fatal().Err(err).Msg("Server listen error")
 		}
 	}()
+
+	database.DB = database.New()
+	logger.Log.Info().Msg("Database initialized")
 
 	<-ctx.Done()
 	logger.Log.Warn().Msg("Shutdown signal received, terminating...")

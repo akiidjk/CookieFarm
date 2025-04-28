@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
+	json "github.com/bytedance/sonic"
 	"github.com/rs/zerolog/log"
 )
 

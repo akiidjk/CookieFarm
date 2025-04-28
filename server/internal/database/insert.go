@@ -30,7 +30,7 @@ func (s *service) AddFlags(flags []models.Flag) error {
 		batch := flags[i:end]
 
 		parts := make([]string, len(batch))
-		args := make([]interface{}, 0, len(batch)*perRow)
+		args := make([]any, 0, len(batch)*perRow)
 		for j, f := range batch {
 			parts[j] = "(?, ?, ?, ?, ?, ?, ?, ?)"
 			args = append(args,
@@ -45,6 +45,8 @@ func (s *service) AddFlags(flags []models.Flag) error {
 			return fmt.Errorf("batch insert: %w", err)
 		}
 	}
+
+	flags = nil
 
 	return tx.Commit()
 }

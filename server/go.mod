@@ -3,10 +3,12 @@ module github.com/ByteTheCookies/cookieserver
 go 1.24.2
 
 require (
+	github.com/bytedance/sonic v1.13.2
 	github.com/gofiber/fiber/v2 v2.52.6
 	github.com/gofiber/jwt/v3 v3.3.10
 	github.com/gofiber/template/html/v2 v2.1.3
 	github.com/golang-jwt/jwt/v4 v4.5.2
+	github.com/grafana/pyroscope-go v1.2.2
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.27
 	github.com/rs/zerolog v1.34.0
@@ -15,13 +17,11 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
-	github.com/bytedance/sonic v1.13.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
 	github.com/gofiber/utils v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/grafana/pyroscope-go v1.2.2 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.8 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect

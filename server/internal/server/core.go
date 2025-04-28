@@ -17,8 +17,7 @@ type FLagGroups struct {
 	accepted []string
 	denied   []string
 	errored  []string
-	// capienza massima prevista
-	cap int
+	cap      int
 }
 
 func newFlagGroups(cap int) *FLagGroups {

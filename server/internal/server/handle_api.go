@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"sync"
 
@@ -71,42 +70,17 @@ func (s *FiberServer) HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
-var (
-	// pool di wrapper per il parsing JSON
-	submitFlagsPool = sync.Pool{
-		New: func() interface{} {
-			return new(models.SubmitFlagsRequest)
-		},
-	}
-	// pool di slice per i codici flag
-	flagsPool = sync.Pool{
-		New: func() interface{} {
-			return make([]models.Flag, 0, 16) // presupponiamo batch massimo di 16
-		},
-	}
-	// pool di buffer per la risposta JSON
-	jsonBufPool = sync.Pool{
-		New: func() interface{} {
-			return new(bytes.Buffer)
-		},
-	}
-)
-
 // ---------- POST ----------------
 
 func (s *FiberServer) HandlePostFlags(c *fiber.Ctx) error {
-	payload := submitFlagsPool.Get().(*models.SubmitFlagsRequest)
-	defer func() {
-		*payload = models.SubmitFlagsRequest{}
-		submitFlagsPool.Put(payload)
-	}()
+	payload := new(models.SubmitFlagsRequest)
 
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusUnprocessableEntity).
 			JSON(models.ResponseError{Error: err.Error()})
 	}
-	flags := payload.Flags
 
+	flags := payload.Flags
 	if err := s.db.AddFlags(flags); err != nil {
 		logger.Log.Error().
 			Err(err).
@@ -114,6 +88,9 @@ func (s *FiberServer) HandlePostFlags(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).
 			JSON(models.ResponseError{Error: "DB error: " + err.Error()})
 	}
+
+	payload.Flags = nil
+	flags = nil
 
 	logger.Log.Info().
 		Int("count", len(flags)).
@@ -125,17 +102,13 @@ func (s *FiberServer) HandlePostFlags(c *fiber.Ctx) error {
 }
 
 var submitFlagPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return new(models.SubmitFlagRequest)
 	},
 }
 
 func (s *FiberServer) HandlePostFlag(c *fiber.Ctx) error {
-	payload := submitFlagPool.Get().(*models.SubmitFlagRequest)
-	defer func() {
-		*payload = models.SubmitFlagRequest{}
-		submitFlagPool.Put(payload)
-	}()
+	payload := new(models.SubmitFlagRequest)
 
 	if err := c.BodyParser(payload); err != nil {
 		logger.Log.Error().Err(err).Msg("Invalid SubmitFlag payload")
@@ -150,12 +123,7 @@ func (s *FiberServer) HandlePostFlag(c *fiber.Ctx) error {
 			JSON(models.ResponseError{Error: "Failed to add flag: " + err.Error()})
 	}
 
-	flags := flagsPool.Get().([]string)
-	flags = flags[:0]
-	flags = append(flags, f.FlagCode)
-	defer func() {
-		flagsPool.Put(flags)
-	}()
+	flags := []string{f.FlagCode}
 
 	if config.Current.ConfigServer.HostFlagchecker == "" {
 		logger.Log.Warn().Msg("Flagchecker host not configured")

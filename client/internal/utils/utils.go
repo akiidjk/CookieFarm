@@ -11,8 +11,8 @@ import (
 
 	"math/rand"
 
-	"github.com/ByteTheCookies/cookiefarm-client/internal/config"
-	"github.com/ByteTheCookies/cookiefarm-client/internal/models"
+	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/models"
 )
 
 const regexUrl = `^http://(localhost|127\.0\.0\.1):[0-9]{1,5}$`

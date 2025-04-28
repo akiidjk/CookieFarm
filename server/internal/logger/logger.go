@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ByteTheCookies/backend/internal/utils"
+	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	"github.com/rs/zerolog"
 )
 

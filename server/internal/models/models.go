@@ -1,5 +1,12 @@
 package models
 
+const (
+	StatusUnsubmitted = "UNSUBMITTED"
+	StatusAccepted    = "ACCEPTED"
+	StatusDenied      = "DENIED"
+	StatusError       = "ERROR"
+)
+
 type Flag struct {
 	SubmitTime   uint64 `json:"submit_time"`
 	ResponseTime uint64 `json:"response_time"`
@@ -64,4 +71,39 @@ type Session struct {
 
 type SigninRequest struct {
 	Password string `json:"password"`
+}
+
+type Pagination struct {
+	Limit    int
+	Pages    int
+	Current  int // <-- pagina corrente (offset / limit)
+	HasPrev  bool
+	HasNext  bool
+	PageList []int
+}
+
+type ViewParamsDashboard struct {
+	Limit int `json:"limit"`
+}
+
+type ViewParamsPagination struct {
+	Pagination Pagination
+}
+
+type ViewParamsFlags struct {
+	Flags []Flag `json:"flags"`
+}
+
+type ResponseFlags struct {
+	Nflags int    `json:"n_flags"`
+	Flags  []Flag `json:"flags"`
+}
+
+type ResponseSuccess struct {
+	Message string `json:"message"`
+}
+
+type ResponseError struct {
+	Error   string `json:"error"`
+	Details string `json:"details"`
 }

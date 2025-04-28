@@ -9,7 +9,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
 func Submit(host string, team_token string, flags []string) ([]models.ResponseProtocol, error) {

@@ -18,7 +18,7 @@ WORKDIR /app
 
 RUN apk add --no-cache libc6-compat
 
-COPY --from=build /app/bin/serverbackend /app/main
+COPY --from=build /app/bin/cookieserver /app/main
 COPY --from=build /app/protocols /app/protocols
 
 RUN touch ./cookiefarm.db

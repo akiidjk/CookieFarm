@@ -2,7 +2,7 @@ BIN_DIR := ./bin
 CMD_DIR := ./cmd
 LOGS_DIR := ./logs
 MAIN_FILE := ./main.go
-BINARY_NAME := ./clientfarm
+BINARY_NAME := ./cookieclient
 VERSION := 0.1.0
 
 RESET := \033[0m

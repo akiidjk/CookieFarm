@@ -5,10 +5,10 @@ tmp_dir = "tmp"
 [build]
 exclude_dir = ["tmp", "vendor", "testdata", "node_modules"]
 args_bin = []
-bin = "./bin/serverbackend --debug"
+bin = "./bin/cookieserver --debug"
 cmd = "make minify; make build"
 delay = 1000
-exclude_file = []
+exclude_file = ["public/js/output.min.js"]
 exclude_regex = ["_test.go"]
 exclude_unchanged = false
 follow_symlink = false

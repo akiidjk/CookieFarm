@@ -2,7 +2,7 @@ BIN_DIR := ./bin
 CMD_DIR := ./cmd/api
 LOGS_DIR := ./logs
 MAIN_FILE := main.go
-BINARY_NAME := serverbackend
+BINARY_NAME := cookieserver
 VERSION := 1.0.0
 GOOS ?= linux
 GOARCH ?= amd64
@@ -90,10 +90,10 @@ clean:
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
 
 tailwindcss-build:
-	./tailwindcss -i ./assets/css/global.css -o ./public/css/output.css --minify
+	./tools/tailwindcss -c ../tailwind.config.js -i ./assets/css/global.css -o ./public/css/output.css --minify
 
 tailwindcss-watch:
-	./tailwindcss -i ./assets/css/global.css -o ./public/css/output.css --watch
+	./tools/tailwindcss -c ../tailwind.config.js -i ./assets/css/global.css -o ./public/css/output.css --watch
 
 watch:
 	@if command -v air > /dev/null; then \

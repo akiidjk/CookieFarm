@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
-	"github.com/ByteTheCookies/backend/internal/utils"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -28,11 +28,12 @@ type Service interface {
 	GetFirstNFlags(limit int) ([]models.Flag, error)
 	GetPagedFlags(offset int, limit int) ([]models.Flag, error)
 	GetPagedFlagCodeList(offset int, limit int) ([]string, error)
-	GetUnsubmittedFlagCodeList(limit int) ([]string, error)
+	GetUnsubmittedFlagCodeList(limit uint16) ([]string, error)
 	GetAllFlagCodeList() ([]string, error)
 	GetFirstNFlagCodeList(limit int) ([]string, error)
 	UpdateFlagStatus(flag_code string, status string) error
 	UpdateFlagsStatus(flags []string, status string) error
+	FlagsNumber(ctx context.Context) (int, error)
 	InitDB() error
 	Close() error
 }
@@ -129,4 +130,33 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	logger.Log.Info().Str("path", dbPath).Msg("Disconnected from database")
 	return s.db.Close()
+}
+
+func (s *service) FlagsNumber(ctx context.Context) (int, error) {
+
+	stmt, err := s.db.PrepareContext(ctx, "SELECT COUNT(*) FROM flags")
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to prepare statement")
+		return 0, err
+	}
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to execute query")
+		return 0, err
+	}
+	defer rows.Close()
+
+	var count int
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("Failed to scan result")
+			return 0, err
+		}
+	}
+
+	logger.Log.Debug().Int("count", count).Msg("Flags number")
+
+	return count, nil
 }

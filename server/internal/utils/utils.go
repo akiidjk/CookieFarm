@@ -42,3 +42,31 @@ func GetExecutableDir() string {
 	}
 	return filepath.Dir(exePath)
 }
+
+const windowSize = 5
+
+func MakePagination(current, totalPages int) []int {
+	pages := []int{}
+
+	half := windowSize / 2
+	start := current - half
+	end := current + half
+
+	if start < 0 {
+		end += -start
+		start = 0
+	}
+
+	if end > totalPages-1 {
+		start -= (end - (totalPages - 1))
+		end = totalPages - 1
+	}
+	if start < 0 {
+		start = 0
+	}
+
+	for i := start; i <= end; i++ {
+		pages = append(pages, i)
+	}
+	return pages
+}

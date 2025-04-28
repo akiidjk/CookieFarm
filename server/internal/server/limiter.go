@@ -3,8 +3,8 @@ package server
 import (
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/config"
-	"github.com/ByteTheCookies/backend/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 )

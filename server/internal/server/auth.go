@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ByteTheCookies/backend/internal/config"
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -95,4 +95,12 @@ func (s *FiberServer) HandleLogin(c *fiber.Ctx) error {
 	})
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
+}
+
+func CookieAuthMiddleware(c *fiber.Ctx) error {
+	token := c.Cookies("token")
+	if token == "" || VerifyToken(token) != nil {
+		return c.Redirect("/login")
+	}
+	return nil
 }

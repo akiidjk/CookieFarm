@@ -1,0 +1,14 @@
+{{ range .Flags }}
+<tr class="group hover:bg-primary/20">
+  <td class="td">{{ .ID }}</td>
+  <td class="td">{{ .FlagCode }}</td>
+  <td class="td">{{ .ServiceName }}{{ .ServicePort }}</td>
+  <td class="td">{{ .Status }}</td>
+  <td class="td">{{ .SubmitTime }}</td>
+  <td class="td">{{ .ResponseTime }}</td>
+</tr>
+{{ else }}
+<tr>
+  <td colspan="3" class="text-center text-gray-400">Nessun dato disponibile</td>
+</tr>
+{{ end }}

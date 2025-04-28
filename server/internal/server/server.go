@@ -4,54 +4,47 @@ import (
 	"context"
 	"strings"
 
-	"github.com/ByteTheCookies/backend/internal/config"
-	"github.com/ByteTheCookies/backend/internal/database"
-	"github.com/ByteTheCookies/backend/internal/logger"
-	"github.com/ByteTheCookies/backend/internal/ui"
+	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/database"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/ui"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/template/html/v2"
 )
 
 type FiberServer struct {
 	*fiber.App
-	shutdownCancel context.CancelFunc
 	db             database.Service
+	shutdownCancel context.CancelFunc
 }
 
-func DevConfig() fiber.Config {
-	return fiber.Config{
-		AppName:               "CookieFarm Backend (Dev)",
-		DisableStartupMessage: false,
-		Prefork:               false,
-		CaseSensitive:         false,
-		StrictRouting:         false,
-		ServerHeader:          "Fiber",
-		EnablePrintRoutes:     true,
-		Views:                 html.New(ui.GetPathView(), ".html"),
+func newConfig(debug bool) fiber.Config {
+	views := ui.InitTemplateEngine(!debug)
+	common := fiber.Config{
+		Views: views,
 	}
-}
 
-func ProdConfig() fiber.Config {
-	return fiber.Config{
-		AppName:               "CookieFarm Backend",
-		DisableStartupMessage: true,
-		Prefork:               false,
-		CaseSensitive:         true,
-		StrictRouting:         true,
-		ServerHeader:          "",
-		EnablePrintRoutes:     false,
-		Views:                 html.NewFileSystem(ui.ViewsFS(), ".html"),
+	if debug {
+		common.AppName = "CookieFarm Server (Dev)"
+		common.DisableStartupMessage = false
+		common.CaseSensitive = false
+		common.StrictRouting = false
+		common.EnablePrintRoutes = true
+	} else {
+		common.AppName = "CookieFarm Server"
+		common.DisableStartupMessage = true
+		common.CaseSensitive = true
+		common.StrictRouting = true
+		common.EnablePrintRoutes = false
 	}
+
+	common.Prefork = false
+	common.ServerHeader = "Fiber"
+
+	return common
 }
 
 func New() *FiberServer {
-	var cfg fiber.Config
-	if *config.Debug {
-		cfg = DevConfig()
-	} else {
-		cfg = ProdConfig()
-	}
-
+	cfg := newConfig(*config.Debug)
 	app := fiber.New(cfg)
 
 	app.Static("/css", "./public/css")

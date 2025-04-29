@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from flask import Flask, request
+import time
 import random
 
 app = Flask(__name__)
@@ -21,6 +22,9 @@ status = {
 @app.route("/submit", methods=['PUT'])
 def check_flags():
     responses = []
+
+    time.sleep(random.randint(0, 2))
+
     if request.headers.get('X-Team-Token'):
         data = request.get_json()
         if data:

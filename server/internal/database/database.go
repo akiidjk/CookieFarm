@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
@@ -18,25 +17,6 @@ import (
 
 //go:embed schema.sql
 var sqlSchema string
-
-type Service interface {
-	Health() map[string]string
-	AddFlags(flags []models.Flag) error
-	AddFlag(flag models.Flag) error
-	GetUnsubmittedFlags(limit int) ([]models.Flag, error)
-	GetAllFlags() ([]models.Flag, error)
-	GetFirstNFlags(limit int) ([]models.Flag, error)
-	GetPagedFlags(offset int, limit int) ([]models.Flag, error)
-	GetPagedFlagCodeList(offset int, limit int) ([]string, error)
-	GetUnsubmittedFlagCodeList(limit uint16) ([]string, error)
-	GetAllFlagCodeList() ([]string, error)
-	GetFirstNFlagCodeList(limit int) ([]string, error)
-	UpdateFlagStatus(flag_code string, status string) error
-	UpdateFlagsStatus(flags []string, status string) error
-	FlagsNumber(ctx context.Context) (int, error)
-	InitDB() error
-	Close() error
-}
 
 var DB *sql.DB
 

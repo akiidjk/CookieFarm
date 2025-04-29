@@ -30,6 +30,7 @@ func main() {
 		// 	logger.Log.Debug().Msgf("Listening on localhost:6060")
 		// 	http.ListenAndServe("localhost:6060", nil)
 		// }()
+
 		/*pyroscope.Start(pyroscope.Config{
 		ApplicationName: "cookiefarm",
 		ServerAddress:   "http://pyroscope-server:4040",

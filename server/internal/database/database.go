@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
@@ -19,40 +18,18 @@ import (
 //go:embed schema.sql
 var sqlSchema string
 
-type Service interface {
-	Health() map[string]string
-	AddFlags(flags []models.Flag) error
-	AddFlag(flag models.Flag) error
-	GetUnsubmittedFlags(limit int) ([]models.Flag, error)
-	GetAllFlags() ([]models.Flag, error)
-	GetFirstNFlags(limit int) ([]models.Flag, error)
-	GetPagedFlags(offset int, limit int) ([]models.Flag, error)
-	GetPagedFlagCodeList(offset int, limit int) ([]string, error)
-	GetUnsubmittedFlagCodeList(limit uint16) ([]string, error)
-	GetAllFlagCodeList() ([]string, error)
-	GetFirstNFlagCodeList(limit int) ([]string, error)
-	UpdateFlagStatus(flag_code string, status string) error
-	UpdateFlagsStatus(flags []string, status string) error
-	FlagsNumber(ctx context.Context) (int, error)
-	InitDB() error
-	Close() error
-}
-
-type service struct {
-	db *sql.DB
-}
+var DB *sql.DB
 
 var (
-	dbPath     = utils.GetEnv("DB_URL", filepath.Join(utils.GetExecutableDir(), "cookiefarm.db"))
-	dbInstance *service
+	dbPath = utils.GetEnv("DB_URL", filepath.Join(utils.GetExecutableDir(), "cookiefarm.db"))
 )
 
-func (s *service) InitDB() error {
+func InitDB() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	logger.Log.Info().Msg("Initializing database schema")
-	_, err := s.db.ExecContext(ctx, sqlSchema)
+	_, err := DB.ExecContext(ctx, sqlSchema)
 	if err != nil {
 		return err
 	}
@@ -61,34 +38,26 @@ func (s *service) InitDB() error {
 	return nil
 }
 
-func New() Service {
-	if dbInstance != nil {
-		return dbInstance
-	}
-
+func New() *sql.DB {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Str("path", dbPath).Msg("Failed to open database")
 	}
-
-	dbInstance = &service{
-		db: db,
-	}
-
-	if err := dbInstance.InitDB(); err != nil {
+	DB = db
+	if err := InitDB(); err != nil {
 		logger.Log.Fatal().Err(err).Msg("Database initialization failed")
 	}
 
-	return dbInstance
+	return db
 }
 
-func (s *service) Health() map[string]string {
+func Health() map[string]string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	stats := make(map[string]string)
 
-	err := s.db.PingContext(ctx)
+	err := DB.PingContext(ctx)
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
@@ -99,7 +68,7 @@ func (s *service) Health() map[string]string {
 	stats["status"] = "up"
 	stats["message"] = "It's healthy"
 
-	dbStats := s.db.Stats()
+	dbStats := DB.Stats()
 	stats["open_connections"] = strconv.Itoa(dbStats.OpenConnections)
 	stats["in_use"] = strconv.Itoa(dbStats.InUse)
 	stats["idle"] = strconv.Itoa(dbStats.Idle)
@@ -127,36 +96,25 @@ func (s *service) Health() map[string]string {
 	return stats
 }
 
-func (s *service) Close() error {
+func Close() error {
 	logger.Log.Info().Str("path", dbPath).Msg("Disconnected from database")
-	return s.db.Close()
+	return DB.Close()
 }
 
-func (s *service) FlagsNumber(ctx context.Context) (int, error) {
-
-	stmt, err := s.db.PrepareContext(ctx, "SELECT COUNT(*) FROM flags")
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to prepare statement")
-		return 0, err
-	}
-
-	rows, err := stmt.QueryContext(ctx)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to execute query")
-		return 0, err
-	}
-	defer rows.Close()
-
+func FlagsNumber(ctx context.Context) (int, error) {
 	var count int
-	for rows.Next() {
-		err = rows.Scan(&count)
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to scan result")
-			return 0, err
-		}
+	err := DB.
+		QueryRowContext(ctx, "SELECT COUNT(*) FROM flags").
+		Scan(&count)
+	if err != nil {
+		logger.Log.Error().
+			Err(err).
+			Msg("Failed to get flags count")
+		return 0, err
 	}
 
-	logger.Log.Debug().Int("count", count).Msg("Flags number")
-
+	logger.Log.Debug().
+		Int("count", count).
+		Msg("Flags number")
 	return count, nil
 }

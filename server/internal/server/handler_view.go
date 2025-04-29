@@ -4,13 +4,14 @@ import (
 	"math"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
-func (s *FiberServer) HandleIndexPage(c *fiber.Ctx) error {
+func HandleIndexPage(c *fiber.Ctx) error {
 	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
@@ -27,11 +28,11 @@ func (s *FiberServer) HandleIndexPage(c *fiber.Ctx) error {
 	return c.Render("pages/dashboard", data, "layouts/main")
 }
 
-func (s *FiberServer) HandleLoginPage(c *fiber.Ctx) error {
+func HandleLoginPage(c *fiber.Ctx) error {
 	return c.Render("pages/login", map[string]any{}, "layouts/main")
 }
 
-func (s *FiberServer) HandlePartialsPagination(c *fiber.Ctx) error {
+func HandlePartialsPagination(c *fiber.Ctx) error {
 	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
@@ -42,7 +43,7 @@ func (s *FiberServer) HandlePartialsPagination(c *fiber.Ctx) error {
 	}
 	logger.Log.Debug().Int("limit", limit).Msg("Paginated flags request")
 
-	totalFlags, err := s.db.FlagsNumber(c.Context())
+	totalFlags, err := database.FlagsNumber(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Errore nel recupero dei dati")
 	}
@@ -67,7 +68,7 @@ func (s *FiberServer) HandlePartialsPagination(c *fiber.Ctx) error {
 	return c.Render("partials/pagination", data, "layouts/main")
 }
 
-func (s *FiberServer) HandlePartialsFlags(c *fiber.Ctx) error {
+func HandlePartialsFlags(c *fiber.Ctx) error {
 	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func (s *FiberServer) HandlePartialsFlags(c *fiber.Ctx) error {
 	offset := c.QueryInt("offset", config.OFFSET)
 	logger.Log.Debug().Int("offset", offset).Int("limit", limit).Msg("Paginated flags request")
 
-	flags, err := s.db.GetPagedFlags(limit, offset)
+	flags, err := database.GetPagedFlags(limit, offset)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Errore nel recupero dei dati")
 	}

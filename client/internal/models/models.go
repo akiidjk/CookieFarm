@@ -5,7 +5,6 @@ type Flag struct {
 	ResponseTime uint64 `json:"response_time"`
 	ServicePort  uint16 `json:"service_port"`
 	TeamID       uint16 `json:"team_id"`
-	ID           string `json:"id"`
 	FlagCode     string `json:"flag_code"`
 	ServiceName  string `json:"service_name"`
 	Status       string `json:"status"`

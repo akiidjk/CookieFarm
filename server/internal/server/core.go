@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
+	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/ByteTheCookies/cookieserver/protocols"
@@ -17,8 +18,7 @@ type FLagGroups struct {
 	accepted []string
 	denied   []string
 	errored  []string
-	// capienza massima prevista
-	cap int
+	cap      int
 }
 
 func newFlagGroups(cap int) *FLagGroups {
@@ -38,7 +38,7 @@ func (g *FLagGroups) reset() {
 
 // ----------- END FLAG GROUPS ------------
 
-func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
+func StartFlagProcessingLoop(ctx context.Context) {
 	interval := time.Duration(config.Current.ConfigServer.SubmitFlagCheckerTime) * time.Second
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -58,7 +58,7 @@ func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 			logger.Log.Info().Msg("Flag processing loop terminated")
 			return
 		case <-ticker.C:
-			flags, err := s.db.GetUnsubmittedFlagCodeList(config.Current.ConfigServer.MaxFlagBatchSize)
+			flags, err := database.GetUnsubmittedFlagCodeList(config.Current.ConfigServer.MaxFlagBatchSize)
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to get unsubmitted flags")
 				continue
@@ -80,12 +80,12 @@ func (s *FiberServer) StartFlagProcessingLoop(ctx context.Context) {
 				continue
 			}
 
-			s.UpdateFlags(responses)
+			UpdateFlags(responses)
 		}
 	}
 }
 
-func (s *FiberServer) UpdateFlags(flags []models.ResponseProtocol) {
+func UpdateFlags(flags []models.ResponseProtocol) {
 	maxBatch := int(config.Current.ConfigServer.MaxFlagBatchSize)
 	groups := newFlagGroups(maxBatch)
 	defer groups.reset()
@@ -107,7 +107,7 @@ func (s *FiberServer) UpdateFlags(flags []models.ResponseProtocol) {
 		if len(flags) == 0 {
 			return
 		}
-		if err := s.db.UpdateFlagsStatus(flags, status); err != nil {
+		if err := database.UpdateFlagsStatus(flags, status); err != nil {
 			logger.Log.Error().
 				Strs("flags", flags).
 				Err(err).

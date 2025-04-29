@@ -2,55 +2,55 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
-func (s *service) AddFlags(flags []models.Flag) error {
+func AddFlags(flags []models.Flag) error {
 	if len(flags) == 0 {
 		return nil
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	query := `
-		INSERT INTO flags
-		(id, flag_code, service_name, service_port, submit_time, response_time, status, team_id)
-		VALUES `
+	tx, _ := DB.BeginTx(ctx, nil)
+	defer tx.Rollback()
 
-	valueStrings := make([]string, 0, len(flags))
-	valueArgs := make([]interface{}, 0, len(flags)*8)
+	const maxParams = 50
+	perRow := 8
+	maxRows := maxParams / perRow
+	for i := 0; i < len(flags); i += maxRows {
+		end := i + maxRows
+		if end > len(flags) {
+			end = len(flags)
+		}
+		batch := flags[i:end]
 
-	for _, flag := range flags {
-		valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?)")
-		valueArgs = append(valueArgs,
-			flag.ID,
-			flag.FlagCode,
-			flag.ServiceName,
-			flag.ServicePort,
-			flag.SubmitTime,
-			flag.ResponseTime,
-			flag.Status,
-			flag.TeamID,
-		)
+		parts := make([]string, len(batch))
+		args := make([]any, 0, len(batch)*perRow)
+		for j, f := range batch {
+			parts[j] = "(?, ?, ?, ?, ?, ?, ?)"
+			args = append(args,
+				f.FlagCode, f.ServiceName, f.ServicePort,
+				f.SubmitTime, f.ResponseTime, f.Status, f.TeamID,
+			)
+		}
+		query := "INSERT INTO flags(flag_code,service_name,service_port,submit_time,response_time,status,team_id) VALUES " +
+			strings.Join(parts, ",")
+
+		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+			return fmt.Errorf("batch insert: %w", err)
+		}
 	}
 
-	query += strings.Join(valueStrings, ", ")
+	flags = nil
 
-	_, err := s.db.ExecContext(ctx, query, valueArgs...)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to batch insert flags")
-		return err
-	}
-
-	logger.Log.Debug().Int("inserted", len(flags)).Msg("Flags inserted successfully")
-	return nil
+	return tx.Commit()
 }
 
-func (s *service) AddFlag(flag models.Flag) error {
-	return s.AddFlags([]models.Flag{flag})
+func AddFlag(flag models.Flag) error {
+	return AddFlags([]models.Flag{flag})
 }

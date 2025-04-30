@@ -21,6 +21,8 @@ import (
 
 func main() {
 	config.Debug = flag.Bool("debug", false, "Enable debug-level logging")
+	flag.StringVar(&config.ConfigPath, "config", "", "Path to the configuration file")
+
 	flag.Parse()
 
 	level := "info"
@@ -57,6 +59,16 @@ func main() {
 	}
 	logger.Setup(level)
 	defer logger.Close()
+
+	if config.ConfigPath != "" {
+		logger.Log.Info().Msg("Using file config...")
+		err := server.LoadConfig(config.ConfigPath)
+		if err != nil {
+			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
+		}
+	} else {
+		logger.Log.Info().Msg("Using web config...")
+	}
 
 	server.InitSecret()
 	logger.Log.Debug().Str("plain", config.Password).Msg("Plain password before hashing")

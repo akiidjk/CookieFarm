@@ -11,6 +11,7 @@ var Current models.Config = models.Config{
 	ConfigServer: models.ConfigServer{},
 }
 var Debug *bool
+var ConfigPath string
 var Secret = make([]byte, 32)
 var Password = utils.GetEnv("PASSWORD", "password")
 var ServerPort = utils.GetEnv("BACKEND_PORT", "8080")

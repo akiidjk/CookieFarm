@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"sync"
 	"time"
 
@@ -128,4 +130,28 @@ func UpdateFlags(flags []models.ResponseProtocol) {
 		Int("errored", len(groups.errored)).
 		Int("total", total).
 		Msg("Flags update summary")
+}
+
+func LoadConfig(path string) error {
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return err
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	json.Unmarshal(data, &config.Current)
+
+	if shutdownCancel != nil {
+		shutdownCancel()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	shutdownCancel = cancel
+
+	go StartFlagProcessingLoop(ctx)
+
+	return nil
 }

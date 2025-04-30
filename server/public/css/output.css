@@ -264,6 +264,9 @@
   .mr-3 {
     margin-right: calc(var(--spacing) * 3);
   }
+  .mr-4 {
+    margin-right: calc(var(--spacing) * 4);
+  }
   .mb-2 {
     margin-bottom: calc(var(--spacing) * 2);
   }
@@ -275,9 +278,6 @@
   }
   .ml-2 {
     margin-left: calc(var(--spacing) * 2);
-  }
-  .ml-4 {
-    margin-left: calc(var(--spacing) * 4);
   }
   .block {
     display: block;
@@ -318,20 +318,8 @@
   .h-\[80vh\] {
     height: 80vh;
   }
-  .max-h-\[80vh\] {
-    max-height: 80vh;
-  }
   .max-h-\[85vh\] {
     max-height: 85vh;
-  }
-  .max-h-\[90vh\] {
-    max-height: 90vh;
-  }
-  .max-h-\[100vh\] {
-    max-height: 100vh;
-  }
-  .max-h-full {
-    max-height: 100%;
   }
   .min-h-full {
     min-height: 100%;
@@ -348,14 +336,23 @@
   .w-16 {
     width: calc(var(--spacing) * 16);
   }
+  .w-40 {
+    width: calc(var(--spacing) * 40);
+  }
+  .w-64 {
+    width: calc(var(--spacing) * 64);
+  }
   .w-full {
     width: 100%;
   }
   .max-w-4xl {
     max-width: var(--container-4xl);
   }
-  .max-w-60 {
-    max-width: calc(var(--spacing) * 60);
+  .max-w-\[100px\] {
+    max-width: 100px;
+  }
+  .max-w-\[1500px\] {
+    max-width: 1500px;
   }
   .max-w-sm {
     max-width: var(--container-sm);
@@ -363,8 +360,8 @@
   .min-w-10 {
     min-width: calc(var(--spacing) * 10);
   }
-  .min-w-\[1500px\] {
-    min-width: 1500px;
+  .min-w-\[800px\] {
+    min-width: 800px;
   }
   .min-w-full {
     min-width: 100%;
@@ -392,6 +389,9 @@
   }
   .flex-col {
     flex-direction: column;
+  }
+  .flex-row {
+    flex-direction: row;
   }
   .items-center {
     align-items: center;
@@ -527,9 +527,6 @@
   .border-transparent {
     border-color: transparent;
   }
-  .bg-\[\#8c7b5e\] {
-    background-color: #8c7b5e;
-  }
   .bg-\[var\(--background\)\] {
     background-color: var(--background);
   }
@@ -599,26 +596,11 @@
   .px-6 {
     padding-inline: calc(var(--spacing) * 6);
   }
-  .px-7 {
-    padding-inline: calc(var(--spacing) * 7);
-  }
-  .px-8 {
-    padding-inline: calc(var(--spacing) * 8);
+  .px-10 {
+    padding-inline: calc(var(--spacing) * 10);
   }
   .px-16 {
     padding-inline: calc(var(--spacing) * 16);
-  }
-  .px-28 {
-    padding-inline: calc(var(--spacing) * 28);
-  }
-  .px-80 {
-    padding-inline: calc(var(--spacing) * 80);
-  }
-  .px-\[100px\] {
-    padding-inline: 100px;
-  }
-  .px-\[200px\] {
-    padding-inline: 200px;
   }
   .py-1 {
     padding-block: calc(var(--spacing) * 1);
@@ -646,6 +628,18 @@
   }
   .pe-9 {
     padding-inline-end: calc(var(--spacing) * 9);
+  }
+  .pl-2 {
+    padding-left: calc(var(--spacing) * 2);
+  }
+  .pl-3 {
+    padding-left: calc(var(--spacing) * 3);
+  }
+  .pl-10 {
+    padding-left: calc(var(--spacing) * 10);
+  }
+  .pl-\[10px\] {
+    padding-left: 10px;
   }
   .text-center {
     text-align: center;

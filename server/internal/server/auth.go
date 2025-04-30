@@ -100,7 +100,7 @@ func HandleLogin(c *fiber.Ctx) error {
 func CookieAuthMiddleware(c *fiber.Ctx) error {
 	token := c.Cookies("token")
 	if token == "" || VerifyToken(token) != nil {
-		// return c.Redirect("/login")
+		return c.Redirect("/login")
 	}
 	return nil
 }

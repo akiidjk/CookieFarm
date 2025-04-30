@@ -1,28 +1,30 @@
 {{ range .Flags }}
 <tr class="group hover:bg-primary/20">
-  <td class="td">{{ .FlagCode }}</td>
-  <td class="td "> <span class="bg-secondary p-1 px-4 rounded-full"> {{ .ServiceName }}:{{ .ServicePort }} </span></td>
+    <td class="td">{{ .FlagCode }}</td>
+    <td class="td">
+        <span class="bg-secondary p-1 px-4 rounded-full">
+            {{ .ServiceName }}:{{ .ServicePort }}
+        </span>
+    </td>
 
-  {{ $color := "text-gray-500" }}
-  {{ if eq .Status "ACCEPTED" }}
-    {{ $color = "text-green-500" }}
-  {{ else if eq .Status "DENIED" }}
-    {{ $color = "text-red-500" }}
-  {{ else if eq .Status "ERROR" }}
-    {{ $color = "text-yellow-500" }}
-  {{ end }}
-  <td class="{{ $color }} td">{{ .Status }}</td>
-  <td class="td">{{ .SubmitTime }}</td>
-  <td class="td">{{ .ResponseTime }}</td>
+    {{ $color := "text-gray-500" }} {{ if eq .Status "ACCEPTED" }} {{ $color =
+    "text-green-500" }} {{ else if eq .Status "DENIED" }} {{ $color =
+    "text-red-500" }} {{ else if eq .Status "ERROR" }} {{ $color =
+    "text-yellow-500" }} {{ end }}
+    <td class="{{ $color }} td">{{ .Status }}</td>
+    <td class="td timestamp">{{ .SubmitTime }}</td>
+    <td class="td timestamp">{{ .ResponseTime }}</td>
 
-  {{ if eq .ResponseTime 0 }}
+    {{ if eq .ResponseTime 0 }}
     <td class="td text-red-500">No Response</td>
-  {{ else }}
+    {{ else }}
     <td class="td">{{ subu64 .ResponseTime .SubmitTime }} ms</td>
-  {{ end }}
+    {{ end }}
 </tr>
 {{ else }}
 <tr>
-  <td colspan="6" class="text-center text-gray-400">Nessun dato disponibile</td>
+    <td colspan="6" class="text-center text-gray-400">
+        Nessun dato disponibile
+    </td>
 </tr>
 {{ end }}

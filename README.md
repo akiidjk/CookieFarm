@@ -14,6 +14,9 @@
 - [x] Setup repository
   - [x] Setup .gitignore - @akiidjk @suga
   - [x] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval) - @suga
+- [ ] Configurazione da file/shitcurl (json parsato)
+- [ ] Numero configurabile di thread nelle coroutine
+- [ ] Upgrade FE
 
 ---
 

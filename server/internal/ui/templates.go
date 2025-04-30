@@ -16,9 +16,10 @@ func InitTemplateEngine(debug bool) *html.Engine {
 	engine := html.New(path, ".html")
 
 	engineFuncMap := map[string]interface{}{
-		"mul": func(a, b int) int { return a * b },
-		"add": func(a, b int) int { return a + b },
-		"sub": func(a, b int) int { return a - b },
+		"mul":    func(a, b int) int { return a * b },
+		"add":    func(a, b int) int { return a + b },
+		"sub":    func(a, b int) int { return a - b },
+		"subu64": func(a, b uint64) uint64 { return a - b },
 	}
 	engine.AddFuncMap(engineFuncMap)
 

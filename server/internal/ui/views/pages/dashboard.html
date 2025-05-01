@@ -29,7 +29,7 @@
    <div class="-m-1.5 overflow-x-auto">
       <div class="p-5 px-16 min-w-full inline-block align-middle">
          <div class="flex flex-col max-h-[85vh] border border-gray-200 dark:border-neutral-700 rounded-lg  ">
-            <div class="overflow-y-auto flex-1">
+            <div class="overflow-y-auto flex-1 rounded-lg">
                <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 relative">
                   <thead class="bg-gray-50 dark:bg-neutral-700 sticky top-0 ">
                      <tr>
@@ -106,7 +106,7 @@
                Loading...
             </div>
             <!-- Pagination -->
-            <div id="pagination" class="px-4 py-2 bg-white dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-700"
+            <div id="pagination" class="px-4 py-2 bg-white dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-700 rounded-b-lg"
                hx-get="/pagination/{{.Limit}}?offset=0"
                hx-trigger="load, flagsUpdated from:body"
                hx-target="this"

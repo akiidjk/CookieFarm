@@ -28,6 +28,7 @@ func init() {
 	args.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server")
 	args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background")
 	args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between run exploits")
+	args.ThreadCount = pflag.IntP("thread", "T", 5, "Number of threads to use for concurrent execution")
 }
 
 func setupClient() error {
@@ -82,7 +83,7 @@ func main() {
 	}
 	defer logger.Close()
 
-	result, err := executor.Start(*args.ExploitName, *args.Password, *args.TickTime, logPath)
+	result, err := executor.Start(*args.ExploitName, *args.Password, *args.TickTime, logPath, *args.ThreadCount)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

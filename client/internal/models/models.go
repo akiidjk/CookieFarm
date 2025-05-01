@@ -52,6 +52,7 @@ type Args struct {
 	TickTime      *int    `json:"tick_time"`
 	Debug         *bool   `json:"debug"`
 	Detach        *bool   `json:"detach"`
+	ThreadCount   *int    `json:"thread_count"`
 }
 
 type TokenResponse struct {

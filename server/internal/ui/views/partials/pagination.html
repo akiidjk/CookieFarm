@@ -6,20 +6,6 @@
          </p>
       </div>
 
-      <div>
-        <select
-          id="hs-hidden-select"
-          onchange="window.location.href = `?limit=${this.value}`"
-          class="shadow-sm ml-36 border-2 border-solid border-primary py-3 px-4 pe-9 block w-full rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-700 dark:border-neutral-700 dark:text-white dark:placeholder-white-500 dark:focus:ring-neutral-600"
-        >
-          <option disabled selected>{{.Pagination.Limit}}</option>
-          <option value="20">20</option>
-          <option value="40">40</option>
-          <option value="80">80</option>
-          <option value="100">100</option>
-        </select>
-      </div>
-
 
       <div>
          <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
@@ -87,6 +73,20 @@
                </svg>
             </a>
          </nav>
+      </div>
+
+      <div>
+        <select
+          id="hs-hidden-select"
+          onchange="window.location.href = `?limit=${this.value}`"
+          class="shadow-sm border-2 border-solid border-primary py-3 px-4 pe-9 block w-full rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-700 dark:border-neutral-700 dark:text-white dark:placeholder-white-500 dark:focus:ring-neutral-600"
+        >
+          <option disabled selected>{{.Pagination.Limit}}</option>
+          <option value="20">20</option>
+          <option value="40">40</option>
+          <option value="80">80</option>
+          <option value="100">100</option>
+        </select>
       </div>
    </div>
 </div>

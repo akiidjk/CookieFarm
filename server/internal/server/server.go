@@ -12,11 +12,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-//	type FiberServer struct {
-//		*fiber.App
-//		db             database.Service
-//
-// }
 var shutdownCancel context.CancelFunc
 
 func newConfig(debug bool) fiber.Config {

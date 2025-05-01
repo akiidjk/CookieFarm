@@ -19,6 +19,8 @@ status = {
     "ERROR": ERROR,
 }
 
+flag_store = set()
+
 @app.route("/submit", methods=['PUT'])
 def check_flags():
     responses = []
@@ -29,15 +31,20 @@ def check_flags():
         data = request.get_json()
         if data:
             for flag in data:
-                s = random.choice(list(status.keys()))
-                if s == "DENIED":
-                    message = random.choice(status["DENIED"])
-                elif s == "RESUBMIT":
+                if flag in flag_store:
+                    s = "RESUBMIT"
                     message = status["RESUBMIT"]
-                elif s == "ERROR":
-                    message = status["ERROR"]
                 else:
-                    message = status["ACCEPTED"]
+                    s = random.choice(list(status.keys()))
+                    match s:
+                        case "ACCEPTED":
+                            message = status["ACCEPTED"]
+                            flag_store.add(flag)
+                        case "DENIED":
+                            message = status["DENIED"]
+                        case _:
+                            message = status["ERROR"]
+
                 responses.append({
                     "msg": f"[{flag}] {message}",
                     "flag": flag,

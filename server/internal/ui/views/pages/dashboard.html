@@ -120,25 +120,6 @@
 <script type="module" defer>
    import { uuidv4, sendFlag} from '/js/output.min.js';
 
-   document.body.addEventListener('htmx:afterSettle', () => {
-      document.querySelectorAll('.timestamp').forEach(el => {
-        const raw = parseInt(el.textContent);
-        if (!isNaN(raw)) {
-          el.textContent = formatTimestamp(raw);
-        }
-      });
-    });
-
-    function formatTimestamp(unixTimestamp) {
-      const date = new Date(unixTimestamp * 1000);
-      const pad = (num, size = 2) => String(num).padStart(size, '0');
-      const hours = pad(date.getHours());
-      const minutes = pad(date.getMinutes());
-      const seconds = pad(date.getSeconds());
-      const milliseconds = pad(date.getMilliseconds(), 3);
-      return `${hours}:${minutes}:${seconds}.${milliseconds}`;
-    }
-
    function submitFlag() {
        const flagInput = document.getElementById('flag-input');
        const statusEl = document.getElementById('flag-submission-status');

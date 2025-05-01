@@ -12,13 +12,13 @@
     "text-red-500" }} {{ else if eq .Status "ERROR" }} {{ $color =
     "text-yellow-500" }} {{ end }}
     <td class="{{ $color }} td">{{ .Status }}</td>
-    <td class="td timestamp">{{ .SubmitTime }}</td>
-    <td class="td timestamp">{{ .ResponseTime }}</td>
+    <td class="td timestamp">{{ format_timestamp .SubmitTime }}</td>
+    <td class="td timestamp">{{ format_timestamp .ResponseTime }}</td>
 
     {{ if eq .ResponseTime 0 }}
     <td class="td text-red-500">No Response</td>
     {{ else }}
-    <td class="td">{{ subu64 .ResponseTime .SubmitTime }} ms</td>
+    <td class="td">{{ subu64 .ResponseTime .SubmitTime }} s</td>
     {{ end }}
 </tr>
 {{ else }}

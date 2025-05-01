@@ -12,11 +12,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-//	type FiberServer struct {
-//		*fiber.App
-//		db             database.Service
-//
-// }
 var shutdownCancel context.CancelFunc
 
 func newConfig(debug bool) fiber.Config {
@@ -53,8 +48,8 @@ func New() *fiber.App {
 
 	app.Static("/css", "./public/css", fiber.Static{
 		Compress:      true,
-		// CacheDuration: 10 * time.Second,
-		// MaxAge:        3600,
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
 	})
 	app.Static("/js", "./public/js", fiber.Static{
 		Compress:      true,

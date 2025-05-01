@@ -38,7 +38,7 @@ func CleanGC() (uint64, uint64) {
 func GetExecutableDir() string {
 	exePath, err := os.Executable()
 	if err != nil {
-		panic("impossibile determinare il path del binario: " + err.Error())
+		panic("impossible to determine the binary path: " + err.Error())
 	}
 	return filepath.Dir(exePath)
 }

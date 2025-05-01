@@ -88,7 +88,7 @@ func MapPortToService(port uint16) string {
 func GetExecutableDir() string {
 	exePath, err := os.Executable()
 	if err != nil {
-		panic("impossibile determinare il path del binario: " + err.Error())
+		panic("impossible to determine the binary path: " + err.Error())
 	}
 	return filepath.Dir(exePath)
 }

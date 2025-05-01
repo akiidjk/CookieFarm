@@ -21,7 +21,7 @@ type ExecutionResult struct {
 	FlagsChan chan models.Flag
 }
 
-func Start(exploitName, password string, tickTime int, logPath string, threadCount int) (*ExecutionResult, error) {
+func Start(exploitName, password string, tickTime int, threadCount int, logPath string) (*ExecutionResult, error) {
 	exploitPath := filepath.Join(utils.GetExecutableDir(), "..", "exploits", exploitName)
 
 	cmd := exec.Command(
@@ -30,8 +30,8 @@ func Start(exploitName, password string, tickTime int, logPath string, threadCou
 		password,
 		strconv.Itoa(tickTime),
 		config.Current.ConfigClient.RegexFlag,
-		logPath,
 		strconv.Itoa(threadCount),
+		logPath,
 	)
 
 	logger.Log.Debug().

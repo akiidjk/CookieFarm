@@ -83,7 +83,7 @@ func main() {
 	}
 	defer logger.Close()
 
-	result, err := executor.Start(*args.ExploitName, *args.Password, *args.TickTime, logPath, *args.ThreadCount)
+	result, err := executor.Start(*args.ExploitName, *args.Password, *args.TickTime, *args.ThreadCount, logPath)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

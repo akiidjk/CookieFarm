@@ -14,7 +14,6 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/ByteTheCookies/cookieclient/internal/utils"
-	json "github.com/bytedance/sonic"
 )
 
 type ExecutionResult struct {
@@ -28,7 +27,7 @@ func Start(exploitName, password string, tickTime int, threadCount int, logPath 
 
 	cmd := exec.Command(
 		exploitPath,
-		config.Current.ConfigClient.BaseUrlServer,
+		*config.BaseURLServer,
 		password,
 		strconv.Itoa(tickTime),
 		config.Current.ConfigClient.RegexFlag,
@@ -37,23 +36,24 @@ func Start(exploitName, password string, tickTime int, threadCount int, logPath 
 	)
 
 	logger.Log.Debug().
-		Str("path", exploitPath).
-		Int("tick", tickTime).
-		Str("command", cmd.String()).
-		Msg("Starting exploit process")
+		Str("full path exploit", exploitPath).
+		Int("tick time", tickTime).
+		Str("command executed", cmd.String())
+
+	logger.Log.Info().Msg("Starting exploiting process with exploit_manager...")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get stdout pipe: %w", err)
+		return nil, fmt.Errorf("Failed to get stdout pipe: %w", err)
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get stderr pipe: %w", err)
+		return nil, fmt.Errorf("Failed to get stderr pipe: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("failed to start command: %w", err)
+		return nil, fmt.Errorf("Failed to start command: %w", err)
 	}
 
 	flagsChan := make(chan models.Flag, 100)
@@ -82,14 +82,15 @@ func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 		}
 		flagsChan <- flag
 
-		if jsonFlag, err := json.Marshal(flag); err == nil {
-			logger.Log.Debug().
-				Str("flag", string(jsonFlag)).
-				Msg("Parsed and queued flag")
-		}
+		logger.Log.Info().
+			Str("flag", flag.FlagCode).
+			Int("team", int(flag.TeamID)).
+			Str("service", flag.ServiceName).
+			Uint16("port", flag.ServicePort).
+			Msg("Parsed and queued flag")
 	}
 	if err := scanner.Err(); err != nil {
-		logger.Log.Error().Err(err).Msg("Errore lettura stdout scanner")
+		logger.Log.Error().Err(err).Msg("Error reading stdout scanner")
 	}
 }
 
@@ -100,6 +101,6 @@ func readStderr(stderr io.Reader) {
 		logger.Log.Warn().Str("stderr", scanner.Text()).Msg("Exploit stderr")
 	}
 	if err := scanner.Err(); err != nil {
-		logger.Log.Error().Err(err).Msg("Errore lettura stderr scanner")
+		logger.Log.Error().Err(err).Msg("Error reading stderr scanner")
 	}
 }

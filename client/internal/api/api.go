@@ -22,14 +22,14 @@ var (
 func SendFlag(flags ...models.Flag) error {
 	body, err := json.Marshal(map[string][]models.Flag{"flags": flags})
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Errore durante il marshalling delle flags")
+		logger.Log.Error().Err(err).Msg("Error during flags marshalling")
 		return err
 	}
 
-	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/submit-flags"
+	url := *config.BaseURLServer + "/api/v1/submit-flags"
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
-		log.Error().Err(err).Str("url", url).Msg("Errore creazione richiesta")
+		log.Error().Err(err).Str("url", url).Msg("Error creating request")
 		return err
 	}
 
@@ -38,58 +38,58 @@ func SendFlag(flags ...models.Flag) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Log.Error().Err(err).Str("url", url).Msg("Errore durante la richiesta di invio flags")
+		logger.Log.Error().Err(err).Str("url", url).Msg("Error during flags submission request")
 		return err
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Errore lettura risposta server")
+		logger.Log.Error().Err(err).Msg("Error reading response")
 		return err
 	}
 
-	logger.Log.Info().
+	logger.Log.Debug().
 		Int("status", resp.StatusCode).
-		Msgf("Risposta server invio flags: %s", string(respBody))
+		Msgf("Server response from submit-flags: %s", string(respBody))
+
 	return nil
 }
 
 // GetConfig retrieves the configuration from the CookieFarm server API.
 func GetConfig() (models.Config, error) {
-	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/config"
+	url := *config.BaseURLServer + "/api/v1/config"
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("errore creazione richiesta config: %w", err)
+		return models.Config{}, fmt.Errorf("Error creating config request: %w", err)
 	}
 	req.Header.Set("Cookie", "token="+config.Token)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("errore invio richiesta config: %w", err)
+		return models.Config{}, fmt.Errorf("Error sending config request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("errore lettura risposta config: %w", err)
+		return models.Config{}, fmt.Errorf("Error reading config response: %w", err)
 	}
 
 	var parsedConfig models.Config
 	if err := json.Unmarshal(respBody, &parsedConfig); err != nil {
-		return models.Config{}, fmt.Errorf("errore parsing config: %w", err)
+		return models.Config{}, fmt.Errorf("Error parsing config: %w", err)
 	}
 
-	if jsonOut, err := json.Marshal(parsedConfig); err == nil {
-		logger.Log.Debug().Msgf("Configurazione ricevuta dal server: %s", string(jsonOut))
-	}
+	logger.Log.Debug().Msgf("Configuration received correctly")
 
 	return parsedConfig, nil
 }
 
 // Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
-	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/auth/login"
+	url := *config.BaseURLServer + "/api/v1/auth/login"
+
 	logger.Log.Debug().Str("url", url).Msg("Tentativo di login")
 
 	resp, err := http.Post(
@@ -98,7 +98,7 @@ func Login(password string) (string, error) {
 		bytes.NewBufferString(fmt.Sprintf(`password=%s`, password)),
 	)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Errore invio login")
+		logger.Log.Error().Err(err).Msg("Error sending login request")
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -106,7 +106,8 @@ func Login(password string) (string, error) {
 	cookies := resp.Cookies()
 	for _, c := range cookies {
 		if c.Name == "token" {
-			logger.Log.Info().Str("token", c.Value).Msg("Login effettuato con successo via cookie")
+			logger.Log.Debug().Str("token", c.Value).Msg("Token found")
+			logger.Log.Info().Msg("Login successfully")
 			return c.Value, nil
 		}
 	}

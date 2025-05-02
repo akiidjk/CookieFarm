@@ -32,7 +32,6 @@ type ConfigServer struct {
 
 // ConfigClient contains all client-side configuration options.
 type ConfigClient struct {
-	BaseUrlServer        string    `json:"base_url_server"`         // Base URL of the cookiefarm server
 	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"` // Time interval (ms) between flag submissions
 	Services             []Service `json:"services"`                // List of services to exploit
 	RangeIPTeams         uint8     `json:"range_ip_teams"`          // Number of teams / IP range
@@ -52,13 +51,12 @@ type Config struct {
 // Args represents the command-line arguments or configuration
 // values passed at runtime to control the exploit manager behavior.
 type Args struct {
-	ExploitName   *string `json:"exploit_name"`    // Name of the exploit to run
-	Password      *string `json:"password"`        // Authentication password
-	BaseURLServer *string `json:"base_url_server"` // Server url
-	TickTime      *int    `json:"tick_time"`       // Optional custom tick time
-	Debug         *bool   `json:"debug"`           // Enable debug mode if true
-	Detach        *bool   `json:"detach"`          // Run in background if true
-	ThreadCount   *int    `json:"thread_count"`    // Optional number of concurrent threads (coroutine) to use
+	ExploitName *string `json:"exploit_name"` // Name of the exploit to run
+	Password    *string `json:"password"`     // Authentication password
+	TickTime    *int    `json:"tick_time"`    // Optional custom tick time
+	Debug       *bool   `json:"debug"`        // Enable debug mode if true
+	Detach      *bool   `json:"detach"`       // Run in background if true
+	ThreadCount *int    `json:"thread_count"` // Optional number of concurrent threads (coroutine) to use
 }
 
 // ParsedFlagOutput represents the output of a parsed flag returned

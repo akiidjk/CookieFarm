@@ -14,7 +14,6 @@ export function validateConfigForm(document, tagify) {
     team_token: val => val.length > 0,
     host_flagchecker: val => val.length > 0,
     protocol: val => val.length > 0,
-    base_url_server: val => /^https?:\/\/.+/.test(val),
     my_team_ip: val => /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(val),
     regex_flag: val => {
       try {
@@ -67,7 +66,6 @@ export function buildConfigFromDOM(document, tagify) {
       submit_flag_checker_time: Number(get("submit_flag_checker_time")),
     },
     client: {
-      base_url_server: get("base_url_server"),
       submit_flag_server_time: Number(get("submit_flag_server_time")),
       services: getServiceEntries(tagify),
       range_ip_teams: Number(get("range_ip_teams")),

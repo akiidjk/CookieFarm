@@ -41,7 +41,6 @@ func (s ConfigServer) IsEmpty() bool {
 }
 
 type ConfigClient struct {
-	BaseUrlServer        string    `json:"base_url_server"`
 	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"`
 	Services             []Service `json:"services"`
 	RangeIPTeams         uint8     `json:"range_ip_teams"`
@@ -51,7 +50,7 @@ type ConfigClient struct {
 }
 
 func (c ConfigClient) IsEmpty() bool {
-	return c.BaseUrlServer == "" && c.SubmitFlagServerTime == 0 && len(c.Services) == 0
+	return c.SubmitFlagServerTime == 0 && len(c.Services) == 0
 }
 
 type Config struct {

@@ -14,11 +14,12 @@ import (
 )
 
 var (
-	LogLevel zerolog.Level
-	Log      zerolog.Logger
-	logFile  *os.File
+	LogLevel zerolog.Level  // Log level for the logger.
+	Log      zerolog.Logger // Logger instance for the CookieFarm client.
+	logFile  *os.File       // Log file for the CookieFarm client.
 )
 
+// Setup initializes the logger with the specified log level.
 func Setup(level string) string {
 	parsedLevel, err := zerolog.ParseLevel(strings.ToLower(level))
 	if err != nil {
@@ -67,12 +68,18 @@ func Setup(level string) string {
 
 	multi := zerolog.MultiLevelWriter(consoleWriter, logFile)
 
-	Log = zerolog.New(multi).With().Timestamp().Caller().Logger()
+	if level == "debug" {
+		Log = zerolog.New(multi).With().Timestamp().Caller().Logger()
+	} else {
+		Log = zerolog.New(multi).With().Timestamp().Logger()
+	}
+
 	zerolog.SetGlobalLevel(parsedLevel)
 
 	return logPath
 }
 
+// Close closes the log file.
 func Close() {
 	if logFile != nil {
 		_ = logFile.Close()

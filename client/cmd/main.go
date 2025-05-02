@@ -4,6 +4,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 
@@ -23,12 +24,18 @@ var (
 	logPath string      // Path to the generated log file
 )
 
+//go:embed banner.txt
+var banner string
+
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
+
+	fmt.Println(banner)
+
 	args.ExploitName = pflag.StringP("exploit", "e", "", "Name of the exploit file to execute")
 	args.Debug = pflag.Bool("debug", false, "Enable debug logging")
 	args.Password = pflag.StringP("password", "p", "", "Password for authenticating to the server")
-	args.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the flag submission server")
+	config.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the flag submission server")
 	args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")
 	args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between exploit executions")
 	args.ThreadCount = pflag.IntP("thread", "T", 5, "Number of concurrent threads to run the exploit with")
@@ -44,6 +51,7 @@ func setupClient() error {
 	pflag.Parse()
 
 	if *args.Detach {
+		fmt.Println(utils.Blue + "[INFO]" + utils.Reset + " | Detaching from terminal")
 		utils.Detach()
 	}
 
@@ -58,7 +66,7 @@ func setupClient() error {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
-	config.Current.ConfigClient.BaseUrlServer = *args.BaseURLServer
+	logger.Log.Debug().Str("ExploitName", *args.ExploitName).Str("BaseURLServer", *config.BaseURLServer).Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime).Msg("Arguments validated")
 
 	config.Token, err = api.Login(*args.Password)
 	if err != nil {
@@ -70,13 +78,12 @@ func setupClient() error {
 		return fmt.Errorf("failed to get config: %w", err)
 	}
 
-	logger.Log.Info().Msgf("Configurazione corrente: %+v", config.Current)
+	logger.Log.Debug().Msgf("Current configuration: %+v", config.Current)
 
 	if !config.Current.Configured {
 		logger.Log.Fatal().Msg("Client not configured. Please run the configurator before using the client.")
 	}
 
-	logger.Log.Info().Msg("Client initialized successfully")
 	return nil
 }
 
@@ -94,10 +101,13 @@ func main() {
 	}
 	defer logger.Close()
 
+	logger.Log.Info().Msg("Client initialized successfully")
+
 	result, err := executor.Start(*args.ExploitName, *args.Password, *args.TickTime, *args.ThreadCount, logPath)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}
+	logger.Log.Info().Msg("Exploit started successfully")
 
 	go submitter.Start(result.FlagsChan)
 

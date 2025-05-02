@@ -46,11 +46,11 @@ func Detach() {
 
 	err := cmd.Start()
 	if err != nil {
-		fmt.Println("Errore nel detach:", err)
+		fmt.Println(Red+"[ERROR]"+Reset+" | Error during detach:", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("Process detached with PID:", cmd.Process.Pid)
+	fmt.Println(Yellow+"[WARN]"+Reset+" | Process detached with PID:", cmd.Process.Pid)
 	os.Exit(0)
 }
 
@@ -79,14 +79,15 @@ func ValidateArgs(args models.Args) error {
 	if *args.ExploitName == "" {
 		return fmt.Errorf("missing required --exploit argument")
 	}
-	if *args.BaseURLServer == "" {
+
+	if *config.BaseURLServer == "" {
 		return fmt.Errorf("missing required --base_url_server argument")
 	}
 	if *args.Password == "" {
 		return fmt.Errorf("missing required --password argument")
 	}
 
-	if !regexp.MustCompile(regexUrl).MatchString(*args.BaseURLServer) {
+	if !regexp.MustCompile(regexUrl).MatchString(*config.BaseURLServer) {
 		return fmt.Errorf("invalid base URL server")
 	}
 

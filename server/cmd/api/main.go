@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os/signal"
 	"syscall"
@@ -16,16 +15,21 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/server"
 	"github.com/ByteTheCookies/cookieserver/internal/utils"
-
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/spf13/pflag"
 )
+
+func init() {
+	config.Debug = pflag.BoolP("debug", "d", false, "Enable debug-level logging")
+	config.ConfigPath = *pflag.StringP("config", "c", "", "Path to the configuration file")
+	config.Password = *pflag.StringP("password", "p", "password", "Password for authentication")
+	config.ServerPort = *pflag.StringP("port", "P", "8080", "Port for server")
+}
 
 // The main function initializes configuration, sets up logging, connects to the database,
 // configures the Fiber HTTP server, and handles graceful shutdown on system signals.
 func main() {
-	config.Debug = flag.Bool("debug", false, "Enable debug-level logging")
-	flag.StringVar(&config.ConfigPath, "config", "", "Path to the configuration file")
-	flag.Parse()
+	pflag.Parse()
 
 	level := "info"
 	if *config.Debug {

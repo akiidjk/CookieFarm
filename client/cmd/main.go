@@ -1,3 +1,6 @@
+// Package main is the entry point for the CookieFarm client,
+// responsible for initializing configuration, validating input,
+// and executing exploits in a loop.
 package main
 
 import (
@@ -12,25 +15,31 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/submitter"
 	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/rs/zerolog"
-
 	"github.com/spf13/pflag"
 )
 
 var (
-	args    models.Args = models.Args{}
-	logPath string
+	args    models.Args // Struct holding runtime arguments
+	logPath string      // Path to the generated log file
 )
 
+// init initializes all command-line flags and binds them to the args struct.
 func init() {
-	args.ExploitName = pflag.StringP("exploit", "e", "", "Name of the exploit file")
-	args.Debug = pflag.Bool("debug", false, "Enable debug log level")
-	args.Password = pflag.StringP("password", "p", "", "Password for authentication")
-	args.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the target server")
-	args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background")
-	args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between run exploits")
-	args.ThreadCount = pflag.IntP("thread", "T", 5, "Number of threads to use for concurrent execution")
+	args.ExploitName = pflag.StringP("exploit", "e", "", "Name of the exploit file to execute")
+	args.Debug = pflag.Bool("debug", false, "Enable debug logging")
+	args.Password = pflag.StringP("password", "p", "", "Password for authenticating to the server")
+	args.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the flag submission server")
+	args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")
+	args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between exploit executions")
+	args.ThreadCount = pflag.IntP("thread", "T", 5, "Number of concurrent threads to run the exploit with")
 }
 
+// setupClient handles the full initialization process:
+// - Parse flags
+// - Setup logging
+// - Validate arguments
+// - Authenticate with the server
+// - Sync client configuration
 func setupClient() error {
 	pflag.Parse()
 
@@ -64,13 +73,15 @@ func setupClient() error {
 	logger.Log.Info().Msgf("Configurazione corrente: %+v", config.Current)
 
 	if !config.Current.Configured {
-		logger.Log.Fatal().Msg("Client not configured. Please run the configurator before using the client")
+		logger.Log.Fatal().Msg("Client not configured. Please run the configurator before using the client.")
 	}
 
 	logger.Log.Info().Msg("Client initialized successfully")
 	return nil
 }
 
+// main is the main execution flow of the CookieFarm client.
+// It handles setup, starts the exploit, and manages the flag submission process.
 func main() {
 	if err := setupClient(); err != nil {
 		if logger.LogLevel != zerolog.Disabled {

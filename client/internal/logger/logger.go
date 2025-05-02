@@ -1,3 +1,4 @@
+// Package logger provides functions to manage the CookieFarm client logging.
 package logger
 
 import (

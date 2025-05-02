@@ -1,3 +1,4 @@
+// Package executor provides functions to execute exploits and manage their output.
 package executor
 
 import (
@@ -21,6 +22,7 @@ type ExecutionResult struct {
 	FlagsChan chan models.Flag
 }
 
+// Start starts the exploit_manager and listens for flags in stdout.
 func Start(exploitName, password string, tickTime int, threadCount int, logPath string) (*ExecutionResult, error) {
 	exploitPath := filepath.Join(utils.GetExecutableDir(), "..", "exploits", exploitName)
 
@@ -65,6 +67,7 @@ func Start(exploitName, password string, tickTime int, threadCount int, logPath 
 	}, nil
 }
 
+// Read the stdout and parse JSON lines into Flag structs.
 func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
@@ -90,6 +93,7 @@ func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 	}
 }
 
+// Read the stderr and log any errors.
 func readStderr(stderr io.Reader) {
 	scanner := bufio.NewScanner(stderr)
 	for scanner.Scan() {

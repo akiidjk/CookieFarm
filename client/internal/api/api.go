@@ -1,3 +1,4 @@
+// Package api provides functions to interact with the CookieFarm server API.
 package api
 
 import (
@@ -17,6 +18,7 @@ var (
 	client = &http.Client{}
 )
 
+// SendFlag sends flags to the CookieFarm server API.
 func SendFlag(flags ...models.Flag) error {
 	body, err := json.Marshal(map[string][]models.Flag{"flags": flags})
 	if err != nil {
@@ -53,6 +55,7 @@ func SendFlag(flags ...models.Flag) error {
 	return nil
 }
 
+// GetConfig retrieves the configuration from the CookieFarm server API.
 func GetConfig() (models.Config, error) {
 	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/config"
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -84,6 +87,7 @@ func GetConfig() (models.Config, error) {
 	return parsedConfig, nil
 }
 
+// Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
 	url := config.Current.ConfigClient.BaseUrlServer + "/api/v1/auth/login"
 	logger.Log.Debug().Str("url", url).Msg("Tentativo di login")

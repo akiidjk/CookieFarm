@@ -63,7 +63,12 @@ func Setup(level string) {
 
 	// multi := zerolog.MultiLevelWriter(consoleWriter, logFile)
 
-	Log = zerolog.New(consoleWriter).With().Timestamp().Caller().Logger()
+	if level == "debug" {
+		Log = zerolog.New(consoleWriter).With().Timestamp().Caller().Logger()
+	} else {
+		Log = zerolog.New(consoleWriter).With().Timestamp().Logger()
+	}
+
 	zerolog.SetGlobalLevel(parsedLevel)
 }
 

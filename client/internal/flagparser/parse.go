@@ -1,3 +1,4 @@
+// Package flagparser provides functions to parse flags from JSON output.
 package flagparser
 
 import (
@@ -9,6 +10,7 @@ import (
 	json "github.com/bytedance/sonic"
 )
 
+// ParseLine parses a JSON line into a Flag struct.
 func ParseLine(line string) (models.Flag, error) {
 	var out models.ParsedFlagOutput
 	if err := json.Unmarshal([]byte(line), &out); err != nil {

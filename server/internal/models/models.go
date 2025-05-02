@@ -1,116 +1,120 @@
+// Package models defines the core data structures used by both
+// the CookieFarm client and server for handling flags, configuration,
+// and runtime arguments.
 package models
 
 const (
-	StatusUnsubmitted = "UNSUBMITTED"
-	StatusAccepted    = "ACCEPTED"
-	StatusDenied      = "DENIED"
-	StatusError       = "ERROR"
+	StatusUnsubmitted = "UNSUBMITTED" // Status for unsubmitted flags
+	StatusAccepted    = "ACCEPTED"    // Status for accepted flags
+	StatusDenied      = "DENIED"      // Status for denied flags
+	StatusError       = "ERROR"       // Status for error flags
 )
 
+// Flag represents a single flag captured during a CTF round.
+// It includes metadata about the submission and the service context.
 type Flag struct {
-	SubmitTime   uint64 `json:"submit_time"`
-	ResponseTime uint64 `json:"response_time"`
-	ServicePort  uint16 `json:"service_port"`
-	TeamID       uint16 `json:"team_id"`
-	FlagCode     string `json:"flag_code"`
-	ServiceName  string `json:"service_name"`
-	Status       string `json:"status"`
+	SubmitTime   uint64 `json:"submit_time"`   // UNIX timestamp when the flag was submitted
+	ResponseTime uint64 `json:"response_time"` // UNIX timestamp when a response was received
+	ServicePort  uint16 `json:"service_port"`  // Port of the vulnerable service
+	TeamID       uint16 `json:"team_id"`       // ID of the team the flag was captured from
+	FlagCode     string `json:"flag_code"`     // Actual flag string
+	ServiceName  string `json:"service_name"`  // Human-readable name of the service
+	Status       string `json:"status"`        // Status of the submission (e.g., "unsubmitted", "accepted", "denied")
 }
 
+// ResponseProtocol represents a response from the flag checker service.
 type ResponseProtocol struct {
-	Flag   string `json:"flag"`
-	Msg    string `json:"msg"`
-	Status string `json:"status"`
+	Flag   string `json:"flag"`   // Flag string received from the flag checker service
+	Msg    string `json:"msg"`    // Message from the flag checker service
+	Status string `json:"status"` // Status of the response (e.g., "success", "error")
 }
 
+// Service represents a single vulnerable service as defined in the configuration.
 type Service struct {
-	Port uint16 `json:"port"`
-	Name string `json:"name"`
+	Port uint16 `json:"port"` // Port where the service is exposed
+	Name string `json:"name"` // Name identifier of the service
 }
 
+// ConfigServer holds configuration data required by the server to submit and validate flags.
 type ConfigServer struct {
-	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time"`
-	HostFlagchecker       string `json:"host_flagchecker"`
-	TeamToken             string `json:"team_token"`
-	MaxFlagBatchSize      uint16 `json:"max_flag_batch_size"`
-	Protocol              string `json:"protocol"`
+	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time"` // Time interval (s) to check and submit flags
+	HostFlagchecker       string `json:"host_flagchecker"`         // Address of the flagchecker server
+	TeamToken             string `json:"team_token"`               // Authentication token for team identity
+	MaxFlagBatchSize      uint16 `json:"max_flag_batch_size"`      // Max number of flags to send in a single batch
+	Protocol              string `json:"protocol"`                 // Protocol used to communicate with the flagchecker server
 }
 
-func (s ConfigServer) IsEmpty() bool {
-	return s.HostFlagchecker == "" && s.TeamToken == "" && s.SubmitFlagCheckerTime == 0
-}
-
+// ConfigClient contains all client-side configuration options.
 type ConfigClient struct {
-	BaseUrlServer        string    `json:"base_url_server"`
-	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"`
-	Services             []Service `json:"services"`
-	RangeIPTeams         uint8     `json:"range_ip_teams"`
-	FormatIPTeams        string    `json:"format_ip_teams"`
-	MyTeamIP             string    `json:"my_team_ip"`
-	RegexFlag            string    `json:"regex_flag"`
+	SubmitFlagServerTime uint64    `json:"submit_flag_server_time"` // Time interval (ms) between flag submissions
+	Services             []Service `json:"services"`                // List of services to exploit
+	RangeIPTeams         uint8     `json:"range_ip_teams"`          // Number of teams / IP range
+	FormatIPTeams        string    `json:"format_ip_teams"`         // Format string for generating team IPs
+	MyTeamIP             string    `json:"my_team_ip"`              // IP address of the current team
+	RegexFlag            string    `json:"regex_flag"`              // Regex used to identify flags in output
 }
 
-func (c ConfigClient) IsEmpty() bool {
-	return c.BaseUrlServer == "" && c.SubmitFlagServerTime == 0 && len(c.Services) == 0
-}
-
+// Config aggregates both server and client configuration,
+// and includes a flag indicating whether the configuration is initialized.
 type Config struct {
-	Configured   bool         `json:"configured"`
-	ConfigServer ConfigServer `json:"server"`
-	ConfigClient ConfigClient `json:"client"`
+	Configured   bool         `json:"configured"` // True if configuration has been loaded and validated
+	ConfigServer ConfigServer `json:"server"`     // Server-specific configuration
+	ConfigClient ConfigClient `json:"client"`     // Client-specific configuration
 }
 
-func (c Config) IsEmpty() bool {
-	return c.ConfigServer.IsEmpty() && c.ConfigClient.IsEmpty()
-}
-
-type Session struct {
-	Password string `json:"password"`
-}
-
+// Signin request from the client to the server
 type SigninRequest struct {
-	Password string `json:"password"`
+	Password string `json:"password"` // Password for authentication
 }
 
+// Pagination structure for manage data in the view
 type Pagination struct {
-	Limit    int
-	Pages    int
-	Current  int // <-- pagina corrente (offset / limit)
-	HasPrev  bool
-	HasNext  bool
-	PageList []int
+	Limit    int   // Maximum number of items per page
+	Pages    int   // Total number of pages
+	Current  int   // Current page number (offset / limit)
+	HasPrev  bool  // Indicates if there is a previous page
+	HasNext  bool  // Indicates if there is a next page
+	PageList []int // List of page numbers to display in the pagination
 }
 
+// ViewParamsDashboard represents the parameters for the dashboard view
 type ViewParamsDashboard struct {
-	Limit int `json:"limit"`
+	Limit int `json:"limit"` // Maximum number of items per page
 }
 
+// ViewParamsPagination represents the parameters for the pagination view
 type ViewParamsPagination struct {
-	Pagination Pagination
+	Pagination Pagination // Pagination parameters
 }
 
+// ViewParamsFlags represents the parameters for the flags view
 type ViewParamsFlags struct {
-	Flags []Flag `json:"flags"`
+	Flags []Flag `json:"flags"` // List of flags to display
 }
 
+// ResponseFlags represents the response for the flags api
 type ResponseFlags struct {
 	Nflags int    `json:"n_flags"`
 	Flags  []Flag `json:"flags"`
 }
 
+// ResponseSuccess represents the response for the success api
 type ResponseSuccess struct {
-	Message string `json:"message"`
+	Message string `json:"message"` // Message for the success response
 }
 
+// ResponseError represents the response for the error api
 type ResponseError struct {
-	Error   string `json:"error"`
-	Details string `json:"details"`
+	Error   string `json:"error"`   // Error message for the error response
+	Details string `json:"details"` // Details for the error response
 }
 
+// SubmitFlagRequest the struct for the requests from the client to server
 type SubmitFlagRequest struct {
-	Flag Flag `json:"flag"`
+	Flag Flag `json:"flag"` // Flag to submit
 }
 
+// SubmitFlagsRequest the struct for the requests from the client to server
 type SubmitFlagsRequest struct {
-	Flags []Flag `json:"flags"`
+	Flags []Flag `json:"flags"` // Flags to submit
 }

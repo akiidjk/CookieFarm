@@ -13,15 +13,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// InitSecret generates a random secret key and assigns it to the config.
 func InitSecret() {
 	secret := make([]byte, 32)
 	if _, err := rand.Read(secret); err != nil {
 		panic(fmt.Sprintf("failed to generate secret: %v", err))
 	}
 	config.Secret = secret
-	logger.Log.Info().Msg("JWT secret generated")
 }
 
+// VerifyToken validates the JWT token using the secret key.
 func VerifyToken(token string) error {
 	_, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -32,6 +33,7 @@ func VerifyToken(token string) error {
 	return err
 }
 
+// HashPassword hashes the password using bcrypt.
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -40,6 +42,7 @@ func HashPassword(password string) (string, error) {
 	return string(hash), nil
 }
 
+// CreateJWT generates a new JWT token with an expiration time of 24 hours.
 func CreateJWT() (string, int64, error) {
 	exp := time.Now().Add(24 * time.Hour).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -54,6 +57,7 @@ func CreateJWT() (string, int64, error) {
 	return tokenString, exp, nil
 }
 
+// HandleLogin handles the login request by checking the credentials and generating a JWT token.
 func HandleLogin(c *fiber.Ctx) error {
 	req := new(models.SigninRequest)
 	if err := c.BodyParser(req); err != nil {
@@ -88,7 +92,7 @@ func HandleLogin(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
 		Value:    token,
-		MaxAge:   60 * 60 * 24, // 1 giorno
+		MaxAge:   60 * 60 * 24, // 1 day
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "Strict",
@@ -97,6 +101,7 @@ func HandleLogin(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
 }
 
+// CookieAuthMiddleware checks if the user has a valid JWT token in their cookies.
 func CookieAuthMiddleware(c *fiber.Ctx) error {
 	token := c.Cookies("token")
 	if token == "" || VerifyToken(token) != nil {

@@ -1,3 +1,4 @@
+// Package main is the entry point for the API server.
 package main
 
 import (
@@ -19,43 +20,16 @@ import (
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
 )
 
+// The main function initializes configuration, sets up logging, connects to the database,
+// configures the Fiber HTTP server, and handles graceful shutdown on system signals.
 func main() {
 	config.Debug = flag.Bool("debug", false, "Enable debug-level logging")
 	flag.StringVar(&config.ConfigPath, "config", "", "Path to the configuration file")
-
 	flag.Parse()
 
 	level := "info"
 	if *config.Debug {
 		level = "debug"
-		// go func() {
-		// 	logger.Log.Debug().Msgf("Listening on localhost:6060")
-		// 	http.ListenAndServe("localhost:6060", nil)
-		// }()
-
-		/*pyroscope.Start(pyroscope.Config{
-		ApplicationName: "cookiefarm",
-		ServerAddress:   "http://pyroscope-server:4040",
-		Logger:          pyroscope.StandardLogger,
-
-		ProfileTypes: []pyroscope.ProfileType{
-			// these profile types are enabled by default:
-			pyroscope.ProfileCPU,
-			pyroscope.ProfileAllocObjects,
-			pyroscope.ProfileAllocSpace,
-			pyroscope.ProfileInuseObjects,
-			pyroscope.ProfileInuseSpace,
-			pyroscope.ProfileAllocObjects,
-			pyroscope.ProfileAllocSpace,
-
-			// these profile types are optional:
-			pyroscope.ProfileGoroutines,
-			pyroscope.ProfileMutexCount,
-			pyroscope.ProfileMutexDuration,
-			pyroscope.ProfileBlockCount,
-			pyroscope.ProfileBlockDuration,
-		},
-		})*/
 	}
 	logger.Setup(level)
 	defer logger.Close()
@@ -106,6 +80,7 @@ func main() {
 
 	database.DB = database.New()
 	logger.Log.Info().Msg("Database initialized")
+	defer database.Close()
 
 	<-ctx.Done()
 	logger.Log.Warn().Msg("Shutdown signal received, terminating...")

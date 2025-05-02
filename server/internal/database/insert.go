@@ -9,6 +9,8 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
+// AddFlags adds a batch of flags to the database.
+// It divides the flags into batches to insert in chunks, helping avoid hitting query parameter limits.
 func AddFlags(flags []models.Flag) error {
 	if len(flags) == 0 {
 		return nil
@@ -51,6 +53,8 @@ func AddFlags(flags []models.Flag) error {
 	return tx.Commit()
 }
 
+// AddFlag adds a single flag to the database.
+// It calls the AddFlags function to add the flag as a batch of size 1.
 func AddFlag(flag models.Flag) error {
 	return AddFlags([]models.Flag{flag})
 }

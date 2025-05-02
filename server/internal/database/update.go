@@ -14,6 +14,8 @@ const (
 	updateFlagsStatusQuery = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code IN (%s)`
 )
 
+// UpdateFlagStatus updates the status of a single flag in the database.
+// It prepares a SQL statement and executes it with the provided flag code and status.
 func UpdateFlagStatus(flagCode string, status string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -35,6 +37,8 @@ func UpdateFlagStatus(flagCode string, status string) error {
 	return nil
 }
 
+// UpdateFlagsStatus updates the status of multiple flags in the database.
+// It dynamically creates a SQL query with placeholders for each flag code and executes the update in a batch.
 func UpdateFlagsStatus(flagCodes []string, status string) error {
 	if len(flagCodes) == 0 {
 		return nil

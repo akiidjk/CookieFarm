@@ -19,7 +19,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
+//go:embed banner.txt
+var banner string
+
 func init() {
+	fmt.Println(banner)
+
 	config.Debug = pflag.BoolP("debug", "d", false, "Enable debug-level logging")
 	config.ConfigPath = *pflag.StringP("config", "c", "", "Path to the configuration file")
 	config.Password = *pflag.StringP("password", "p", "password", "Password for authentication")

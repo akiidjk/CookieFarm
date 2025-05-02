@@ -3,12 +3,12 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
+	_ "net/http/pprof"
 	"os/signal"
 	"syscall"
 	"time"
-
-	_ "net/http/pprof"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/database"

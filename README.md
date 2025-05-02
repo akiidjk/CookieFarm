@@ -55,3 +55,34 @@ gocyclo ............. 100%
 ineffassign ......... 100%
 license ............. 100%
 misspell ............ 100%
+
+# IDEE
+
+- Aggiungere Docs (Codice e user) /
+- Rifare log e cli di server e client /
+- Sistemare repo /
+
+- Aggiungere numero client attacanti realtime displayato sulla dashboard,
+- Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)
+- Ottimizzazione exploiter per gestire servizi di macchine down etc...
+- Config Reloader (hot realod of config file || button to reload)
+- api/button to delete/remove the flag queue
+- api/button to send flags, instead of waiting the timer
+- TTL per le flag senza condizione statistiche
+- client option to submit directly to gameserver
+- Auto Flag
+
+
+
+### Logging client
+
+- Team attaccato
+- Ip attaccato
+- Flag prese
+
+
+## Final test
+
+- Test con infra reale
+- Team separato
+- Exploit dai writeup

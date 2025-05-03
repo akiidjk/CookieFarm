@@ -1,6 +1,6 @@
 # 🛠️ CookieFarm Server Guide
 
-Welcome to the documentation of the **CookieFarm server**!  
+Welcome to the documentation of the **CookieFarm server**!
 This guide describes how to launch, configure, and use the server responsible for flag management.
 
 ---
@@ -26,19 +26,18 @@ To run the server use docker with:
 docker compose up
 ```
 
-
 ---
 
 ## ⚙️ Execution Options
 
-When running the binary (or using `make run`), you can specify the following **optional arguments**:
+To configure the server, you need to create a `.env` file with the following parameters. You can use the `.env.example` file as a reference to set up your configuration.
 
-| Flag              | Description                                                                      | Default      |
-|-------------------|----------------------------------------------------------------------------------|--------------|
-| `-d`, `--debug`   | Enables debug mode                                                               | `false`      |
-| `-c`, `--config`  | Path to a JSON config file (instead of using the web form)                       | N/A          |
-| `-p`, `--password`| Password to access the server web interface                                      | `"password"` |
-| `-P`, `--port`    | Sets the port the server will listen on                                          | `8080`       |
+| Environment Variable | Description                                                          | Default      |
+|----------------------|----------------------------------------------------------------------|--------------|
+| `DEBUG`              | Enables debug mode when set to `true`                                | `false`      |
+| `CONFIG_PATH`        | Path to a JSON config file (instead of using the web form)           | N/A          |
+| `SERVER_PASSWORD`    | Password to access the server web interface                          | `"password"` |
+| `SERVER_PORT`        | Sets the port the server will listen on                              | `8080`       |
 
 ---
 
@@ -62,11 +61,23 @@ Through the UI you can:
 
 ## 📂 Example Usage
 
-```bash
-./bin/server -d -p SuperSecret -P 9090
+### Setting up .env file
+
+Create a `.env` file with the following content:
+
+```
+DEBUG=true
+SERVER_PASSWORD=SuperSecret
+SERVER_PORT=9090
 ```
 
-This command runs the server:
+### Running with Docker
+
+```bash
+docker compose up
+```
+
+This configuration runs the server:
 
 - In debug mode.
 - With password `SuperSecret`.
@@ -74,12 +85,4 @@ This command runs the server:
 
 ---
 
-## 📝 Notes
-
-- The server is fully compatible with CookieFarm clients.
-- Ensure the `flagchecker` configuration is properly set via JSON or the startup form.
-- You may use `.env` files or service managers (e.g., `systemd`, `docker`) for advanced deployment needs.
-
----
-
-Happy flag handling! 🎯
+Happy flag cathing! 🎯

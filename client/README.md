@@ -1,4 +1,4 @@
-# 📜 CookieFarm Exploitation Guide
+# 📜 CookieFarm Client Exploitation Guide
 
 Welcome to the CookieFarm client documentation! This guide explains how to create, run, and manage your exploits with CookieFarm's client and exploit manager.
 

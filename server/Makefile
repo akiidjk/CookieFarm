@@ -55,7 +55,7 @@ build-plugins:
 		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
 	done
 
-build-prod: build-plugins-prod tailwindcss-build minify
+build-prod:
 	@echo -e "$(CYAN)[*] Building $(BOLD)for production...$(RESET)"
 	@mkdir -p $(BIN_DIR)
 	GOOS=$(GOOS) GOARCH=$(GOARCH) \

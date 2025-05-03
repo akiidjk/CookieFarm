@@ -11,7 +11,6 @@ SCRIPTS_DIR="../scripts"
 TESTS_DIR="../tests"
 REQUIREMENTS="../requirements.txt"
 TAILWIND_URL="https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.4/tailwindcss-linux-x64"
-MINIFY_URL="https://github.com/tdewolff/minify/releases/download/v2.23.1/minify_linux_amd64.tar.gz"
 
 # === USAGE CHECK ===
 if [[ $# -ne 2 ]]; then
@@ -63,10 +62,10 @@ cd "$SERVER_DIR"
 
 if [[ $2 -eq 1 ]]; then
     echo "🔒 Modalità produzione attivata!"
-    kitty --title "cookieserver" bash -c "make run-prod; chmod +x ./cookieserver; ./cookieserver; exec bash" &
+    kitty --title "cookieserver" bash -c "make build-plugins-prod ;make run-prod; chmod +x ./cookieserver; ./cookieserver; exec bash" &
 else
     echo "🔓 Modalità sviluppo attivata!"
-    kitty --title "cookieserver" bash -c "make run ARGS='--debug'; exec bash" &
+    kitty --title "cookieserver" bash -c "make build-plugins; make run ARGS='--debug'; exec bash" &
 fi
 echo "✅ Server avviato!"
 

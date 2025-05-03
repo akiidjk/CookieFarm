@@ -26,9 +26,9 @@ func init() {
 	fmt.Println(banner)
 
 	config.Debug = pflag.BoolP("debug", "d", false, "Enable debug-level logging")
-	config.ConfigPath = *pflag.StringP("config", "c", "", "Path to the configuration file")
-	config.Password = *pflag.StringP("password", "p", "password", "Password for authentication")
-	config.ServerPort = *pflag.StringP("port", "P", "8080", "Port for server")
+	config.ConfigPath = pflag.StringP("config", "c", "", "Path to the configuration file")
+	config.Password = pflag.StringP("password", "p", "password", "Password for authentication")
+	config.ServerPort = pflag.StringP("port", "P", "8080", "Port for server")
 }
 
 // The main function initializes configuration, sets up logging, connects to the database,
@@ -43,9 +43,9 @@ func main() {
 	logger.Setup(level)
 	defer logger.Close()
 
-	if config.ConfigPath != "" {
+	if *config.ConfigPath != "" {
 		logger.Log.Info().Msg("Using file config...")
-		err := server.LoadConfig(config.ConfigPath)
+		err := server.LoadConfig(*config.ConfigPath)
 		if err != nil {
 			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
 		}
@@ -54,14 +54,14 @@ func main() {
 	}
 
 	server.InitSecret()
-	logger.Log.Debug().Str("plain", config.Password).Msg("Plain password before hashing")
+	logger.Log.Debug().Str("plain", *config.Password).Msg("Plain password before hashing")
 
-	hashed, err := server.HashPassword(config.Password)
+	hashed, err := server.HashPassword(*config.Password)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Password hashing failed")
 	}
-	config.Password = hashed
-	logger.Log.Debug().Str("hashed", config.Password).Msg("Password after hashing")
+	config.Password = &hashed
+	logger.Log.Debug().Str("hashed", *config.Password).Msg("Password after hashing")
 
 	app := server.New()
 	if *config.Debug {

@@ -9,6 +9,7 @@ services:
       - ${BACKEND_PORT}:${BACKEND_PORT}
     environment:
       PASSWORD: ${PASSWORD}
+      CONFIG_FROM_FILE: ${CONFIG_FROM_FILE}
       PORT: ${BACKEND_PORT}
     volumes:
       - sqlite_bp:/app/database

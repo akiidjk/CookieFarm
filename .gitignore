@@ -1,5 +1,4 @@
 # ------------- Go -------------
-
 bin
 # Binaries for programs and plugins
 *.exe
@@ -36,31 +35,6 @@ main
 .DS_Store
 
 cookiefarm.db
-
-# ------------- Nuxt -------------
-
-# Nuxt dev/build outputs
-.output
-.data
-.nuxt
-.nitro
-.cache
-dist
-
-# Node dependencies
-node_modules
-
-# Logs
-logs
-*.log
-
-# Misc
-.DS_Store
-
-# Local env files
-.env
-!.env.example
-
 
 # ------------- Python -------------
 
@@ -109,8 +83,10 @@ ipython_config.py
 .spyproject
 
 # compose useless
-
 ./tests/docker-compose.yml
 
 # Binaries
 tailwindcss
+
+# Logs
+logs

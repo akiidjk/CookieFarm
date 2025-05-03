@@ -98,7 +98,7 @@ func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 			Str("flag", flag.FlagCode).
 			Int("team", int(flag.TeamID)).
 			Str("service", flag.ServiceName).
-			Uint16("port", flag.ServicePort).
+			Uint16("port", flag.PortService).
 			Msg("Parsed and queued flag")
 	}
 

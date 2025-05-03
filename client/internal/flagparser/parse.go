@@ -23,7 +23,7 @@ func ParseLine(line string) (models.Flag, string, error) {
 		return models.Flag{}, out.Status, errors.New(out.Message)
 	case "failed":
 		return models.Flag{}, out.Status, fmt.Errorf("flag submission failed for team %d on the %s: %s",
-			out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
+			out.TeamID, utils.MapPortToService(uint16(out.PortService)), out.Message)
 	case "error":
 		return models.Flag{}, out.Status, fmt.Errorf("flag submission error: %s", out.Message)
 	case "fatal":
@@ -31,8 +31,8 @@ func ParseLine(line string) (models.Flag, string, error) {
 	case "success":
 		return models.Flag{
 			FlagCode:     out.FlagCode,
-			ServiceName:  utils.MapPortToService(uint16(out.ServicePort)),
-			ServicePort:  out.ServicePort,
+			ServiceName:  utils.MapPortToService(uint16(out.PortService)),
+			PortService:  out.PortService,
 			SubmitTime:   uint64(time.Now().Unix()),
 			ResponseTime: 0,
 			Status:       "UNSUBMITTED",

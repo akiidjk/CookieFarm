@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	baseFlagQuery         = `SELECT flag_code, service_name,service_port, submit_time, response_time, status, team_id FROM flags`
+	baseFlagQuery         = `SELECT flag_code, service_name,port_service, submit_time, response_time, status, team_id FROM flags`
 	queryAllFlags         = baseFlagQuery + " ORDER BY submit_time DESC"
 	queryFirstNFlags      = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ?"
 	queryUnsubmittedFlags = baseFlagQuery + " WHERE status = 'UNSUBMITTED' ORDER BY submit_time ASC LIMIT ?"
@@ -92,7 +92,7 @@ func queryFlags(query string, args ...any) ([]models.Flag, error) {
 	flagPtr := new(models.Flag)
 	for rows.Next() {
 		if err := rows.Scan(
-			&flagPtr.FlagCode, &flagPtr.ServiceName, &flagPtr.ServicePort,
+			&flagPtr.FlagCode, &flagPtr.ServiceName, &flagPtr.PortService,
 			&flagPtr.SubmitTime, &flagPtr.ResponseTime, &flagPtr.Status,
 			&flagPtr.TeamID,
 		); err != nil {

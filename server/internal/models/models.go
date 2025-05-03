@@ -15,7 +15,7 @@ const (
 type Flag struct {
 	SubmitTime   uint64 `json:"submit_time"`   // UNIX timestamp when the flag was submitted
 	ResponseTime uint64 `json:"response_time"` // UNIX timestamp when a response was received
-	ServicePort  uint16 `json:"service_port"`  // Port of the vulnerable service
+	PortService  uint16 `json:"port_service"`  // Port of the vulnerable service
 	TeamID       uint16 `json:"team_id"`       // ID of the team the flag was captured from
 	FlagCode     string `json:"flag_code"`     // Actual flag string
 	ServiceName  string `json:"service_name"`  // Human-readable name of the service

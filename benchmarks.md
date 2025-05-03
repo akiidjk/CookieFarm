@@ -1,14 +1,14 @@
-## Benchmark consumo ram e cpu medio
+## Benchmark average cpu/ram
 
 ## 1 test
 
-## 30 macchine
+## 30 machines
 
 - Tool: SysScope
-- Durata: 30 minuti
+- Duration: 30 minutes
 - Client: 1
 - Exploits: example_1.py
-- Note: example_1.py is a simple example of an exploit that can be used to test the system.
+- Notes: example_1.py is a simple example of an exploit that can be used to test the system.
 - Debug: False
 - Client Args: -e example_1.py -p password -b http://localhost:8080 -t 5
 
@@ -38,13 +38,13 @@ Exploiter:
 
 ## 2 test
 
-## 30 macchine
+## 30 machines
 
 - Tool: SysScope
-- Durata: 30 minuti
+- Duration: 30 minutes
 - Client: 5
 - Exploits: example_1.py example_2.py example_3.py example_4.py example_5.py
-- Note: example_1.py is a simple example of an exploit that can be used to test the system.
+- Notes: example_1.py is a simple example of an exploit that can be used to test the system.
 - Debug: False
 - Client Args: -e example_1.py -p password -b http://localhost:8080 -t 5
 

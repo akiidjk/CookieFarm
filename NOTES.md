@@ -61,6 +61,8 @@
 - [x] Aggiungere Docs (Codice e user)
 - [x] Rifare log e cli di server e client
 - [ ] Sistemare repo
+- [ ] Comando create lato client per creare template
+- ? POSSIBILE REDIS PAZZO SGRAVATO (Visto che stiamo usando Docker per il server)
 
 - [ ] Aggiungere numero client attacanti realtime displayato sulla dashboard,
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

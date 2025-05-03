@@ -58,9 +58,9 @@
 
 # IDEE
 
-- [x] Aggiungere Docs (Codice e user) /
-- [x] Rifare log e cli di server e client /
-- [ ] Sistemare repo /
+- [x] Aggiungere Docs (Codice e user)
+- [x] Rifare log e cli di server e client
+- [ ] Sistemare repo
 
 - [ ] Aggiungere numero client attacanti realtime displayato sulla dashboard,
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

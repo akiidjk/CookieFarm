@@ -75,9 +75,10 @@ func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 		flag, err := flagparser.ParseLine(line)
 		if err != nil {
 			logger.Log.Warn().
-				Err(err).
+				Err(err)
+			logger.Log.Debug().
 				Str("raw", line).
-				Msg("Failed to parse JSON from stdout")
+				Msg("Raw line in the error")
 			continue
 		}
 		flagsChan <- flag

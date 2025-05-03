@@ -17,6 +17,10 @@ func ParseLine(line string) (models.Flag, error) {
 		return models.Flag{}, fmt.Errorf("invalid JSON format: %w", err)
 	}
 
+	if out.Status == "failed" {
+		return models.Flag{}, fmt.Errorf("flag submission failed for team %d on the %s: %s", out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
+	}
+
 	flag := models.Flag{
 		FlagCode:     out.FlagCode,
 		ServiceName:  utils.MapPortToService(uint16(out.ServicePort)),

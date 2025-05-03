@@ -23,7 +23,7 @@ func HandleIndexPage(c *fiber.Ctx) error {
 		limit = config.DEFAULT_LIMIT
 	}
 
-	logger.Log.Info().Int("Limit", limit).Msg("Index page request")
+	logger.Log.Debug().Int("Limit", limit).Msg("Index page request")
 	data := models.ViewParamsDashboard{
 		Limit: limit,
 	}

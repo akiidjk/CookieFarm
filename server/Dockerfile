@@ -12,18 +12,24 @@ COPY . .
 RUN make build-prod
 RUN make build-plugins-prod
 
+# Runtime stage
 FROM alpine:3.20.1 AS prod
 
 WORKDIR /app
 
 RUN apk add --no-cache libc6-compat
 
-COPY --from=build /app/bin/cookieserver /app/main
+COPY --from=build /app/bin/cookieserver /app/bin/cookieserver
+COPY --from=build /app/public /app/public
+COPY --from=build /app/config.json /app/config.json
 COPY --from=build /app/protocols /app/protocols
 COPY --from=build /app/internal/ui/views /app/internal/ui/views
 
 RUN touch ./cookiefarm.db
 
-EXPOSE ${PORT}
+EXPOSE ${BACKEND_PORT}
 
-CMD ["./main"]
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
+
+ENTRYPOINT ["/run.sh"]

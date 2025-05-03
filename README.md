@@ -14,7 +14,7 @@
 - [x] Setup repository
   - [x] Setup .gitignore - @akiidjk @suga
   - [x] Setup security settings of repository (branch protection, code scanning, pull request review, code review, pull request approval) - @suga
-- [ ] Configurazione da file/shitcurl (json parsato)
+- [x] Configurazione da file/shitcurl (json parsato)
 - [x] Numero configurabile di thread nelle coroutine
 - [x] Upgrade FE
 
@@ -46,31 +46,31 @@
 
 # Go code quality
 
-Grade .......... A+ 100.0%
-Files ................. 28
-Issues ................. 0
-gofmt ............... 100%
-go_vet .............. 100%
-gocyclo ............. 100%
-ineffassign ......... 100%
-license ............. 100%
-misspell ............ 100%
+- Grade .......... A+ 100.0%
+- Files ................. 28
+- Issues ................. 0
+- gofmt ............... 100%
+- go_vet .............. 100%
+- gocyclo ............. 100%
+- ineffassign ......... 100%
+- license ............. 100%
+- misspell ............ 100%
 
 # IDEE
 
-- Aggiungere Docs (Codice e user) /
-- Rifare log e cli di server e client /
-- Sistemare repo /
+- [x] Aggiungere Docs (Codice e user) /
+- [x] Rifare log e cli di server e client /
+- [ ] Sistemare repo /
 
-- Aggiungere numero client attacanti realtime displayato sulla dashboard,
-- Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)
-- Ottimizzazione exploiter per gestire servizi di macchine down etc...
-- Config Reloader (hot realod of config file || button to reload)
-- api/button to delete/remove the flag queue
-- api/button to send flags, instead of waiting the timer
-- TTL per le flag senza condizione statistiche
-- client option to submit directly to gameserver
-- Auto Flag
+- [ ] Aggiungere numero client attacanti realtime displayato sulla dashboard,
+- [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)
+- [ ] Ottimizzazione exploiter per gestire servizi di macchine down etc...
+- [ ] Config Reloader (hot realod of config file || button to reload)
+- [ ] api/button to delete/remove the flag queue
+- [ ] api/button to send flags, instead of waiting the timer
+- [ ] TTL per le flag senza condizione statistiche
+- [ ] client option to submit directly to gameserver
+- [ ] Auto Flag
 
 
 

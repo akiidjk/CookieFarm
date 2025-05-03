@@ -77,7 +77,7 @@ func logParsedLineError(err error, status, line string) {
 	case "failed":
 		logger.Log.Warn().Err(err).Msg("Failed to run exploit")
 	default:
-		logger.Log.Warn().Err(err).Msg("Parsing warning")
+		logger.Log.Debug().Err(err).Msg("Parsing warning")
 	}
 	logger.Log.Debug().Str("raw", line).Msg("Raw line with error")
 }

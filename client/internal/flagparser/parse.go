@@ -2,6 +2,7 @@
 package flagparser
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -14,30 +15,30 @@ import (
 func ParseLine(line string) (models.Flag, string, error) {
 	var out models.ParsedFlagOutput
 	if err := json.Unmarshal([]byte(line), &out); err != nil {
-		return models.Flag{}, "error", fmt.Errorf("invalid JSON format: %w", err)
+		return models.Flag{}, "invalid", fmt.Errorf("invalid JSON format: %w", err)
 	}
 
-	if out.Status == "failed" {
-		return models.Flag{}, "failed", fmt.Errorf("flag submission failed for team %d on the %s: %s", out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
+	switch out.Status {
+	case "info":
+		return models.Flag{}, out.Status, errors.New(out.Message)
+	case "failed":
+		return models.Flag{}, out.Status, fmt.Errorf("flag submission failed for team %d on the %s: %s",
+			out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
+	case "error":
+		return models.Flag{}, out.Status, fmt.Errorf("flag submission error: %s", out.Message)
+	case "fatal":
+		return models.Flag{}, out.Status, fmt.Errorf("fatal error in the exploiter: %s", out.Message)
+	case "success":
+		return models.Flag{
+			FlagCode:     out.FlagCode,
+			ServiceName:  utils.MapPortToService(uint16(out.ServicePort)),
+			ServicePort:  out.ServicePort,
+			SubmitTime:   uint64(time.Now().Unix()),
+			ResponseTime: 0,
+			Status:       "UNSUBMITTED",
+			TeamID:       out.TeamID,
+		}, out.Status, nil
+	default:
+		return models.Flag{}, "unknown", fmt.Errorf("unhandled status: %s", out.Status)
 	}
-
-	if out.Status == "error" {
-		return models.Flag{}, "error", fmt.Errorf("flag submission error for team %d on the %s: %s", out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
-	}
-
-	if out.Status == "fatal" {
-		return models.Flag{}, "fatal", fmt.Errorf("fatal error in the exploiter: %s", out.Message)
-	}
-
-	flag := models.Flag{
-		FlagCode:     out.FlagCode,
-		ServiceName:  utils.MapPortToService(uint16(out.ServicePort)),
-		ServicePort:  out.ServicePort,
-		SubmitTime:   uint64(time.Now().Unix()),
-		ResponseTime: 0,
-		Status:       "UNSUBMITTED",
-		TeamID:       out.TeamID,
-	}
-
-	return flag, "success", nil
 }

@@ -67,6 +67,20 @@ func Start(exploitName, password string, tickTime int, threadCount int, logPath 
 	}, nil
 }
 
+func logParsedLineError(err error, status, line string) {
+	switch status {
+	case "fatal":
+		logger.Log.Fatal().Err(err).Msg("Fatal error")
+	case "info":
+		logger.Log.Info().Err(err).Msg("Info")
+	case "failed":
+		logger.Log.Warn().Err(err).Msg("Failed to run exploit")
+	default:
+		logger.Log.Warn().Err(err).Msg("Parsing warning")
+	}
+	logger.Log.Debug().Str("raw", line).Msg("Raw line with error")
+}
+
 // Read the stdout and parse JSON lines into Flag structs.
 func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 	scanner := bufio.NewScanner(stdout)
@@ -74,20 +88,11 @@ func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 		line := scanner.Text()
 		flag, status, err := flagparser.ParseLine(line)
 		if err != nil {
-			if status == "fatal" {
-				logger.Log.Fatal().
-					Err(err).
-					Msg("Fatal error")
-			}
-			logger.Log.Warn().
-				Err(err)
-			logger.Log.Debug().
-				Str("raw", line).
-				Msg("Raw line in the error")
+			logParsedLineError(err, status, line)
 			continue
 		}
-		flagsChan <- flag
 
+		flagsChan <- flag
 		logger.Log.Info().
 			Str("flag", flag.FlagCode).
 			Int("team", int(flag.TeamID)).
@@ -95,6 +100,7 @@ func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 			Uint16("port", flag.ServicePort).
 			Msg("Parsed and queued flag")
 	}
+
 	if err := scanner.Err(); err != nil {
 		logger.Log.Error().Err(err).Msg("Error reading stdout scanner")
 	}

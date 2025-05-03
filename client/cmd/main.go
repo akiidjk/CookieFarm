@@ -81,7 +81,7 @@ func setupClient() error {
 	logger.Log.Debug().Msgf("Current configuration: %+v", config.Current)
 
 	if !config.Current.Configured {
-		logger.Log.Fatal().Msg("Client not configured. Please run the configurator before using the client.")
+		logger.Log.Fatal().Msg("Server not configured. Please run the configurator before using the client.")
 	}
 
 	return nil

@@ -1,3 +1,4 @@
+// Database package provides some basic functionality for interacting with a SQLite database.
 package database
 
 import (
@@ -18,17 +19,17 @@ import (
 //go:embed schema.sql
 var sqlSchema string
 
-var DB *sql.DB
-
 var (
 	dbPath = utils.GetEnv("DB_URL", filepath.Join(utils.GetExecutableDir(), "cookiefarm.db"))
+	DB     *sql.DB
 )
 
+// InitDB initializes the database schema using the SQL schema embedded in the code.
+// It runs the SQL schema to set up tables and structures in the database.
 func InitDB() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	logger.Log.Info().Msg("Initializing database schema")
 	_, err := DB.ExecContext(ctx, sqlSchema)
 	if err != nil {
 		return err
@@ -38,6 +39,9 @@ func InitDB() error {
 	return nil
 }
 
+// New initializes the database connection and schema.
+// It opens a connection to the SQLite database and initializes the schema by calling InitDB.
+// Returns the database connection object.
 func New() *sql.DB {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
@@ -51,6 +55,8 @@ func New() *sql.DB {
 	return db
 }
 
+// Health checks the health of the database.
+// It pings the database to check if it's reachable and returns stats about its connections and usage.
 func Health() map[string]string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -96,11 +102,15 @@ func Health() map[string]string {
 	return stats
 }
 
+// Close closes the database connection.
+// It disconnects from the database and logs the disconnection message.
 func Close() error {
 	logger.Log.Info().Str("path", dbPath).Msg("Disconnected from database")
 	return DB.Close()
 }
 
+// FlagsNumber returns the number of flags in the database.
+// It queries the database to count the flags and returns the total number.
 func FlagsNumber(ctx context.Context) (int, error) {
 	var count int
 	err := DB.

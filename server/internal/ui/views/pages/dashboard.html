@@ -118,7 +118,7 @@
 </div>
 
 <script type="module" defer>
-   import { uuidv4, sendFlag} from '/js/output.min.js';
+   import { sendFlag} from '/js/output.min.js';
 
    function submitFlag() {
        const flagInput = document.getElementById('flag-input');
@@ -136,7 +136,7 @@
          service_port: 0,
          team_id: 0,
          status: 'UNSUBMITTED',
-         submit_time: Date.now(),
+         submit_time: Math.floor(Date.now() / 1000),
          response_time: 0,
        };
 

@@ -7,8 +7,7 @@
     "protocol": "cc_http"
   },
   "client": {
-    "base_url_server": "http://localhost:8080",
-    "submit_flag_server_time": 10,
+    "submit_flag_server_time": 20,
     "services": [
       {
         "name": "CookieService",

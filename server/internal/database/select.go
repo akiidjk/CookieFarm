@@ -24,42 +24,52 @@ const (
 
 // --------- Flag Structs ---------
 
+// GetAllFlags retrieves all flags from the database.
 func GetAllFlags() ([]models.Flag, error) {
 	return queryFlags(queryAllFlags)
 }
 
+// GetUnsubmittedFlags retrieves the first n unsubmitted flags from the database.
 func GetUnsubmittedFlags(limit int) ([]models.Flag, error) {
 	return queryFlags(queryUnsubmittedFlags, limit)
 }
 
+// GetFirstNFlags retrieves the first n flags from the database.
 func GetFirstNFlags(limit int) ([]models.Flag, error) {
 	return queryFlags(queryFirstNFlags, limit)
 }
 
+// GetPagedFlags retrieves the flags from the database starting at the given offset.
 func GetPagedFlags(limit, offset int) ([]models.Flag, error) {
 	return queryFlags(queryPagedFlags, limit, offset)
 }
 
 // --------- Flag Code Only ---------
 
+// GetAllFlagCodeList retrieves all flag codes from the database.
 func GetAllFlagCodeList() ([]string, error) {
 	return queryFlagCodes(queryAllFlagCodes)
 }
 
+// GetUnsubmittedFlagCodeList retrieves the first n unsubmitted flag codes from the database.
 func GetUnsubmittedFlagCodeList(limit uint16) ([]string, error) {
 	return queryFlagCodes(queryUnsubmittedFlagCodes, limit)
 }
 
+// GetFirstNFlagCodeList retrieves the first n flag codes from the database.
 func GetFirstNFlagCodeList(limit int) ([]string, error) {
 	return queryFlagCodes(queryFirstNFlagCodes, limit)
 }
 
+// GetPagedFlagCodeList retrieves the flag codes from the database starting at the given offset.
 func GetPagedFlagCodeList(limit, offset int) ([]string, error) {
 	return queryFlagCodes(queryPagedFlagCodes, limit, offset)
 }
 
 // --------- Shared query logic ---------
 
+// queryFlags executes a query to retrieve flags from the database.
+// It prepares and executes a query with the provided arguments and returns a list of flags.
 func queryFlags(query string, args ...any) ([]models.Flag, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -95,6 +105,8 @@ func queryFlags(query string, args ...any) ([]models.Flag, error) {
 	return flags, nil
 }
 
+// queryFlagCodes executes a query to retrieve flag codes from the database.
+// It prepares and executes a query with the provided arguments and returns a list of flag codes.
 func queryFlagCodes(query string, args ...any) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

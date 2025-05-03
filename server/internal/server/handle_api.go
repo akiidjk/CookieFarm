@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"sync"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/database"
@@ -13,10 +12,12 @@ import (
 
 // ---------- GET ----------------
 
+// HandleGetConfig returns the current configuration of the server.
 func HandleGetConfig(c *fiber.Ctx) error {
 	return c.JSON(config.Current)
 }
 
+// HandleGetAllFlags retrieves and returns all the stored flags.
 func HandleGetAllFlags(c *fiber.Ctx) error {
 	flags, err := database.GetAllFlags()
 	if err != nil {
@@ -34,6 +35,8 @@ func HandleGetAllFlags(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
+// HandleGetStats returns statistics about the server state.
+// Currently returns placeholders for flags and users.
 func HandleGetStats(c *fiber.Ctx) error {
 	logger.Log.Debug().Msg("Stats endpoint hit")
 	return c.JSON(fiber.Map{
@@ -44,14 +47,15 @@ func HandleGetStats(c *fiber.Ctx) error {
 	})
 }
 
+// HandleGetPaginatedFlags returns a paginated list of flags based on the limit and offset.
 func HandleGetPaginatedFlags(c *fiber.Ctx) error {
-	limit, err := c.ParamsInt("limit", config.LIMIT)
+	limit, err := c.ParamsInt("limit", config.DEFAULT_LIMIT)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(models.ResponseError{
 			Error: "Invalid limit parameter",
 		})
 	}
-	offset := c.QueryInt("offset", config.OFFSET)
+	offset := c.QueryInt("offset", config.DEFAULT_OFFSET)
 
 	flags, err := database.GetPagedFlags(limit, offset)
 	if err != nil {
@@ -73,6 +77,7 @@ func HandleGetPaginatedFlags(c *fiber.Ctx) error {
 
 // ---------- POST ----------------
 
+// HandlePostFlags processes a batch of flags submitted in the request.
 func HandlePostFlags(c *fiber.Ctx) error {
 	payload := new(models.SubmitFlagsRequest)
 
@@ -93,21 +98,12 @@ func HandlePostFlags(c *fiber.Ctx) error {
 	payload.Flags = nil
 	flags = nil
 
-	logger.Log.Info().
-		Int("count", len(flags)).
-		Msg("Flags batch submitted")
-
 	return c.JSON(models.ResponseSuccess{
 		Message: "Flags submitted successfully",
 	})
 }
 
-var submitFlagPool = sync.Pool{
-	New: func() any {
-		return new(models.SubmitFlagRequest)
-	},
-}
-
+// HandlePostFlag processes a single flag and optionally submits it to an external checker.
 func HandlePostFlag(c *fiber.Ctx) error {
 	payload := new(models.SubmitFlagRequest)
 
@@ -141,7 +137,6 @@ func HandlePostFlag(c *fiber.Ctx) error {
 		})
 	}
 
-	logger.Log.Info().Strs("submitted_flags", flags).Msg("Flag submitted successfully")
 	UpdateFlags(response)
 
 	return c.JSON(models.ResponseSuccess{
@@ -149,6 +144,7 @@ func HandlePostFlag(c *fiber.Ctx) error {
 	})
 }
 
+// HandlePostConfig updates the server configuration and restarts the flag processing loop.
 func HandlePostConfig(c *fiber.Ctx) error {
 	var configPayload struct {
 		Config models.Config `json:"config"`
@@ -162,7 +158,6 @@ func HandlePostConfig(c *fiber.Ctx) error {
 	}
 
 	config.Current = configPayload.Config
-	logger.Log.Info().Msg("Configuration updated via API")
 
 	if shutdownCancel != nil {
 		shutdownCancel()

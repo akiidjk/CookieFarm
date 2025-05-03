@@ -1,3 +1,4 @@
+// Package submitter provides functions to manage the CookieFarm client submission.
 package submitter
 
 import (
@@ -9,9 +10,10 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/models"
 )
 
+// Start initializes the submission loop to the cookiefarm server.
 func Start(flagsChan <-chan models.Flag) {
 	submitInterval := time.Duration(config.Current.ConfigClient.SubmitFlagServerTime) * time.Second
-	logger.Log.Debug().Dur("interval", submitInterval).Msg("Starting submitter loop")
+	logger.Log.Info().Uint64("interval seconds", config.Current.ConfigClient.SubmitFlagServerTime).Msg("Starting submission loop...")
 
 	ticker := time.NewTicker(submitInterval)
 	defer ticker.Stop()
@@ -30,6 +32,8 @@ func Start(flagsChan <-chan models.Flag) {
 				}
 				logger.Log.Info().Int("flags_sent", len(flagsBatch)).Msg("Submitted flags batch")
 				flagsBatch = nil
+			} else {
+				logger.Log.Info().Msg("No flags to send")
 			}
 		}
 	}

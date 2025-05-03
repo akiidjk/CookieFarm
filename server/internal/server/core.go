@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"sync"
 	"time"
+
+	json "github.com/bytedance/sonic"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/database"
@@ -16,15 +17,17 @@ import (
 
 // ----------- FLAG GROUPS ------------
 
-type FLagGroups struct {
-	accepted []string
-	denied   []string
-	errored  []string
-	cap      int
+// FlagGroups represents a group of flags with different statuses (accepted, denied, errored).
+type FlagGroups struct {
+	accepted []string // Accepted flags
+	denied   []string // Denied flags
+	errored  []string // Errored flags
+	cap      int      // Capacity of the groups
 }
 
-func newFlagGroups(cap int) *FLagGroups {
-	return &FLagGroups{
+// newFlagGroups creates a new instance of FlagGroups with the specified capacity.
+func newFlagGroups(cap int) *FlagGroups {
+	return &FlagGroups{
 		accepted: make([]string, 0, cap),
 		denied:   make([]string, 0, cap),
 		errored:  make([]string, 0, cap),
@@ -32,7 +35,8 @@ func newFlagGroups(cap int) *FLagGroups {
 	}
 }
 
-func (g *FLagGroups) reset() {
+// reset resets the flag groups to their initial state.
+func (g *FlagGroups) reset() {
 	g.accepted = g.accepted[:0]
 	g.denied = g.denied[:0]
 	g.errored = g.errored[:0]
@@ -40,12 +44,13 @@ func (g *FLagGroups) reset() {
 
 // ----------- END FLAG GROUPS ------------
 
+// StartFlagProcessingLoop starts the flag processing loop.
 func StartFlagProcessingLoop(ctx context.Context) {
 	interval := time.Duration(config.Current.ConfigServer.SubmitFlagCheckerTime) * time.Second
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	logger.Log.Info().Msg("Starting flag processing loop")
+	logger.Log.Info().Msg("Starting flag processing loop...")
 
 	var err error
 	config.Submit, err = protocols.LoadProtocol(config.Current.ConfigServer.Protocol)
@@ -54,6 +59,7 @@ func StartFlagProcessingLoop(ctx context.Context) {
 		return
 	}
 
+	// Main loop for flag processing.
 	for {
 		select {
 		case <-ctx.Done():
@@ -70,7 +76,7 @@ func StartFlagProcessingLoop(ctx context.Context) {
 				continue
 			}
 
-			logger.Log.Debug().Int("count", len(flags)).Msg("Submitting flags to checker")
+			logger.Log.Info().Int("count", len(flags)).Msg("Submitting flags to checker")
 
 			responses, err := config.Submit(
 				config.Current.ConfigServer.HostFlagchecker,
@@ -87,6 +93,7 @@ func StartFlagProcessingLoop(ctx context.Context) {
 	}
 }
 
+// UpdateFlags updates the status of flags in the database.
 func UpdateFlags(flags []models.ResponseProtocol) {
 	maxBatch := int(config.Current.ConfigServer.MaxFlagBatchSize)
 	groups := newFlagGroups(maxBatch)
@@ -132,6 +139,7 @@ func UpdateFlags(flags []models.ResponseProtocol) {
 		Msg("Flags update summary")
 }
 
+// LoadConfig loads the configuration from the given path.
 func LoadConfig(path string) error {
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {

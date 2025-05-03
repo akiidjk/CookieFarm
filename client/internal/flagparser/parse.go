@@ -11,14 +11,22 @@ import (
 )
 
 // ParseLine parses a JSON line into a Flag struct.
-func ParseLine(line string) (models.Flag, error) {
+func ParseLine(line string) (models.Flag, string, error) {
 	var out models.ParsedFlagOutput
 	if err := json.Unmarshal([]byte(line), &out); err != nil {
-		return models.Flag{}, fmt.Errorf("invalid JSON format: %w", err)
+		return models.Flag{}, "error", fmt.Errorf("invalid JSON format: %w", err)
 	}
 
 	if out.Status == "failed" {
-		return models.Flag{}, fmt.Errorf("flag submission failed for team %d on the %s: %s", out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
+		return models.Flag{}, "failed", fmt.Errorf("flag submission failed for team %d on the %s: %s", out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
+	}
+
+	if out.Status == "error" {
+		return models.Flag{}, "error", fmt.Errorf("flag submission error for team %d on the %s: %s", out.TeamID, utils.MapPortToService(uint16(out.ServicePort)), out.Message)
+	}
+
+	if out.Status == "fatal" {
+		return models.Flag{}, "fatal", fmt.Errorf("fatal error in the exploiter: %s", out.Message)
 	}
 
 	flag := models.Flag{
@@ -31,5 +39,5 @@ func ParseLine(line string) (models.Flag, error) {
 		TeamID:       out.TeamID,
 	}
 
-	return flag, nil
+	return flag, "success", nil
 }

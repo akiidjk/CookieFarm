@@ -57,7 +57,7 @@ func HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	}
 	offset := c.QueryInt("offset", config.DEFAULT_OFFSET)
 
-	flags, err := database.GetPagedFlags(limit, offset)
+	flags, err := database.GetPagedFlags(uint(limit), uint(offset))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
 			Error: err.Error(),

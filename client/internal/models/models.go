@@ -26,7 +26,7 @@ type ConfigServer struct {
 	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time"` // Time interval (s) to check and submit flags
 	HostFlagchecker       string `json:"host_flagchecker"`         // Address of the flagchecker server
 	TeamToken             string `json:"team_token"`               // Authentication token for team identity
-	MaxFlagBatchSize      uint16 `json:"max_flag_batch_size"`      // Max number of flags to send in a single batch
+	MaxFlagBatchSize      uint   `json:"max_flag_batch_size"`      // Max number of flags to send in a single batch
 	Protocol              string `json:"protocol"`                 // Protocol used to communicate with the flagchecker server
 }
 
@@ -65,6 +65,6 @@ type ParsedFlagOutput struct {
 	TeamID      uint16 `json:"team_id"`      // ID of the team the flag was extracted from
 	ServicePort uint16 `json:"service_port"` // Port of the service that produced the flag
 	FlagCode    string `json:"flag_code"`    // The actual flag string
-	Status      string `json:"status"`       // Status of the flag submission (eg "success", "failed")
+	Status      string `json:"status"`       // Status of the flag submission (eg "success", "failed", "error", "fatal")
 	Message     string `json:"message"`      // Additional message or error information
 }

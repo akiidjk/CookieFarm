@@ -18,5 +18,5 @@ var ServerPort string                                                        // 
 var Secret = make([]byte, 32)                                                // JWT secret key
 var Submit func(string, string, []string) ([]models.ResponseProtocol, error) // Function to submit data
 
-const DEFAULT_LIMIT = 100 // Default maximum number of flags to retrieve in the view
-const DEFAULT_OFFSET = 0  // Default offset for pagination
+const DEFAULT_LIMIT int = 100 // Default maximum number of flags to retrieve in the view
+const DEFAULT_OFFSET int = 0  // Default offset for pagination

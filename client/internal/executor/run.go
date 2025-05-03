@@ -72,8 +72,13 @@ func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		line := scanner.Text()
-		flag, err := flagparser.ParseLine(line)
+		flag, status, err := flagparser.ParseLine(line)
 		if err != nil {
+			if status == "fatal" {
+				logger.Log.Fatal().
+					Err(err).
+					Msg("Fatal error")
+			}
 			logger.Log.Warn().
 				Err(err)
 			logger.Log.Debug().

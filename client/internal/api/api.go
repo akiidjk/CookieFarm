@@ -112,6 +112,6 @@ func Login(password string) (string, error) {
 		}
 	}
 
-	logger.Log.Warn().Msg("Token non trovato nei cookie")
-	return "", fmt.Errorf("token non trovato nel Set-Cookie")
+	logger.Log.Warn().Msg("Token not found in Set-Cookie")
+	return "", fmt.Errorf("token not found in Set-Cookie")
 }

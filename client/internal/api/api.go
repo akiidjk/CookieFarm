@@ -90,7 +90,7 @@ func GetConfig() (models.Config, error) {
 func Login(password string) (string, error) {
 	url := *config.BaseURLServer + "/api/v1/auth/login"
 
-	logger.Log.Debug().Str("url", url).Msg("Tentativo di login")
+	logger.Log.Debug().Str("url", url).Msg("Login attempt")
 
 	resp, err := http.Post(
 		url,

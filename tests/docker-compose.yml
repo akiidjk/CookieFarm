@@ -119,66 +119,6 @@ services:
     networks:
       net:
         ipv4_address: 10.10.19.1
-  service20:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.20.1
-  service21:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.21.1
-  service22:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.22.1
-  service23:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.23.1
-  service24:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.24.1
-  service25:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.25.1
-  service26:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.26.1
-  service27:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.27.1
-  service28:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.28.1
-  service29:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.29.1
 
 networks:
   net:

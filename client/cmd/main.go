@@ -95,7 +95,7 @@ func main() {
 			logger.Log.Fatal().Err(err).Msg("Initialization error")
 			logger.Close()
 		} else {
-			fmt.Println("Errore inizializzazione:", err)
+			fmt.Println("Error initializing:", err)
 		}
 		os.Exit(1)
 	}

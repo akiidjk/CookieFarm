@@ -39,6 +39,12 @@ To configure the server, you need to create a `.env` file with the following par
 | `SERVER_PASSWORD`    | Password to access the server web interface                          | `"password"` |
 | `SERVER_PORT`        | Sets the port the server will listen on                              | `8080`       |
 
+
+
+> **⚠️ WARNING: Security Risk!**
+>
+> You are **strongly encouraged** to change the default password (`"password"`) to a strong, unique password. Using the default password poses a significant security risk as it could allow unauthorized access to your flag management system!
+
 ---
 
 ## 🌐 Web Interface
@@ -53,9 +59,7 @@ Through the UI you can:
 
 - View all received flags.
 - Check the submission and acceptance status of each flag.
-- Configure the server (unless `--config` mode is enabled).
-
-🔐 **Password-protected access**: set the password via `-p` or use the default `"password"`.
+- Configure the server (unless you setup the configuration from JSON).
 
 ---
 

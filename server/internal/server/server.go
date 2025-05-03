@@ -36,7 +36,7 @@ func newConfig(debug bool) fiber.Config {
 		cfg.EnablePrintRoutes = true
 	} else {
 		cfg.AppName = "CookieFarm Server"
-		cfg.DisableStartupMessage = true
+		cfg.DisableStartupMessage = false
 		cfg.CaseSensitive = true
 		cfg.StrictRouting = true
 		cfg.EnablePrintRoutes = false

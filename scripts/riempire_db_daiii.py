@@ -30,7 +30,7 @@ for i in range(total_flags // batch_size):
             "status": "unsubmitted",
             "id": str(uuid.uuid4()),
             "team_id": random.randint(1, 80),
-            "service_port": random.randint(1, 65535),
+            "port_service": random.randint(1, 65535),
             "service_name": "diocane",
             "flag_code": random_flag_code(50),
             "response_time": 0,

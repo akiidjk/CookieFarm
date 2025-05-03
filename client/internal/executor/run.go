@@ -67,28 +67,41 @@ func Start(exploitName, password string, tickTime int, threadCount int, logPath 
 	}, nil
 }
 
+// LogParsedLineError logs an error based on the status and line.
+func logParsedLineError(err error, status, line string) {
+	switch status {
+	case "fatal":
+		logger.Log.Fatal().Err(err).Msg("Fatal error")
+	case "info":
+		logger.Log.Info().Err(err).Msg("Info")
+	case "failed":
+		logger.Log.Warn().Err(err).Msg("Failed to run exploit")
+	default:
+		logger.Log.Warn().Err(err).Msg("Parsing warning")
+	}
+	logger.Log.Debug().Str("raw", line).Msg("Raw line with error")
+}
+
 // Read the stdout and parse JSON lines into Flag structs.
 func readStdout(stdout io.Reader, flagsChan chan<- models.Flag) {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		line := scanner.Text()
-		flag, err := flagparser.ParseLine(line)
+		flag, status, err := flagparser.ParseLine(line)
 		if err != nil {
-			logger.Log.Warn().
-				Err(err).
-				Str("raw", line).
-				Msg("Failed to parse JSON from stdout")
+			logParsedLineError(err, status, line)
 			continue
 		}
-		flagsChan <- flag
 
+		flagsChan <- flag
 		logger.Log.Info().
 			Str("flag", flag.FlagCode).
 			Int("team", int(flag.TeamID)).
 			Str("service", flag.ServiceName).
-			Uint16("port", flag.ServicePort).
+			Uint16("port", flag.PortService).
 			Msg("Parsed and queued flag")
 	}
+
 	if err := scanner.Err(); err != nil {
 		logger.Log.Error().Err(err).Msg("Error reading stdout scanner")
 	}

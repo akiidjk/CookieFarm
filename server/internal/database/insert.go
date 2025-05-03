@@ -36,11 +36,11 @@ func AddFlags(flags []models.Flag) error {
 		for j, f := range batch {
 			parts[j] = "(?, ?, ?, ?, ?, ?, ?)"
 			args = append(args,
-				f.FlagCode, f.ServiceName, f.ServicePort,
+				f.FlagCode, f.ServiceName, f.PortService,
 				f.SubmitTime, f.ResponseTime, f.Status, f.TeamID,
 			)
 		}
-		query := "INSERT INTO flags(flag_code,service_name,service_port,submit_time,response_time,status,team_id) VALUES " +
+		query := "INSERT INTO flags(flag_code,service_name,port_service,submit_time,response_time,status,team_id) VALUES " +
 			strings.Join(parts, ",")
 
 		if _, err := tx.ExecContext(ctx, query, args...); err != nil {

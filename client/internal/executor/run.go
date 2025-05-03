@@ -67,6 +67,7 @@ func Start(exploitName, password string, tickTime int, threadCount int, logPath 
 	}, nil
 }
 
+// LogParsedLineError logs an error based on the status and line.
 func logParsedLineError(err error, status, line string) {
 	switch status {
 	case "fatal":

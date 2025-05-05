@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+    restart: unless-stopped
+    ports:
+      - ${BACKEND_PORT}:${BACKEND_PORT}
+    environment:
+      PASSWORD: ${PASSWORD}
+      CONFIG_FROM_FILE: ${CONFIG_FROM_FILE}
+      PORT: ${BACKEND_PORT}
+      DEBUG: ${DEBUG}
+    volumes:
+      - sqlite_bp:/app/database
+
+volumes:
+  sqlite_bp:

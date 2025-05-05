@@ -21,11 +21,60 @@ The system automatically handles exploit distribution, flag submission, and resu
 
 ---
 
-##  📐 Architecture
+## 📐 Architecture
 
 <div align="center" style="margin-bottom: 20px">
   <img width="800px" height="auto" src="assets/arch_farm.png">
 </div>
+
+---
+
+## ▶️ Usage Guide
+
+### 💻 Starting the Server
+
+To start the server:
+
+1. Navigate to the `server/` directory:
+
+   ```bash
+   cd server/
+   ```
+
+2. Launch the server using Docker Compose:
+
+   ```bash
+   docker compose up
+   ```
+
+
+### 💻 Running the Client and Exploit
+
+1. Navigate to the `client/` directory:
+
+   ```bash
+   cd client/
+   ```
+
+2. Copy the exploit template (`exploit.py`) to the `exploits/` folder with a new name:
+
+   ```bash
+   cp ./exploits/exploit.py ./exploits/your_exploit.py
+   ```
+
+   > 🔧 *Edit `your_exploit.py` to implement your custom exploit logic.*
+
+3. Run the exploit manager with the following command:
+
+   ```bash
+   ./bin/cookieclient -e ./exploits/your_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd
+   ```
+
+   * `-e`: path to your exploit script
+   * `-b`: target server base URL
+   * `-p`: password for authentication
+
+🎉 **Enjoy your exploitation session!**
 
 ---
 

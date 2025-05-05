@@ -151,7 +151,14 @@ func LoadConfig(path string) error {
 		return err
 	}
 
-	yaml.Unmarshal(data, &config.Current)
+	err = yaml.Unmarshal(data, &config.Current)
+	if err != nil {
+		return err
+	}
+
+	if config.Current.Configured != true {
+		config.Current.Configured = false
+	}
 
 	if shutdownCancel != nil {
 		shutdownCancel()

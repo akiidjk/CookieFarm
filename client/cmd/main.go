@@ -32,7 +32,7 @@ func init() {
 
 	fmt.Println(banner)
 
-	args.ExploitName = pflag.StringP("exploit", "e", "", "Name of the exploit file to execute")
+	args.ExploitPath = pflag.StringP("exploit", "e", "", "Path to the exploit file to execute")
 	args.Debug = pflag.Bool("debug", false, "Enable debug logging")
 	args.Password = pflag.StringP("password", "p", "", "Password for authenticating to the server")
 	config.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the flag submission server")
@@ -66,7 +66,7 @@ func setupClient() error {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
-	logger.Log.Debug().Str("ExploitName", *args.ExploitName).Str("BaseURLServer", *config.BaseURLServer).Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime).Msg("Arguments validated")
+	logger.Log.Debug().Str("ExploitPath", *args.ExploitPath).Str("BaseURLServer", *config.BaseURLServer).Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime).Msg("Arguments validated")
 
 	config.Token, err = api.Login(*args.Password)
 	if err != nil {
@@ -103,7 +103,7 @@ func main() {
 
 	logger.Log.Info().Msg("Client initialized successfully")
 
-	result, err := executor.Start(*args.ExploitName, *args.Password, *args.TickTime, *args.ThreadCount, logPath)
+	result, err := executor.Start(*args.ExploitPath, *args.Password, *args.TickTime, *args.ThreadCount, logPath)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

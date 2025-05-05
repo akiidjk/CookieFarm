@@ -24,7 +24,7 @@ The system automatically handles exploit distribution, flag submission, and resu
 ##  📐 Architecture
 
 <div align="center" style="margin-bottom: 20px">
-  <img width="600px" height="auto" src="assets/arch_farm.png">
+  <img width="800px" height="auto" src="assets/arch_farm.png">
 </div>
 
 ---

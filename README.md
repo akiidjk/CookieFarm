@@ -8,7 +8,7 @@
 
 # CookieFarm
 
-**CookieFarm** is a Attack/Defense CTF framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookies**. What sets CookieFarm apart is its hybrid Go+Python architecture and "zero distraction" approach: **Your only task: write the exploit logic!**
+**CookieFarm** is a Attack/Defense CTF framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookie**. What sets CookieFarm apart is its hybrid Go+Python architecture and "zero distraction" approach: **Your only task: write the exploit logic!**
 
 The system automatically handles exploit distribution, flag submission, and result monitoring, allowing you to focus exclusively on writing effective exploits.
 
@@ -41,7 +41,18 @@ To start the server:
    cd server/
    ```
 
-2. Launch the server using Docker Compose:
+2. Create a `.env` file in the server directory to configure the environment settings:
+
+  ```bash
+  # Server configuration
+  DEBUG=true                   # Enable debug mode for verbose logging
+  SERVER_PASSWORD=SuperSecret  # Set a strong password for authentication
+  SERVER_PORT=9090            # Define the port the server will listen on
+  ```
+
+  > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
+
+3. Launch the server using Docker Compose:
 
    ```bash
    docker compose up
@@ -74,7 +85,7 @@ To start the server:
    * `-b`: target server base URL
    * `-p`: password for authentication
 
-🎉 **Enjoy your exploitation!**
+🎉 **Enjoy your exploitation session!**
 
 ---
 
@@ -92,4 +103,4 @@ Contributions, suggestions, and bug reports are always welcome! Check out [CONTR
 
 CookieFarm was designed with particular attention to user experience during high-pressure CTFs. Our goal is to eliminate every distraction and allow you to focus on what really matters: writing effective exploits.
 
-**Created with ❤️ by ByteTheCookies**
+**Created with ❤️ by ByteTheCookie**

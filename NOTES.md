@@ -62,6 +62,8 @@
 - [ ] api/button to delete/remove the flag queue
 - [ ] Sostituire le richieste in GO con `request.h`
 - [ ] Compatibilità windows/macos
+- [ ] Tutorial nella dashboard
+- [ ] Possibilità di scaricare dal server il client
 
 ## RELEASE 1.2
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

@@ -35,7 +35,7 @@ trap cleanup SIGINT
 # === REQUIREMENTS ===
 echo "📦 Installazione dipendenze Python..."
 pip install --upgrade pip > /dev/null
-pip install -r "$REQUIREMENTS" > /dev/null
+#pip install -r "$REQUIREMENTS" > /dev/null
 
 # === TAILWIND ===
 echo "🎨 Controllo TailwindCSS..."

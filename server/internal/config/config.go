@@ -5,11 +5,7 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
-var Current models.Config = models.Config{ // Initialize the config struct
-	Configured:   false,
-	ConfigClient: models.ConfigClient{},
-	ConfigServer: models.ConfigServer{},
-}
+var Current models.Config // Initialize the config struct
 
 var Debug *bool                                                              // Global debug flag
 var ConfigPath *string                                                       // Path to configuration file

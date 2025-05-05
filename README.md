@@ -42,14 +42,14 @@ To start the server:
    ```
 
 2. Create a `.env` file in the server directory to configure the environment settings:
-
+  
   ```bash
-  # Server configuration
-  DEBUG=true                   # Enable debug mode for verbose logging
-  SERVER_PASSWORD=SuperSecret  # Set a strong password for authentication
-  SERVER_PORT=9090            # Define the port the server will listen on
+    # Server configuration
+    DEBUG=true                   # Enable debug mode for verbose logging
+    SERVER_PASSWORD=SuperSecret  # Set a strong password for authentication
+    SERVER_PORT=9090            # Define the port the server will listen on
   ```
-
+  
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
 
 3. Launch the server using Docker Compose:

@@ -21,20 +21,11 @@ The system automatically handles exploit distribution, flag submission, and resu
 
 ---
 
-## 🚀 Installation & Setup
-
 ### 🔹 Prerequisites
 
 Ensure you have installed:
 1. **Python 3.10+**
 2. **Docker**
-
-### 🔹 Clone the Repository
-
-```bash
-git clone https://github.com/ByteTheCookie/CookieFarm.git
-cd CookieFarm
-```
 
 ## 🤝 Contributing
 

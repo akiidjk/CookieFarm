@@ -74,7 +74,7 @@ To start the server:
    * `-b`: target server base URL
    * `-p`: password for authentication
 
-🎉 **Enjoy your exploitation session!**
+🎉 **Enjoy your exploitation!**
 
 ---
 

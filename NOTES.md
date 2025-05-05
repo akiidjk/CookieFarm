@@ -63,6 +63,8 @@
 - [ ] Sistemare repo
 - [ ] Comando create lato client per creare template
 - [ ] Altro comando cli per vedere in RealTime consumo di risorse di tutti i client e boh altre info
+- [ ] Aggiungere un comando cli per vedere le flag che sono state inviate al server
+- [ ] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
 - ? POSSIBILE REDIS PAZZO SGRAVATO (Visto che stiamo usando Docker per il server)
 
 - [ ] Aggiungere numero client attacanti realtime displayato sulla dashboard,

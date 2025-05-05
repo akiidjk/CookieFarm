@@ -95,7 +95,10 @@ func ValidateArgs(args models.Args) error {
 		return fmt.Errorf("tick time must be at least 1")
 	}
 
-	exploitPath := filepath.Join(GetExecutableDir(), "..", "exploits", *args.ExploitPath)
+	exploitPath, err := filepath.Abs(*args.ExploitPath)
+	if err != nil {
+		return fmt.Errorf("error resolving exploit path: %v", err)
+	}
 
 	if _, err := os.Stat(exploitPath); os.IsNotExist(err) {
 		return fmt.Errorf("exploit not found in the exploits directory")

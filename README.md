@@ -78,7 +78,7 @@ To start the server:
 3. Run the exploit manager with the following command:
 
    ```bash
-   ./bin/cookieclient -e ./exploits/your_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd
+   cookieclient -e ./exploits/your_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd
    ```
 
    * `-e`: path to your exploit script

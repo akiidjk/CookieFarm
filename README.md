@@ -21,10 +21,18 @@ The system automatically handles exploit distribution, flag submission, and resu
 
 ---
 
+##  📐 Architecture
+
+<div align="center" style="margin-bottom: 20px">
+  <img width="600px" height="auto" src="assets/arch_farm.png">
+</div>
+
+---
+
 ### 🔹 Prerequisites
 
 Ensure you have installed:
-1. **Python 3.10+**
+1. **Python 3+**
 2. **Docker**
 
 ## 🤝 Contributing

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	json "github.com/bytedance/sonic"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/database"
@@ -151,7 +151,14 @@ func LoadConfig(path string) error {
 		return err
 	}
 
-	json.Unmarshal(data, &config.Current)
+	err = yaml.Unmarshal(data, &config.Current)
+	if err != nil {
+		return err
+	}
+
+	if config.Current.Configured != true {
+		config.Current.Configured = false
+	}
 
 	if shutdownCancel != nil {
 		shutdownCancel()

@@ -60,7 +60,7 @@
 - [ ] Config Reloader (hot realod of config file || button to reload)
 - [ ] api/button to send flags, instead of waiting the timer
 - [ ] api/button to delete/remove the flag queue
-- [ ] Sostituire le richieste in GO con `request.h`
+- [ ] Filtri,Search flag, Sort, Reload
 - [ ] Compatibilità windows/macos
 
 ## RELEASE 1.2
@@ -76,6 +76,7 @@
 
 ## RELEASE BOH SI QUANDO ABBIAMO TEMPO
 - [ ] client option to submit directly to gameserver
+- [ ] Sostituire le richieste in GO con `request.h`
 
 
 ## Final test

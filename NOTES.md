@@ -53,8 +53,8 @@
 - [x] Aggiungere Docs (Codice e user)
 - [x] Rifare log e cli di server e client
 - [x] Ottimizzazione exploiter per gestire servizi di macchine down etc...
-- [ ] Fare il README.md
-- [ ] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
+- [x] Fare il README.md
+- [x] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
 
 ## RELEASE 1.1
 - [ ] Config Reloader (hot realod of config file || button to reload)
@@ -70,6 +70,7 @@
 - [ ] Aggiungere numero client attacanti realtime displayato sulla dashboard,
 - [ ] TTL per le flag senza condizione statistiche
 - [ ] Completed cli (create template,RealTime consumo di risorse di tutti i client e boh altre info,flag che sono state inviate al server)
+- [ ] Exploit Manager che runna più di un exploit (by Matte)
 
 ## RELEASE 2.0 (Cyberchallenge update)
 - [ ] Calcolatore della SLA

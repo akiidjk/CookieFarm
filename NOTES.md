@@ -64,6 +64,7 @@
 - [ ] Compatibilità windows/macos
 - [ ] Tutorial nella dashboard
 - [ ] Possibilità di scaricare dal server il client
+- [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte)
 
 ## RELEASE 1.2
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

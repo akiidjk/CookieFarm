@@ -65,6 +65,7 @@
 - [ ] Tutorial nella dashboard
 - [ ] Possibilità di scaricare dal server il client
 - [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte)
+- [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit
 
 ## RELEASE 1.2
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

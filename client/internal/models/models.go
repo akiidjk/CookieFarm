@@ -51,7 +51,7 @@ type Config struct {
 // Args represents the command-line arguments or configuration
 // values passed at runtime to control the exploit manager behavior.
 type Args struct {
-	ExploitName *string `json:"exploit_name"` // Name of the exploit to run
+	ExploitPath *string `json:"exploit_path"` // Path to the exploit to run
 	Password    *string `json:"password"`     // Authentication password
 	TickTime    *int    `json:"tick_time"`    // Optional custom tick time
 	Debug       *bool   `json:"debug"`        // Enable debug mode if true

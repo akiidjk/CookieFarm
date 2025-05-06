@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/flagparser"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
-	"github.com/ByteTheCookies/cookieclient/internal/utils"
 )
 
 type ExecutionResult struct {
@@ -22,8 +20,7 @@ type ExecutionResult struct {
 }
 
 // Start starts the exploit_manager and listens for flags in stdout.
-func Start(exploitName, password string, tickTime int, threadCount int, logPath string) (*ExecutionResult, error) {
-	exploitPath := filepath.Join(utils.GetExecutableDir(), "..", "exploits", exploitName)
+func Start(exploitPath, password string, tickTime int, threadCount int, logPath string) (*ExecutionResult, error) {
 
 	cmd := exec.Command(
 		exploitPath,

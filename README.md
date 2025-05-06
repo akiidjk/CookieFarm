@@ -1,5 +1,5 @@
 <div align="center" style="margin-bottom: 20px">
-  <img width="360px" height="360px" src="assets/logo.png">
+  <img width="360px" height="auto" src="assets/logo_mucca.png">
 </div>
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
@@ -8,7 +8,7 @@
 
 # CookieFarm
 
-**CookieFarm** is a Attack/Defense CTF framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookie**. What sets CookieFarm apart is its hybrid Go+Python architecture and "zero distraction" approach: **Your only task: write the exploit logic!**
+**CookieFarm** is a Attack/Defense CTF framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookies**. What sets CookieFarm apart is its hybrid Go+Python architecture and "zero distraction" approach: **Your only task: write the exploit logic!**
 
 The system automatically handles exploit distribution, flag submission, and result monitoring, allowing you to focus exclusively on writing effective exploits.
 
@@ -78,7 +78,7 @@ To start the server:
 3. Run the exploit manager with the following command:
 
    ```bash
-   ./bin/cookieclient -e ./exploits/your_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd
+   cookieclient -e ./exploits/your_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd
    ```
 
    * `-e`: path to your exploit script
@@ -103,4 +103,4 @@ Contributions, suggestions, and bug reports are always welcome! Check out [CONTR
 
 CookieFarm was designed with particular attention to user experience during high-pressure CTFs. Our goal is to eliminate every distraction and allow you to focus on what really matters: writing effective exploits.
 
-**Created with ❤️ by ByteTheCookie**
+**Created with ❤️ by ByteTheCookies**

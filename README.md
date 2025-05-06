@@ -41,7 +41,7 @@ To start the server:
    cd server/
    ```
 
-2. Create a `.env` file in the server directory to configure the environment settings:
+2. Create an `.env` file in the server directory to configure the environment settings:
 
     ```bash
       # Server configuration

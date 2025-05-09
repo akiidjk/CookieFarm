@@ -20,6 +20,7 @@ type Flag struct {
 	FlagCode     string `json:"flag_code"`     // Actual flag string
 	ServiceName  string `json:"service_name"`  // Human-readable name of the service
 	Status       string `json:"status"`        // Status of the submission (e.g., "unsubmitted", "accepted", "denied")
+	Msg          string `json:"msg"`           // Message from the flag checker service
 }
 
 // ResponseProtocol represents a response from the flag checker service.

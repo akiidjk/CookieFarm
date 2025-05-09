@@ -1,6 +1,7 @@
 {{ range .Flags }}
 <tr class="group hover:bg-primary/20">
     <td class="td">{{ .FlagCode }}</td>
+    <td class="td">{{ .Msg }}</td>
     <td class="td">
         <span class="bg-secondary p-1 px-4 rounded-full">
             {{ .ServiceName }}:{{ .PortService }}
@@ -9,8 +10,8 @@
 
     {{ $color := "text-gray-500" }} {{ if eq .Status "ACCEPTED" }} {{ $color =
     "text-green-500" }} {{ else if eq .Status "DENIED" }} {{ $color =
-    "text-red-500" }} {{ else if eq .Status "ERROR" }} {{ $color =
-    "text-yellow-500" }} {{ end }}
+    "text-yellow-500" }} {{ else if eq .Status "ERROR" }} {{ $color =
+    "text-red-500" }} {{ end }}
     <td class="{{ $color }} td">{{ .Status }}</td>
     <td class="td timestamp">{{ format_timestamp .SubmitTime }}</td>
     <td class="td timestamp">{{ format_timestamp .ResponseTime }}</td>

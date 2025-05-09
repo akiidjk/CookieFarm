@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
@@ -43,6 +44,10 @@ func Submit(host string, team_token string, flags []string) ([]models.ResponsePr
 	// logger.Debug("Raw body %s", string(body))
 	if err := json.Unmarshal(body, &responses); err != nil {
 		return nil, fmt.Errorf("error during response parsing: %w", err)
+	}
+
+	for i := range responses {
+		responses[i].Msg = strings.Split(responses[i].Msg, "]")[1]
 	}
 
 	return responses, nil

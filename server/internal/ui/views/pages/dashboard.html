@@ -11,7 +11,8 @@
             hx-target="#flag-table-body"
             hx-swap="innerHTML"
             hx-indicator="#spinner"
-            class="button">
+            class="button"
+            onclick="reloadData()">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="white" d="M4.654 19.346v-1H7.75l-1.054-1.042q-1.165-1.131-1.68-2.481q-.516-1.35-.516-2.734q0-2.41 1.374-4.361T9.5 4.942v1.062q-1.82.765-2.91 2.424t-1.09 3.66q0 1.222.464 2.37q.463 1.15 1.44 2.127l1.019 1.019v-3.027h1v4.77zm9.846-.288v-1.062q1.82-.765 2.91-2.424t1.09-3.66q0-1.222-.463-2.37q-.464-1.15-1.44-2.126l-1.02-1.02v3.027h-1v-4.77h4.77v1H16.25l1.054 1.043q1.148 1.148 1.672 2.49q.524 1.341.524 2.726q0 2.41-1.374 4.36T14.5 19.058"/></svg>
         </button>
          <input
@@ -49,6 +50,14 @@
                                     </svg>
                                 </div>
                                 <div class="pl-2">Flag</div>
+                            </div>
+                        </th>
+                        <th class="th">
+                            <div class="flex">
+                                <div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M3 20.077V4.616q0-.691.463-1.153T4.615 3h14.77q.69 0 1.152.463T21 4.616v10.769q0 .69-.463 1.153T19.385 17H6.077zM6.5 13.5h7v-1h-7zm0-3h11v-1h-11zm0-3h11v-1h-11z"/></svg>
+                                </div>
+                                <div class="pl-2">Msg</div>
                             </div>
                         </th>
                         <th class="th">
@@ -127,7 +136,7 @@
 </div>
 
 <script type="module" defer>
-   import { sendFlag} from '/js/output.min.js';
+   import { sendFlag } from '/js/output.min.js';
 
    function submitFlag() {
        const flagInput = document.getElementById('flag-input');
@@ -167,7 +176,23 @@
          });
      }
 
+   function reloadData() {
+       const limit = {{.Limit}};
+       const offset = parseInt(localStorage.getItem("flags-offset"), 10) || 0;
 
+       htmx.ajax('GET', `/flags/${limit}?offset=${offset}`, {
+         target: '#flag-table-body',
+         swap: 'innerHTML',
+         indicator: '#spinner'
+       });
+
+       htmx.ajax('GET', `/pagination/${limit}?offset=${offset}`, {
+         target: '#pagination',
+         swap: 'innerHTML'
+       });
+   }
+
+    window.reloadData = reloadData;
     window.SubmitFlag = submitFlag;
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -198,9 +223,7 @@
         });
       }
 
-
       updateComponents(currentPage);
-
 
       document.body.addEventListener('click', function(e) {
         const tgt = e.target.closest('[data-page]');

@@ -1,14 +1,15 @@
+
 configured: true
 
 server:
-  host_flagchecker: "localhost:5001"
+  host_flagchecker: "192.168.1.1:8080"
   team_token: "4242424242424242424"
-  submit_flag_checker_time: 60
+  submit_flag_checker_time: 120
   max_flag_batch_size: 1000
   protocol: "cc_http"
 
 client:
-  submit_flag_server_time: 20
+  submit_flag_server_time: 120
   services:
     - name: "CookieService"
       port: 8081

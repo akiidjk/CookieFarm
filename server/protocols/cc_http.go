@@ -39,11 +39,11 @@ func Submit(host string, team_token string, flags []string) ([]models.ResponsePr
 		return nil, fmt.Errorf("error during response reading: %w", err)
 	}
 
-	var response []models.ResponseProtocol
+	var responses []models.ResponseProtocol
 	// logger.Debug("Raw body %s", string(body))
-	if err := json.Unmarshal(body, &response); err != nil {
+	if err := json.Unmarshal(body, &responses); err != nil {
 		return nil, fmt.Errorf("error during response parsing: %w", err)
 	}
 
-	return response, nil
+	return responses, nil
 }

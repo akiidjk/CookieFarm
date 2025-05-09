@@ -3,17 +3,15 @@ package utils
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
 )
-
-const regexUrl = `^http://(localhost|127\.0\.0\.1):[0-9]{1,5}$` // Regex for matching URLs
 
 const (
 	Reset   = "\033[0m"
@@ -87,8 +85,9 @@ func ValidateArgs(args models.Args) error {
 		return fmt.Errorf("missing required --password argument")
 	}
 
-	if !regexp.MustCompile(regexUrl).MatchString(*config.BaseURLServer) {
-		return fmt.Errorf("invalid base URL server")
+	_, err := url.ParseRequestURI(*config.BaseURLServer)
+	if err != nil {
+		return fmt.Errorf("invalid URL format: %v", err)
 	}
 
 	if *args.TickTime < 1 {

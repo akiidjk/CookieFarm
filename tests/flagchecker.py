@@ -46,7 +46,7 @@ def check_flags():
                             message = status["ERROR"]
 
                 responses.append({
-                    "msg": f"[{flag}] {message}",
+                    "msg": f"[{flag}] {random.choice(message) if s == "DENIED" else  message}",
                     "flag": flag,
                     "status": s
                 })

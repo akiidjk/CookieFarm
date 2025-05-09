@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"os"
-	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -14,33 +13,6 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/ByteTheCookies/cookieserver/protocols"
 )
-
-// ----------- FLAG GROUPS ------------
-
-// FlagGroups represents a group of flags with different statuses (accepted, denied, errored).
-type FlagGroups struct {
-	accepted []string // Accepted flags
-	denied   []string // Denied flags
-	errored  []string // Errored flags
-	cap      int      // Capacity of the groups
-}
-
-// newFlagGroups creates a new instance of FlagGroups with the specified capacity.
-func newFlagGroups(cap int) *FlagGroups {
-	return &FlagGroups{
-		accepted: make([]string, 0, cap),
-		denied:   make([]string, 0, cap),
-		errored:  make([]string, 0, cap),
-		cap:      cap,
-	}
-}
-
-// reset resets the flag groups to their initial state.
-func (g *FlagGroups) reset() {
-	g.accepted = g.accepted[:0]
-	g.denied = g.denied[:0]
-	g.errored = g.errored[:0]
-}
 
 // ----------- END FLAG GROUPS ------------
 
@@ -95,46 +67,39 @@ func StartFlagProcessingLoop(ctx context.Context) {
 
 // UpdateFlags updates the status of flags in the database.
 func UpdateFlags(flags []models.ResponseProtocol) {
-	maxBatch := int(config.Current.ConfigServer.MaxFlagBatchSize)
-	groups := newFlagGroups(maxBatch)
-	defer groups.reset()
+	valid := flags[:0]
 
-	for _, resp := range flags {
-		switch resp.Status {
+	accepted, denied, errored := 0, 0, 0
+	for _, f := range flags {
+		switch f.Status {
 		case models.StatusAccepted:
-			groups.accepted = append(groups.accepted, resp.Flag)
+			accepted++
+			valid = append(valid, f)
+
 		case models.StatusDenied:
-			groups.denied = append(groups.denied, resp.Flag)
+			denied++
+			valid = append(valid, f)
+
+		case models.StatusError:
+			errored++
+			valid = append(valid, f)
+
 		default:
-			groups.errored = append(groups.errored, resp.Flag)
+			continue
 		}
 	}
 
-	var wg sync.WaitGroup
-	update := func(flags []string, status string) {
-		defer wg.Done()
-		if len(flags) == 0 {
-			return
-		}
-		if err := database.UpdateFlagsStatus(flags, status); err != nil {
-			logger.Log.Error().
-				Strs("flags", flags).
-				Err(err).
-				Msgf("Failed to update flags with status %s", status)
-		}
+	if err := database.UpdateFlagsStatus(valid); err != nil {
+		logger.Log.Error().
+			Err(err).
+			Msg("Failed to update flags")
 	}
 
-	wg.Add(3)
-	go update(groups.accepted, models.StatusAccepted)
-	go update(groups.denied, models.StatusDenied)
-	go update(groups.errored, models.StatusError)
-	wg.Wait()
-
-	total := len(groups.accepted) + len(groups.denied) + len(groups.errored)
+	total := accepted + denied + errored
 	logger.Log.Info().
-		Int("accepted", len(groups.accepted)).
-		Int("denied", len(groups.denied)).
-		Int("errored", len(groups.errored)).
+		Int("accepted", accepted).
+		Int("denied", denied).
+		Int("errored", errored).
 		Int("total", total).
 		Msg("Flags update summary")
 }

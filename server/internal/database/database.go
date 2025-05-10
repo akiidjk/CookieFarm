@@ -52,6 +52,10 @@ func New() *sql.DB {
 		logger.Log.Fatal().Err(err).Msg("Database initialization failed")
 	}
 
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(30 * time.Minute)
+
 	return db
 }
 

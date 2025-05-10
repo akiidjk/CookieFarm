@@ -31,6 +31,12 @@ func Start(exploitPath, password string, tickTime int, threadCount int, logPath 
 		logPath,
 	)
 
+	defer func() {
+		if cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+	}()
+
 	logger.Log.Debug().
 		Str("full path exploit", exploitPath).
 		Int("tick time", tickTime).
@@ -52,7 +58,7 @@ func Start(exploitPath, password string, tickTime int, threadCount int, logPath 
 		return nil, fmt.Errorf("failed to start command: %w", err)
 	}
 
-	flagsChan := make(chan models.Flag, 100)
+	flagsChan := make(chan models.Flag, 500)
 
 	go readStdout(stdout, flagsChan)
 	go readStderr(stderr)

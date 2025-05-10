@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
@@ -97,6 +98,14 @@ func ValidateArgs(args models.Args) error {
 	exploitPath, err := filepath.Abs(*args.ExploitPath)
 	if err != nil {
 		return fmt.Errorf("error resolving exploit path: %v", err)
+	}
+
+	if info, err := os.Stat(exploitPath); err == nil && info.Mode()&0111 == 0 {
+		return fmt.Errorf("exploit file is not executable")
+	}
+
+	if !strings.HasSuffix(filepath.Clean(exploitPath), "exploits") {
+		return fmt.Errorf("exploit must be located in the exploits directory")
 	}
 
 	if _, err := os.Stat(exploitPath); os.IsNotExist(err) {

@@ -87,18 +87,6 @@ func HandlePostFlags(c *fiber.Ctx) error {
 	}
 
 	flags := payload.Flags
-	if len(payload.Flags) > 0 {
-		flagSet := make(map[string]struct{})
-		uniqueFlags := []models.Flag{}
-		for _, flag := range payload.Flags {
-			flagCode := flag.FlagCode
-			if _, exists := flagSet[flagCode]; !exists {
-				flagSet[flagCode] = struct{}{}
-				uniqueFlags = append(uniqueFlags, flag)
-			}
-		}
-		flags = uniqueFlags
-	}
 
 	if err := database.AddFlags(flags); err != nil {
 		logger.Log.Error().

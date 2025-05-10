@@ -29,7 +29,7 @@ help:
 build:
 	@echo -e "$(CYAN)[*] Building $(BOLD)...$(RESET)"
 	@mkdir -p $(BIN_DIR)
-	@go build -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
+	@go build -i -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
 	@echo -e "$(GREEN)[+] Build complete!$(RESET)"
 
 build-prod:
@@ -38,6 +38,7 @@ build-prod:
 	GOOS=linux GOARCH=amd64 \
 		go build \
 		-race   \
+		-i      \
 		-trimpath \
 		-ldflags="-s -w" \
 		-o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
@@ -63,11 +64,11 @@ version:
 	@echo -e "$(GREEN)[+] Version $(BINARY_NAME) v$(VERSION) $(RESET)"
 
 clean:
-	@echo -e "$(YELLOW)[*] Cleaning binaries...$(RESET)"
-	@rm -rf $(BIN_DIR)/*
+	@echo -e "$(YELLOW)[*] Cleaning binaries and db...$(RESET)"
+	@if [ -d $(BIN_DIR) ]; then rm -rf $(BIN_DIR)/*; fi
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
 	@echo -e "$(YELLOW)[*] Cleaning logs...$(RESET)"
-	@rm -rf $(LOGS_DIR)/*
+	@if [ -d $(LOGS_DIR) ]; then rm -rf $(LOGS_DIR)/*; fi
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
 
 lint:

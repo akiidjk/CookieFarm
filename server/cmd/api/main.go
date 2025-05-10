@@ -13,7 +13,6 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/server"
-	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/spf13/pflag"
 )
@@ -62,22 +61,27 @@ func main() {
 	config.Password = &hashed
 	logger.Log.Debug().Str("hashed", *config.Password).Msg("Password after hashing")
 
-	app := server.New()
-	if *config.Debug {
-		app.Use(flogger.New(flogger.Config{
-			Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
-			TimeFormat: time.RFC3339,
-			TimeZone:   "Local",
-		}))
+	database.DB = database.New()
+	if err := database.DB.Ping(); err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to connect to the database")
 	}
+	logger.Log.Info().Msg("Database initialized")
+	defer database.Close()
+
+	app := server.New()
+
+	app.Use(flogger.New(flogger.Config{
+		Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
+		TimeFormat: time.RFC3339,
+		TimeZone:   "Local",
+	}))
 
 	server.RegisterRoutes(app)
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer stop()
 
-	port := utils.GetEnv("PORT", "8080")
-	addr := ":" + port
+	addr := ":" + *config.ServerPort
 
 	go func() {
 		logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")
@@ -85,10 +89,6 @@ func main() {
 			logger.Log.Fatal().Err(err).Msg("Server listen error")
 		}
 	}()
-
-	database.DB = database.New()
-	logger.Log.Info().Msg("Database initialized")
-	defer database.Close()
 
 	<-ctx.Done()
 	logger.Log.Warn().Msg("Shutdown signal received, terminating...")
@@ -98,6 +98,14 @@ func main() {
 	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
 		logger.Log.Error().Err(err).Msg("Error during shutdown, forcing exit")
 	}
+
+	go func() {
+		<-ctx.Done()
+		if ctx.Err() == context.Canceled {
+			logger.Log.Info().Msg("Reloading configuration...")
+			server.LoadConfig(*config.ConfigPath)
+		}
+	}()
 
 	logger.Log.Info().Msg("Server stopped gracefully")
 }

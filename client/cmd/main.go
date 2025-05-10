@@ -7,6 +7,8 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
@@ -90,6 +92,14 @@ func setupClient() error {
 // Main is the main execution flow of the CookieFarm client.
 // It handles setup, starts the exploit, and manages the flag submission process.
 func main() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		logger.Log.Info().Msg("Shutting down gracefully...")
+		os.Exit(0)
+	}()
+
 	if err := setupClient(); err != nil {
 		if logger.LogLevel != zerolog.Disabled {
 			logger.Log.Fatal().Err(err).Msg("Initialization error")

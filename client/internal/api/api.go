@@ -35,6 +35,7 @@ func SendFlag(flags ...models.Flag) error {
 
 	req.Header.Set("Cookie", "token="+config.Token)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
 
 	resp, err := client.Do(req)
 	if err != nil {

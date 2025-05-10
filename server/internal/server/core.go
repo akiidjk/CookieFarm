@@ -124,11 +124,13 @@ func LoadConfig(path string) error {
 		config.Current.Configured = false
 	}
 
-	if shutdownCancel != nil {
-		shutdownCancel()
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	shutdownCancel = cancel
+
+	if shutdownCancel != nil {
+		shutdownCancel()
+		<-ctx.Done()
+	}
 
 	go StartFlagProcessingLoop(ctx)
 

@@ -65,18 +65,18 @@ if [[ $2 -eq 1 ]]; then
     kitty --title "cookieserver" bash -c "make build-plugins-prod ;make run-prod; chmod +x ./cookieserver; ./cookieserver; exec bash" &
 else
     echo "🔓 Modalità sviluppo attivata!"
-    kitty --title "cookieserver" bash -c "make build-plugins; make run ARGS='--debug'; exec bash" &
+    kitty --title "cookieserver" bash -c "make build-plugins; make run ARGS='--config config.yml --debug'; exec bash" &
 fi
 echo "✅ Server avviato!"
 
 sleep 3
 
-# === INVIO CONFIG ===
-echo "📡 Invio configurazione..."
-cd "$SCRIPTS_DIR"
-chmod +x shitcurl.py
-./shitcurl.py
-echo "✅ Configurazione inviata!"
+# # === INVIO CONFIG ===
+# echo "📡 Invio configurazione..."
+# cd "$SCRIPTS_DIR"
+# chmod +x shitcurl.py
+# ./shitcurl.py
+# echo "✅ Configurazione inviata!"
 
 # === FRONTEND ===
 echo "🌐 Avvio Frontend..."

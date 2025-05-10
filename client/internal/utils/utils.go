@@ -2,6 +2,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -73,16 +74,15 @@ func GetExecutableDir() string {
 
 // ValidateArgs validates the arguments passed to the program.
 func ValidateArgs(args models.Args) error {
-
 	if *args.ExploitPath == "" {
-		return fmt.Errorf("missing required --exploit argument")
+		return errors.New("missing required --exploit argument")
 	}
 
 	if *config.BaseURLServer == "" {
-		return fmt.Errorf("missing required --base_url_server argument")
+		return errors.New("missing required --base_url_server argument")
 	}
 	if *args.Password == "" {
-		return fmt.Errorf("missing required --password argument")
+		return errors.New("missing required --password argument")
 	}
 
 	_, err := url.ParseRequestURI(*config.BaseURLServer)
@@ -91,7 +91,7 @@ func ValidateArgs(args models.Args) error {
 	}
 
 	if *args.TickTime < 1 {
-		return fmt.Errorf("tick time must be at least 1")
+		return errors.New("tick time must be at least 1")
 	}
 
 	exploitPath, err := filepath.Abs(*args.ExploitPath)
@@ -100,7 +100,7 @@ func ValidateArgs(args models.Args) error {
 	}
 
 	if _, err := os.Stat(exploitPath); os.IsNotExist(err) {
-		return fmt.Errorf("exploit not found in the exploits directory")
+		return errors.New("exploit not found in the exploits directory")
 	}
 
 	return nil

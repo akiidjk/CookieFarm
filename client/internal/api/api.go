@@ -3,9 +3,11 @@ package api
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
@@ -14,22 +16,20 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var (
-	client = &http.Client{}
-)
+var client = &http.Client{}
 
 // SendFlag sends flags to the CookieFarm server API.
 func SendFlag(flags ...models.Flag) error {
 	body, err := json.Marshal(map[string][]models.Flag{"flags": flags})
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error during flags marshalling")
+		logger.Log.Error().Err(err).Msg("error during flags marshalling")
 		return err
 	}
 
-	url := *config.BaseURLServer + "/api/v1/submit-flags"
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	ServerURL := *config.BaseURLServer + "/api/v1/submit-flags"
+	req, err := http.NewRequest(http.MethodPost, ServerURL, bytes.NewReader(body))
 	if err != nil {
-		log.Error().Err(err).Str("url", url).Msg("Error creating request")
+		log.Error().Err(err).Str("url", ServerURL).Msg("error creating request")
 		return err
 	}
 
@@ -38,14 +38,14 @@ func SendFlag(flags ...models.Flag) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Log.Error().Err(err).Str("url", url).Msg("Error during flags submission request")
+		logger.Log.Error().Err(err).Str("url", ServerURL).Msg("error during flags submission request")
 		return err
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error reading response")
+		logger.Log.Error().Err(err).Msg("error reading response")
 		return err
 	}
 
@@ -58,27 +58,27 @@ func SendFlag(flags ...models.Flag) error {
 
 // GetConfig retrieves the configuration from the CookieFarm server API.
 func GetConfig() (models.Config, error) {
-	url := *config.BaseURLServer + "/api/v1/config"
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	ServerURL := *config.BaseURLServer + "/api/v1/config"
+	req, err := http.NewRequest(http.MethodGet, ServerURL, nil)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("Error creating config request: %w", err)
+		return models.Config{}, fmt.Errorf("error creating config request: %w", err)
 	}
 	req.Header.Set("Cookie", "token="+config.Token)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("Error sending config request: %w", err)
+		return models.Config{}, fmt.Errorf("error sending config request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("Error reading config response: %w", err)
+		return models.Config{}, fmt.Errorf("error reading config response: %w", err)
 	}
 
 	var parsedConfig models.Config
 	if err := json.Unmarshal(respBody, &parsedConfig); err != nil {
-		return models.Config{}, fmt.Errorf("Error parsing config: %w", err)
+		return models.Config{}, fmt.Errorf("error parsing config: %w", err)
 	}
 
 	logger.Log.Debug().Msgf("Configuration received correctly")
@@ -88,17 +88,22 @@ func GetConfig() (models.Config, error) {
 
 // Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
-	url := *config.BaseURLServer + "/api/v1/auth/login"
+	ServerURL := *config.BaseURLServer + "/api/v1/auth/login"
 
-	logger.Log.Debug().Str("url", url).Msg("Login attempt")
+	_, err := url.Parse(ServerURL)
+	if err != nil {
+		log.Fatal().Msg("Invalid base URL in config")
+	}
+
+	logger.Log.Debug().Str("url", ServerURL).Msg("Login attempt")
 
 	resp, err := http.Post(
-		url,
+		ServerURL,
 		"application/x-www-form-urlencoded",
-		bytes.NewBufferString(fmt.Sprintf(`password=%s`, password)),
+		bytes.NewBufferString("password="+password),
 	)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error sending login request")
+		logger.Log.Error().Err(err).Msg("error sending login request")
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -113,5 +118,5 @@ func Login(password string) (string, error) {
 	}
 
 	logger.Log.Warn().Msg("Token not found in Set-Cookie")
-	return "", fmt.Errorf("token not found in Set-Cookie")
+	return "", errors.New("token not found in Set-Cookie")
 }

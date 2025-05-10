@@ -29,7 +29,6 @@ var banner string
 
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
-
 	fmt.Println(banner)
 
 	args.ExploitPath = pflag.StringP("exploit", "e", "", "Path to the exploit file to execute")
@@ -41,7 +40,7 @@ func init() {
 	args.ThreadCount = pflag.IntP("thread", "T", 5, "Number of concurrent threads to run the exploit with")
 }
 
-// setupClient handles the full initialization process:
+// SetupClient handles the full initialization process:
 // - Parse flags
 // - Setup logging
 // - Validate arguments
@@ -66,7 +65,8 @@ func setupClient() error {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
-	logger.Log.Debug().Str("ExploitPath", *args.ExploitPath).Str("BaseURLServer", *config.BaseURLServer).Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime).Msg("Arguments validated")
+	logger.Log.Debug().Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime)
+	logger.Log.Debug().Str("ExploitPath", *args.ExploitPath).Str("BaseURLServer", *config.BaseURLServer).Msg("Arguments validated")
 
 	config.Token, err = api.Login(*args.Password)
 	if err != nil {
@@ -87,7 +87,7 @@ func setupClient() error {
 	return nil
 }
 
-// main is the main execution flow of the CookieFarm client.
+// Main is the main execution flow of the CookieFarm client.
 // It handles setup, starts the exploit, and manages the flag submission process.
 func main() {
 	if err := setupClient(); err != nil {

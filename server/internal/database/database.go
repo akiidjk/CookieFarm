@@ -1,4 +1,4 @@
-// Database package provides some basic functionality for interacting with a SQLite database.
+// Package database provides some basic functionality for interacting with a SQLite database.
 package database
 
 import (

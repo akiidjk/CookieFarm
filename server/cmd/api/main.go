@@ -5,7 +5,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	_ "net/http/pprof"
 	"os/signal"
 	"syscall"
 	"time"
@@ -78,7 +77,7 @@ func main() {
 	defer stop()
 
 	port := utils.GetEnv("PORT", "8080")
-	addr := fmt.Sprintf(":%s", port)
+	addr := ":" + port
 
 	go func() {
 		logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")

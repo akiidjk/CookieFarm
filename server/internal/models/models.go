@@ -63,7 +63,7 @@ type Config struct {
 	ConfigClient ConfigClient `json:"client" yaml:"client"`         // Client-specific configuration
 }
 
-// Signin request from the client to the server
+// SigninRequest from the client to the server
 type SigninRequest struct {
 	Password string `json:"password"` // Password for authentication
 }

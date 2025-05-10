@@ -18,9 +18,9 @@ func HandleIndexPage(c *fiber.Ctx) error {
 		return err
 	}
 
-	limit := c.QueryInt("limit", config.DEFAULT_LIMIT)
+	limit := c.QueryInt("limit", config.DefaultLimit)
 	if limit <= 0 {
-		limit = config.DEFAULT_LIMIT
+		limit = config.DefaultLimit
 	}
 
 	logger.Log.Debug().Int("Limit", limit).Msg("Index page request")
@@ -42,7 +42,7 @@ func HandlePartialsPagination(c *fiber.Ctx) error {
 		return err
 	}
 
-	limit, err := c.ParamsInt("limit", config.DEFAULT_LIMIT)
+	limit, err := c.ParamsInt("limit", config.DefaultLimit)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid 'limit' parameter")
 	}
@@ -53,7 +53,7 @@ func HandlePartialsPagination(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving flag count")
 	}
 
-	offset := c.QueryInt("offset", config.DEFAULT_OFFSET)
+	offset := c.QueryInt("offset", config.DefaultOffeset)
 
 	totalPages := int(math.Ceil(float64(totalFlags) / float64(limit)))
 	current := offset / limit
@@ -80,12 +80,12 @@ func HandlePartialsFlags(c *fiber.Ctx) error {
 		return err
 	}
 
-	limit, err := c.ParamsInt("limit", config.DEFAULT_LIMIT)
+	limit, err := c.ParamsInt("limit", config.DefaultLimit)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid 'limit' parameter")
 	}
 
-	offset := c.QueryInt("offset", config.DEFAULT_OFFSET)
+	offset := c.QueryInt("offset", config.DefaultOffeset)
 	logger.Log.Debug().Int("offset", offset).Int("limit", limit).Msg("Paginated flags request")
 
 	flags, err := database.GetPagedFlags(uint(limit), uint(offset))

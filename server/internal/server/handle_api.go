@@ -40,7 +40,7 @@ func HandleGetAllFlags(c *fiber.Ctx) error {
 func HandleGetStats(c *fiber.Ctx) error {
 	logger.Log.Debug().Msg("Stats endpoint hit")
 	return c.JSON(fiber.Map{
-		"stats": map[string]interface{}{
+		"stats": map[string]any{
 			"total_flags": 0,
 			"total_users": 0,
 		},
@@ -49,13 +49,13 @@ func HandleGetStats(c *fiber.Ctx) error {
 
 // HandleGetPaginatedFlags returns a paginated list of flags based on the limit and offset.
 func HandleGetPaginatedFlags(c *fiber.Ctx) error {
-	limit, err := c.ParamsInt("limit", config.DEFAULT_LIMIT)
+	limit, err := c.ParamsInt("limit", config.DefaultLimit)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(models.ResponseError{
 			Error: "Invalid limit parameter",
 		})
 	}
-	offset := c.QueryInt("offset", config.DEFAULT_OFFSET)
+	offset := c.QueryInt("offset", config.DefaultOffeset)
 
 	flags, err := database.GetPagedFlags(uint(limit), uint(offset))
 	if err != nil {
@@ -109,7 +109,6 @@ func HandlePostFlags(c *fiber.Ctx) error {
 	}
 
 	payload.Flags = nil
-	flags = nil
 
 	return c.JSON(models.ResponseSuccess{
 		Message: "Flags submitted successfully",

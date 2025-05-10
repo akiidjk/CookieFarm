@@ -106,7 +106,6 @@ func UpdateFlags(flags []models.ResponseProtocol) {
 
 // LoadConfig loads the configuration from the given path.
 func LoadConfig(path string) error {
-
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return err
 	}
@@ -121,7 +120,7 @@ func LoadConfig(path string) error {
 		return err
 	}
 
-	if config.Current.Configured != true {
+	if !config.Current.Configured {
 		config.Current.Configured = false
 	}
 

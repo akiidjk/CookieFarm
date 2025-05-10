@@ -37,7 +37,7 @@ help:
 build:
 	@echo -e "$(CYAN)[*] Building $(BOLD)...$(RESET)"
 	@mkdir -p $(BIN_DIR)
-	@go build -i -gcflags='github.com/ByteTheCookies/cookieserver/...="-m"' -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
+	@go build -race -gcflags='github.com/ByteTheCookies/cookieserver/...="-m"' -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
 	@echo -e "$(GREEN)[+] Build complete!$(RESET)"
 
 build-plugins-prod:
@@ -53,7 +53,7 @@ build-plugins:
 	@for file in $$(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
 		filename=$$(basename $$file); \
 		pluginname=$${filename%.go}; \
-		go build -i -race -gcflags -m -buildmode=plugin -o "protocols/$$pluginname.so" "$$file"; \
+		go build -race -gcflags -m -buildmode=plugin -o "protocols/$$pluginname.so" "$$file"; \
 		echo -e "$(GREEN)[+] Plugin $$pluginname.so built!$(RESET)"; \
 	done
 
@@ -62,8 +62,6 @@ build-prod:
 	@mkdir -p $(BIN_DIR)
 	GOOS=$(GOOS) GOARCH=$(GOARCH) \
 		go build \
-		-race   \
-		-i      \
 		-trimpath \
 		-ldflags="-s -w" \
 		-o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)

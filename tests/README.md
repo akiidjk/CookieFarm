@@ -20,7 +20,7 @@
 ├── flagchecker.py // flagchecker service for testing
 ├── start_containers.sh // Script to start the containers with all the services
 └── vulnify // Second netcat testing more complex and cool
-    ├── db.csv
+    ├── vulnify.h
     ├── docker-compose.yml
     ├── Dockerfile
     ├── Makefile

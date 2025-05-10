@@ -29,7 +29,7 @@ help:
 build:
 	@echo -e "$(CYAN)[*] Building $(BOLD)...$(RESET)"
 	@mkdir -p $(BIN_DIR)
-	@go build -i -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
+	@go build -o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
 	@echo -e "$(GREEN)[+] Build complete!$(RESET)"
 
 build-prod:
@@ -38,7 +38,6 @@ build-prod:
 	GOOS=linux GOARCH=amd64 \
 		go build \
 		-race   \
-		-i      \
 		-trimpath \
 		-ldflags="-s -w" \
 		-o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)

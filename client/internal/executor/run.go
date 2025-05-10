@@ -31,12 +31,6 @@ func Start(exploitPath, password string, tickTime int, threadCount int, logPath 
 		logPath,
 	)
 
-	defer func() {
-		if cmd.Process != nil {
-			cmd.Process.Kill()
-		}
-	}()
-
 	logger.Log.Debug().
 		Str("full path exploit", exploitPath).
 		Int("tick time", tickTime).

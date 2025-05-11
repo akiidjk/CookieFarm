@@ -7,6 +7,8 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
@@ -29,7 +31,6 @@ var banner string
 
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
-
 	fmt.Println(banner)
 
 	args.ExploitPath = pflag.StringP("exploit", "e", "", "Path to the exploit file to execute")
@@ -41,7 +42,7 @@ func init() {
 	args.ThreadCount = pflag.IntP("thread", "T", 5, "Number of concurrent threads to run the exploit with")
 }
 
-// setupClient handles the full initialization process:
+// SetupClient handles the full initialization process:
 // - Parse flags
 // - Setup logging
 // - Validate arguments
@@ -66,7 +67,8 @@ func setupClient() error {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
-	logger.Log.Debug().Str("ExploitPath", *args.ExploitPath).Str("BaseURLServer", *config.BaseURLServer).Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime).Msg("Arguments validated")
+	logger.Log.Debug().Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime)
+	logger.Log.Debug().Str("ExploitPath", *args.ExploitPath).Str("BaseURLServer", *config.BaseURLServer).Msg("Arguments validated")
 
 	config.Token, err = api.Login(*args.Password)
 	if err != nil {
@@ -87,9 +89,17 @@ func setupClient() error {
 	return nil
 }
 
-// main is the main execution flow of the CookieFarm client.
+// Main is the main execution flow of the CookieFarm client.
 // It handles setup, starts the exploit, and manages the flag submission process.
 func main() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		logger.Log.Info().Msg("Shutting down gracefully...")
+		os.Exit(0)
+	}()
+
 	if err := setupClient(); err != nil {
 		if logger.LogLevel != zerolog.Disabled {
 			logger.Log.Fatal().Err(err).Msg("Initialization error")

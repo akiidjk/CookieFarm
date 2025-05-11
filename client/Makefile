@@ -21,6 +21,8 @@ help:
 	@echo -e "  $(CYAN)make version$(RESET)   - Show the version"
 	@echo -e "  $(CYAN)make clean$(RESET)     - Remove binaries and logs"
 	@echo -e "  $(CYAN)make build-prod$(RESET) - Compile the Go project for production"
+	@echo -e "  $(CYAN)make lint$(RESET)      - Lint the Go files"
+	@echo -e "  $(CYAN)make fmt$(RESET)       - Format the Go files"
 	@echo -e "  $(CYAN)make help$(RESET)      - Show this message"
 
 
@@ -35,6 +37,7 @@ build-prod:
 	@mkdir -p $(BIN_DIR)
 	GOOS=linux GOARCH=amd64 \
 		go build \
+		-race   \
 		-trimpath \
 		-ldflags="-s -w" \
 		-o $(BIN_DIR)/$(BINARY_NAME) $(CMD_DIR)/$(MAIN_FILE)
@@ -60,9 +63,31 @@ version:
 	@echo -e "$(GREEN)[+] Version $(BINARY_NAME) v$(VERSION) $(RESET)"
 
 clean:
-	@echo -e "$(YELLOW)[*] Cleaning binaries...$(RESET)"
-	@rm -rf $(BIN_DIR)/*
+	@echo -e "$(YELLOW)[*] Cleaning binaries and db...$(RESET)"
+	@if [ -d $(BIN_DIR) ]; then rm -rf $(BIN_DIR)/*; fi
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
 	@echo -e "$(YELLOW)[*] Cleaning logs...$(RESET)"
-	@rm -rf $(LOGS_DIR)/*
+	@if [ -d $(LOGS_DIR) ]; then rm -rf $(LOGS_DIR)/*; fi
 	@echo -e "$(GREEN)[+] Clean complete!$(RESET)"
+
+lint:
+	@echo -e "$(CYAN)[*] Linting $(BOLD)...$(RESET)"
+	@if ! golangci-lint run; then \
+		echo -e "$(RED)[!] Linting failed!$(RESET)"; \
+		exit 1; \
+	fi
+	@echo -e "$(GREEN)[+] Linting complete!$(RESET)"
+
+fmt: ## run gofumpt (if present) or gofmt
+	@if command -v gofumpt > /dev/null; then \
+		if ! gofumpt -w -d .; then \
+			echo -e "$(RED)[!] Formatting with gofumpt failed!$(RESET)"; \
+			exit 1; \
+		fi; \
+	else \
+		if ! go list -f {{.Dir}} ./... | xargs gofmt -w -s -d; then \
+			echo -e "$(RED)[!] Formatting with gofmt failed!$(RESET)"; \
+			exit 1; \
+		fi; \
+	fi
+	@echo -e "$(GREEN)[+] Formatting complete!$(RESET)"

@@ -49,8 +49,6 @@ func AddFlags(flags []models.Flag) error {
 		}
 	}
 
-	flags = nil
-
 	return tx.Commit()
 }
 

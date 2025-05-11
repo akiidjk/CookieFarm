@@ -16,7 +16,7 @@ func InitTemplateEngine(debug bool) *html.Engine {
 	logger.Log.Debug().Str("template_path", path).Msg("Using disk templates")
 	engine := html.New(path, ".html")
 
-	engineFuncMap := map[string]interface{}{
+	engineFuncMap := map[string]any{
 		"mul":    func(a, b int) int { return a * b },
 		"add":    func(a, b int) int { return a + b },
 		"sub":    func(a, b int) int { return a - b },

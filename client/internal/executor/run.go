@@ -21,7 +21,6 @@ type ExecutionResult struct {
 
 // Start starts the exploit_manager and listens for flags in stdout.
 func Start(exploitPath, password string, tickTime int, threadCount int, logPath string) (*ExecutionResult, error) {
-
 	cmd := exec.Command(
 		exploitPath,
 		*config.BaseURLServer,
@@ -41,19 +40,19 @@ func Start(exploitPath, password string, tickTime int, threadCount int, logPath 
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get stdout pipe: %w", err)
+		return nil, fmt.Errorf("failed to get stdout pipe: %w", err)
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get stderr pipe: %w", err)
+		return nil, fmt.Errorf("failed to get stderr pipe: %w", err)
 	}
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("Failed to start command: %w", err)
+		return nil, fmt.Errorf("failed to start command: %w", err)
 	}
 
-	flagsChan := make(chan models.Flag, 100)
+	flagsChan := make(chan models.Flag, 500)
 
 	go readStdout(stdout, flagsChan)
 	go readStderr(stderr)

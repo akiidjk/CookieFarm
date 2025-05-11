@@ -3,11 +3,12 @@ FROM ubuntu:latest
 RUN apt update && apt install -y socat build-essential
 
 WORKDIR /app
-COPY db.csv vulnify.c Makefile .
+COPY vulnify.c vulnify.h Makefile .
 
+RUN mkdir data
 RUN make build
 RUN chmod +x ./vulnify
-RUN rm -f ./vulnify.c ./Makefile
+RUN rm -f ./vulnify.c ./vulnify.h ./Makefile
 
 EXPOSE 1337
 

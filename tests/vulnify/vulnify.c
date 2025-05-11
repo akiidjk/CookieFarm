@@ -1,59 +1,21 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <ctype.h>
+#include "vulnify.h"
 
-
-#define USERNAME_LENGTH 32
-#define PASSWORD_LENGTH 16
-#define PLAYLIST_NAME_LENGTH 32
-#define PLAYLIST_DESCRIPTION_LENGTH 128
-#define SONG_NAME_LENGTH 32
-#define MAX_SONGS 24
-#define MAX_PLAYLISTS 16
-#define MAX_USERS 64
-
-#define USER_LINE_LENGTH (USERNAME_LENGTH + PASSWORD_LENGTH + 5)
-#define PLAYLIST_LINE_LENGTH (PLAYLIST_NAME_LENGTH + PLAYLIST_DESCRIPTION_LENGTH + (SONG_NAME_LENGTH + 1) * MAX_SONGS + 3)
-
-
-typedef struct playlist_t
+struct playlist_t
 {
 	char name[PLAYLIST_NAME_LENGTH];
 	char description[PLAYLIST_DESCRIPTION_LENGTH];
 	char songs[MAX_SONGS][SONG_NAME_LENGTH];
 	uint8_t saved_songs;
-} playlist;
+};
 
-typedef struct user_t
+struct user_t
 {
 	char username[USERNAME_LENGTH];
 	char password[PASSWORD_LENGTH];
-	playlist* playlists[MAX_PLAYLISTS];
 	uint8_t saved_playlists;
-} user;
+};
 
-user* g_users[MAX_USERS] = { 0 };
 user* g_logged = NULL;
-
-
-user* _username_exists(char*);
-uint8_t _check_string(char*);
-void _load_users();
-void _free_users();
-
-void generate_safe_password(char*, char*);
-
-void user_menu();
-void main_menu();
-
-uint8_t register_user();
-uint8_t login();
-
-void create_playlist();
-void inspect_playlists();
-void delete_playlist();
 
 
 int main()
@@ -61,22 +23,45 @@ int main()
 	setvbuf(stdin, NULL, _IONBF, 0);
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
+	setlocale(LC_ALL, "");
 
-	_load_users();
+	g_logged = malloc(sizeof(user));
+
 	main_menu();
-	_free_users();
+
+	free(g_logged);
+	g_logged = NULL;
 
 	return 0;
 }
 
-
-user* _username_exists(char* string)
+uint8_t _user_exists(char* name, char* path)
 {/*{{{*/
-	uint8_t i;
-	for (i = 0; i < MAX_USERS && g_users[i] != NULL; ++i)
-		if (!strncmp(g_users[i]->username, string, strlen(g_users[i]->username))) break;
+	name[strcspn(name, "\n")] = '\0';
+	snprintf(path, USER_PATH_LENGTH, "data/%s", name);
+	return access(path, F_OK) == 0;
+}/*}}}*/
 
-	return (i != MAX_USERS && g_users[i] != NULL) ? g_users[i] : NULL;
+uint8_t _playlist_exists(char* name, char* path)
+{/*{{{*/
+	snprintf(path, PLAYLIST_PATH_LENGTH, "data/%s/%s", g_logged->username, name);
+	return access(path, F_OK) == 0;
+}/*}}}*/
+
+void _load_user(char* path)
+{/*{{{*/
+	snprintf(path + strcspn(path, "\n"), 6, "/info");
+	FILE* f = fopen(path, "rb");
+	fread(g_logged, sizeof(user), 1, f);
+	fclose(f);
+}/*}}}*/
+
+void _save_user(char* path, user* usr)
+{/*{{{*/
+	snprintf(path + strlen(path), USER_PATH_LENGTH + 6, "/info");
+	FILE* uf = fopen(path, "w+b");
+	fwrite(usr, sizeof(user), 1, uf);
+	fclose(uf);
 }/*}}}*/
 
 uint8_t _check_string(char* string)
@@ -92,84 +77,6 @@ uint8_t _check_string(char* string)
 	return *string == '\0';
 }/*}}}*/
 
-void _load_users()
-{/*{{{*/
-	char user_line[USER_LINE_LENGTH], playlist_line[PLAYLIST_LINE_LENGTH];
-	uint8_t num_playlists, i = 0;
-
-	FILE* db = fopen("db.csv", "r"); // TODO: remember permissions (root can write, others can read)
-	while (fgets(user_line, USER_LINE_LENGTH, db) != NULL)
-	{
-		user_line[strcspn(user_line, "\n")] = '\0';
-
-		user* usr = (user*) malloc(sizeof(user));
-
-		strncpy(usr->username, strtok(user_line, ";"), USERNAME_LENGTH);
-		strncpy(usr->password, strtok(NULL, ";"), PASSWORD_LENGTH);
-		num_playlists = atoi(strtok(NULL, ";"));
-
-		for (uint8_t j = 0; j < num_playlists; ++j)
-		{
-			if (fgets(playlist_line, PLAYLIST_LINE_LENGTH, db) != NULL)
-			{
-				playlist_line[strcspn(playlist_line, "\n")] = '\0';
-
-				playlist* pl = (playlist*) malloc(sizeof(playlist));
-
-				strncpy(pl->name, strtok(playlist_line, ";"), PLAYLIST_NAME_LENGTH);
-				strncpy(pl->description, strtok(NULL, ";"), PLAYLIST_DESCRIPTION_LENGTH);
-
-				uint8_t k;
-				for (k = 0; k < MAX_SONGS; ++k)
-				{
-					char* tmp = strtok(NULL, ";");
-					if (tmp == NULL) break;
-
-					strncpy(pl->songs[k], tmp, SONG_NAME_LENGTH);
-				}
-
-				pl->saved_songs = k;
-				usr->playlists[j] = pl;
-			}
-		}
-
-		usr->saved_playlists = num_playlists;
-		g_users[i++] = usr;
-	}
-
-	fclose(db);
-}/*}}}*/
-
-void _free_users()
-{/*{{{*/
-	char user_line[USER_LINE_LENGTH], playlist_line[PLAYLIST_LINE_LENGTH];
-
-	FILE* db = fopen("db.csv", "w");
-	for (uint8_t i = 0; i < MAX_USERS && g_users[i] != NULL; ++i)
-	{
-		snprintf(user_line, USER_LINE_LENGTH, "%s;%s;%hhu\n", g_users[i]->username, g_users[i]->password, g_users[i]->saved_playlists);
-		fwrite(user_line, sizeof(char), strlen(user_line), db);
-
-		for (uint8_t j = 0; j < g_users[i]->saved_playlists; ++j)
-		{
-			snprintf(playlist_line, PLAYLIST_LINE_LENGTH, "%s;%s", g_users[i]->playlists[j]->name, g_users[i]->playlists[j]->description);
-			for (uint8_t k = 0; k < g_users[i]->playlists[j]->saved_songs; ++k)
-				snprintf(playlist_line + strlen(playlist_line), SONG_NAME_LENGTH + 1, ";%s", g_users[i]->playlists[j]->songs[k]);
-			snprintf(playlist_line + strlen(playlist_line), 2, "\n");
-
-			fwrite(playlist_line, sizeof(char), strlen(playlist_line), db);
-
-			free(g_users[i]->playlists[j]);
-			g_users[i]->playlists[j] = NULL;
-		}
-
-		free(g_users[i]);
-		g_users[i] = NULL;
-	}
-
-	fclose(db);
-}/*}}}*/
-
 void generate_safe_password(char* username, char* password)
 {/*{{{*/
 	uint32_t val = 1, tmp;
@@ -183,12 +90,14 @@ void generate_safe_password(char* username, char* password)
 
 void main_menu()
 {/*{{{*/
+	puts("Vulnify (version: 2.0.1)\n");
 	uint8_t choice, run = 0;
 
 	do
 	{
-		puts("Vulnify (version: 2.0.1)\n\n");
-		puts("Select an option");
+		run = 0;
+
+		puts("\nSelect an option");
 		puts("1. Register");
 		puts("2. Login");
 		puts("0. Exit");
@@ -206,12 +115,12 @@ void main_menu()
 				if (!login()) run = 1;
 				break;
 			default:
-				exit(0);
+				run = 2;
 				break;
 		}
-	} while (run);
+	} while (run == 1);
 
-	putchar('\n');
+	if (run == 2) return;
 
 	user_menu();
 }/*}}}*/
@@ -222,15 +131,14 @@ void user_menu()
 
 	do
 	{
-		puts("Select an option");
+		puts("\nSelect an option");
 		puts("1. Create a new playlist");
 		puts("2. Inspect your playlists");
-		puts("3. Delete one of your playlists");
+		puts("3. Play a random song");
 		puts("0. Exit");
 		putchar('>'); putchar(' ');
 
 		choice = getchar(); getchar();
-		putchar('\n');
 
 		switch (choice)
 		{
@@ -243,7 +151,7 @@ void user_menu()
 				run = 1;
 				break;
 			case '3':
-				delete_playlist();
+				play_random_song();
 				run = 1;
 				break;
 			default:
@@ -255,69 +163,74 @@ void user_menu()
 
 uint8_t register_user()
 {/*{{{*/
-	user* usr = malloc(sizeof(user));
-	char* tmp;
-	uint8_t i;
+	char username[USERNAME_LENGTH];
+	char password[PASSWORD_LENGTH];
+	char path[USER_PATH_LENGTH];
 
 	while (1)
 	{
 		puts("Insert username");
 		putchar('>'); putchar(' ');
 
-		tmp = fgets(usr->username, USERNAME_LENGTH, stdin);
-		if (tmp == NULL || strlen(tmp) < 1 || !_check_string(tmp) || _username_exists(tmp) != NULL)
+		if (fgets(username, USERNAME_LENGTH, stdin) == NULL || strlen(username) < 1 || !_check_string(username))
 		{
 			puts("[ERROR] Invalid username");
 			continue;
 		}
+		if (_user_exists(username, path))
+		{
+			puts("[ERROR] Username already exists");
+			continue;
+		}
+		mkdir(path, 0777);
 
 		break;
 	}
-	usr->username[strcspn(usr->username, "\n")] = '\0';
+	username[strcspn(username, "\n")] = '\0';
 
 	puts("Insert password [Empty to generate a safe password automatically]");
 	putchar('>'); putchar(' ');
 
-	tmp = fgets(usr->password, PASSWORD_LENGTH, stdin);
-	if (tmp == NULL || !_check_string(tmp))
+	if (fgets(password, PASSWORD_LENGTH, stdin) == NULL || !_check_string(password))
 	{
 		puts("[ERROR] Invalid password");
 		return 0;
 	}
-	if (tmp[0] == '\0')
+	if (password[0] == '\0')
 	{
-		generate_safe_password(usr->username, usr->password);
-		printf("Your password is: %s\n", usr->password);
+		generate_safe_password(username, password);
+		printf("Your password is: %s\n", password);
 	}
-	else usr->password[strcspn(usr->password, "\n")] = '\0';
+	else password[strcspn(password, "\n")] = '\0';
 
-	for (i = 0; i < MAX_USERS && g_users[i] != NULL; ++i);
 
-	if (i == MAX_USERS)
-	{
-		puts("[ERROR] Users limit reached");
-		return 0;
-	}
+	user* usr = malloc(sizeof(user));
 
-	puts("User succesfully registered");
-	g_logged = g_users[i] = usr;
+	strcpy(usr->username, username);
+	strcpy(usr->password, password);
+	usr->saved_playlists = 0;
+
+	_save_user(path, usr);
+
+	g_logged = usr;
+
+	puts("\nUser succesfully registered");
 
 	return 1;
 }/*}}}*/
 
 uint8_t login()
 {/*{{{*/
-	char username[USERNAME_LENGTH], password[PASSWORD_LENGTH];
-	char* tmp;
-	user* usr;
+	char username[USERNAME_LENGTH];
+	char password[PASSWORD_LENGTH];
+	char path[USER_PATH_LENGTH];
 
 	while (1)
 	{
 		puts("Insert username");
 		putchar('>'); putchar(' ');
 
-		tmp = fgets(username, USERNAME_LENGTH, stdin);
-		if (tmp == NULL || (usr = _username_exists(username)) == NULL)
+		if (fgets(username, USERNAME_LENGTH, stdin) == NULL || !_user_exists(username, path))
 		{
 			puts("[ERROR] Username not found\n");
 			continue;
@@ -325,55 +238,59 @@ uint8_t login()
 
 		break;
 	}
+	username[strcspn(username, "\n")] = '\0';
+
+	_load_user(path);
 
 	puts("Insert password");
 	putchar('>'); putchar(' ');
 
-	tmp = fgets(password, PASSWORD_LENGTH, stdin);
-	if (tmp == NULL || strlen(password) < 1 || strncmp(usr->password, password, strlen(password) - 1) != 0)
+	if (fgets(password, PASSWORD_LENGTH, stdin) == NULL || strlen(password) < 1 || strncmp(g_logged->password, password, strlen(password) - 1) != 0)
 	{
 		puts("[ERROR] Invalid password");
 		return 0;
 	}
 
-	g_logged = usr;
+	puts("\nLogin successful");
 
 	return 1;
 }/*}}}*/
 
 void create_playlist()
 {/*{{{*/
-	if (g_logged->saved_playlists == MAX_PLAYLISTS)
-	{
-		puts("[ERROR] You already reached the maximum number of playlists");
-		return;
-	}
-
-	playlist* pl = malloc(sizeof(playlist));
-	char tmp[SONG_NAME_LENGTH];
+	char name[PLAYLIST_NAME_LENGTH];
+	char description[PLAYLIST_DESCRIPTION_LENGTH];
+	char song[SONG_NAME_LENGTH];
+	char songs[MAX_SONGS][SONG_NAME_LENGTH];
+	char path[PLAYLIST_PATH_LENGTH];
 	uint8_t num_songs;
 
 	while (1)
 	{
-		puts("Insert playlist name");
+		puts("\nInsert playlist name");
 		putchar('>'); putchar(' ');
 
-		if (!fgets(pl->name, PLAYLIST_NAME_LENGTH, stdin) || strlen(pl->name) < 1 || !_check_string(pl->name))
+		if (!fgets(name, PLAYLIST_NAME_LENGTH, stdin) || strlen(name) < 1 || !_check_string(name))
 		{
 			puts("[ERROR] Invalid name");
+			continue;
+		}
+		if (_playlist_exists(name, path))
+		{
+			puts("[ERROR] Playlist with that name already exists");
 			continue;
 		}
 
 		break;
 	}
-	pl->name[strcspn(pl->name, "\n")] = '\0';
+	name[strcspn(name, "\n")] = '\0';
 
 	while (1)
 	{
-		puts("Insert description");
+		puts("\nInsert description");
 		putchar('>'); putchar(' ');
 
-		if (!fgets(pl->description, PLAYLIST_NAME_LENGTH, stdin) || !_check_string(pl->description))
+		if (!fgets(description, PLAYLIST_NAME_LENGTH, stdin) || !_check_string(description))
 		{
 			puts("[ERROR] Invalid description");
 			continue;
@@ -381,11 +298,11 @@ void create_playlist()
 
 		break;
 	}
-	pl->description[strcspn(pl->description, "\n")] = '\0';
+	description[strcspn(description, "\n")] = '\0';
 
 	while (1)
 	{
-		puts("How many songs do you want to insert?");
+		puts("\nHow many songs do you want to insert?");
 		putchar('>'); putchar(' ');
 
 		scanf("%hhu%*c", &num_songs);
@@ -398,78 +315,98 @@ void create_playlist()
 		break;
 	}
 
-	puts("Insert songs");
+	puts("\nInsert songs");
 	uint8_t i = 0;
 	while (i < num_songs)
 	{
 		printf("Song %hhd: ", i);
 
-		if (!fgets(tmp, SONG_NAME_LENGTH, stdin) || !_check_string(tmp))
+		if (!fgets(song, SONG_NAME_LENGTH, stdin) || !_check_string(song))
 		{
 			puts("[ERROR] Invalid song name");
 			continue;
 		}
-		tmp[strcspn(tmp, "\n")] = '\0';
+		song[strcspn(song, "\n")] = '\0';
 
-		strcpy(pl->songs[i++], tmp);
+		strcpy(songs[i++], song);
 	}
 	putchar('\n');
 
+	playlist* pl = malloc(sizeof(playlist));
+
+	strcpy(pl->name, name);
+	strcpy(pl->description, description);
 	pl->saved_songs = num_songs;
 
-	g_logged->playlists[g_logged->saved_playlists] = pl;
+	for (i = 0; i < num_songs; ++i)
+		strcpy(pl->songs[i], songs[i]);
+
 	g_logged->saved_playlists++;
+
+	FILE* plf = fopen(path, "w+b");
+	fwrite(pl, sizeof(playlist), 1, plf);
+	fclose(plf);
+
+	free(pl);
+	pl = NULL;
 
 	puts("Playlist successfully created");
 }/*}}}*/
 
 void inspect_playlists()
 {/*{{{*/
-	for (uint8_t i = 0; i < g_logged->saved_playlists; ++i)
+	char path[USER_PATH_LENGTH], fpath[PLAYLIST_PATH_LENGTH];
+	snprintf(path, USER_PATH_LENGTH, "data/%s", g_logged->username);
+
+	DIR* dir = opendir(path);
+	struct dirent* entry;
+
+	while ((entry = readdir(dir)) != NULL)
 	{
-		printf("Playlist %hhd: %s\n\"%s\"\n", i, g_logged->playlists[i]->name, g_logged->playlists[i]->description);
-		for (uint8_t j = 0; j < g_logged->playlists[i]->saved_songs; ++j)
-			printf("\tSong%hhd: %s\n", j, g_logged->playlists[i]->songs[j]);
-		putchar('\n');
+		if (!strncmp(entry->d_name, "info", 4) || entry->d_name[0] == '.') continue;
+
+		playlist* pl = malloc(sizeof(playlist));
+
+		snprintf(fpath, PLAYLIST_PATH_LENGTH, "%s/%s", path, entry->d_name);
+
+		FILE* f = fopen(fpath, "rb");
+		fread(pl, sizeof(playlist), 1, f);
+		fclose(f);
+
+		printf("\nPlaylist: %s\n\"%s\"\n", pl->name, pl->description);
+		for (uint8_t i = 0; i < pl->saved_songs; ++i)
+			printf("\tSong %hhd: %s\n", i, pl->songs[i]);
+
+		free(pl);
+		pl = NULL;
 	}
-	putchar('\n');
+
+	closedir(dir);
 }/*}}}*/
 
-void delete_playlist()
+void play_random_song()
 {/*{{{*/
-	if (g_logged->saved_playlists == 0)
+	putchar('\n');
+	switch (rand() % 5)
 	{
-		puts("[ERROR] You have no playlists");
-		return;
+		case 0:
+			printf(u8"👟🦈👟 Tralalero Tralala 👟🦈👟\n");
+			break;
+		case 1:
+			printf(u8"🌵🐘🌵 Lirili Larila 🌵🐘🌵\n");
+			break;
+		case 2:
+			printf(u8"💣🐊💣 Bombardilo Crocodilo 💣🐊💣\n");
+			break;
+		case 3:
+			printf(u8"🍂🌳🍂 Brr Brr Patapim 🍂🌳🍂\n");
+			break;
+		case 4:
+			printf(u8"🐱🐟🐱 Brr Brr Patapim 🐱🐟🐱\n");
+			break;
+		default:
+			break;
 	}
-
-	puts("Which playlist do you want do delete (use index)?");
-	inspect_playlists();
-
-	uint8_t choice;
-	while (1)
-	{
-		putchar('>'); putchar(' ');
-		scanf("%hhd%*c", &choice);
-		if (choice >= g_logged->saved_playlists)
-		{
-			puts("[ERROR] Select a valid index");
-			continue;
-		}
-
-		break;
-	}
-
-	playlist* og = g_logged->playlists[choice];
-
-	g_logged->saved_playlists--;
-	for (uint8_t i = choice; i < g_logged->saved_playlists; ++i)
-		g_logged->playlists[i] = g_logged->playlists[i+1];
-
-	g_logged->playlists[g_logged->saved_playlists] = NULL;
-	free(og);
-
-	puts("Playlist successfully deleted");
 }/*}}}*/
 
 // vulns:

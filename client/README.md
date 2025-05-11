@@ -82,7 +82,7 @@ Follow these steps to run your exploit with the client:
 | `-t`, `--tick` | Frequency in seconds to re-run the exploit and submit flags | 120 |
 | `-T`, `--threads` | Number of threads to use for concurrent execution | 5 |
 | `-D`, `--debug` | Enable debug mode | False |
-| `-d`, `--detach` | Detach Mode | False |
+| `-d`, `--detach` | Detach mode | False |
 
 ### 📂 Example Run
 

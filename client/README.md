@@ -69,7 +69,7 @@ Follow these steps to run your exploit with the client:
 3. Execute the following command:
 
    ```bash
-   cookieclient -e ./<exploit_name>.py -b <server_url> -p <server_password> -t <tick_time> -T <thread_count> --debug -d
+   cookieclient -e ./<exploit_name>.py -b <server_url> -p <server_password> -t <tick_time> -T <thread_count> -D -d
    ```
 
 ### 🔍 Command Arguments
@@ -81,8 +81,8 @@ Follow these steps to run your exploit with the client:
 | `-p`, `--password` | Password for server authentication | N/A |
 | `-t`, `--tick` | Frequency in seconds to re-run the exploit and submit flags | 120 |
 | `-T`, `--threads` | Number of threads to use for concurrent execution | 5 |
-| `--debug` | Enable debug mode | False |
-| `-d` | Detach Mode | False |
+| `-D`, `--debug` | Enable debug mode | False |
+| `-d`, `--detach` | Detach Mode | False |
 
 ### 📂 Example Run
 

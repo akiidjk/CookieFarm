@@ -34,7 +34,7 @@ func init() {
 	fmt.Println(banner)
 
 	args.ExploitPath = pflag.StringP("exploit", "e", "", "Path to the exploit file to execute")
-	args.Debug = pflag.Bool("debug", false, "Enable debug logging")
+	args.Debug = pflag.BoolP("debug", "D", false, "Enable debug logging")
 	args.Password = pflag.StringP("password", "p", "", "Password for authenticating to the server")
 	config.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the flag submission server")
 	args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")

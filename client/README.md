@@ -81,7 +81,8 @@ Follow these steps to run your exploit with the client:
 | `-p`, `--password` | Password for server authentication | N/A |
 | `-t`, `--tick` | Frequency in seconds to re-run the exploit and submit flags | 120 |
 | `-T`, `--threads` | Number of threads to use for concurrent execution | 5 |
-| `-d`, `--debug` | Enable debug mode | False |
+| `-D`, `--debug` | Enable debug mode | False |
+| `-d`, `--detach` | Detach mode | False |
 
 ### 📂 Example Run
 

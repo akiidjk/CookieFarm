@@ -41,14 +41,13 @@ func AddFlags(flags []models.Flag) error {
 			)
 		}
 		query := "INSERT INTO flags(flag_code,service_name,port_service,submit_time,response_time,status,team_id) VALUES " +
-			strings.Join(parts, ",")
+			strings.Join(parts, ",") +
+			" ON CONFLICT(flag_code) DO NOTHING"
 
 		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
 			return fmt.Errorf("batch insert: %w", err)
 		}
 	}
-
-	flags = nil
 
 	return tx.Commit()
 }

@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"plugin"
@@ -32,7 +33,7 @@ func LoadProtocol(protocolName string) (SubmitFunc, error) {
 	submitFunc, ok := submitSymbol.(SubmitFunc)
 	if !ok {
 		logger.Log.Error().Str("plugin", pluginPath).Msg("Invalid Submit function signature")
-		return nil, fmt.Errorf("plugin 'Submit' has invalid signature")
+		return nil, errors.New("plugin 'Submit' has invalid signature")
 	}
 
 	logger.Log.Info().Str("protocol", protocolName).Msg("Protocol loaded successfully")

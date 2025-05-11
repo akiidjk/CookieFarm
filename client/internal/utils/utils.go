@@ -2,18 +2,17 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
 )
-
-const regexUrl = `^http://(localhost|127\.0\.0\.1):[0-9]{1,5}$` // Regex for matching URLs
 
 const (
 	Reset   = "\033[0m"
@@ -75,33 +74,36 @@ func GetExecutableDir() string {
 
 // ValidateArgs validates the arguments passed to the program.
 func ValidateArgs(args models.Args) error {
-
 	if *args.ExploitPath == "" {
-		return fmt.Errorf("missing required --exploit argument")
+		return errors.New("missing required --exploit argument")
 	}
 
 	if *config.BaseURLServer == "" {
-		return fmt.Errorf("missing required --base_url_server argument")
+		return errors.New("missing required --base_url_server argument")
 	}
 	if *args.Password == "" {
-		return fmt.Errorf("missing required --password argument")
+		return errors.New("missing required --password argument")
 	}
 
-	if !regexp.MustCompile(regexUrl).MatchString(*config.BaseURLServer) {
-		return fmt.Errorf("invalid base URL server")
+	_, err := url.ParseRequestURI(*config.BaseURLServer)
+	if err != nil {
+		return fmt.Errorf("invalid URL format: %v", err)
 	}
 
 	if *args.TickTime < 1 {
-		return fmt.Errorf("tick time must be at least 1")
+		return errors.New("tick time must be at least 1")
 	}
 
 	exploitPath, err := filepath.Abs(*args.ExploitPath)
 	if err != nil {
 		return fmt.Errorf("error resolving exploit path: %v", err)
 	}
+	if info, err := os.Stat(exploitPath); err == nil && info.Mode()&0111 == 0 {
+		return fmt.Errorf("exploit file is not executable")
+	}
 
 	if _, err := os.Stat(exploitPath); os.IsNotExist(err) {
-		return fmt.Errorf("exploit not found in the exploits directory")
+		return errors.New("exploit not found in the exploits directory")
 	}
 
 	return nil

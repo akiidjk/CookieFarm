@@ -7,70 +7,81 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
 const (
-	updateFlagStatusQuery  = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code = ?`
-	updateFlagsStatusQuery = `UPDATE flags SET status = ?, response_time = ? WHERE flag_code IN (%s)`
+	defaultBatchSize = 1000
 )
 
-// UpdateFlagStatus updates the status of a single flag in the database.
-// It prepares a SQL statement and executes it with the provided flag code and status.
-func UpdateFlagStatus(flagCode string, status string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	stmt, err := DB.PrepareContext(ctx, updateFlagStatusQuery)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("flag_code", flagCode).Msg("Failed to prepare UpdateFlagStatus statement")
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.ExecContext(ctx, status, uint64(time.Now().Unix()), flagCode)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("flag_code", flagCode).Msg("Failed to execute UpdateFlagStatus")
-		return err
-	}
-
-	logger.Log.Debug().Str("flag_code", flagCode).Str("status", status).Msg("Updated flag status")
-	return nil
-}
-
-// UpdateFlagsStatus updates the status of multiple flags in the database.
-// It dynamically creates a SQL query with placeholders for each flag code and executes the update in a batch.
-func UpdateFlagsStatus(flagCodes []string, status string) error {
-	if len(flagCodes) == 0 {
+// UpdateFlagsStatus aggiorna lo status e il messaggio delle flag in batch
+func UpdateFlagsStatus(responses []models.ResponseProtocol) error {
+	if len(responses) == 0 {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	batchSize := defaultBatchSize
+	for start := 0; start < len(responses); start += batchSize {
+		end := start + batchSize
+		if end > len(responses) {
+			end = len(responses)
+		}
+		batch := responses[start:end]
+		if err := updateFlagsBatch(batch); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func updateFlagsBatch(batch []models.ResponseProtocol) error {
+	if len(batch) == 0 {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	placeholders := strings.Repeat("?,", len(flagCodes))
-	placeholders = placeholders[:len(placeholders)-1]
+	placeholders := make([]string, 0, len(batch))
+	args := make([]any, 0, len(batch)*3)
 
-	query := fmt.Sprintf(updateFlagsStatusQuery, placeholders)
+	now := uint64(time.Now().Unix())
 
-	args := make([]any, 0, len(flagCodes)+2)
-	args = append(args, status, time.Now().Unix())
-	for _, code := range flagCodes {
-		args = append(args, code)
+	for i, r := range batch {
+		placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d)", i*3+1, i*3+2, i*3+3))
+		args = append(args, r.Flag, r.Status, r.Msg)
 	}
 
-	stmt, err := DB.PrepareContext(ctx, query)
+	query := fmt.Sprintf(`
+		WITH batch_values (flag_code, status, msg) AS (
+			VALUES %s
+		)
+		UPDATE flags
+		SET
+			status = batch_values.status,
+			msg = batch_values.msg,
+			response_time = $%d
+		FROM batch_values
+		WHERE flags.flag_code = batch_values.flag_code`,
+		strings.Join(placeholders, ","),
+		len(args)+1,
+	)
+
+	args = append(args, now)
+
+	result, err := DB.ExecContext(ctx, query, args...)
 	if err != nil {
-		logger.Log.Error().Err(err).Int("count", len(flagCodes)).Msg("Failed to prepare UpdateFlagsStatus statement")
+		logger.Log.Error().Err(err).
+			Int("count", len(batch)).
+			Msg("Failed to execute batch update of flags status")
 		return err
 	}
-	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, args...)
-	if err != nil {
-		logger.Log.Error().Err(err).Int("count", len(flagCodes)).Msg("Failed to execute UpdateFlagsStatus")
-		return err
-	}
+	rowsAffected, _ := result.RowsAffected()
+	logger.Log.Debug().
+		Int("count", len(batch)).
+		Int64("rows_affected", rowsAffected).
+		Msg("Updated statuses for flag batch")
 
-	logger.Log.Debug().Int("count", len(flagCodes)).Str("status", status).Msg("Updated statuses for multiple flags")
 	return nil
 }

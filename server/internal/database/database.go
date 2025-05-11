@@ -1,4 +1,4 @@
-// Database package provides some basic functionality for interacting with a SQLite database.
+// Package database provides some basic functionality for interacting with a SQLite database.
 package database
 
 import (
@@ -51,6 +51,10 @@ func New() *sql.DB {
 	if err := InitDB(); err != nil {
 		logger.Log.Fatal().Err(err).Msg("Database initialization failed")
 	}
+
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	return db
 }

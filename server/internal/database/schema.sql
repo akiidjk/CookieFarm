@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS flags (
     port_service INTEGER NOT NULL,
     submit_time INTEGER,  -- Unix timestamp
     response_time INTEGER, -- Unix timestamp
+    msg VARCHAR(255) NOT NULL DEFAULT '',
     status VARCHAR(255) NOT NULL,
     team_id INTEGER NOT NULL
 );

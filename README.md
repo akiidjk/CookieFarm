@@ -45,9 +45,10 @@ To start the server:
 
     ```bash
       # Server configuration
-      DEBUG=true                   # Enable debug mode for verbose logging
+      DEBUG=false                   # Enable debug mode for verbose logging
       SERVER_PASSWORD=SuperSecret  # Set a strong password for authentication
-      SERVER_PORT=9090            # Define the port the server will listen on
+      CONFIG_FROM_FILE=config.yml  # Set if the server takes the config from config.yml in the filesystem; otherwise, do not set the variable
+      SERVER_PORT=8080            # Define the port the server will listen on
     ```
 
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password

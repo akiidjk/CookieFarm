@@ -6,11 +6,11 @@ services:
       target: prod
     restart: unless-stopped
     ports:
-      - ${BACKEND_PORT}:${BACKEND_PORT}
+      - ${PORT}:${PORT}
     environment:
       PASSWORD: ${PASSWORD}
       CONFIG_FROM_FILE: ${CONFIG_FROM_FILE}
-      PORT: ${BACKEND_PORT}
+      PORT: ${PORT}
       DEBUG: ${DEBUG}
     volumes:
       - sqlite_bp:/app/database

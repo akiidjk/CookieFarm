@@ -98,7 +98,6 @@ func ValidateArgs(args models.Args) error {
 	if err != nil {
 		return fmt.Errorf("error resolving exploit path: %v", err)
 	}
-
 	if info, err := os.Stat(exploitPath); err == nil && info.Mode()&0111 == 0 {
 		return fmt.Errorf("exploit file is not executable")
 	}

@@ -67,8 +67,12 @@ func setupClient() error {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
+<<<<<<< HEAD
 	logger.Log.Debug().Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime)
 	logger.Log.Debug().Str("ExploitPath", *args.ExploitPath).Str("BaseURLServer", *config.BaseURLServer).Msg("Arguments validated")
+=======
+	logger.Log.Debug().Str("ExploitPath", *args.ExploitPath).Str("BaseURLServer", *config.BaseURLServer).Int("ThreadCount", *args.ThreadCount).Int("Tick time", *args.TickTime).Msg("Arguments validated")
+>>>>>>> a1755e82d5d047e1a858122dec98372510a6e030
 
 	config.Token, err = api.Login(*args.Password)
 	if err != nil {

@@ -21,6 +21,7 @@ type ExecutionResult struct {
 
 // Start starts the exploit_manager and listens for flags in stdout.
 func Start(exploitPath, password string, tickTime int, threadCount int, logPath string) (*ExecutionResult, error) {
+
 	cmd := exec.Command(
 		exploitPath,
 		*config.BaseURLServer,

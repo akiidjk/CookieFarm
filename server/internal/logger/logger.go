@@ -22,20 +22,12 @@ func Setup(level string) {
 	}
 	LogLevel = parsedLevel
 
-	// _ = os.MkdirAll("./logs", 0755)
-	// logPath := filepath.Join("logs", "clientfarm-"+time.Now().Format("20060102-150405")+".log")
-
-	// logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	// if err != nil {
-	// panic("cannot create log file: " + err.Error())
-	// }
-
 	consoleWriter := zerolog.ConsoleWriter{
 		Out:        os.Stdout,
 		TimeFormat: "15:04:05",
-		FormatLevel: func(i interface{}) string {
-			level := strings.ToLower(fmt.Sprintf("%s", i))
-			switch level {
+		FormatLevel: func(i any) string {
+			lvl := strings.ToLower(fmt.Sprintf("%s", i))
+			switch lvl {
 			case "debug":
 				return utils.Gray + "[DEBUG]" + utils.Reset
 			case "info":
@@ -47,21 +39,19 @@ func Setup(level string) {
 			case "fatal":
 				return utils.Magenta + "[FATAL]" + utils.Reset
 			default:
-				return level
+				return lvl
 			}
 		},
-		FormatMessage: func(i interface{}) string {
+		FormatMessage: func(i any) string {
 			return fmt.Sprintf("%s", i)
 		},
-		FormatFieldName: func(i interface{}) string {
+		FormatFieldName: func(i any) string {
 			return utils.White + fmt.Sprintf("%s=", i)
 		},
-		FormatFieldValue: func(i interface{}) string {
+		FormatFieldValue: func(i any) string {
 			return fmt.Sprintf("%v", i) + utils.Reset
 		},
 	}
-
-	// multi := zerolog.MultiLevelWriter(consoleWriter, logFile)
 
 	if level == "debug" {
 		Log = zerolog.New(consoleWriter).With().Timestamp().Caller().Logger()

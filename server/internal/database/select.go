@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	baseFlagQuery         = `SELECT flag_code, service_name,port_service, submit_time, response_time, status, team_id FROM flags`
+	baseFlagQuery         = `SELECT flag_code, service_name,port_service, submit_time, response_time, status, team_id, msg FROM flags`
 	queryAllFlags         = baseFlagQuery + " ORDER BY submit_time DESC"
 	queryFirstNFlags      = baseFlagQuery + " ORDER BY submit_time DESC LIMIT ?"
 	queryUnsubmittedFlags = baseFlagQuery + " WHERE status = 'UNSUBMITTED' ORDER BY submit_time ASC LIMIT ?"
@@ -94,7 +94,7 @@ func queryFlags(query string, args ...any) ([]models.Flag, error) {
 		if err := rows.Scan(
 			&flagPtr.FlagCode, &flagPtr.ServiceName, &flagPtr.PortService,
 			&flagPtr.SubmitTime, &flagPtr.ResponseTime, &flagPtr.Status,
-			&flagPtr.TeamID,
+			&flagPtr.TeamID, &flagPtr.Msg,
 		); err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to scan row in queryFlags")
 			return nil, err

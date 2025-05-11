@@ -13,6 +13,7 @@ type Flag struct {
 	FlagCode     string `json:"flag_code"`     // Actual flag string
 	ServiceName  string `json:"service_name"`  // Human-readable name of the service
 	Status       string `json:"status"`        // Status of the submission (e.g., "unsubmitted", "accepted", "denied")
+	Msg          string `json:"msg"`           // Message from the flag checker service
 }
 
 // Service represents a single vulnerable service as defined in the configuration.
@@ -51,7 +52,7 @@ type Config struct {
 // Args represents the command-line arguments or configuration
 // values passed at runtime to control the exploit manager behavior.
 type Args struct {
-	ExploitName *string `json:"exploit_name"` // Name of the exploit to run
+	ExploitPath *string `json:"exploit_path"` // Path to the exploit to run
 	Password    *string `json:"password"`     // Authentication password
 	TickTime    *int    `json:"tick_time"`    // Optional custom tick time
 	Debug       *bool   `json:"debug"`        // Enable debug mode if true

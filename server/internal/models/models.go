@@ -20,6 +20,7 @@ type Flag struct {
 	FlagCode     string `json:"flag_code"`     // Actual flag string
 	ServiceName  string `json:"service_name"`  // Human-readable name of the service
 	Status       string `json:"status"`        // Status of the submission (e.g., "unsubmitted", "accepted", "denied")
+	Msg          string `json:"msg"`           // Message from the flag checker service
 }
 
 // ResponseProtocol represents a response from the flag checker service.
@@ -62,7 +63,7 @@ type Config struct {
 	ConfigClient ConfigClient `json:"client" yaml:"client"`         // Client-specific configuration
 }
 
-// Signin request from the client to the server
+// SigninRequest from the client to the server
 type SigninRequest struct {
 	Password string `json:"password"` // Password for authentication
 }

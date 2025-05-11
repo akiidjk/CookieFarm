@@ -1,0 +1,550 @@
+services:
+  service0:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.0.1
+  vulnify0:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.30.1
+  app-nc0:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.60.1
+  service1:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.1.1
+  vulnify1:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.31.1
+  app-nc1:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.61.1
+  service2:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.2.1
+  vulnify2:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.32.1
+  app-nc2:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.62.1
+  service3:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.3.1
+  vulnify3:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.33.1
+  app-nc3:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.63.1
+  service4:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.4.1
+  vulnify4:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.34.1
+  app-nc4:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.64.1
+  service5:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.5.1
+  vulnify5:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.35.1
+  app-nc5:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.65.1
+  service6:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.6.1
+  vulnify6:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.36.1
+  app-nc6:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.66.1
+  service7:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.7.1
+  vulnify7:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.37.1
+  app-nc7:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.67.1
+  service8:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.8.1
+  vulnify8:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.38.1
+  app-nc8:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.68.1
+  service9:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.9.1
+  vulnify9:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.39.1
+  app-nc9:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.69.1
+  service10:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.10.1
+  vulnify10:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.40.1
+  app-nc10:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.70.1
+  service11:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.11.1
+  vulnify11:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.41.1
+  app-nc11:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.71.1
+  service12:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.12.1
+  vulnify12:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.42.1
+  app-nc12:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.72.1
+  service13:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.13.1
+  vulnify13:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.43.1
+  app-nc13:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.73.1
+  service14:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.14.1
+  vulnify14:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.44.1
+  app-nc14:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.74.1
+  service15:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.15.1
+  vulnify15:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.45.1
+  app-nc15:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.75.1
+  service16:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.16.1
+  vulnify16:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.46.1
+  app-nc16:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.76.1
+  service17:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.17.1
+  vulnify17:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.47.1
+  app-nc17:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.77.1
+  service18:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.18.1
+  vulnify18:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.48.1
+  app-nc18:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.78.1
+  service19:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.19.1
+  vulnify19:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.49.1
+  app-nc19:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.79.1
+  service20:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.20.1
+  vulnify20:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.50.1
+  app-nc20:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.80.1
+  service21:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.21.1
+  vulnify21:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.51.1
+  app-nc21:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.81.1
+  service22:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.22.1
+  vulnify22:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.52.1
+  app-nc22:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.82.1
+  service23:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.23.1
+  vulnify23:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.53.1
+  app-nc23:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.83.1
+  service24:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.24.1
+  vulnify24:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.54.1
+  app-nc24:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.84.1
+  service25:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.25.1
+  vulnify25:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.55.1
+  app-nc25:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.85.1
+  service26:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.26.1
+  vulnify26:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.56.1
+  app-nc26:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.86.1
+  service27:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.27.1
+  vulnify27:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.57.1
+  app-nc27:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.87.1
+  service28:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.28.1
+  vulnify28:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.58.1
+  app-nc28:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.88.1
+  service29:
+    build:
+      context: ./app
+    networks:
+      net:
+        ipv4_address: 10.10.29.1
+  vulnify29:
+    build:
+      context: ./vulnify
+    networks:
+      net:
+        ipv4_address: 10.10.59.1
+  app-nc29:
+    build:
+      context: ./app-nc
+    networks:
+      net:
+        ipv4_address: 10.10.89.1
+
+networks:
+  net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.0.0/16
+          ip_range: 10.10.0.0/16
+          gateway: 10.10.0.254

@@ -12,6 +12,7 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/ui"
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 )
 
 // shutdownCancel is used to gracefully shut down the server from external signals (if implemented).
@@ -70,6 +71,13 @@ func New() *fiber.App {
 		CacheDuration: 10 * time.Second,
 		MaxAge:        3600,
 	})
+
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestSpeed,
+	}))
+
+	app.Server().ReadTimeout = 10 * time.Second
+	app.Server().WriteTimeout = 10 * time.Second
 
 	// Log static file requests in debug mode
 	if *config.Debug {

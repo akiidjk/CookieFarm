@@ -1,5 +1,5 @@
 <div align="center" style="margin-bottom: 20px">
-  <img width="360px" height="360px" src="assets/logo.png">
+  <img width="360px" height="auto" src="assets/logo_mucca.png">
 </div>
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
@@ -45,9 +45,10 @@ To start the server:
 
     ```bash
       # Server configuration
-      DEBUG=true                   # Enable debug mode for verbose logging
+      DEBUG=false                   # Enable debug mode for verbose logging
       SERVER_PASSWORD=SuperSecret  # Set a strong password for authentication
-      SERVER_PORT=9090            # Define the port the server will listen on
+      CONFIG_FROM_FILE=config.yml  # Set if the server takes the config from config.yml in the filesystem; otherwise, do not set the variable
+      SERVER_PORT=8080            # Define the port the server will listen on
     ```
 
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
@@ -78,7 +79,7 @@ To start the server:
 3. Run the exploit manager with the following command:
 
    ```bash
-   ./bin/cookieclient -e ./exploits/your_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd
+   cookieclient -e ./exploits/your_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd
    ```
 
    * `-e`: path to your exploit script

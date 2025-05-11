@@ -10,8 +10,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
 
-var MaxRequests = utils.GetEnvAsInt("RATE_LIMIT_MAX", 50)
-var Window = utils.GetEnvAsInt("RATE_LIMIT_WINDOW", 1)
+var (
+	MaxRequests = utils.GetEnvAsInt("RATE_LIMIT_MAX", 50)
+	Window      = utils.GetEnvAsInt("RATE_LIMIT_WINDOW", 1)
+)
 
 var whitelist = map[string]bool{
 	"127.0.0.1": true,

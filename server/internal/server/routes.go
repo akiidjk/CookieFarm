@@ -35,26 +35,26 @@ func RegisterRoutes(app *fiber.App) {
 	// ------------------ PUBLIC API ------------------
 
 	// Public endpoints that do not require authentication
-	publicApi := app.Group("/api/v1")
-	publicApi.Get("/", GetStatus) // Simple status check
-	publicApi.Post("/auth/login", NewLimiter(), HandleLogin)
+	publicAPI := app.Group("/api/v1")
+	publicAPI.Get("/", GetStatus) // Simple status check
+	publicAPI.Post("/auth/login", NewLimiter(), HandleLogin)
 
 	// ------------------ PRIVATE API ------------------
 
 	// Protected routes, accessible only with a valid JWT token.
 	// The token can be passed via Authorization header or cookie.
-	privateApi := app.Group("/api/v1", jwtware.New(jwtware.Config{
+	privateAPI := app.Group("/api/v1", jwtware.New(jwtware.Config{
 		SigningKey:  config.Secret,
 		TokenLookup: "header:Authorization,cookie:token",
 	}))
-	privateApi.Get("/stats", HandleGetStats)
-	privateApi.Get("/flags", HandleGetAllFlags)
-	privateApi.Get("/flags/:limit", HandleGetPaginatedFlags)
-	privateApi.Get("/config", HandleGetConfig)
-	privateApi.Get("/health", HealthHandler)
-	privateApi.Post("/submit-flags", HandlePostFlags)
-	privateApi.Post("/submit-flag", HandlePostFlag)
-	privateApi.Post("/config", HandlePostConfig)
+	privateAPI.Get("/stats", HandleGetStats)
+	privateAPI.Get("/flags", HandleGetAllFlags)
+	privateAPI.Get("/flags/:limit", HandleGetPaginatedFlags)
+	privateAPI.Get("/config", HandleGetConfig)
+	privateAPI.Get("/health", HealthHandler)
+	privateAPI.Post("/submit-flags", HandlePostFlags)
+	privateAPI.Post("/submit-flag", HandlePostFlag)
+	privateAPI.Post("/config", HandlePostConfig)
 }
 
 // GetStatus is a simple public endpoint used to check if the server is online.

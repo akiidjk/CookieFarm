@@ -21,7 +21,7 @@ RUN apk add --no-cache libc6-compat
 
 COPY --from=build /app/bin/cookieserver /app/bin/cookieserver
 COPY --from=build /app/public /app/public
-COPY --from=build /app/config.json /app/config.json
+COPY --from=build /app/config.yml /app/config.yml
 COPY --from=build /app/protocols /app/protocols
 COPY --from=build /app/internal/ui/views /app/internal/ui/views
 

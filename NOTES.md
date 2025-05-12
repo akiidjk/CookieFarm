@@ -67,7 +67,7 @@
 - [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte)
 - [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit
 - [ ] Inserire la porta non nell'exploit ma come argomento dell'exploiter
-- [ ] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit
+- [ ] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit e flusso continuo con i websocket da client a server
 
 ## RELEASE 1.2
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

@@ -21,6 +21,7 @@ func main() {
 	}
 
 	// Read an input string from the user
+	fmt.Printf("Benvenuto nel servizio di Vincenzino per prima cosa fai questo")
 	fmt.Println("Enter a string:")
 	var input string
 	fmt.Scanln(&input)

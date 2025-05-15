@@ -113,14 +113,13 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "expr": "sum by (groupname)(rate(namedprocess_namegroup_cpu_seconds_total{pid=~\"52369|58292\"}[1m])) * 100",
+          "expr": "sum by (groupname)(rate(namedprocess_namegroup_cpu_seconds_total{groupname=~'cookieserver|cookieclient|exploit_total|df_server|df_client'}[1m])) * 100",
           "legendFormat": "{{groupname}} (total)",
           "refId": "A"
         }
       ],
       "title": "CPU Usage - Total",
-      "type": "timeseries",
-      "unit": "percent"
+      "type": "timeseries"
     },
     {
       "description": "Dettaglio CPU user vs system",
@@ -201,19 +200,18 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "expr": "rate(namedprocess_namegroup_cpu_seconds_total{pid=~\"52369|58292\",mode='user'}[1m]) * 100",
+          "expr": "rate(namedprocess_namegroup_cpu_seconds_total{groupname=~'cookieserver|cookieclient|exploit_total|df_server|df_client',mode='user'}[1m]) * 100",
           "legendFormat": "{{groupname}} (user)",
           "refId": "A"
         },
         {
-          "expr": "rate(namedprocess_namegroup_cpu_seconds_total{pid=~\"52369|58292\",mode='system'}[1m]) * 100",
+          "expr": "rate(namedprocess_namegroup_cpu_seconds_total{groupname=~'cookieserver|cookieclient|exploit_total|df_server|df_client',mode='system'}[1m]) * 100",
           "legendFormat": "{{groupname}} (system)",
           "refId": "B"
         }
       ],
       "title": "CPU Usage - Breakdown",
-      "type": "timeseries",
-      "unit": "percent"
+      "type": "timeseries"
     },
     {
       "collapsed": false,
@@ -307,14 +305,13 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "expr": "namedprocess_namegroup_memory_bytes{pid=~\"52369|58292\",memtype='resident'} / (1024 * 1024)",
+          "expr": "namedprocess_namegroup_memory_bytes{groupname=~'cookieserver|cookieclient|exploit_total|df_client|df_server',memtype='resident'} / (1024 * 1024)",
           "legendFormat": "{{groupname}} (RSS)",
           "refId": "A"
         }
       ],
       "title": "Resident Memory (RSS)",
-      "type": "timeseries",
-      "unit": "mbytes"
+      "type": "timeseries"
     },
     {
       "description": "Memoria virtuale allocata",
@@ -395,14 +392,13 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "expr": "namedprocess_namegroup_memory_bytes{pid=~\"52369|58292\",memtype='virtual'} / (1024 * 1024)",
+          "expr": "namedprocess_namegroup_memory_bytes{groupname=~'cookieserver|cookieclient|exploit_total|df_server|df_client',memtype='virtual'}",
           "legendFormat": "{{groupname}} (VMS)",
           "refId": "A"
         }
       ],
       "title": "Virtual Memory (VMS)",
-      "type": "timeseries",
-      "unit": "mbytes"
+      "type": "timeseries"
     },
     {
       "collapsed": false,
@@ -463,9 +459,29 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "expr": "namedprocess_namegroup_num_procs{pid=~\"52369|58292\"}",
-          "legendFormat": "{{groupname}}",
+          "expr": "namedprocess_namegroup_num_procs{groupname='cookieserver'}",
+          "legendFormat": "CookieServer",
           "refId": "A"
+        },
+        {
+          "expr": "namedprocess_namegroup_num_procs{groupname='cookieclient'}",
+          "legendFormat": "CookieClient",
+          "refId": "B"
+        },
+        {
+          "expr": "namedprocess_namegroup_num_procs{groupname='exploit_total'}",
+          "legendFormat": "ExploitTotal",
+          "refId": "C"
+        },
+        {
+          "expr": "namedprocess_namegroup_num_procs{groupname='df_client'}",
+          "legendFormat": "DF Client",
+          "refId": "D"
+        },
+        {
+          "expr": "namedprocess_namegroup_num_procs{groupname='df_server'}",
+          "legendFormat": "DF Server",
+          "refId": "E"
         }
       ],
       "title": "Process Count",
@@ -517,9 +533,29 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "expr": "namedprocess_namegroup_threads{pid=~\"52369|58292\"}",
-          "legendFormat": "{{groupname}}",
+          "expr": "namedprocess_namegroup_threads{groupname='cookieserver'}",
+          "legendFormat": "CookieServer",
           "refId": "A"
+        },
+        {
+          "expr": "namedprocess_namegroup_threads{groupname='cookieclient'}",
+          "legendFormat": "CookieClient",
+          "refId": "B"
+        },
+        {
+          "expr": "namedprocess_namegroup_threads{groupname='exploit_total'}",
+          "legendFormat": "ExploitTotal",
+          "refId": "C"
+        },
+        {
+          "expr": "namedprocess_namegroup_threads{groupname='df_client'}",
+          "legendFormat": "DF Client",
+          "refId": "D"
+        },
+        {
+          "expr": "namedprocess_namegroup_threads{groupname='df_server'}",
+          "legendFormat": "DF Server",
+          "refId": "E"
         }
       ],
       "title": "Thread Count",
@@ -571,39 +607,77 @@
       "pluginVersion": "12.0.0",
       "targets": [
         {
-          "expr": "namedprocess_namegroup_open_filedesc{pid=~\"52369|58292\"}",
-          "legendFormat": "{{groupname}}",
+          "expr": "namedprocess_namegroup_open_filedesc{groupname='cookieserver'}",
+          "legendFormat": "CookieServer",
           "refId": "A"
+        },
+        {
+          "expr": "namedprocess_namegroup_open_filedesc{groupname='cookieclient'}",
+          "legendFormat": "CookieClient",
+          "refId": "B"
+        },
+        {
+          "expr": "namedprocess_namegroup_open_filedesc{groupname='exploit_total'}",
+          "legendFormat": "ExploitTotal",
+          "refId": "C"
+        },
+        {
+          "expr": "namedprocess_namegroup_open_filedesc{groupname='df_client'}",
+          "legendFormat": "DF Client",
+          "refId": "E"
+        },
+        {
+          "expr": "namedprocess_namegroup_open_filedesc{groupname='df_server'}",
+          "legendFormat": "DF Server",
+          "refId": "F"
         }
       ],
       "title": "File Descriptors",
       "type": "stat"
     }
   ],
+  "preload": false,
+  "refresh": "auto",
+  "schemaVersion": 41,
+  "tags": [
+    "cookie-apps",
+    "process-monitoring",
+    "prometheus"
+  ],
   "templating": {
     "list": [
       {
-        "name": "application",
-        "type": "query",
-        "datasource": "Prometheus",
-        "refresh": 1,
-        "query": "label_values(namedprocess_namegroup_cpu_seconds_total, pid)",
         "current": {
-          "selected": true,
           "text": [
-            "52369",
-            "58292"
+            "cookieserver",
+            "cookieclient",
+            "exploit_total"
           ],
           "value": [
-            "52369",
-            "58292"
+            "cookieserver",
+            "cookieclient",
+            "exploit_total"
           ]
         },
-        "options": [],
+        "datasource": "Prometheus",
         "includeAll": false,
         "multi": true,
-        "sort": 1
+        "name": "application",
+        "options": [],
+        "query": "label_values(namedprocess_namegroup_cpu_seconds_total, groupname)",
+        "refresh": 1,
+        "sort": 1,
+        "type": "query"
       }
     ]
-  }
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Cookie Apps Monitor - CPU & Memory",
+  "uid": "938695bd-b153-4bad-b35c-73c8413f37fa",
+  "version": 10
 }

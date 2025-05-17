@@ -12,10 +12,6 @@ client:
   services:
     - name: "CookieService"
       port: 8081
-    - name: "vulnify"
-      port: 1337
-    - name: "app-nc"
-      port: 1338
   range_ip_teams: 29
   format_ip_teams: "10.10.{}.1"
   my_team_ip: "10.10.0.1"

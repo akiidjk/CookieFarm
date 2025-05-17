@@ -12,6 +12,7 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/flagparser"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
+	"github.com/ByteTheCookies/cookieclient/internal/utils"
 )
 
 type ExecutionResult struct {
@@ -20,7 +21,7 @@ type ExecutionResult struct {
 }
 
 // Start starts the exploit_manager and listens for flags in stdout.
-func Start(exploitPath, password string, tickTime int, threadCount int, logPath string) (*ExecutionResult, error) {
+func Start(exploitPath, password string, tickTime int, threadCount int, logPath string, port int) (*ExecutionResult, error) {
 	cmd := exec.Command(
 		exploitPath,
 		*config.BaseURLServer,
@@ -28,6 +29,8 @@ func Start(exploitPath, password string, tickTime int, threadCount int, logPath 
 		strconv.Itoa(tickTime),
 		config.Current.ConfigClient.RegexFlag,
 		strconv.Itoa(threadCount),
+		strconv.Itoa(port),
+		utils.MapPortToService(uint16(port)),
 		logPath,
 	)
 

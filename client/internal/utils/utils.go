@@ -84,6 +84,9 @@ func ValidateArgs(args models.Args) error {
 	if *args.Password == "" {
 		return errors.New("missing required --password argument")
 	}
+	if *args.Port == 0 {
+		return errors.New("missing required --port argument")
+	}
 
 	_, err := url.ParseRequestURI(*config.BaseURLServer)
 	if err != nil {

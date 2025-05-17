@@ -78,7 +78,8 @@ Follow these steps to run your exploit with the client:
 |:---------|:------------|:--------|
 | `-e`, `--exploit` | Path to your exploit file (must be inside `exploits/` folder) | N/A |
 | `-b`, `--base_url_server` | Base URL and port of the CookieFarm server | N/A |
-| `-p`, `--password` | Password for server authentication | N/A |
+| `-P`, `--password` | Password for server authentication | N/A |
+| `-p`, `--port` | Port of the service | N/A |
 | `-t`, `--tick` | Frequency in seconds to re-run the exploit and submit flags | 120 |
 | `-T`, `--threads` | Number of threads to use for concurrent execution | 5 |
 | `-D`, `--debug` | Enable debug mode | False |

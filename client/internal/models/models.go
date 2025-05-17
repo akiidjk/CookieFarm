@@ -54,6 +54,7 @@ type Config struct {
 type Args struct {
 	ExploitPath *string `json:"exploit_path"` // Path to the exploit to run
 	Password    *string `json:"password"`     // Authentication password
+	Port        *int    `json:"port"`         // Service Port
 	TickTime    *int    `json:"tick_time"`    // Optional custom tick time
 	Debug       *bool   `json:"debug"`        // Enable debug mode if true
 	Detach      *bool   `json:"detach"`       // Run in background if true

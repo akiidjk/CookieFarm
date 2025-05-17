@@ -35,7 +35,8 @@ func init() {
 
 	args.ExploitPath = pflag.StringP("exploit", "e", "", "Path to the exploit file to execute")
 	args.Debug = pflag.BoolP("debug", "D", false, "Enable debug logging")
-	args.Password = pflag.StringP("password", "p", "", "Password for authenticating to the server")
+	args.Password = pflag.StringP("password", "P", "", "Password for authenticating to the server")
+	args.Port = pflag.IntP("port", "p", 0, "Port of the service to exploit")
 	config.BaseURLServer = pflag.StringP("base_url_server", "b", "", "Base URL of the flag submission server")
 	args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")
 	args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between exploit executions")
@@ -113,7 +114,7 @@ func main() {
 
 	logger.Log.Info().Msg("Client initialized successfully")
 
-	result, err := executor.Start(*args.ExploitPath, *args.Password, *args.TickTime, *args.ThreadCount, logPath)
+	result, err := executor.Start(*args.ExploitPath, *args.Password, *args.TickTime, *args.ThreadCount, logPath, *args.Port)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

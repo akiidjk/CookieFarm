@@ -4,7 +4,6 @@
 package cmd
 
 import (
-	_ "embed"
 	"fmt"
 	"os"
 	"os/signal"
@@ -24,20 +23,13 @@ var attackCmd = &cobra.Command{
 	Use:   "attack",
 	Short: "Attack the other team with a exploit",
 	Long:  `This command allows you to attack the other team with a exploit. You can specify the exploit path and the server host.`, // Da finire
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	Run: attack,
+	Run:   attack,
 }
 
 var logPath string // Path to the generated log file
 
-//go:embed banner.txt
-var banner string
-
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
-	fmt.Println(banner)
-
 	rootCmd.AddCommand(attackCmd)
 	config.Args.ExploitPath = attackCmd.Flags().StringP("exploit", "e", "", "Path to the exploit file to execute")
 	config.Args.Debug = attackCmd.Flags().BoolP("debug", "D", false, "Enable debug logging")

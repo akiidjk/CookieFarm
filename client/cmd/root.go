@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
+
+	_ "embed"
 
 	"github.com/spf13/cobra"
 )
@@ -12,13 +15,8 @@ var rootCmd = &cobra.Command{
 	Short: "The client cli for CookieFarm",
 	Long: `CookieFarm is a exploiter writed by the team ByteTheCookies for CyberChallenge
 	competition. This is the client cli for the CookieFarm server for attack the teams with exploits.`, // Da migliorare
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
@@ -26,14 +24,9 @@ func Execute() {
 	}
 }
 
+//go:embed banner.txt
+var banner string
+
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cookieclient.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	fmt.Println(banner)
 }

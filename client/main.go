@@ -1,6 +1,8 @@
 package main
 
-import "github.com/ByteTheCookies/cookieclient/cmd"
+import (
+	"github.com/ByteTheCookies/cookieclient/cmd"
+)
 
 func main() {
 	cmd.Execute()

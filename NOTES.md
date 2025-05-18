@@ -57,7 +57,7 @@
 - [x] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
 
 ## RELEASE 1.1
-- [ ] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit !!!! PRIORITY
+- [x] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit !!!! PRIORITY
 - [ ] Implementazione websocket da client a server !!!! PRIORITY
 - [ ] Config Reloader (hot realod of config file || button to reload)
 - [ ] api/button to send flags, instead of waiting the timer

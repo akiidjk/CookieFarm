@@ -16,6 +16,7 @@ func Start(flagsChan <-chan models.Flag) error {
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Error connecting to WebSocket")
 	}
+	defer conn.Close()
 
 	for {
 		select {

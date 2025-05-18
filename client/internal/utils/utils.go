@@ -94,7 +94,7 @@ func ValidateArgs(args models.Args) error {
 	}
 
 	if info, err := os.Stat(exploitPath); err == nil && info.Mode()&0o111 == 0 {
-		return fmt.Errorf("exploit file is not executable")
+		return errors.New("exploit file is not executable")
 	}
 
 	if _, err := os.Stat(exploitPath); os.IsNotExist(err) {

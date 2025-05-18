@@ -10,11 +10,11 @@ import (
 )
 
 // Start initializes the submission loop to the cookiefarm server.
-func Start(flagsChan <-chan models.Flag) {
+func Start(flagsChan <-chan models.Flag) error {
+	logger.Log.Info().Msg("Starting submission loop to the cookiefarm server...")
 	conn, err := websockets.GetConnection()
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error connecting to WebSocket")
-		return
+		logger.Log.Fatal().Err(err).Msg("Error connecting to WebSocket")
 	}
 
 	for {
@@ -29,7 +29,20 @@ func Start(flagsChan <-chan models.Flag) {
 				logger.Log.Error().Err(err).Msg("Error marshalling flag")
 				continue
 			}
-			conn.WriteMessage(gorilla.TextMessage, marshalFlag)
+			if err := conn.WriteMessage(gorilla.TextMessage, marshalFlag); err != nil {
+				logger.Log.Error().Err(err).Msg("Error sending flag, attempting reconnection")
+				newConn, reconnectErr := websockets.GetConnection()
+				if reconnectErr != nil {
+					logger.Log.Fatal().Err(reconnectErr).Msg("Failed to reconnect to WebSocket")
+				} else {
+					conn = newConn
+					logger.Log.Info().Msg("Successfully reconnected to WebSocket")
+					if err := conn.WriteMessage(gorilla.TextMessage, marshalFlag); err != nil {
+						logger.Log.Error().Err(err).Msg("Error sending flag after reconnection")
+					}
+				}
+				continue
+			}
 		}
 	}
 }

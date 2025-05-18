@@ -7,4 +7,5 @@ var (
 	Current    models.Config // Current holds the global configuration for the client.
 	Token      string        // Token stores the global authentication token.
 	HostServer *string       // BaseURLServer holds the global base URL for the server.
+	Args       models.Args   // Struct holding runtime arguments
 )

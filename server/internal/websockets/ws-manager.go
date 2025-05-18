@@ -3,6 +3,7 @@ package websockets
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/gofiber/fiber/v2"
@@ -10,7 +11,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var ErrEventNotSupported = errors.New("this event type is not supported")
+var (
+	ErrEventNotSupported = errors.New("this event type is not supported")
+	// Errore quando un client supera il timeout totale della connessione
+	ErrConnectionTimeout = errors.New("connection timeout exceeded")
+)
+
+// Timeout della connessione websocket
+const (
+	ConnectionLifetime = 24 * time.Hour // Tempo massimo di vita della connessione
+)
 
 var websocketUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -74,6 +84,20 @@ func (m *Manager) ServeWS(c *fiber.Ctx) error {
 		client := NewClient(conn, m)
 		m.AddClient(client)
 
+		// Impostiamo un timeout per la durata complessiva della connessione
+		connectionTimer := time.AfterFunc(ConnectionLifetime, func() {
+			logger.Log.Info().Int("client", client.Number).Msg("Connection lifetime exceeded, closing")
+			client.Connection.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Connection timeout"),
+				time.Now().Add(time.Second),
+			)
+			client.CloseConnection("Connection lifetime exceeded")
+		})
+
+		// Memorizza il timer per consentirne la cancellazione se la connessione viene chiusa prima
+		client.ConnectionTimer = connectionTimer
+
 		go client.ReadMessages()
 		go client.WriteMessages()
 		logger.Log.Debug().Msg("Started reading messages")
@@ -93,7 +117,23 @@ func (m *Manager) RemoveClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.Clients[client]; ok {
+		// Ferma il timer della connessione se è stato impostato
+		if client.ConnectionTimer != nil {
+			client.ConnectionTimer.Stop()
+		}
+
+		// Chiude la connessione in modo sicuro
+		err := client.Connection.WriteControl(
+			websocket.CloseMessage,
+			websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Server closing connection"),
+			time.Now().Add(time.Second),
+		)
+		if err != nil {
+			logger.Log.Debug().Err(err).Int("client", client.Number).Msg("Failed to send close message")
+		}
+
 		client.Connection.Close()
 		delete(m.Clients, client)
+		logger.Log.Debug().Int("client", client.Number).Int("active_clients", len(m.Clients)).Msg("Client removed")
 	}
 }

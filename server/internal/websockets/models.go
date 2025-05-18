@@ -33,6 +33,14 @@ type Client struct {
 	Manager    *Manager
 	Egress     chan []byte
 	Number     int
+	// Closed is used to signal when the client is being closed
+	Closed chan struct{}
+	// IsClosed helps track if the client has already been closed
+	IsClosed bool
+	// Mutex for safely accessing IsClosed
+	mutex sync.Mutex
+	// ConnectionTimer tracks the connection lifetime
+	ConnectionTimer *time.Timer
 }
 
 // Manager handles WebSocket clients and event routing

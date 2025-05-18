@@ -15,18 +15,6 @@ while [[ $i -lt $1 ]]; do
     s+="    networks:\n"
     s+="      net:\n"
     s+="        ipv4_address: 10.10.${i}.1\n"
-    s+="  vulnify${i}:\n"
-    s+="    build:\n"
-    s+="      context: ./vulnify\n"
-    s+="    networks:\n"
-    s+="      net:\n"
-    s+="        ipv4_address: 10.10.$(($1 + $i)).1\n"
-    s+="  app-nc${i}:\n"
-    s+="    build:\n"
-    s+="      context: ./app-nc\n"
-    s+="    networks:\n"
-    s+="      net:\n"
-    s+="        ipv4_address: 10.10.$((($1 * 2) + $i)).1\n"
     i=$((i + 1))
 done
 

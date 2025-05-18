@@ -35,10 +35,31 @@ To configure the server, you need to create a `.env` file with the following par
 | Environment Variable | Description                                                          | Default      |
 |----------------------|----------------------------------------------------------------------|--------------|
 | `DEBUG`              | Enables debug mode when set to `true`                                | `false`      |
-| `CONFIG_PATH`        | Path to a JSON config file (instead of using the web form)           | N/A          |
+| `CONFIG_PATH`        | Path to a YAML config file (instead of using the web form)           | N/A          |
 | `SERVER_PASSWORD`    | Password to access the server web interface                          | `"password"` |
 | `SERVER_PORT`        | Sets the port the server will listen on                              | `8080`       |
 
+The YAML config file as be like that:
+```YAML
+configured: true
+
+server:
+  host_flagchecker: "http://flagchecker:1234"
+  team_token: "4242424242424242424"
+  submit_flag_checker_time: 10
+  max_flag_batch_size: 1000
+  protocol: "cc_http"
+
+client:
+  submit_flag_server_time: 10
+  services:
+    - name: "ExampleService"
+      port: 8081
+  range_ip_teams: 29
+  format_ip_teams: "10.10.{}.1"
+  my_team_ip: "10.10.0.1"
+  regex_flag: "[A-Z0-9]{31}="
+```
 
 
 > **⚠️ WARNING: Security Risk!**
@@ -59,7 +80,7 @@ Through the UI you can:
 
 - View all received flags.
 - Check the submission and acceptance status of each flag.
-- Configure the server (unless you setup the configuration from JSON).
+- Configure the server (unless you setup the configuration from YAML file).
 
 ---
 

@@ -53,6 +53,7 @@ type Config struct {
 type Args struct {
 	ExploitPath *string `json:"exploit_path"` // Path to the exploit to run
 	Password    *string `json:"password"`     // Authentication password
+	Port        *uint16 `json:"port"`         // Service Port
 	TickTime    *int    `json:"tick_time"`    // Optional custom tick time
 	Debug       *bool   `json:"debug"`        // Enable debug mode if true
 	Detach      *bool   `json:"detach"`       // Run in background if true
@@ -67,6 +68,7 @@ type ParsedFlagOutput struct {
 	FlagCode    string `json:"flag_code"`    // The actual flag string
 	Status      string `json:"status"`       // Status of the flag submission (eg "success", "failed", "error", "fatal")
 	Message     string `json:"message"`      // Additional message or error information
+	NameService string `json:"name_service"` // Human-readable name of the service
 }
 
 type EventWS struct {

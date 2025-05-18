@@ -41,8 +41,7 @@ def exploit(ip: str, port: int, name: str):
     return flag
 
 if __name__ == "__main__":
-    port = 4512  # Example port
-    exploit(port=port)
+    exploit()
 ```
 
 ✅ The `exploit_manager` automatically:
@@ -88,7 +87,7 @@ Follow these steps to run your exploit with the client:
 ### 📂 Example Run
 
 ```bash
-cookieclient -e ./my_exploit.py -b http://10.10.23.1:8080 -P Str0ng_p4ssw0rd -p 8080 -t 120 -T 5 -d
+cookieclient -e ./my_exploit.py -b 10.10.23.1:8080 -P Str0ng_p4ssw0rd -p 8080 -t 120 -T 5 -d
 ```
 
-This example runs `my_exploit.py` in debug mode every 120 seconds using 5 threads, sending the obtained flags to `http://10.10.23.1:8080`, using the password `Str0ng_p4ssw0rd`.
+This example runs `my_exploit.py` in debug mode every 120 seconds using 5 threads, sending the obtained flags to `10.10.23.1:8080`, using the password `Str0ng_p4ssw0rd`.

@@ -237,6 +237,7 @@ func (m *ConnectionMonitor) performHealthCheck() {
 			logger.Log.Warn().
 				Time("last_activity", lastActivity).
 				Msg("WebSocket connection inactive for more than 5 minutes")
+			m.RecordDisconnect(nil)
 		}
 
 		stats := m.GetStats()

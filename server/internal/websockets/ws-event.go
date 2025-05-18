@@ -15,6 +15,10 @@ const (
 	FlagResponse = "flag_response"
 )
 
+func init() {
+	database.GetCollector().Start()
+}
+
 // FlagHandler will send out a message to all other participants in the chat
 func FlagHandler(event Event, client *Client) error {
 	var flag models.Flag
@@ -22,8 +26,8 @@ func FlagHandler(event Event, client *Client) error {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	if err := database.AddFlag(flag); err != nil {
-		logger.Log.Error().Err(err).Msg("DB insert failed in flag handler")
+	if err := database.GetCollector().AddFlag(flag); err != nil {
+		logger.Log.Error().Err(err).Msg("Flag buffer add failed in flag handler")
 		return err
 	}
 

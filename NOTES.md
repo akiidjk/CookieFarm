@@ -84,8 +84,7 @@
 - [ ] Auto Flag
 
 ## RELEASE BOH SI QUANDO ABBIAMO TEMPO
-- [ ] client option to submit directly to gameserver
-- [ ] Sostituire le richieste in GO con `request.h`
+- [ ] Sostituire le richieste in GO con `requests.h`
 
 
 ## Final test

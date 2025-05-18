@@ -31,7 +31,8 @@ func init() {
 
 	config.Args.ExploitPath = pflag.StringP("exploit", "e", "", "Path to the exploit file to execute")
 	config.Args.Debug = pflag.BoolP("debug", "D", false, "Enable debug logging")
-	config.Args.Password = pflag.StringP("password", "p", "", "Password for authenticating to the server")
+	config.Args.Password = pflag.StringP("password", "P", "", "Password for authenticating to the server")
+	config.Args.Port = pflag.Uint16P("port", "p", 0, "Service Port to attack")
 	config.HostServer = pflag.StringP("host", "h", "", "Host of the cookieserver")
 	config.Args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")
 	config.Args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between exploit executions")
@@ -107,13 +108,9 @@ func main() {
 	}
 	defer logger.Close()
 
-	// if err := websockets.ConnectToWebSocket(); err != nil {
-	// 	logger.Log.Fatal().Err(err).Msg("Failed to connect to WebSocket")
-	// }
-
 	logger.Log.Info().Msg("Client initialized successfully")
 
-	result, err := executor.Start(*config.Args.ExploitPath, *config.Args.Password, *config.Args.TickTime, *config.Args.ThreadCount, logPath)
+	result, err := executor.Start(*config.Args.ExploitPath, *config.Args.Password, *config.Args.TickTime, *config.Args.ThreadCount, logPath, *config.Args.Port)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

@@ -38,12 +38,11 @@ func Start(flagsChan <-chan models.Flag) error {
 				} else {
 					conn = newConn
 					logger.Log.Info().Msg("Successfully reconnected to WebSocket")
-					if err := conn.WriteMessage(gorilla.TextMessage, marshalFlag); err != nil {
-						logger.Log.Error().Err(err).Msg("Error sending flag after reconnection")
-					}
 				}
 				continue
 			}
 		}
 	}
 }
+
+// TODO: Sistema di accumulo in caso di non connesione fino a 2 minuti

@@ -8,7 +8,7 @@
 
 # CookieFarm
 
-**CookieFarm** is a Attack/Defense CTF framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookie**. What sets CookieFarm apart is its hybrid Go+Python architecture and "zero distraction" approach: **Your only task: write the exploit logic!**
+**CookieFarm** is a Attack/Defense CTF framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookies**. What sets CookieFarm apart is its hybrid Go+Python architecture and "zero distraction" approach: **Your only task: write the exploit logic!**
 
 The system automatically handles exploit distribution, flag submission, and result monitoring, allowing you to focus exclusively on writing effective exploits.
 
@@ -105,4 +105,4 @@ Contributions, suggestions, and bug reports are always welcome! Check out [CONTR
 
 CookieFarm was designed with particular attention to user experience during high-pressure CTFs. Our goal is to eliminate every distraction and allow you to focus on what really matters: writing effective exploits.
 
-**Created with ❤️ by ByteTheCookie**
+**Created with ❤️ by ByteTheCookies**

@@ -13,13 +13,11 @@ import (
 
 var (
 	ErrEventNotSupported = errors.New("this event type is not supported")
-	// Errore quando un client supera il timeout totale della connessione
 	ErrConnectionTimeout = errors.New("connection timeout exceeded")
 )
 
-// Timeout della connessione websocket
 const (
-	ConnectionLifetime = 24 * time.Hour // Tempo massimo di vita della connessione
+	ConnectionLifetime = 24 * time.Hour // Lifetime of the connection
 )
 
 var websocketUpgrader = websocket.Upgrader{
@@ -84,7 +82,6 @@ func (m *Manager) ServeWS(c *fiber.Ctx) error {
 		client := NewClient(conn, m)
 		m.AddClient(client)
 
-		// Impostiamo un timeout per la durata complessiva della connessione
 		connectionTimer := time.AfterFunc(ConnectionLifetime, func() {
 			logger.Log.Info().Int("client", client.Number).Msg("Connection lifetime exceeded, closing")
 			client.Connection.WriteControl(
@@ -95,7 +92,6 @@ func (m *Manager) ServeWS(c *fiber.Ctx) error {
 			client.CloseConnection("Connection lifetime exceeded")
 		})
 
-		// Memorizza il timer per consentirne la cancellazione se la connessione viene chiusa prima
 		client.ConnectionTimer = connectionTimer
 
 		go client.ReadMessages()
@@ -117,12 +113,10 @@ func (m *Manager) RemoveClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.Clients[client]; ok {
-		// Ferma il timer della connessione se è stato impostato
 		if client.ConnectionTimer != nil {
 			client.ConnectionTimer.Stop()
 		}
 
-		// Chiude la connessione in modo sicuro
 		err := client.Connection.WriteControl(
 			websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.CloseNormalClosure, "Server closing connection"),

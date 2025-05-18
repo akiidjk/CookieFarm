@@ -57,17 +57,18 @@
 - [x] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
 
 ## RELEASE 1.1
+- [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte) @Matte
+- [ ] api/button to send flags, instead of waiting the timer @akiidjk
+- [ ] api/button to delete/remove the flag queue @akiidjk
+- [ ] Filtri, Search flag, Sort @suga
+- [ ] Auto Reload @akiidjk
+- [ ] Compatibilità windows/macos @Dabi
+- [ ] Config Reloader (hot realod of config file || button to reload) @akiidjk
+- [ ] Tutorial nella dashboard @suga
+- [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
+- [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit @suga
 - [x] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit !!!! PRIORITY
-- [ ] Implementazione websocket da client a server !!!! PRIORITY
-- [ ] Config Reloader (hot realod of config file || button to reload)
-- [ ] api/button to send flags, instead of waiting the timer
-- [ ] api/button to delete/remove the flag queue
-- [ ] Filtri, Search flag, Sort, Reload
-- [ ] Compatibilità windows/macos
-- [ ] Tutorial nella dashboard
-- [ ] Possibilità di scaricare dal server il client
-- [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte)
-- [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit
+- [X] Implementazione websocket da client a server !!!! PRIORITY
 - [x] Inserire la porta non nell'exploit ma come argomento dell'exploiter
 - [x] Fornire il numero del team e il nome del servizio nella funzione
 

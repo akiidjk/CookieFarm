@@ -31,7 +31,7 @@ func ParseLine(line string) (models.Flag, string, error) {
 	case "success":
 		return models.Flag{
 			FlagCode:     out.FlagCode,
-			ServiceName:  utils.MapPortToService(out.PortService),
+			ServiceName:  out.NameService,
 			PortService:  out.PortService,
 			SubmitTime:   uint64(time.Now().Unix()),
 			ResponseTime: 0,

@@ -35,7 +35,7 @@ from utils.exploiter_manager import exploit_manager
 import requests
 
 @exploit_manager
-def exploit(ip: str, port: int):
+def exploit(ip: str, port: int, name: str):
     r = requests.get(f"http://{ip}:{port}/get-flag")
     flag = r.text()
     return flag
@@ -69,7 +69,7 @@ Follow these steps to run your exploit with the client:
 3. Execute the following command:
 
    ```bash
-   cookieclient -e ./<exploit_name>.py -b <server_url> -p <server_password> -t <tick_time> -T <thread_count> -d
+   cookieclient -e ./<exploit_name>.py -b <server_url> -P <server_password> -p <service_port> -t <tick_time> -T <thread_count> -d
    ```
 
 ### 🔍 Command Arguments
@@ -88,7 +88,7 @@ Follow these steps to run your exploit with the client:
 ### 📂 Example Run
 
 ```bash
-cookieclient -e ./my_exploit.py -b http://10.10.23.1:8080 -p Str0ng_p4ssw0rd -t 120 -T 5 -d
+cookieclient -e ./my_exploit.py -b http://10.10.23.1:8080 -P Str0ng_p4ssw0rd -p 8080 -t 120 -T 5 -d
 ```
 
 This example runs `my_exploit.py` in debug mode every 120 seconds using 5 threads, sending the obtained flags to `http://10.10.23.1:8080`, using the password `Str0ng_p4ssw0rd`.

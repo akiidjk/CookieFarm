@@ -1,9 +1,9 @@
 BIN_DIR := ./bin
-CMD_DIR := ./cmd
+CMD_DIR := ./
 LOGS_DIR := ./logs
 MAIN_FILE := ./main.go
 BINARY_NAME := ./cookieclient
-VERSION := 0.1.0
+VERSION := 1.1.0
 
 RESET := \033[0m
 BOLD := \033[1m

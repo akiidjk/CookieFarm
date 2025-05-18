@@ -1,7 +1,7 @@
-// Package main is the entry point for the CookieFarm client,
+// Package cmd contains commands for the CookieFarm client,
 // responsible for initializing configuration, validating input,
 // and executing exploits in a loop.
-package main
+package cmd
 
 import (
 	_ "embed"
@@ -17,8 +17,17 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/submitter"
 	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/rs/zerolog"
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 )
+
+var attackCmd = &cobra.Command{
+	Use:   "attack",
+	Short: "Attack the other team with a exploit",
+	Long:  `This command allows you to attack the other team with a exploit. You can specify the exploit path and the server host.`, // Da finire
+	// Uncomment the following line if your bare application
+	// has an action associated with it:
+	Run: attack,
+}
 
 var logPath string // Path to the generated log file
 
@@ -29,14 +38,15 @@ var banner string
 func init() {
 	fmt.Println(banner)
 
-	config.Args.ExploitPath = pflag.StringP("exploit", "e", "", "Path to the exploit file to execute")
-	config.Args.Debug = pflag.BoolP("debug", "D", false, "Enable debug logging")
-	config.Args.Password = pflag.StringP("password", "P", "", "Password for authenticating to the server")
-	config.Args.Port = pflag.Uint16P("port", "p", 0, "Service Port to attack")
-	config.HostServer = pflag.StringP("host", "h", "", "Host of the cookieserver")
-	config.Args.Detach = pflag.BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")
-	config.Args.TickTime = pflag.IntP("tick", "t", 120, "Interval in seconds between exploit executions")
-	config.Args.ThreadCount = pflag.IntP("thread", "T", 5, "Number of concurrent threads to run the exploit with")
+	rootCmd.AddCommand(attackCmd)
+	config.Args.ExploitPath = attackCmd.Flags().StringP("exploit", "e", "", "Path to the exploit file to execute")
+	config.Args.Debug = attackCmd.Flags().BoolP("debug", "D", false, "Enable debug logging")
+	config.Args.Password = attackCmd.Flags().StringP("password", "P", "", "Password for authenticating to the server")
+	config.Args.Port = attackCmd.Flags().Uint16P("port", "p", 0, "Service Port to attack")
+	config.HostServer = attackCmd.Flags().StringP("host", "H", "", "Host of the cookieserver")
+	config.Args.Detach = attackCmd.Flags().BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")
+	config.Args.TickTime = attackCmd.Flags().IntP("tick", "t", 120, "Interval in seconds between exploit executions")
+	config.Args.ThreadCount = attackCmd.Flags().IntP("thread", "T", 5, "Number of concurrent threads to run the exploit with")
 }
 
 // SetupClient handles the full initialization process:
@@ -46,8 +56,6 @@ func init() {
 // - Authenticate with the server
 // - Sync client configuration
 func setupClient() error {
-	pflag.Parse()
-
 	if *config.Args.Detach {
 		fmt.Println(utils.Blue + "[INFO]" + utils.Reset + " | Detaching from terminal")
 		utils.Detach()
@@ -88,7 +96,7 @@ func setupClient() error {
 
 // Main is the main execution flow of the CookieFarm client.
 // It handles setup, starts the exploit, and manages the flag submission process.
-func main() {
+func attack(cmd *cobra.Command, args []string) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {

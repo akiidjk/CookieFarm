@@ -68,8 +68,8 @@
 - [ ] Possibilità di scaricare dal server il client
 - [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte)
 - [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit
-- [ ] Inserire la porta non nell'exploit ma come argomento dell'exploiter
-- [ ] Fornire il numero del team e il nome del servizio nella funzione
+- [x] Inserire la porta non nell'exploit ma come argomento dell'exploiter
+- [x] Fornire il numero del team e il nome del servizio nella funzione
 
 ## RELEASE 1.2
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

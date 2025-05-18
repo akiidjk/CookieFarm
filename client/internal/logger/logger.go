@@ -33,7 +33,7 @@ func Setup(level string) string {
 	_ = os.MkdirAll("./logs", 0o755)
 	logPath := filepath.Join("logs", "clientfarm-"+strconv.Itoa(int(time.Now().UnixMilli()))) + ".log"
 
-	logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0666)
+	logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0o666)
 	if err != nil {
 		panic("cannot create log file: " + err.Error())
 	}

@@ -15,8 +15,9 @@ import (
 var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Generate a new exploit template",
-	Long:  `Generate a new exploit template for the CookieFarm client. This command initializes a structured exploit template file in your specified directory with all necessary components for immediate use.`,
-	Run:   Create,
+	Long: `Generate a new exploit template for the CookieFarm client.
+	This command initializes a structured exploit template file in your specified directory with all necessary components for immediate use.`,
+	Run: Create,
 }
 
 var (
@@ -35,16 +36,16 @@ func init() {
 func Create(cmd *cobra.Command, args []string) {
 	logger.Log.Debug().Str("Exploit name", name).Str("Exploit path", path).Msg("Creating exploit template")
 	if !strings.HasSuffix(name, ".py") {
-		name = name + ".py"
+		name += ".py"
 	}
-	final_path := filepath.Join(path, name)
-	exploit_file, err := os.OpenFile(final_path, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0o777)
+	finalPath := filepath.Join(path, name)
+	exploitFile, err := os.OpenFile(finalPath, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0o777)
 	if err != nil {
 		fmt.Println("Errore durante la creazione del file:", err.Error())
 		return
 	}
-	exploit_file.Write(config.ExploitTemplate)
-	defer exploit_file.Close()
+	exploitFile.Write(config.ExploitTemplate)
+	defer exploitFile.Close()
 
-	logger.Log.Info().Str("Exploit path", final_path).Msg("File creato con successo")
+	logger.Log.Info().Str("Exploit path", finalPath).Msg("File creato con successo")
 }

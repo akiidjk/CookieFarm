@@ -27,7 +27,7 @@ var attackCmd = &cobra.Command{
 }
 
 // Path to the generated log file, accessible from root command
-var logPath string 
+var logPath string
 
 // init initializes all command-line flags and binds them to the args struct.
 func init() {

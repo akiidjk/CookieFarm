@@ -73,25 +73,11 @@ func GetExecutableDir() string {
 
 // ValidateArgs validates the arguments passed to the program.
 func ValidateArgs(args models.Args) error {
-	if *args.ExploitPath == "" {
-		return errors.New("missing required --exploit argument")
-	}
-
-	if *config.HostServer == "" {
-		return errors.New("missing required --base_url_server argument")
-	}
-	if *args.Password == "" {
-		return errors.New("missing required --password argument")
-	}
-	if *args.Port == 0 {
-		return errors.New("missing required --port argument")
-	}
-
-	if *args.TickTime < 1 {
+	if args.TickTime < 1 {
 		return errors.New("tick time must be at least 1")
 	}
 
-	exploitPath, err := filepath.Abs(*args.ExploitPath)
+	exploitPath, err := filepath.Abs(args.ExploitPath)
 	if err != nil {
 		return fmt.Errorf("error resolving exploit path: %v", err)
 	}

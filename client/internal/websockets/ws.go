@@ -129,7 +129,7 @@ func GetConnection() (*websocket.Conn, error) {
 	}
 
 	for attempts := 0; attempts < maxAttempts; attempts++ {
-		conn, _, err = dialer.Dial("ws://"+*config.HostServer+"/ws", http.Header{
+		conn, _, err = dialer.Dial("ws://"+config.HostServer+"/ws", http.Header{
 			"Cookie": []string{"token=" + config.Token},
 		})
 
@@ -152,7 +152,7 @@ func GetConnection() (*websocket.Conn, error) {
 
 		if websocket.ErrBadHandshake == err {
 			logger.Log.Error().Err(err).Msg("Bad handshake, retrying login...")
-			config.Token, err = api.Login(*config.Args.Password)
+			config.Token, err = api.Login(config.Args.Password)
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to refresh token")
 				circuitBreaker.RecordFailure()

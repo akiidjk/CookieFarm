@@ -6,6 +6,8 @@ import (
 
 	_ "embed"
 
+	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +17,7 @@ var rootCmd = &cobra.Command{
 	Short: "The client cli for CookieFarm",
 	Long: `CookieFarm is a exploiter writed by the team ByteTheCookies for CyberChallenge
 	competition. This is the client cli for the CookieFarm server for attack the teams with exploits.`, // Da migliorare
+	Version: "v1.1.0",
 }
 
 func Execute() {
@@ -28,5 +31,14 @@ func Execute() {
 var banner string
 
 func init() {
-	fmt.Println(banner)
+	rootCmd.PersistentFlags().BoolVarP(&config.Args.Debug, "debug", "D", false, "Enable debug logging")
+
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		if config.Args.Debug {
+			logPath = logger.Setup("debug")
+		} else {
+			logPath = logger.Setup("info")
+		}
+		fmt.Println(banner)
+	}
 }

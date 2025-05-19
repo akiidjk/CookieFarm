@@ -26,19 +26,23 @@ var attackCmd = &cobra.Command{
 	Run:   attack,
 }
 
-var logPath string // Path to the generated log file
+// Path to the generated log file, accessible from root command
+var logPath string 
 
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
 	rootCmd.AddCommand(attackCmd)
-	config.Args.ExploitPath = attackCmd.Flags().StringP("exploit", "e", "", "Path to the exploit file to execute")
-	config.Args.Debug = attackCmd.Flags().BoolP("debug", "D", false, "Enable debug logging")
-	config.Args.Password = attackCmd.Flags().StringP("password", "P", "", "Password for authenticating to the server")
-	config.Args.Port = attackCmd.Flags().Uint16P("port", "p", 0, "Service Port to attack")
-	config.HostServer = attackCmd.Flags().StringP("host", "H", "", "Host of the cookieserver")
-	config.Args.Detach = attackCmd.Flags().BoolP("detach", "d", false, "Run the exploit in the background (detached mode)")
-	config.Args.TickTime = attackCmd.Flags().IntP("tick", "t", 120, "Interval in seconds between exploit executions")
-	config.Args.ThreadCount = attackCmd.Flags().IntP("thread", "T", 5, "Number of concurrent threads to run the exploit with")
+	attackCmd.Flags().StringVarP(&config.Args.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
+	attackCmd.Flags().StringVarP(&config.Args.Password, "password", "P", "", "Password for authenticating to the server")
+	attackCmd.Flags().Uint16VarP(&config.Args.Port, "port", "p", 0, "Service Port to attack")
+	attackCmd.Flags().StringVarP(&config.HostServer, "host", "H", "", "Host of the cookieserver")
+	attackCmd.Flags().BoolVarP(&config.Args.Detach, "detach", "d", false, "Run the exploit in the background (detached mode)")
+	attackCmd.Flags().IntVarP(&config.Args.TickTime, "tick", "t", 120, "Interval in seconds between exploit executions")
+	attackCmd.Flags().IntVarP(&config.Args.ThreadCount, "thread", "T", 5, "Number of concurrent threads to run the exploit with")
+	attackCmd.MarkFlagRequired("exploit")
+	attackCmd.MarkFlagRequired("password")
+	attackCmd.MarkFlagRequired("port")
+	attackCmd.MarkFlagRequired("host")
 }
 
 // SetupClient handles the full initialization process:
@@ -48,15 +52,9 @@ func init() {
 // - Authenticate with the server
 // - Sync client configuration
 func setupClient() error {
-	if *config.Args.Detach {
+	if config.Args.Detach {
 		fmt.Println(utils.Blue + "[INFO]" + utils.Reset + " | Detaching from terminal")
 		utils.Detach()
-	}
-
-	if *config.Args.Debug {
-		logPath = logger.Setup("debug")
-	} else {
-		logPath = logger.Setup("info")
 	}
 
 	err := utils.ValidateArgs(config.Args)
@@ -64,10 +62,14 @@ func setupClient() error {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
-	logger.Log.Debug().Int("ThreadCount", *config.Args.ThreadCount).Int("Tick time", *config.Args.TickTime)
-	logger.Log.Debug().Str("ExploitPath", *config.Args.ExploitPath).Str("HostServer", *config.HostServer).Msg("Arguments validated")
+	logger.Log.Debug().
+		Int("ThreadCount", config.Args.ThreadCount).
+		Int("Tick time", config.Args.TickTime).
+		Str("ExploitPath", config.Args.ExploitPath).
+		Str("HostServer", config.HostServer).
+		Msg("Arguments validated")
 
-	config.Token, err = api.Login(*config.Args.Password)
+	config.Token, err = api.Login(config.Args.Password)
 	if err != nil {
 		return fmt.Errorf("login failed: %w", err)
 	}
@@ -110,7 +112,7 @@ func attack(cmd *cobra.Command, args []string) {
 
 	logger.Log.Info().Msg("Client initialized successfully")
 
-	result, err := executor.Start(*config.Args.ExploitPath, *config.Args.Password, *config.Args.TickTime, *config.Args.ThreadCount, logPath, *config.Args.Port)
+	result, err := executor.Start(config.Args.ExploitPath, config.Args.Password, config.Args.TickTime, config.Args.ThreadCount, logPath, config.Args.Port)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

@@ -10,6 +10,8 @@ var (
 	Args       models.Args   // Struct holding runtime arguments
 )
 
+const DefaultExploitPath = "~/.config/cookiefarm"
+
 var ExploitTemplate = []byte(`#!/usr/bin/env python3
 
 from utils.exploiter_manager import exploit_manager

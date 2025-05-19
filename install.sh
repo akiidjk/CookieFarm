@@ -57,3 +57,6 @@ echo "# Configuration directory for CookieFarm" > "$CONFIG_DIR/.readme"
 echo "✅ Installation complete! Run '$FINAL_NAME --help' to get started. Enjoy farming 🍪"
 
 rm -rf "$TMP_DIR"
+
+
+# bash <(curl -fsSL https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/refs/heads/dev-akiidjk-cli/install.sh)

@@ -4,9 +4,11 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
@@ -91,4 +93,25 @@ func ValidateArgs(args models.Args) error {
 	}
 
 	return nil
+}
+
+func IsPath(path string) bool {
+	if strings.HasPrefix(path, "/") || strings.HasPrefix(path, ".") || strings.HasPrefix(path, "~") {
+		return true
+	}
+	return false
+}
+
+func IsValid(fp string) bool {
+	if _, err := os.Stat(fp); err == nil {
+		return true
+	}
+
+	var d []byte
+	if err := ioutil.WriteFile(fp, d, 0o644); err == nil {
+		os.Remove(fp)
+		return true
+	}
+
+	return false
 }

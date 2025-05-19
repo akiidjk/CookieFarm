@@ -35,9 +35,9 @@ func init() {
 
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if config.Args.Debug {
-			logPath = logger.Setup("debug")
+			logger.Setup("debug")
 		} else {
-			logPath = logger.Setup("info")
+			logger.Setup("info")
 		}
 		fmt.Println(banner)
 	}

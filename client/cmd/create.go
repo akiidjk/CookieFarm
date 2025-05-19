@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
@@ -30,9 +29,9 @@ func init() {
 }
 
 func Create(cmd *cobra.Command, args []string) {
-	path, err := filepath.Abs(config.DefaultExploitPath)
+	path, err := utils.ExpandTilde(config.DefaultExploitPath)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error getting absolute path")
+		logger.Log.Error().Err(err).Msg("Error expanding path")
 		return
 	}
 
@@ -45,16 +44,20 @@ func Create(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
+
+	name, err = utils.NormalizeNamePathExploit(name)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error normalizing exploit name")
+		return
+	}
+
 	if utils.IsPath(name) {
 		path = name
 	} else {
 		path = filepath.Join(path, name)
 	}
 
-	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
-	if !strings.HasSuffix(name, ".py") {
-		name += ".py"
-	}
 	exploitFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0o777)
 	if err != nil {
 		fmt.Println("Errore durante la creazione del file:", err.Error())

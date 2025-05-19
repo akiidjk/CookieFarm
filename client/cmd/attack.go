@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
@@ -25,9 +26,6 @@ var attackCmd = &cobra.Command{
 	Long:  `This command allows you to attack the other team with a exploit. You can specify the exploit path and the server host.`, // Da finire
 	Run:   attack,
 }
-
-// Path to the generated log file, accessible from root command
-var logPath string
 
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
@@ -52,12 +50,31 @@ func init() {
 // - Authenticate with the server
 // - Sync client configuration
 func setupClient() error {
+	var err error
+
 	if config.Args.Detach {
 		fmt.Println(utils.Blue + "[INFO]" + utils.Reset + " | Detaching from terminal")
 		utils.Detach()
 	}
 
-	err := utils.ValidateArgs(config.Args)
+	config.Args.ExploitPath, err = utils.NormalizeNamePathExploit(config.Args.ExploitPath)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error normalizing exploit name")
+		return err
+	}
+
+	if !utils.IsPath(config.Args.ExploitPath) {
+		defaultPath, err := utils.ExpandTilde(config.DefaultExploitPath)
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("Error expanding path")
+			return err
+		}
+		config.Args.ExploitPath = filepath.Join(defaultPath, config.Args.ExploitPath)
+	}
+
+	logger.Log.Debug().Str("Exploit path", config.Args.ExploitPath).Msg("Using default exploit path")
+
+	err = utils.ValidateArgs(config.Args)
 	if err != nil {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
@@ -112,7 +129,7 @@ func attack(cmd *cobra.Command, args []string) {
 
 	logger.Log.Info().Msg("Client initialized successfully")
 
-	result, err := executor.Start(config.Args.ExploitPath, config.Args.Password, config.Args.TickTime, config.Args.ThreadCount, logPath, config.Args.Port)
+	result, err := executor.Start(config.Args.ExploitPath, config.Args.Password, config.Args.TickTime, config.Args.ThreadCount, config.Args.Port)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

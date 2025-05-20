@@ -2,7 +2,6 @@ package cmd
 
 import (
 	_ "embed"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -60,11 +59,11 @@ func Create(cmd *cobra.Command, args []string) {
 
 	exploitFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0o777)
 	if err != nil {
-		fmt.Println("Errore durante la creazione del file:", err.Error())
+		logger.Log.Error().Err(err).Msg("Error creating exploit file")
 		return
 	}
 	exploitFile.Write(config.ExploitTemplate)
 	defer exploitFile.Close()
 
-	logger.Log.Info().Str("Exploit path", path).Msg("File creato con successo")
+	logger.Log.Info().Str("Exploit path", path).Msg("File created successfully")
 }

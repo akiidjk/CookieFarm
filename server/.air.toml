@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
 exclude_dir = ["tmp", "vendor", "testdata", "node_modules"]
 args_bin = []
-bin = "./bin/cookieserver --debug"
+bin = "./bin/cookieserver -c ./config.yml --debug"
 cmd = "make minify; make build"
 delay = 1000
 exclude_file = ["public/js/output.min.js"]

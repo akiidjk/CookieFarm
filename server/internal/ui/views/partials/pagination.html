@@ -79,7 +79,7 @@
         <select
           id="hs-hidden-select"
           onchange="window.location.href = `?limit=${this.value}`"
-          class="shadow-sm border-2 border-solid border-primary py-3 px-4 pe-9 block w-full rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-700 dark:border-neutral-700 dark:text-white dark:placeholder-white-500 dark:focus:ring-neutral-600"
+          class="select"
         >
           <option disabled selected>{{.Pagination.Limit}}</option>
           <option value="20">20</option>

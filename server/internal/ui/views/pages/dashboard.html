@@ -28,6 +28,28 @@
            >
         Submit
         </button>
+        <div class="flex items-center gap-2 self-center">
+          <label for="autoreload-toggle" class="text-sm text-gray-700 dark:text-gray-300">AutoReload</label>
+          <input
+            type="checkbox"5
+            id="autoreload-toggle"
+            class="checkbox"
+            onchange="toggleAutoReload()"
+          />
+
+          <select
+            id="autoreload-interval"
+            class="select min-w-[100px]"
+            onchange="updateAutoReloadInterval()"
+            disabled
+          >
+            <option value="5000">5s</option>
+            <option value="10000" selected>10s</option>
+            <option value="60000">1m</option>
+            <option value="120000">2m</option>
+          </select>
+        </div>
+
         <p id="flag-submission-status" class="text-sm mt-2 ml-2 text-gray-600 dark:text-neutral-400 self-center">
            <!-- Status -->
         </p>
@@ -39,63 +61,63 @@
    <div class="-m-1.5 overflow-x-auto">
       <div class="p-5 px-16 min-w-full inline-block align-middle">
          <div class="flex flex-col max-h-[85vh] border border-gray-200 dark:border-neutral-700 rounded-t-lg  ">
-            <div class="overflow-y-auto flex-1 rounded-lg">
+            <div class="overflow-y-auto flex-1 rounded-lg relative">
                <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 relative">
-                  <thead class="bg-gray-50 dark:bg-neutral-700 sticky top-0 ">
+                  <thead class="bg-gray-50 dark:bg-neutral-700 sticky top-0 z-10">
                      <tr>
                         <th class="th">
-                            <div class="flex">
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M5 21V4h9l.4 2H20v10h-7l-.4-2H7v7z"/>
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="relative"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M5 21V4h9l.4 2H20v10h-7l-.4-2H7v7z"/>
                                     </svg>
                                 </div>
                                 <div class="pl-2">Flag</div>
                             </div>
                         </th>
                         <th class="th">
-                            <div class="flex">
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M3 20.077V4.616q0-.691.463-1.153T4.615 3h14.77q.69 0 1.152.463T21 4.616v10.769q0 .69-.463 1.153T19.385 17H6.077zM6.5 13.5h7v-1h-7zm0-3h11v-1h-11zm0-3h11v-1h-11z"/></svg>
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="relative"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M3 20.077V4.616q0-.691.463-1.153T4.615 3h14.77q.69 0 1.152.463T21 4.616v10.769q0 .69-.463 1.153T19.385 17H6.077zM6.5 13.5h7v-1h-7zm0-3h11v-1h-11zm0-3h11v-1h-11z"/></svg>
                                 </div>
                                 <div class="pl-2">Msg</div>
                             </div>
                         </th>
                         <th class="th">
-                            <div class="flex">
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M3 19q-.425 0-.712-.288T2 18t.288-.712T3 17h18q.425 0 .713.288T22 18t-.288.713T21 19zm0-3v-1q0-3.2 1.963-5.65T10 6.25V6q0-.825.588-1.412T12 4t1.413.588T14 6v.25q3.1.65 5.05 3.1T21 15v1z"/></svg>
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="relative"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M3 19q-.425 0-.712-.288T2 18t.288-.712T3 17h18q.425 0 .713.288T22 18t-.288.713T21 19zm0-3v-1q0-3.2 1.963-5.65T10 6.25V6q0-.825.588-1.412T12 4t1.413.588T14 6v.25q3.1.65 5.05 3.1T21 15v1z"/></svg>
                                 </div>
                                 <div class="pl-2">Service</div>
                             </div>
                         </th>
                         <th class="th">
-                            <div class="flex">
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M4.25 14q.15.575.363 1.1t.487 1q.225.375.175.8t-.325.7t-.688.263t-.637-.363q-.525-.8-.888-1.65t-.562-1.8q-.1-.4.163-.725T3.025 13t.763.275t.462.725m.85-6.1q-.275.475-.487 1T4.25 10q-.125.45-.462.725T3.025 11t-.687-.3t-.163-.7q.2-.975.575-1.875t.9-1.65q.225-.325.625-.337t.675.262t.325.7t-.175.8m2.775 10.95q.5.3 1.025.525t1.075.375q.425.125.7.45t.275.75t-.3.675t-.7.175q-.925-.2-1.787-.55T6.5 20.375q-.35-.225-.387-.638t.237-.712q.3-.3.725-.35t.8.175m2.15-14.6q-.55.15-1.062.363t-1.013.512q-.4.225-.837.188t-.738-.338t-.275-.7t.375-.625q.825-.525 1.713-.887t1.837-.563q.375-.075.675.175t.3.675t-.275.75t-.7.45M12 15q-1.25 0-2.125-.875T9 12t.875-2.125T12 9t2.125.875T15 12t-.875 2.125T12 15m4.075 3.875q.375-.225.813-.187t.737.337t.275.713t-.375.612q-.8.525-1.7.888t-1.85.562q-.4.075-.712-.175t-.313-.675t.288-.75t.712-.45q.575-.15 1.1-.362t1.025-.513m-2.1-14.625q-.425-.125-.7-.45T13 3.05t.3-.675t.675-.175q.95.2 1.85.563t1.7.887q.35.225.375.625t-.25.7q-.3.3-.725.35T16.1 5.15q-.525-.3-1.05-.525t-1.075-.375m5.775 9.725q.125-.425.463-.7t.762-.275t.687.325t.163.725q-.2.95-.587 1.825T20.35 17.5q-.225.325-.625.35t-.675-.25t-.325-.712t.175-.813q.275-.5.488-1.012t.362-1.088M18.9 7.9q-.225-.375-.175-.8t.325-.7t.675-.25t.625.35q.55.8.925 1.675T21.85 10q.075.4-.188.7t-.687.3t-.763-.275T19.75 10q-.15-.575-.362-1.1t-.488-1"/></svg>
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="relative"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M4.25 14q.15.575.363 1.1t.487 1q.225.375.175.8t-.325.7t-.688.263t-.637-.363q-.525-.8-.888-1.65t-.562-1.8q-.1-.4.163-.725T3.025 13t.763.275t.462.725m.85-6.1q-.275.475-.487 1T4.25 10q-.125.45-.462.725T3.025 11t-.687-.3t-.163-.7q.2-.975.575-1.875t.9-1.65q.225-.325.625-.337t.675.262t.325.7t-.175.8m2.775 10.95q.5.3 1.025.525t1.075.375q.425.125.7.45t.275.75t-.3.675t-.7.175q-.925-.2-1.787-.55T6.5 20.375q-.35-.225-.387-.638t.237-.712q.3-.3.725-.35t.8.175m2.15-14.6q-.55.15-1.062.363t-1.013.512q-.4.225-.837.188t-.738-.338t-.275-.7t.375-.625q.825-.525 1.713-.887t1.837-.563q.375-.075.675.175t.3.675t-.275.75t-.7.45M12 15q-1.25 0-2.125-.875T9 12t.875-2.125T12 9t2.125.875T15 12t-.875 2.125T12 15m4.075 3.875q.375-.225.813-.187t.737.337t.275.713t-.375.612q-.8.525-1.7.888t-1.85.562q-.4.075-.712-.175t-.313-.675t.288-.75t.712-.45q.575-.15 1.1-.362t1.025-.513m-2.1-14.625q-.425-.125-.7-.45T13 3.05t.3-.675t.675-.175q.95.2 1.85.563t1.7.887q.35.225.375.625t-.25.7q-.3.3-.725.35T16.1 5.15q-.525-.3-1.05-.525t-1.075-.375m5.775 9.725q.125-.425.463-.7t.762-.275t.687.325t.163.725q-.2.95-.587 1.825T20.35 17.5q-.225.325-.625.35t-.675-.25t-.325-.712t.175-.813q.275-.5.488-1.012t.362-1.088M18.9 7.9q-.225-.375-.175-.8t.325-.7t.675-.25t.625.35q.55.8.925 1.675T21.85 10q.075.4-.188.7t-.687.3t-.763-.275T19.75 10q-.15-.575-.362-1.1t-.488-1"/></svg>
                                 </div>
                                 <div class="pl-2">Status</div>
                             </div>
                         </th>
                         <th class="th">
-                            <div class="flex">
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M4.4 19.425q-.5.2-.95-.088T3 18.5V14l8-2l-8-2V5.5q0-.55.45-.837t.95-.088l15.4 6.5q.625.275.625.925t-.625.925z"/></svg>
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="relative"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M4.4 19.425q-.5.2-.95-.088T3 18.5V14l8-2l-8-2V5.5q0-.55.45-.837t.95-.088l15.4 6.5q.625.275.625.925t-.625.925z"/></svg>
                                 </div>
                                 <div class="pl-2">Submit Time</div>
                             </div>
                         </th>
                         <th class="th">
-                            <div class="flex">
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M8 18h1.5v-5H12l1 2h5V9h-3l-1-2H8zm4 4q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"/></svg>
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="relative"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M8 18h1.5v-5H12l1 2h5V9h-3l-1-2H8zm4 4q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"/></svg>
                                 </div>
                                 <div class="pl-2">Response Time</div>
                             </div>
                         </th>
                         <th class="th">
-                            <div class="flex">
-                                <div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M12 11q1.65 0 2.825-1.175T16 7V4H8v3q0 1.65 1.175 2.825T12 11M4 22v-2h2v-3q0-1.525.713-2.863T8.7 12q-1.275-.8-1.987-2.137T6 7V4H4V2h16v2h-2v3q0 1.525-.712 2.863T15.3 12q1.275.8 1.988 2.138T18 17v3h2v2z"/></svg>
+                            <div class="flex items-center">
+                                <div class="relative">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="relative"><!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="M12 11q1.65 0 2.825-1.175T16 7V4H8v3q0 1.65 1.175 2.825T12 11M4 22v-2h2v-3q0-1.525.713-2.863T8.7 12q-1.275-.8-1.987-2.137T6 7V4H4V2h16v2h-2v3q0 1.525-.712 2.863T15.3 12q1.275.8 1.988 2.138T18 17v3h2v2z"/></svg>
                                 </div>
                                 <div class="pl-2">Duration</div>
                             </div>
@@ -136,7 +158,7 @@
 </div>
 
 <script type="module" defer>
-   import { sendFlag } from '/js/output.min.js';
+   import { sendFlag, deleteFlag } from '/js/output.min.js';
 
    function submitFlag() {
        const flagInput = document.getElementById('flag-input');
@@ -168,6 +190,7 @@
            flagInput.value = '';
            statusEl.textContent = 'Flag submitted successfully!';
            htmx.trigger(document.body, 'flagsUpdated');
+           reloadData()
          })
          .catch(err => {
            console.error(err);
@@ -175,6 +198,35 @@
            statusEl.classList.add('text-red-500');
          });
      }
+
+     function removeFlag() {
+         const flagInput = document.getElementById('flag-input');
+         const statusEl = document.getElementById('flag-submission-status');
+         const code = flagInput.value.trim();
+
+         if (!code) {
+           statusEl.textContent = 'Please enter a flag';
+           return;
+         }
+
+         statusEl.textContent = 'Deleting…';
+         deleteFlag(flagInput.value)
+           .then(res => {
+             if (!res.ok) throw new Error('Deletion failed');
+             return res.json();
+           })
+           .then(() => {
+             flagInput.value = '';
+             statusEl.textContent = 'Flag deleted successfully!';
+             htmx.trigger(document.body, 'flagsUpdated');
+             reloadData()
+           })
+           .catch(err => {
+             console.error(err);
+             statusEl.textContent = 'Error during deleting';
+             statusEl.classList.add('text-red-500');
+           });
+       }
 
    function reloadData() {
        const limit = {{.Limit}};
@@ -192,8 +244,67 @@
        });
    }
 
+   let autoReloadTimer = null;
+
+   function toggleAutoReload() {
+     const isChecked = document.getElementById('autoreload-toggle').checked;
+     const intervalSelect = document.getElementById('autoreload-interval');
+     intervalSelect.disabled = !isChecked;
+
+     localStorage.setItem('autoreload-enabled', isChecked);
+
+     if (isChecked) {
+       const interval = parseInt(intervalSelect.value, 10);
+       startAutoReload(interval);
+     } else {
+       stopAutoReload();
+     }
+   }
+
+   function startAutoReload(interval) {
+     stopAutoReload(); // Avoid multiple intervals
+     autoReloadTimer = setInterval(() => {
+       reloadData();
+     }, interval);
+   }
+
+   function stopAutoReload() {
+     if (autoReloadTimer) {
+       clearInterval(autoReloadTimer);
+       autoReloadTimer = null;
+     }
+   }
+
+   function updateAutoReloadInterval() {
+     const interval = parseInt(document.getElementById('autoreload-interval').value, 10);
+     localStorage.setItem('autoreload-interval', interval);
+     if (document.getElementById('autoreload-toggle').checked) {
+       startAutoReload(interval);
+     }
+   }
+
+   // Restore settings on load
+   document.addEventListener("DOMContentLoaded", () => {
+     const savedEnabled = localStorage.getItem('autoreload-enabled') === 'true';
+     const savedInterval = parseInt(localStorage.getItem('autoreload-interval'), 10) || 10000;
+
+     const toggleEl = document.getElementById('autoreload-toggle');
+     const intervalEl = document.getElementById('autoreload-interval');
+
+     toggleEl.checked = savedEnabled;
+     intervalEl.value = savedInterval;
+     intervalEl.disabled = !savedEnabled;
+
+     if (savedEnabled) {
+       startAutoReload(savedInterval);
+     }
+   });
+
     window.reloadData = reloadData;
     window.SubmitFlag = submitFlag;
+    window.toggleAutoReload = toggleAutoReload;
+    window.updateAutoReloadInterval = updateAutoReloadInterval;
+    window.DeleteFlag = removeFlag;
 
     document.addEventListener("DOMContentLoaded", () => {
       const limit = {{.Limit}};

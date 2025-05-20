@@ -58,10 +58,10 @@
 
 ## RELEASE 1.1
 - [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte) @Matte
-- [ ] api/button to send flags, instead of waiting the timer @akiidjk
-- [ ] api/button to delete/remove the flag queue @akiidjk
+- [x] api/button to send flags, instead of waiting the timer @akiidjk
+- [x] api/button to delete/remove the flag queue @akiidjk
 - [ ] Filtri, Search flag, Sort @suga
-- [ ] Auto Reload @akiidjk
+- [x] Auto Reload @akiidjk
 - [ ] Compatibilità windows/macos @Dabi
 - [ ] Config Reloader (hot realod of config file || button to reload) @akiidjk
 - [ ] Tutorial nella dashboard @suga

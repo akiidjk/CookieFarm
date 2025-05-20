@@ -13,14 +13,17 @@ var (
 const DefaultExploitPath = "~/.config/cookiefarm"
 
 var ExploitTemplate = []byte(`#!/usr/bin/env python3
-from cookiefarm import exploiter_manager
+from cookiefarm_exploiter import exploiter_manager
+import requests
 
-@exploit_manager
-def exploit(ip:str, port:int, name: str):
-    # Insert your exploit code here
-    return []  # Return flag (or a list of flags, text containing the flags, HTML page containing the flags)
+@exploiter_manager
+def exploit(ip, port, name_service):
+    # Run your exploit here
+    response = requests.get(f"http://{ip}:{port}/")
 
+    # Just print the flag to stdout
+    print(response.text)
 
-if __name__ == "__main__":
-    exploit()
+# Run from the command line with arguments from CookieFarm
+# python3 myexploit.py <ip_server> <password> <tick_time> <flag_regex> <thread_number> <port> <name_service>
 `)

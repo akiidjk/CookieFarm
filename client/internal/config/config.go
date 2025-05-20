@@ -23,7 +23,4 @@ def exploit(ip, port, name_service):
 
     # Just print the flag to stdout
     print(response.text)
-
-# Run from the command line with arguments from CookieFarm
-# python3 myexploit.py <ip_server> <password> <tick_time> <flag_regex> <thread_number> <port> <name_service>
 `)

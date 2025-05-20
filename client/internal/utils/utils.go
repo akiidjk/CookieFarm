@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
+	"path"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"syscall"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
@@ -24,6 +28,8 @@ const (
 	Gray    = "\033[37m"
 	White   = "\033[97m"
 )
+
+var pathRegex = regexp.MustCompile(`(~)([^/]*)(/?.*)`)
 
 // Detach detaches the current process from the terminal re executing itself.
 func Detach() {
@@ -73,25 +79,11 @@ func GetExecutableDir() string {
 
 // ValidateArgs validates the arguments passed to the program.
 func ValidateArgs(args models.Args) error {
-	if *args.ExploitPath == "" {
-		return errors.New("missing required --exploit argument")
-	}
-
-	if *config.HostServer == "" {
-		return errors.New("missing required --base_url_server argument")
-	}
-	if *args.Password == "" {
-		return errors.New("missing required --password argument")
-	}
-	if *args.Port == 0 {
-		return errors.New("missing required --port argument")
-	}
-
-	if *args.TickTime < 1 {
+	if args.TickTime < 1 {
 		return errors.New("tick time must be at least 1")
 	}
 
-	exploitPath, err := filepath.Abs(*args.ExploitPath)
+	exploitPath, err := filepath.Abs(args.ExploitPath)
 	if err != nil {
 		return fmt.Errorf("error resolving exploit path: %v", err)
 	}
@@ -105,4 +97,77 @@ func ValidateArgs(args models.Args) error {
 	}
 
 	return nil
+}
+
+func IsPath(pathExploit string) bool {
+	if strings.HasPrefix(pathExploit, "/") || strings.HasPrefix(pathExploit, ".") || strings.HasPrefix(pathExploit, "~") {
+		return true
+	}
+	return false
+}
+
+func IsValid(fp string) bool {
+	if _, err := os.Stat(fp); err == nil {
+		return true
+	}
+
+	var d []byte
+	if err := os.WriteFile(fp, d, 0o644); err == nil {
+		os.Remove(fp)
+		return true
+	}
+
+	return false
+}
+
+// Code by @prep on Github https://github.com/prep/tilde
+func ExpandTilde(p string) (string, error) {
+	if len(p) < 1 || p[0] != '~' {
+		return p, nil
+	}
+
+	var tildePath string
+
+	results := pathRegex.FindStringSubmatch(p)[2:]
+	switch results[0] {
+	case "":
+		u, err := user.Current()
+		if err != nil {
+			return "", err
+		}
+
+		tildePath = u.HomeDir
+	case "+":
+		pwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+
+		tildePath = pwd
+	default:
+		u, err := user.Lookup(results[0])
+		if err != nil {
+			return "", err
+		}
+
+		tildePath = u.HomeDir
+	}
+
+	return path.Join(tildePath, results[1]), nil
+}
+
+func NormalizeNamePathExploit(name string) (string, error) {
+	if !strings.HasSuffix(name, ".py") {
+		name += ".py"
+	}
+
+	var err error
+	if strings.HasPrefix(name, "~") {
+		name, err = ExpandTilde(name)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return name, nil
 }

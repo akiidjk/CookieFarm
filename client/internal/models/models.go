@@ -51,13 +51,13 @@ type Config struct {
 // Args represents the command-line arguments or configuration
 // values passed at runtime to control the exploit manager behavior.
 type Args struct {
-	ExploitPath *string `json:"exploit_path"` // Path to the exploit to run
-	Password    *string `json:"password"`     // Authentication password
-	Port        *uint16 `json:"port"`         // Service Port
-	TickTime    *int    `json:"tick_time"`    // Optional custom tick time
-	Debug       *bool   `json:"debug"`        // Enable debug mode if true
-	Detach      *bool   `json:"detach"`       // Run in background if true
-	ThreadCount *int    `json:"thread_count"` // Optional number of concurrent threads (coroutine) to use
+	ExploitPath string `json:"exploit_path"` // Path to the exploit to run
+	Password    string `json:"password"`     // Authentication password
+	Port        uint16 `json:"port"`         // Service Port
+	TickTime    int    `json:"tick_time"`    // Optional custom tick time
+	Debug       bool   `json:"debug"`        // Enable debug mode if true
+	Detach      bool   `json:"detach"`       // Run in background if true
+	ThreadCount int    `json:"thread_count"` // Optional number of concurrent threads (coroutine) to use
 }
 
 // ParsedFlagOutput represents the output of a parsed flag returned

@@ -21,17 +21,16 @@ type ExecutionResult struct {
 }
 
 // Start starts the exploit_manager and listens for flags in stdout.
-func Start(exploitPath, password string, tickTime int, threadCount int, logPath string, port uint16) (*ExecutionResult, error) {
+func Start(exploitPath, password string, tickTime int, threadCount int, port uint16) (*ExecutionResult, error) {
 	cmd := exec.Command(
 		exploitPath,
-		*config.HostServer,
+		config.HostServer,
 		password,
 		strconv.Itoa(tickTime),
 		config.Current.ConfigClient.RegexFlag,
 		strconv.Itoa(threadCount),
 		strconv.Itoa(int(port)),
 		utils.MapPortToService(port),
-		logPath,
 	)
 
 	logger.Log.Debug().

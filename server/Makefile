@@ -3,7 +3,7 @@ CMD_DIR := ./cmd/api
 LOGS_DIR := ./logs
 MAIN_FILE := main.go
 BINARY_NAME := cookieserver
-VERSION := 1.0.0
+VERSION := 1.1.0
 GOOS ?= linux
 GOARCH ?= amd64
 

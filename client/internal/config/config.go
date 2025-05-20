@@ -13,8 +13,7 @@ var (
 const DefaultExploitPath = "~/.config/cookiefarm"
 
 var ExploitTemplate = []byte(`#!/usr/bin/env python3
-
-from utils.exploiter_manager import exploit_manager
+from cookiefarm import exploiter_manager
 
 @exploit_manager
 def exploit(ip:str, port:int, name: str):

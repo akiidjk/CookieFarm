@@ -57,10 +57,10 @@
 - [x] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
 
 ## RELEASE 1.1
-- [ ] api/button to send flags, instead of waiting the timer @akiidjk
-- [ ] api/button to delete/remove the flag queue @akiidjk
+- [x] api/button to send flags, instead of waiting the timer @akiidjk
+- [x] api/button to delete/remove the flag queue @akiidjk
 - [ ] Filtri, Search flag, Sort @suga
-- [ ] Auto Reload @akiidjk
+- [x] Auto Reload @akiidjk
 - [ ] Compatibilità windows/macos @Dabi
 - [ ] Config Reloader (hot realod of config file || button to reload) @akiidjk
 - [ ] Tutorial nella dashboard @suga

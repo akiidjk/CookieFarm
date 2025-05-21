@@ -171,3 +171,23 @@ func HandlePostConfig(c *fiber.Ctx) error {
 		Message: "Configuration updated successfully",
 	})
 }
+
+func HandleDeleteFlag(c *fiber.Ctx) error {
+	flagID := c.Query("flag")
+	if flagID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ResponseError{
+			Error: "Flag ID is required",
+		})
+	}
+
+	if err := database.DeleteFlag(flagID); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to delete flag")
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
+			Error: "Failed to delete flag",
+		})
+	}
+
+	return c.JSON(models.ResponseSuccess{
+		Message: "Flag deleted successfully",
+	})
+}

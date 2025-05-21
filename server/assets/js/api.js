@@ -62,3 +62,11 @@ export async function sendFlag(flag) {
   });
   return res
 }
+
+export async function deleteFlag(flag) {
+  const res = await fetch(`/api/v1/delete-flag?flag=${flag}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  return res
+}

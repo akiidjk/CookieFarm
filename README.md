@@ -2,7 +2,7 @@
   <img width="360px" height="auto" src="assets/logo_mucca.png">
 </div>
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.1-blue)
 ![Language](https://img.shields.io/badge/languages-Go%20%7C%20Python-yellowgreen)
 ![Keywords](https://img.shields.io/badge/keywords-CTF%2C%20Exploiting%2C%20Attack%20Defense-red)
 

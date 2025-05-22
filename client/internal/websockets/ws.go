@@ -13,9 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var (
-	OnNewConfig func()
-)
+var OnNewConfig func()
 
 const (
 	FlagEvent   = "flag"

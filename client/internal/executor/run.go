@@ -20,8 +20,8 @@ import (
 type ExecutionResult struct {
 	Cmd        *exec.Cmd
 	FlagsChan  chan models.Flag
-	stopReader chan struct{} // Segnale di stop
-	done       chan struct{} // Canale di sincronizzazione
+	stopReader chan struct{}
+	done       chan struct{}
 }
 
 var (
@@ -116,22 +116,17 @@ func RestartGlobal() {
 	}()
 }
 
-// Shutdown termina il processo exploit e chiude le goroutine.
+// Shutdown end	the exploit process.
 func (e *ExecutionResult) Shutdown() error {
 	logger.Log.Info().Msg("Shutting down exploit...")
 
-	// Termina il processo exploit
 	if err := e.Cmd.Process.Kill(); err != nil {
 		return fmt.Errorf("failed to kill exploit process: %w", err)
 	}
 
-	// Invia segnale di stop alle goroutine
 	close(e.stopReader)
-
-	// Aspetta che le goroutine finiscano
 	<-e.done
 
-	// Chiudi il canale
 	close(e.FlagsChan)
 
 	logger.Log.Info().Msg("Exploit shutdown completed.")

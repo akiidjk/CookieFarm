@@ -2,106 +2,46 @@
 package websockets
 
 import (
-	"errors"
+	"encoding/json"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
+	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/gorilla/websocket"
 )
 
-const (
-	FlagEvent  = "flag"
-	maxRetries = 3
-	// Circuit breaker constants
-	failureThreshold = 2                // Numero di errori consecutivi prima di aprire il circuito
-	resetTimeout     = 30 * time.Second // Tempo di attesa prima di tentare una nuova connessione
-	halfOpenMaxRetry = 1                // Tentativi durante lo stato half-open
-	// Connection timeouts
-	dialTimeout  = 10 * time.Second // Timeout per la connessione WebSocket
-	writeTimeout = 10 * time.Second // Timeout per la scrittura dei messaggi
+var (
+	OnNewConfig func()
 )
 
-// CircuitState state of the circuit breaker
-type CircuitState int
-
 const (
+	FlagEvent   = "flag"
+	ConfigEvent = "config"
+
+	maxRetries = 3
+
+	// Connection timeouts
+	dialTimeout  = 10 * time.Second // Timeout for WebSocket connection
+	writeTimeout = 10 * time.Second // Timeout for writing message
+
 	StateClosed   CircuitState = iota // Allowed connections
 	StateHalfOpen                     // Allowed connections with limited retries
 	StateOpen                         // Blocked connections
-)
 
-// CircuitBreaker is a struct that implements the circuit breaker pattern
-type CircuitBreaker struct {
-	state           CircuitState
-	failureCount    int
-	lastFailureTime time.Time
-	mutex           sync.Mutex
-}
-
-var (
-	circuitBreaker = &CircuitBreaker{ // circuitBreaker is the instance of the circuit breaker
-		state:        StateClosed,
-		failureCount: 0,
-	}
-
-	// Errors
-	ErrCircuitOpen = errors.New("circuit breaker is open")
-)
-
-const (
 	pongWait = 60 * time.Second // pongWait is the time to wait for a pong response
-
 )
 
-// CircuitBreaker methods
-
-// RecordSuccess registers a successful connection and resets the failure count
-func (cb *CircuitBreaker) RecordSuccess() {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	cb.failureCount = 0
-	cb.state = StateClosed
-	logger.Log.Debug().Msg("Circuit breaker: Connection successful, circuit closed")
+type Event struct {
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
 }
 
-// RecordFailure registers a failed connection attempt and updates the state
-func (cb *CircuitBreaker) RecordFailure() {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	cb.failureCount++
-	cb.lastFailureTime = time.Now()
-
-	if cb.state == StateHalfOpen || cb.failureCount >= failureThreshold {
-		cb.state = StateOpen
-		logger.Log.Warn().Int("failures", cb.failureCount).Msg("Circuit breaker opened")
-	}
-}
-
-// IsAllowed checks if a connection attempt is allowed based on the circuit breaker state
-func (cb *CircuitBreaker) IsAllowed() bool {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	if cb.state == StateClosed {
-		return true
-	}
-
-	if cb.state == StateOpen {
-		if time.Since(cb.lastFailureTime) > resetTimeout {
-			cb.state = StateHalfOpen
-			logger.Log.Info().Msg("Circuit breaker: Switched to half-open state")
-			return true
-		}
-		return false
-	}
-
-	return true
+// NewMessageEvent represents a new message event
+type NewMessageEvent struct {
+	Sent time.Time `json:"sent"`
 }
 
 // bad handshake (401)
@@ -172,4 +112,53 @@ func GetConnection() (*websocket.Conn, error) {
 	monitor.RecordDisconnect(err)
 	logger.Log.Error().Err(err).Msg("Failed to connect to WebSocket after multiple attempts")
 	return nil, err
+}
+
+func WSReader(conn *websocket.Conn) {
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("Error reading message from WebSocket")
+			circuitBreaker.RecordFailure()
+			break
+		}
+
+		if err := WSHandleMessage(message); err != nil {
+			logger.Log.Error().Err(err).Msg("Error handling message")
+			break
+		}
+	}
+}
+
+func WSHandleMessage(message []byte) error {
+	var event Event
+	if err := json.Unmarshal(message, &event); err != nil {
+		return err
+	}
+
+	logger.Log.Debug().Str("type", event.Type).Str("Payload", string(event.Payload)).Msg("Received event")
+
+	switch event.Type {
+	case ConfigEvent:
+		return ConfigHandler(event.Payload)
+	default:
+		//
+	}
+
+	return nil
+}
+
+func ConfigHandler(payload json.RawMessage) error {
+	var configReceived models.Config
+	if err := json.Unmarshal(payload, &configReceived); err != nil {
+		return err
+	}
+
+	config.Current = configReceived
+
+	if OnNewConfig != nil {
+		go OnNewConfig()
+	}
+
+	return nil
 }

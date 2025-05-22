@@ -62,7 +62,7 @@
 - [ ] Filtri, Search flag, Sort @suga
 - [x] Auto Reload @akiidjk
 - [ ] Compatibilità windows/macos @Dabi
-- [ ] Config Reloader (hot realod of config file || button to reload) @akiidjk
+- [x] Config Reloader (hot reload of config file || button to reload) @akiidjk
 - [ ] Tutorial nella dashboard @suga
 - [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit @suga

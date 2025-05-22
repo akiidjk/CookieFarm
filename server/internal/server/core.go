@@ -33,6 +33,7 @@ func StartFlagProcessingLoop(ctx context.Context) {
 
 	// Main loop for flag processing.
 	for {
+		logger.Log.Debug().Msg("Waiting for flags to process...")
 		select {
 		case <-ctx.Done():
 			logger.Log.Info().Msg("Flag processing loop terminated")

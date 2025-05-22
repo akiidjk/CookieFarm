@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	FlagMessage  = "flag"
-	FlagResponse = "flag_response"
+	FlagMessage    = "flag"
+	FlagResponse   = "flag_response"
+	ConfigMessage  = "config"
+	ConfigResponse = "config_response"
 )
 
 func init() {
@@ -53,6 +55,15 @@ func FlagHandler(event Event, client *Client) error {
 		Str("service name", flag.ServiceName).
 		Uint16("port service", flag.PortService).
 		Msg("Flag received and sent to DB")
+
+	return nil
+}
+
+func ConfigHandler(event Event, client *Client) error {
+	var config models.Config
+	if err := json.Unmarshal(event.Payload, &config); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
 
 	return nil
 }

@@ -49,6 +49,40 @@ func newConfig(debug bool) fiber.Config {
 	return cfg
 }
 
+func PrepareStatic(app *fiber.App) error {
+	// Serve static assets from public folders with compression and caching
+
+	type staticRoute struct {
+		route string
+		dir   string
+	}
+
+	routes := []staticRoute{
+		{"/css", "./public/css"},
+		{"/js", "./public/js"},
+		{"/images", "./public/images"},
+	}
+
+	var staticCfg fiber.Static
+	if config.Cache {
+		staticCfg = fiber.Static{
+			Compress:      true,
+			CacheDuration: 10 * time.Second,
+			MaxAge:        3600,
+		}
+	} else {
+		staticCfg = fiber.Static{
+			Compress: true,
+		}
+	}
+
+	for _, r := range routes {
+		app.Static(r.route, r.dir, staticCfg)
+	}
+
+	return nil
+}
+
 // New initializes and returns a new Fiber app instance,
 // setting up static file routes, debug middleware, and template engine.
 func New() *fiber.App {
@@ -56,21 +90,9 @@ func New() *fiber.App {
 	app := fiber.New(cfg)
 
 	// Serve static assets from public folders with compression and caching
-	app.Static("/css", "./public/css", fiber.Static{
-		Compress:      true,
-		CacheDuration: 10 * time.Second,
-		MaxAge:        3600,
-	})
-	app.Static("/js", "./public/js", fiber.Static{
-		Compress:      true,
-		CacheDuration: 10 * time.Second,
-		MaxAge:        3600,
-	})
-	app.Static("/images", "./public/images", fiber.Static{
-		Compress:      true,
-		CacheDuration: 10 * time.Second,
-		MaxAge:        3600,
-	})
+	if err := PrepareStatic(app); err != nil {
+		logger.Log.Error().Err(err).Msg("Error preparing static assets")
+	}
 
 	app.Use(compress.New(compress.Config{
 		Level: compress.LevelBestSpeed,

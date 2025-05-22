@@ -3,9 +3,7 @@ package websockets
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
@@ -15,17 +13,25 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var (
+	OnNewConfig func()
+)
+
 const (
 	FlagEvent   = "flag"
 	ConfigEvent = "config"
-	maxRetries  = 3
-	// Circuit breaker constants
-	failureThreshold = 2                // Numero di errori consecutivi prima di aprire il circuito
-	resetTimeout     = 30 * time.Second // Tempo di attesa prima di tentare una nuova connessione
-	halfOpenMaxRetry = 1                // Tentativi durante lo stato half-open
+
+	maxRetries = 3
+
 	// Connection timeouts
-	dialTimeout  = 10 * time.Second // Timeout per la connessione WebSocket
-	writeTimeout = 10 * time.Second // Timeout per la scrittura dei messaggi
+	dialTimeout  = 10 * time.Second // Timeout for WebSocket connection
+	writeTimeout = 10 * time.Second // Timeout for writing message
+
+	StateClosed   CircuitState = iota // Allowed connections
+	StateHalfOpen                     // Allowed connections with limited retries
+	StateOpen                         // Blocked connections
+
+	pongWait = 60 * time.Second // pongWait is the time to wait for a pong response
 )
 
 type Event struct {
@@ -36,85 +42,6 @@ type Event struct {
 // NewMessageEvent represents a new message event
 type NewMessageEvent struct {
 	Sent time.Time `json:"sent"`
-}
-
-// CircuitState state of the circuit breaker
-type CircuitState int
-
-const (
-	StateClosed   CircuitState = iota // Allowed connections
-	StateHalfOpen                     // Allowed connections with limited retries
-	StateOpen                         // Blocked connections
-)
-
-// CircuitBreaker is a struct that implements the circuit breaker pattern
-type CircuitBreaker struct {
-	state           CircuitState
-	failureCount    int
-	lastFailureTime time.Time
-	mutex           sync.Mutex
-}
-
-var (
-	circuitBreaker = &CircuitBreaker{ // circuitBreaker is the instance of the circuit breaker
-		state:        StateClosed,
-		failureCount: 0,
-	}
-
-	// Errors
-	ErrCircuitOpen = errors.New("circuit breaker is open")
-)
-
-const (
-	pongWait = 60 * time.Second // pongWait is the time to wait for a pong response
-
-)
-
-// CircuitBreaker methods
-
-// RecordSuccess registers a successful connection and resets the failure count
-func (cb *CircuitBreaker) RecordSuccess() {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	cb.failureCount = 0
-	cb.state = StateClosed
-	logger.Log.Debug().Msg("Circuit breaker: Connection successful, circuit closed")
-}
-
-// RecordFailure registers a failed connection attempt and updates the state
-func (cb *CircuitBreaker) RecordFailure() {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	cb.failureCount++
-	cb.lastFailureTime = time.Now()
-
-	if cb.state == StateHalfOpen || cb.failureCount >= failureThreshold {
-		cb.state = StateOpen
-		logger.Log.Warn().Int("failures", cb.failureCount).Msg("Circuit breaker opened")
-	}
-}
-
-// IsAllowed checks if a connection attempt is allowed based on the circuit breaker state
-func (cb *CircuitBreaker) IsAllowed() bool {
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	if cb.state == StateClosed {
-		return true
-	}
-
-	if cb.state == StateOpen {
-		if time.Since(cb.lastFailureTime) > resetTimeout {
-			cb.state = StateHalfOpen
-			logger.Log.Info().Msg("Circuit breaker: Switched to half-open state")
-			return true
-		}
-		return false
-	}
-
-	return true
 }
 
 // bad handshake (401)
@@ -211,23 +138,15 @@ func WSHandleMessage(message []byte) error {
 
 	logger.Log.Debug().Str("type", event.Type).Str("Payload", string(event.Payload)).Msg("Received event")
 
-	if event.Type == "" || len(event.Payload) == 0 {
-		logger.Log.Debug().Msg("Empty event type or payload")
-	}
-
 	switch event.Type {
 	case ConfigEvent:
 		return ConfigHandler(event.Payload)
-	case FlagEvent:
-		//
 	default:
-		logger.Log.Debug().Str("type", event.Type).Msg("Unknown event type")
+		//
 	}
 
 	return nil
 }
-
-var OnNewConfig func()
 
 func ConfigHandler(payload json.RawMessage) error {
 	var configReceived models.Config
@@ -237,7 +156,6 @@ func ConfigHandler(payload json.RawMessage) error {
 
 	config.Current = configReceived
 
-	// Call function to realod the configuration
 	if OnNewConfig != nil {
 		go OnNewConfig()
 	}

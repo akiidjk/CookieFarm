@@ -2,6 +2,7 @@
 package websockets
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"sync"
@@ -10,12 +11,14 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
+	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/gorilla/websocket"
 )
 
 const (
-	FlagEvent  = "flag"
-	maxRetries = 3
+	FlagEvent   = "flag"
+	ConfigEvent = "config"
+	maxRetries  = 3
 	// Circuit breaker constants
 	failureThreshold = 2                // Numero di errori consecutivi prima di aprire il circuito
 	resetTimeout     = 30 * time.Second // Tempo di attesa prima di tentare una nuova connessione
@@ -24,6 +27,16 @@ const (
 	dialTimeout  = 10 * time.Second // Timeout per la connessione WebSocket
 	writeTimeout = 10 * time.Second // Timeout per la scrittura dei messaggi
 )
+
+type Event struct {
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+// NewMessageEvent represents a new message event
+type NewMessageEvent struct {
+	Sent time.Time `json:"sent"`
+}
 
 // CircuitState state of the circuit breaker
 type CircuitState int
@@ -172,4 +185,63 @@ func GetConnection() (*websocket.Conn, error) {
 	monitor.RecordDisconnect(err)
 	logger.Log.Error().Err(err).Msg("Failed to connect to WebSocket after multiple attempts")
 	return nil, err
+}
+
+func WSReader(conn *websocket.Conn) {
+
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("Error reading message from WebSocket")
+			circuitBreaker.RecordFailure()
+			break
+		}
+
+		if err := WSHandleMessage(message); err != nil {
+			logger.Log.Error().Err(err).Msg("Error handling message")
+			break
+		}
+	}
+}
+
+func WSHandleMessage(message []byte) error {
+	var event Event
+	if err := json.Unmarshal(message, &event); err != nil {
+		return err
+	}
+
+	logger.Log.Debug().Str("type", event.Type).Str("Payload", string(event.Payload)).Msg("Received event")
+
+	if event.Type == "" || len(event.Payload) == 0 {
+		logger.Log.Debug().Msg("Empty event type or payload")
+	}
+
+	switch event.Type {
+	case ConfigEvent:
+		return ConfigHandler(event.Payload)
+	case FlagEvent:
+		//
+	default:
+		logger.Log.Debug().Str("type", event.Type).Msg("Unknown event type")
+	}
+
+	return nil
+}
+
+var OnNewConfig func()
+
+func ConfigHandler(payload json.RawMessage) error {
+	var configReceived models.Config
+	if err := json.Unmarshal(payload, &configReceived); err != nil {
+		return err
+	}
+
+	config.Current = configReceived
+
+	// Call function to realod the configuration
+	if OnNewConfig != nil {
+		go OnNewConfig()
+	}
+
+	return nil
 }

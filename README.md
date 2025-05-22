@@ -99,7 +99,7 @@ Ensure you have installed:
 
 ## 🤝 Contributing
 
-Contributions, suggestions, and bug reports are always welcome! Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to contribute to the project.
+Contributions, suggestions, and bug reports are always welcome! Check out [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on how to contribute to the project.
 
 ## 📝 Notes
 

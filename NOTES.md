@@ -57,15 +57,15 @@
 - [x] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
 
 ## RELEASE 1.1
-- [x] api/button to send flags, instead of waiting the timer @akiidjk
-- [x] api/button to delete/remove the flag queue @akiidjk
 - [ ] Filtri, Search flag, Sort @suga
-- [x] Auto Reload @akiidjk
 - [ ] Compatibilità windows/macos @Dabi
-- [x] Config Reloader (hot reload of config file || button to reload) @akiidjk
 - [ ] Tutorial nella dashboard @suga
 - [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit @suga
+- [x] Auto Reload @akiidjk
+- [x] api/button to delete/remove the flag queue @akiidjk
+- [x] api/button to send flags, instead of waiting the timer @akiidjk
+- [x] Config Reloader (hot reload of config file || button to reload) @akiidjk
 - [x] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte) @Matte
 - [x] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit !!!! PRIORITY
 - [X] Implementazione websocket da client a server !!!! PRIORITY

@@ -31,7 +31,6 @@ var (
 
 // Start starts the exploit_manager and listens for flags in stdout.
 func Start(exploitPath, password string, tickTime int, threadCount int, port uint16) (*ExecutionResult, error) {
-
 	logger.Log.Debug().Str("Regex", config.Current.ConfigClient.RegexFlag).Msg("Regex flag")
 
 	cmd := exec.Command(

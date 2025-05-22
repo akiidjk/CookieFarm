@@ -188,7 +188,6 @@ func GetConnection() (*websocket.Conn, error) {
 }
 
 func WSReader(conn *websocket.Conn) {
-
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {

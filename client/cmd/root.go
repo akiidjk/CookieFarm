@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// RootCmd represents the base command when called without any subcommands
+var RootCmd = &cobra.Command{
 	Use:   "cookieclient",
 	Short: "The client cli for CookieFarm",
 	Long: `CookieFarm is a exploiter writed by the team ByteTheCookies for CyberChallenge
@@ -21,7 +21,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	err := rootCmd.Execute()
+	err := RootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -31,9 +31,10 @@ func Execute() {
 var banner string
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&config.Args.Debug, "debug", "D", false, "Enable debug logging")
+	RootCmd.AddCommand(configCmd)
+	RootCmd.PersistentFlags().BoolVarP(&config.Args.Debug, "debug", "D", false, "Enable debug logging")
 
-	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+	RootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if config.Args.Debug {
 			logger.Setup("debug")
 		} else {

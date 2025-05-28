@@ -29,7 +29,7 @@ var attackCmd = &cobra.Command{
 
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
-	rootCmd.AddCommand(attackCmd)
+	RootCmd.AddCommand(attackCmd)
 	attackCmd.Flags().StringVarP(&config.Args.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
 	attackCmd.Flags().StringVarP(&config.Args.Password, "password", "P", "", "Password for authenticating to the server")
 	attackCmd.Flags().Uint16VarP(&config.Args.Port, "port", "p", 0, "Service Port to attack")

@@ -67,6 +67,7 @@
 - [ ] Tutorial nella dashboard @suga
 - [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit @suga
+- [ ] Spostare le config ripetitive in un altro comando e permettere il login e il logout (cookie saving) @akiidjk
 - [x] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit !!!! PRIORITY
 - [X] Implementazione websocket da client a server !!!! PRIORITY
 - [x] Inserire la porta non nell'exploit ma come argomento dell'exploiter

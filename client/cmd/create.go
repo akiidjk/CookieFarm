@@ -22,7 +22,7 @@ var createCmd = &cobra.Command{
 var name string // Name of the exploit template
 
 func init() {
-	rootCmd.AddCommand(createCmd)
+	RootCmd.AddCommand(createCmd)
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "Name of the exploit template")
 	createCmd.MarkFlagRequired("name")
 }

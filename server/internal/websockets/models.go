@@ -29,25 +29,21 @@ type ClientList map[*Client]bool
 
 // Client represents a WebSocket client connection
 type Client struct {
-	Connection *websocket.Conn
-	Manager    *Manager
-	Egress     chan []byte
-	Number     int
-	// Closed is used to signal when the client is being closed
-	Closed chan struct{}
-	// IsClosed helps track if the client has already been closed
-	IsClosed bool
-	// Mutex for safely accessing IsClosed
-	mutex sync.Mutex
-	// ConnectionTimer tracks the connection lifetime
+	Connection      *websocket.Conn
+	Manager         *Manager
+	Egress          chan []byte
+	Closed          chan struct{}
 	ConnectionTimer *time.Timer
+	mutex           sync.Mutex
+	Number          int
+	IsClosed        bool
 }
 
 // Manager handles WebSocket clients and event routing
 type Manager struct {
-	Clients ClientList
-	sync.RWMutex
+	Clients  ClientList
 	Handlers map[string]EventHandler
+	sync.RWMutex
 }
 
 // VerifyToken verifies the JWT token using the secret key

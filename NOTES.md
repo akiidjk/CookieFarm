@@ -57,21 +57,25 @@
 - [x] Aggiungere un bottone sulla table per aggiornarla senza ricaricare la pagina
 
 ## RELEASE 1.1
-- [ ] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte) @Matte
-- [ ] api/button to send flags, instead of waiting the timer @akiidjk
-- [ ] api/button to delete/remove the flag queue @akiidjk
 - [ ] Filtri, Search flag, Sort @suga
-- [ ] Auto Reload @akiidjk
 - [ ] Compatibilità windows/macos @Dabi
-- [ ] Config Reloader (hot realod of config file || button to reload) @akiidjk
 - [ ] Tutorial nella dashboard @suga
 - [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit @suga
-- [ ] Spostare le config ripetitive in un altro comando e permettere il login e il logout (cookie saving) @akiidjk
+
+- [ ] Spostare le config ripetitive in un altro comando e permettere il login e il logout (cookie saving) @
+- [x] Auto Reload @akiidjk
+- [x] api/button to delete/remove the flag queue @akiidjk
+- [x] api/button to send flags, instead of waiting the timer @akiidjk
+- [x] Config Reloader (hot reload of config file || button to reload) @akiidjk
+- [x] Permettere all'utente di stampare la flag (e la merda che vuole) in stdout senza dover restituire obbligatoriamente la flag (by Matte) @Matte
 - [x] Non fare la batch per la stampa delle flag ma alla conclusione di ogni exploit stampare le flag prese direttamente senza aspettare l'attesa degi altri exploit !!!! PRIORITY
 - [X] Implementazione websocket da client a server !!!! PRIORITY
 - [x] Inserire la porta non nell'exploit ma come argomento dell'exploiter
 - [x] Fornire il numero del team e il nome del servizio nella funzione
+- [x] Creazione della libraria exploiter da poter utilizzare tramite `pip`
+- [x] Comandi all'interno del client per generare il template, runnare gli exploit, ecc
+- [x] Installazione del client tramite `install.sh` per averlo globale
 
 ## RELEASE 1.2
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)

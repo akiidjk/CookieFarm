@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
-
-	_ "embed"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
@@ -27,9 +24,6 @@ func Execute() {
 	}
 }
 
-//go:embed banner.txt
-var banner string
-
 func init() {
 	RootCmd.AddCommand(configCmd)
 	RootCmd.PersistentFlags().BoolVarP(&config.Args.Debug, "debug", "D", false, "Enable debug logging")
@@ -40,6 +34,5 @@ func init() {
 		} else {
 			logger.Setup("info")
 		}
-		fmt.Println(banner)
 	}
 }

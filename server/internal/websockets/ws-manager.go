@@ -11,6 +11,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var GlobalManager *Manager // WebSocket manager
+
 var (
 	ErrEventNotSupported = errors.New("this event type is not supported")
 	ErrConnectionTimeout = errors.New("connection timeout exceeded")

@@ -16,6 +16,7 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/submitter"
 	"github.com/ByteTheCookies/cookieclient/internal/utils"
+	"github.com/ByteTheCookies/cookieclient/internal/websockets"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
@@ -134,6 +135,10 @@ func attack(cmd *cobra.Command, args []string) {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}
 	logger.Log.Info().Msg("Exploit started successfully")
+
+	websockets.OnNewConfig = func() {
+		executor.RestartGlobal()
+	}
 
 	go submitter.Start(result.FlagsChan)
 

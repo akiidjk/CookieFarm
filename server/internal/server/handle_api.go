@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/websockets"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -167,7 +169,49 @@ func HandlePostConfig(c *fiber.Ctx) error {
 
 	go StartFlagProcessingLoop(ctx)
 
+	configData, err := json.Marshal(config.Current)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to marshal config data")
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
+			Error:   "Failed to marshal config data",
+			Details: err.Error(),
+		})
+	}
+
+	for client := range websockets.GlobalManager.Clients {
+		event := websockets.Event{
+			Type:    websockets.ConfigMessage,
+			Payload: configData,
+		}
+		msg, err := json.Marshal(event)
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("Failed to marshal config event")
+			continue
+		}
+		client.Egress <- msg
+	}
+
 	return c.JSON(models.ResponseSuccess{
 		Message: "Configuration updated successfully",
+	})
+}
+
+func HandleDeleteFlag(c *fiber.Ctx) error {
+	flagID := c.Query("flag")
+	if flagID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ResponseError{
+			Error: "Flag ID is required",
+		})
+	}
+
+	if err := database.DeleteFlag(flagID); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to delete flag")
+		return c.Status(fiber.StatusInternalServerError).JSON(models.ResponseError{
+			Error: "Failed to delete flag",
+		})
+	}
+
+	return c.JSON(models.ResponseSuccess{
+		Message: "Flag deleted successfully",
 	})
 }

@@ -18,6 +18,8 @@ func Start(flagsChan <-chan models.Flag) error {
 	}
 	defer conn.Close()
 
+	go websockets.WSReader(conn)
+
 	for {
 		select {
 		case flag := <-flagsChan:

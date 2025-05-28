@@ -73,3 +73,9 @@ export function buildConfigFromDOM(document, tagify) {
     },
   };
 }
+
+export async function openModal() {
+  document.getElementById('dialog').classList.remove('hidden');
+  document.getElementById('table-head').classList.remove('sticky');
+  await FillModalFields();
+}

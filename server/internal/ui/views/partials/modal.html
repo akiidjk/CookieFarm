@@ -54,12 +54,19 @@
                 class="relative transform overflow-hidden rounded-lg bg-[var(--background)] text-[var(--foreground)] text-left shadow-xl transition-all sm:my-8 w-full max-w-4xl"
             >
                 <form id="configForm" class="px-6 py-4 space-y-6">
-                    <div class="text-center sm:text-left">
-                        <h1 class="text-lg font-semibold">Setup config</h1>
-                        <p class="text-sm text-muted-foreground">
-                            Init the config by providing the necessary
-                            information.
-                        </p>
+                    <div class="text-center sm:text-left flex items-center justify-between">
+                        <div>
+                            <h1 class="text-lg font-semibold">Setup config</h1>
+                            <p class="text-sm text-muted-foreground">
+                                Init the config by providing the necessary
+                                information.
+                            </p>
+                        </div>
+                        <button onclick="document.getElementById('dialog').classList.add('hidden'); document.getElementById('table-head').classList.add('sticky')"
+                            class="absolute top-4 right-4 text-muted-foreground hover:text-muted-foreground/80"
+                            type="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M8.4 17L7 15.6l3.6-3.6L7 8.425l1.4-1.4l3.6 3.6l3.575-3.6l1.4 1.4l-3.6 3.575l3.6 3.6l-1.4 1.4L12 13.4z"/></svg>
+                        </button>
                     </div>
 
                     <!-- SERVER CONFIGURATION -->
@@ -249,6 +256,7 @@
         sendConfig,
         checkConfig,
         validateConfigForm,
+        getConfig,
     } from "/js/output.min.js";
     let tagify = new Tagify(document.getElementById("services"));
 
@@ -265,6 +273,8 @@
                 resultBox.classList.add("text-green-500");
                 resultBox.textContent = "Config sent successfully";
                 document.getElementById("dialog").classList.add("hidden");
+                document.getElementById("table-head").classList.add("sticky")
+
             } else {
                 const resultBox = document.getElementById("config-result");
                 resultBox.classList.add("text-red-500");
@@ -277,11 +287,39 @@
         }
     }
 
-    window.handleConfigSubmit = handleSubmit;
+
+    async function fillModalFields() {
+           try {
+               const data = await getConfig()
+               if (data) {
+                   const server = data.server;
+                   if (server.team_token) document.getElementById("team_token").value = server.team_token;
+                   if (server.host_flagchecker) document.getElementById("host_flagchecker").value = server.host_flagchecker;
+                   if (server.protocol) document.getElementById("protocol").value = server.protocol;
+                   if (server.submit_flag_checker_time) document.getElementById("submit_flag_checker_time").value = server.submit_flag_checker_time;
+                   if (server.max_flag_batch_size) document.getElementById("max_flag_batch_size").value = server.max_flag_batch_size;
+
+                   const client = data.client;
+                   if (client.services && client.services.length > 0) {
+                       tagify.removeAllTags();
+                       tagify.addTags(client.services.map(s => `${s.name}:${s.port}`));
+                   }
+                   if (client.range_ip_teams) document.getElementById("range_ip_teams").value = client.range_ip_teams;
+                   if (client.format_ip_teams) document.getElementById("format_ip_teams").value = client.format_ip_teams;
+                   if (client.my_team_ip) document.getElementById("my_team_ip").value = client.my_team_ip;
+                   if (client.regex_flag) document.getElementById("regex_flag").value = client.regex_flag;
+               }
+           } catch (e) {
+               console.error("Error fetching config:", e);
+           }
+       }
 
     (async () => {
         if (!(await checkConfig())) {
-            document.getElementById("dialog").classList.remove("hidden"); //TO REMOVE ONLY DEBUG
+          await openModal();
         }
     })();
+
+    window.handleConfigSubmit = handleSubmit;
+    window.FillModalFields = fillModalFields;
 </script>

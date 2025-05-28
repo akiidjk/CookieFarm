@@ -59,7 +59,7 @@ func SendFlag(flags ...models.Flag) error {
 
 // GetConfig retrieves the configuration from the CookieFarm server API.
 func GetConfig() (models.Config, error) {
-	ServerURL := "http://" + config.ServerAddress + ":" + strconv.Itoa(int(config.ServerPort)) + "/api/v1/config"
+	ServerURL := "http://" + config.ArgsConfig.Address + ":" + strconv.Itoa(int(config.ArgsConfig.Port)) + "/api/v1/config"
 	req, err := http.NewRequest(http.MethodGet, ServerURL, nil)
 	if err != nil {
 		return models.Config{}, fmt.Errorf("error creating config request: %w", err)
@@ -89,7 +89,7 @@ func GetConfig() (models.Config, error) {
 
 // Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
-	ServerURL := "http://" + config.ServerAddress + ":" + strconv.Itoa(int(config.ServerPort)) + "/api/v1/auth/login"
+	ServerURL := "http://" + config.ArgsConfig.Address + ":" + strconv.Itoa(int(config.ArgsConfig.Port)) + "/api/v1/auth/login"
 
 	_, err := url.Parse(ServerURL)
 	if err != nil {

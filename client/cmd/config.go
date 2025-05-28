@@ -32,7 +32,7 @@ var resetConfigCmd = &cobra.Command{
 func resetConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
 	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
-	err = os.MkdirAll(expandendPath, 0755)
+	err = os.MkdirAll(expandendPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
 	}
@@ -65,13 +65,13 @@ var editConfigCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update client configuration",
 	Long:  `This command allows you to edit the client configuration interactively. It opens the configuration file in your default text editor, enabling you to make changes to settings such as server host, port, and other parameters.`,
-	Run:   editConfigFunc,
+	Run:   updateConfigFunc,
 }
 
-func editConfigFunc(cmd *cobra.Command, args []string) {
+func updateConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
 	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
-	err = os.MkdirAll(expandendPath, 0755)
+	err = os.MkdirAll(expandendPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
 	}
@@ -80,8 +80,7 @@ func editConfigFunc(cmd *cobra.Command, args []string) {
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Configuration file does not exist, creating a new one with default settings")
-		os.WriteFile(configPath, []byte(config.ConfigTemplate), 0644)
-		return
+		os.WriteFile(configPath, []byte(config.ConfigTemplate), 0o644)
 	} else if err != nil {
 		logger.Log.Error().Err(err).Msg("Error checking configuration file")
 		return
@@ -112,16 +111,26 @@ var loginConfigCmd = &cobra.Command{
 }
 
 func loginConfigFunc(cmd *cobra.Command, args []string) {
-	var err error
+	err := utils.LoadLocalConfig()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error loading local configuration")
+		return
+	}
+
 	config.Token, err = api.Login(Password)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Login failed")
 		return
 	}
 
-	err = os.WriteFile(filepath.Join(config.DefaultConfigPath, "session"), []byte(config.Token), 0644)
-
-	logger.Log.Info().Msg("Login successful. Session token stored.")
+	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
+		return
+	}
+	sessionPath := filepath.Join(expandendPath, "session")
+	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
+	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
 
 var logoutConfigCmd = &cobra.Command{
@@ -132,8 +141,13 @@ var logoutConfigCmd = &cobra.Command{
 }
 
 func logoutConfigFunc(cmd *cobra.Command, args []string) {
-	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
-	err := os.Remove(sessionPath)
+	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
+		return
+	}
+	sessionPath := filepath.Join(expandendPath, "session")
+	err = os.Remove(sessionPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error removing session file")
 		return

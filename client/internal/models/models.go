@@ -48,16 +48,22 @@ type Config struct {
 	ConfigClient ConfigClient `json:"client" yaml:"client"`         // Client-specific configuration
 }
 
-// Args represents the command-line arguments or configuration
+// ArgsAttack represents the command-line arguments or configuration
 // values passed at runtime to control the exploit manager behavior.
-type Args struct {
-	Port        uint16 `json:"port"`         // Service Port
+type ArgsAttack struct {
+	ServicePort uint16 `json:"port"`         // Service Port
 	TickTime    int    `json:"tick_time"`    // Optional custom tick time
 	ThreadCount int    `json:"thread_count"` // Optional number of concurrent threads (coroutine) to use
 	Debug       bool   `json:"debug"`        // Enable debug mode if true
 	Detach      bool   `json:"detach"`       // Run in background if true
 	ExploitPath string `json:"exploit_path"` // Path to the exploit to run
-	Password    string `json:"password"`     // Authentication password
+}
+
+type ArgsConfig struct {
+	Address  string `json:"address"`  // Host address of the server
+	Port     uint16 `json:"port"`     // Port of the server
+	Https    bool   `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
+	Nickname string `json:"nickname"` // Nickname of the client
 }
 
 // ParsedFlagOutput represents the output of a parsed flag returned

@@ -78,7 +78,7 @@ func GetExecutableDir() string {
 }
 
 // ValidateArgs validates the arguments passed to the program.
-func ValidateArgs(args models.Args) error {
+func ValidateArgs(args models.ArgsAttack) error {
 	if args.TickTime < 1 {
 		return errors.New("tick time must be at least 1")
 	}
@@ -170,4 +170,13 @@ func NormalizeNamePathExploit(name string) (string, error) {
 	}
 
 	return name, nil
+}
+
+func GetSession() (string, error) {
+	sessionPath := filepath.Join(GetExecutableDir(), "session")
+	data, err := os.ReadFile(sessionPath)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

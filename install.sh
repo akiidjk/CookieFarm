@@ -54,6 +54,14 @@ mkdir -p "$CONFIG_DIR"
 cp -r ./client/exploits/utils "$CONFIG_DIR" 2>/dev/null || true
 echo "# Configuration directory for CookieFarm" > "$CONFIG_DIR/.readme"
 
+echo "📄 Creating default configuration file..."
+cat <<EOF > "$CONFIG_DIR/config.yml"
+address: "localhost"
+port: 8080
+https: false
+nickname: "guest"
+EOF
+
 echo "✅ Installation complete! Run '$FINAL_NAME --help' to get started. Enjoy farming 🍪"
 
 rm -rf "$TMP_DIR"

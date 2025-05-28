@@ -28,7 +28,7 @@ func init() {
 }
 
 func Create(cmd *cobra.Command, args []string) {
-	path, err := utils.ExpandTilde(config.DefaultExploitPath)
+	path, err := utils.ExpandTilde(config.DefaultConfigPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error expanding path")
 		return

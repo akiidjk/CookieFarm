@@ -31,13 +31,12 @@ var attackCmd = &cobra.Command{
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
 	RootCmd.AddCommand(attackCmd)
-	attackCmd.Flags().StringVarP(&config.Args.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
-	attackCmd.Flags().StringVarP(&config.Args.Password, "password", "P", "", "Password for authenticating to the server")
-	attackCmd.Flags().Uint16VarP(&config.Args.Port, "port", "p", 0, "Service Port to attack")
-	attackCmd.Flags().StringVarP(&config.HostServer, "host", "H", "", "Host of the cookieserver")
-	attackCmd.Flags().BoolVarP(&config.Args.Detach, "detach", "d", false, "Run the exploit in the background (detached mode)")
-	attackCmd.Flags().IntVarP(&config.Args.TickTime, "tick", "t", 120, "Interval in seconds between exploit executions")
-	attackCmd.Flags().IntVarP(&config.Args.ThreadCount, "thread", "T", 5, "Number of concurrent threads to run the exploit with")
+	attackCmd.Flags().StringVarP(&config.ArgsAttack.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
+	attackCmd.Flags().Uint16VarP(&config.ArgsAttack.ServicePort, "port", "p", 0, "Service Port to attack")
+	attackCmd.Flags().StringVarP(&config.ServerAddress, "host", "H", "", "Host of the cookieserver")
+	attackCmd.Flags().BoolVarP(&config.ArgsAttack.Detach, "detach", "d", false, "Run the exploit in the background (detached mode)")
+	attackCmd.Flags().IntVarP(&config.ArgsAttack.TickTime, "tick", "t", 120, "Interval in seconds between exploit executions")
+	attackCmd.Flags().IntVarP(&config.ArgsAttack.ThreadCount, "thread", "T", 5, "Number of concurrent threads to run the exploit with")
 	attackCmd.MarkFlagRequired("exploit")
 	attackCmd.MarkFlagRequired("password")
 	attackCmd.MarkFlagRequired("port")
@@ -53,43 +52,43 @@ func init() {
 func setupClient() error {
 	var err error
 
-	if config.Args.Detach {
+	if config.ArgsAttack.Detach {
 		fmt.Println(utils.Blue + "[INFO]" + utils.Reset + " | Detaching from terminal")
 		utils.Detach()
 	}
 
-	config.Args.ExploitPath, err = utils.NormalizeNamePathExploit(config.Args.ExploitPath)
+	config.ArgsAttack.ExploitPath, err = utils.NormalizeNamePathExploit(config.ArgsAttack.ExploitPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error normalizing exploit name")
 		return err
 	}
 
-	if !utils.IsPath(config.Args.ExploitPath) {
-		defaultPath, err := utils.ExpandTilde(config.DefaultExploitPath)
+	if !utils.IsPath(config.ArgsAttack.ExploitPath) {
+		defaultPath, err := utils.ExpandTilde(config.DefaultConfigPath)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Error expanding path")
 			return err
 		}
-		config.Args.ExploitPath = filepath.Join(defaultPath, config.Args.ExploitPath)
+		config.ArgsAttack.ExploitPath = filepath.Join(defaultPath, config.ArgsAttack.ExploitPath)
 	}
 
-	logger.Log.Debug().Str("Exploit path", config.Args.ExploitPath).Msg("Using default exploit path")
+	logger.Log.Debug().Str("Exploit path", config.ArgsAttack.ExploitPath).Msg("Using default exploit path")
 
-	err = utils.ValidateArgs(config.Args)
+	err = utils.ValidateArgs(config.ArgsAttack)
 	if err != nil {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
 	logger.Log.Debug().
-		Int("ThreadCount", config.Args.ThreadCount).
-		Int("Tick time", config.Args.TickTime).
-		Str("ExploitPath", config.Args.ExploitPath).
-		Str("HostServer", config.HostServer).
+		Int("ThreadCount", config.ArgsAttack.ThreadCount).
+		Int("Tick time", config.ArgsAttack.TickTime).
+		Str("ExploitPath", config.ArgsAttack.ExploitPath).
+		Str("HostServer", config.ServerAddress).
 		Msg("Arguments validated")
 
-	config.Token, err = api.Login(config.Args.Password)
+	config.Token, err = utils.GetSession()
 	if err != nil {
-		return fmt.Errorf("login failed: %w", err)
+		return fmt.Errorf("failed to get session token: %w", err)
 	}
 
 	config.Current, err = api.GetConfig()
@@ -130,7 +129,7 @@ func attack(cmd *cobra.Command, args []string) {
 
 	logger.Log.Info().Msg("Client initialized successfully")
 
-	result, err := executor.Start(config.Args.ExploitPath, config.Args.Password, config.Args.TickTime, config.Args.ThreadCount, config.Args.Port)
+	result, err := executor.Start(config.ArgsAttack.ExploitPath, config.ArgsAttack.TickTime, config.ArgsAttack.ThreadCount, config.ArgsAttack.ServicePort)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}

@@ -15,6 +15,7 @@ import (
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -78,7 +79,7 @@ func GetExecutableDir() string {
 }
 
 // ValidateArgs validates the arguments passed to the program.
-func ValidateArgs(args models.Args) error {
+func ValidateArgs(args models.ArgsAttack) error {
 	if args.TickTime < 1 {
 		return errors.New("tick time must be at least 1")
 	}
@@ -170,4 +171,37 @@ func NormalizeNamePathExploit(name string) (string, error) {
 	}
 
 	return name, nil
+}
+
+func GetSession() (string, error) {
+	sessionPath := filepath.Join(GetExecutableDir(), "session")
+	data, err := os.ReadFile(sessionPath)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func LoadLocalConfig() error {
+	expandendPath, err := ExpandTilde(config.DefaultConfigPath)
+	configPath := filepath.Join(expandendPath, "config.yml")
+	if err != nil {
+		return err
+	}
+	configFileContent, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("config file does not exist at %s", configPath)
+		}
+		return fmt.Errorf("error reading config file: %w", err)
+	}
+
+	fmt.Println(string(configFileContent))
+
+	err = yaml.Unmarshal(configFileContent, &config.ArgsConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -30,13 +30,11 @@ var (
 )
 
 // Start starts the exploit_manager and listens for flags in stdout.
-func Start(exploitPath, password string, tickTime int, threadCount int, port uint16) (*ExecutionResult, error) {
+func Start(exploitPath string, tickTime int, threadCount int, port uint16) (*ExecutionResult, error) {
 	cmd := exec.Command(
 		exploitPath,
-		config.HostServer,
-		password,
+		config.ServerAddress,
 		strconv.Itoa(tickTime),
-		config.Current.ConfigClient.RegexFlag,
 		strconv.Itoa(threadCount),
 		strconv.Itoa(int(port)),
 		utils.MapPortToService(port),
@@ -90,11 +88,10 @@ func RestartGlobal() {
 	logger.Log.Info().Msg("Starting new exploit process...")
 
 	result, err := Start(
-		config.Args.ExploitPath,
-		config.Args.Password,
-		config.Args.TickTime,
-		config.Args.ThreadCount,
-		config.Args.Port,
+		config.ArgsAttack.ExploitPath,
+		config.ArgsAttack.TickTime,
+		config.ArgsAttack.ThreadCount,
+		config.ArgsAttack.ServicePort,
 	)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to start new exploit")

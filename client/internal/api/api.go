@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
@@ -26,7 +27,7 @@ func SendFlag(flags ...models.Flag) error {
 		return err
 	}
 
-	ServerURL := "http://" + config.HostServer + "/api/v1/submit-flags"
+	ServerURL := "http://" + config.ServerAddress + "/api/v1/submit-flags"
 	req, err := http.NewRequest(http.MethodPost, ServerURL, bytes.NewReader(body))
 	if err != nil {
 		log.Error().Err(err).Str("url", ServerURL).Msg("error creating request")
@@ -58,7 +59,7 @@ func SendFlag(flags ...models.Flag) error {
 
 // GetConfig retrieves the configuration from the CookieFarm server API.
 func GetConfig() (models.Config, error) {
-	ServerURL := "http://" + config.HostServer + "/api/v1/config"
+	ServerURL := "http://" + config.ArgsConfig.Address + ":" + strconv.Itoa(int(config.ArgsConfig.Port)) + "/api/v1/config"
 	req, err := http.NewRequest(http.MethodGet, ServerURL, nil)
 	if err != nil {
 		return models.Config{}, fmt.Errorf("error creating config request: %w", err)
@@ -88,7 +89,7 @@ func GetConfig() (models.Config, error) {
 
 // Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
-	ServerURL := "http://" + config.HostServer + "/api/v1/auth/login"
+	ServerURL := "http://" + config.ArgsConfig.Address + ":" + strconv.Itoa(int(config.ArgsConfig.Port)) + "/api/v1/auth/login"
 
 	_, err := url.Parse(ServerURL)
 	if err != nil {

@@ -15,19 +15,19 @@ const (
 type Flag struct {
 	SubmitTime   uint64 `json:"submit_time"`   // UNIX timestamp when the flag was submitted
 	ResponseTime uint64 `json:"response_time"` // UNIX timestamp when a response was received
-	PortService  uint16 `json:"port_service"`  // Port of the vulnerable service
-	TeamID       uint16 `json:"team_id"`       // ID of the team the flag was captured from
 	FlagCode     string `json:"flag_code"`     // Actual flag string
 	ServiceName  string `json:"service_name"`  // Human-readable name of the service
 	Status       string `json:"status"`        // Status of the submission (e.g., "unsubmitted", "accepted", "denied")
 	Msg          string `json:"msg"`           // Message from the flag checker service
+	PortService  uint16 `json:"port_service"`  // Port of the vulnerable service
+	TeamID       uint16 `json:"team_id"`       // ID of the team the flag was captured from
 }
 
 // ResponseProtocol represents a response from the flag checker service.
 type ResponseProtocol struct {
+	Status string `json:"status"` // Status of the response (e.g., "success", "error")
 	Flag   string `json:"flag"`   // Flag string received from the flag checker service
 	Msg    string `json:"msg"`    // Message from the flag checker service
-	Status string `json:"status"` // Status of the response (e.g., "success", "error")
 }
 
 // Service represents a single vulnerable service as defined in the configuration.
@@ -39,19 +39,19 @@ type Service struct {
 // ConfigServer holds configuration data required by the server to submit and validate flags.
 type ConfigServer struct {
 	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time" yaml:"submit_flag_checker_time"` // Time interval (s) to check and submit flags
+	MaxFlagBatchSize      uint   `json:"max_flag_batch_size" yaml:"max_flag_batch_size"`           // Max number of flags to send in a single batch
 	HostFlagchecker       string `json:"host_flagchecker" yaml:"host_flagchecker"`                 // Address of the flagchecker server
 	TeamToken             string `json:"team_token" yaml:"team_token"`                             // Authentication token for team identity
-	MaxFlagBatchSize      uint   `json:"max_flag_batch_size" yaml:"max_flag_batch_size"`           // Max number of flags to send in a single batch
 	Protocol              string `json:"protocol" yaml:"protocol"`                                 // Protocol used to communicate with the flagchecker server
 }
 
 // ConfigClient contains all client-side configuration options.
 type ConfigClient struct {
-	Services      []Service `json:"services" yaml:"services"`               // List of services to exploit
-	RangeIPTeams  uint8     `json:"range_ip_teams" yaml:"range_ip_teams"`   // Number of teams / IP range
+	RegexFlag     string    `json:"regex_flag" yaml:"regex_flag"`           // Regex used to identify flags in output
 	FormatIPTeams string    `json:"format_ip_teams" yaml:"format_ip_teams"` // Format string for generating team IPs
 	MyTeamIP      string    `json:"my_team_ip" yaml:"my_team_ip"`           // IP address of the current team
-	RegexFlag     string    `json:"regex_flag" yaml:"regex_flag"`           // Regex used to identify flags in output
+	Services      []Service `json:"services" yaml:"services"`               // List of services to exploit
+	RangeIPTeams  uint8     `json:"range_ip_teams" yaml:"range_ip_teams"`   // Number of teams / IP range
 }
 
 // Config aggregates both server and client configuration,
@@ -72,9 +72,9 @@ type Pagination struct {
 	Limit    int   // Maximum number of items per page
 	Pages    int   // Total number of pages
 	Current  int   // Current page number (offset / limit)
+	PageList []int // List of page numbers to display in the pagination
 	HasPrev  bool  // Indicates if there is a previous page
 	HasNext  bool  // Indicates if there is a next page
-	PageList []int // List of page numbers to display in the pagination
 }
 
 // ViewParamsDashboard represents the parameters for the dashboard view

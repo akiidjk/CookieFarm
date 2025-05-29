@@ -62,6 +62,8 @@
 - [ ] Tutorial nella dashboard @suga
 - [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Non mettere 5 threads di default ma mettere un numero adeguato in base al numero di team presi della config e mettere un upper-limit @suga
+
+- [ ] Spostare le config ripetitive in un altro comando e permettere il login e il logout (cookie saving) @
 - [x] Auto Reload @akiidjk
 - [x] api/button to delete/remove the flag queue @akiidjk
 - [x] api/button to send flags, instead of waiting the timer @akiidjk

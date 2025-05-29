@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/models"
+	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/gorilla/websocket"
 )
 
@@ -67,7 +67,7 @@ func GetConnection() (*websocket.Conn, error) {
 	}
 
 	for attempts := 0; attempts < maxAttempts; attempts++ {
-		conn, _, err = dialer.Dial("ws://"+config.HostServer+"/ws", http.Header{
+		conn, _, err = dialer.Dial("ws://"+config.ServerAddress+"/ws", http.Header{
 			"Cookie": []string{"token=" + config.Token},
 		})
 
@@ -90,7 +90,7 @@ func GetConnection() (*websocket.Conn, error) {
 
 		if websocket.ErrBadHandshake == err {
 			logger.Log.Error().Err(err).Msg("Bad handshake, retrying login...")
-			config.Token, err = api.Login(config.Args.Password)
+			config.Token, err = utils.GetSession()
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to refresh token")
 				circuitBreaker.RecordFailure()

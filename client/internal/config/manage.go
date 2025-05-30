@@ -18,7 +18,7 @@ func GetSession() (string, error) {
 }
 
 func LoadLocalConfig() error {
-	configFileContent, err := os.ReadFile(DefaultConfigPath)
+	configFileContent, err := os.ReadFile(filepath.Join(DefaultConfigPath, "config.yml"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("config file does not exist at %s", DefaultConfigPath)

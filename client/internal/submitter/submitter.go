@@ -2,15 +2,25 @@
 package submitter
 
 import (
+	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
-	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/ByteTheCookies/cookieclient/internal/websockets"
 	json "github.com/bytedance/sonic"
 	gorilla "github.com/gorilla/websocket"
 )
 
+type EventWS struct {
+	Type    string `json:"type"`
+	Payload []byte `json:"payload"`
+}
+
+type EventWSFlag struct {
+	Type    string   `json:"type"`
+	Payload api.Flag `json:"payload"`
+}
+
 // Start initializes the submission loop to the cookiefarm server.
-func Start(flagsChan <-chan models.Flag) error {
+func Start(flagsChan <-chan api.Flag) error {
 	logger.Log.Info().Msg("Starting submission loop to the cookiefarm server...")
 	conn, err := websockets.GetConnection()
 	if err != nil {
@@ -23,7 +33,7 @@ func Start(flagsChan <-chan models.Flag) error {
 	for {
 		select {
 		case flag := <-flagsChan:
-			flagObj := models.EventWSFlag{
+			flagObj := EventWSFlag{
 				Type:    websockets.FlagEvent,
 				Payload: flag,
 			}

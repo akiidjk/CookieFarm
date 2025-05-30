@@ -26,10 +26,10 @@ func Execute() {
 
 func init() {
 	RootCmd.AddCommand(configCmd)
-	RootCmd.PersistentFlags().BoolVarP(&config.ArgsAttack.Debug, "debug", "D", false, "Enable debug logging")
+	RootCmd.PersistentFlags().BoolVarP(&config.ArgsAttackInstance.Debug, "debug", "D", false, "Enable debug logging")
 
 	RootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if config.ArgsAttack.Debug {
+		if config.ArgsAttackInstance.Debug {
 			logger.Setup("debug")
 		} else {
 			logger.Setup("info")

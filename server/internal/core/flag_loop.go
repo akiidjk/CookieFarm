@@ -1,18 +1,16 @@
-package server
+package core
 
 import (
 	"context"
-	"os"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/ByteTheCookies/cookieserver/internal/config"
-	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/sqlite"
 	"github.com/ByteTheCookies/cookieserver/protocols"
 )
+
+var shutdownCancel context.CancelFunc
 
 // ----------- END FLAG GROUPS ------------
 
@@ -39,7 +37,7 @@ func StartFlagProcessingLoop(ctx context.Context) {
 			logger.Log.Info().Msg("Flag processing loop terminated")
 			return
 		case <-ticker.C:
-			flags, err := database.GetUnsubmittedFlagCodeList(config.Current.ConfigServer.MaxFlagBatchSize)
+			flags, err := sqlite.GetUnsubmittedFlagCodeList(config.Current.ConfigServer.MaxFlagBatchSize)
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to get unsubmitted flags")
 				continue
@@ -67,21 +65,21 @@ func StartFlagProcessingLoop(ctx context.Context) {
 }
 
 // UpdateFlags updates the status of flags in the database.
-func UpdateFlags(flags []models.ResponseProtocol) {
+func UpdateFlags(flags []protocols.ResponseProtocol) {
 	valid := flags[:0]
 
 	accepted, denied, errored := 0, 0, 0
 	for _, f := range flags {
 		switch f.Status {
-		case models.StatusAccepted:
+		case sqlite.StatusAccepted:
 			accepted++
 			valid = append(valid, f)
 
-		case models.StatusDenied:
+		case sqlite.StatusDenied:
 			denied++
 			valid = append(valid, f)
 
-		case models.StatusError:
+		case sqlite.StatusError:
 			errored++
 			valid = append(valid, f)
 
@@ -90,7 +88,7 @@ func UpdateFlags(flags []models.ResponseProtocol) {
 		}
 	}
 
-	if err := database.UpdateFlagsStatus(valid); err != nil {
+	if err := sqlite.UpdateFlagsStatus(valid); err != nil {
 		logger.Log.Error().
 			Err(err).
 			Msg("Failed to update flags")
@@ -103,38 +101,4 @@ func UpdateFlags(flags []models.ResponseProtocol) {
 		Int("errored", errored).
 		Int("total", total).
 		Msg("Flags update summary")
-}
-
-// LoadConfig loads the configuration from the given path.
-func LoadConfig(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		logger.Log.Error().Err(err).Msg("Configuration file does not exist")
-		return err
-	}
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to read configuration file")
-		return err
-	}
-
-	err = yaml.Unmarshal(data, &config.Current)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to parse configuration file")
-		return err
-	}
-
-	if !config.Current.Configured {
-		config.Current.Configured = true
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	if shutdownCancel != nil {
-		shutdownCancel()
-	}
-	shutdownCancel = cancel
-
-	go StartFlagProcessingLoop(ctx)
-
-	return nil
 }

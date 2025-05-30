@@ -1,4 +1,4 @@
-package database
+package sqlite
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/protocols"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 )
 
 // UpdateFlagsStatus aggiorna lo status e il messaggio delle flag in batch
-func UpdateFlagsStatus(responses []models.ResponseProtocol) error {
+func UpdateFlagsStatus(responses []protocols.ResponseProtocol) error {
 	if len(responses) == 0 {
 		return nil
 	}
@@ -34,7 +34,7 @@ func UpdateFlagsStatus(responses []models.ResponseProtocol) error {
 	return nil
 }
 
-func updateFlagsBatch(batch []models.ResponseProtocol) error {
+func updateFlagsBatch(batch []protocols.ResponseProtocol) error {
 	if len(batch) == 0 {
 		return nil
 	}

@@ -9,8 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/rs/zerolog"
+)
+
+const (
+	Reset   = "\033[0m"
+	Red     = "\033[31m"
+	Green   = "\033[32m"
+	Yellow  = "\033[33m"
+	Blue    = "\033[34m"
+	Magenta = "\033[35m"
+	Cyan    = "\033[36m"
+	Gray    = "\033[37m"
+	White   = "\033[97m"
 )
 
 var (
@@ -45,15 +56,15 @@ func Setup(level string) string {
 			lvl := strings.ToLower(fmt.Sprintf("%s", i))
 			switch lvl {
 			case "debug":
-				return utils.Gray + "[DEBUG]" + utils.Reset
+				return Gray + "[DEBUG]" + Reset
 			case "info":
-				return utils.Cyan + "[INFO]" + utils.Reset
+				return Cyan + "[INFO]" + Reset
 			case "warn":
-				return utils.Yellow + "[WARN]" + utils.Reset
+				return Yellow + "[WARN]" + Reset
 			case "error":
-				return utils.Red + "[ERROR]" + utils.Reset
+				return Red + "[ERROR]" + Reset
 			case "fatal":
-				return utils.Magenta + "[FATAL]" + utils.Reset
+				return Magenta + "[FATAL]" + Reset
 			default:
 				return lvl
 			}
@@ -62,10 +73,10 @@ func Setup(level string) string {
 			return fmt.Sprintf("%s", i)
 		},
 		FormatFieldName: func(i any) string {
-			return utils.White + fmt.Sprintf("%s=", i)
+			return White + fmt.Sprintf("%s=", i)
 		},
 		FormatFieldValue: func(i any) string {
-			return fmt.Sprintf("%v", i) + utils.Reset
+			return fmt.Sprintf("%v", i) + Reset
 		},
 	}
 

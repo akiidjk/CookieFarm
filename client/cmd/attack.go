@@ -4,8 +4,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"syscall"
@@ -13,9 +15,9 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/executor"
+	"github.com/ByteTheCookies/cookieclient/internal/filesystem"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/ByteTheCookies/cookieclient/internal/submitter"
-	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/ByteTheCookies/cookieclient/internal/websockets"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -31,12 +33,12 @@ var attackCmd = &cobra.Command{
 // init initializes all command-line flags and binds them to the args struct.
 func init() {
 	RootCmd.AddCommand(attackCmd)
-	attackCmd.Flags().StringVarP(&config.ArgsAttack.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
-	attackCmd.Flags().Uint16VarP(&config.ArgsAttack.ServicePort, "port", "p", 0, "Service Port to attack")
+	attackCmd.Flags().StringVarP(&config.ArgsAttackInstance.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
+	attackCmd.Flags().Uint16VarP(&config.ArgsAttackInstance.ServicePort, "port", "p", 0, "Service Port to attack")
 	attackCmd.Flags().StringVarP(&config.ServerAddress, "host", "H", "", "Host of the cookieserver")
-	attackCmd.Flags().BoolVarP(&config.ArgsAttack.Detach, "detach", "d", false, "Run the exploit in the background (detached mode)")
-	attackCmd.Flags().IntVarP(&config.ArgsAttack.TickTime, "tick", "t", 120, "Interval in seconds between exploit executions")
-	attackCmd.Flags().IntVarP(&config.ArgsAttack.ThreadCount, "thread", "T", 5, "Number of concurrent threads to run the exploit with")
+	attackCmd.Flags().BoolVarP(&config.ArgsAttackInstance.Detach, "detach", "d", false, "Run the exploit in the background (detached mode)")
+	attackCmd.Flags().IntVarP(&config.ArgsAttackInstance.TickTime, "tick", "t", 120, "Interval in seconds between exploit executions")
+	attackCmd.Flags().IntVarP(&config.ArgsAttackInstance.ThreadCount, "thread", "T", 5, "Number of concurrent threads to run the exploit with")
 	attackCmd.MarkFlagRequired("exploit")
 	attackCmd.MarkFlagRequired("password")
 	attackCmd.MarkFlagRequired("port")
@@ -52,41 +54,41 @@ func init() {
 func setupClient() error {
 	var err error
 
-	if config.ArgsAttack.Detach {
-		fmt.Println(utils.Blue + "[INFO]" + utils.Reset + " | Detaching from terminal")
-		utils.Detach()
+	if config.ArgsAttackInstance.Detach {
+		fmt.Println(logger.Blue + "[INFO]" + logger.Reset + " | Detaching from terminal")
+		Detach()
 	}
 
-	config.ArgsAttack.ExploitPath, err = utils.NormalizeNamePathExploit(config.ArgsAttack.ExploitPath)
+	config.ArgsAttackInstance.ExploitPath, err = filesystem.NormalizeNamePathExploit(config.ArgsAttackInstance.ExploitPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error normalizing exploit name")
 		return err
 	}
 
-	if !utils.IsPath(config.ArgsAttack.ExploitPath) {
-		defaultPath, err := utils.ExpandTilde(config.DefaultConfigPath)
+	if !filesystem.IsPath(config.ArgsAttackInstance.ExploitPath) {
+		defaultPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Error expanding path")
 			return err
 		}
-		config.ArgsAttack.ExploitPath = filepath.Join(defaultPath, config.ArgsAttack.ExploitPath)
+		config.ArgsAttackInstance.ExploitPath = filepath.Join(defaultPath, config.ArgsAttackInstance.ExploitPath)
 	}
 
-	logger.Log.Debug().Str("Exploit path", config.ArgsAttack.ExploitPath).Msg("Using default exploit path")
+	logger.Log.Debug().Str("Exploit path", config.ArgsAttackInstance.ExploitPath).Msg("Using default exploit path")
 
-	err = utils.ValidateArgs(config.ArgsAttack)
+	err = ValidateArgs(config.ArgsAttackInstance)
 	if err != nil {
 		return fmt.Errorf("invalid arguments: %w", err)
 	}
 
 	logger.Log.Debug().
-		Int("ThreadCount", config.ArgsAttack.ThreadCount).
-		Int("Tick time", config.ArgsAttack.TickTime).
-		Str("ExploitPath", config.ArgsAttack.ExploitPath).
+		Int("ThreadCount", config.ArgsAttackInstance.ThreadCount).
+		Int("Tick time", config.ArgsAttackInstance.TickTime).
+		Str("ExploitPath", config.ArgsAttackInstance.ExploitPath).
 		Str("HostServer", config.ServerAddress).
 		Msg("Arguments validated")
 
-	config.Token, err = utils.GetSession()
+	config.Token, err = config.GetSession()
 	if err != nil {
 		return fmt.Errorf("failed to get session token: %w", err)
 	}
@@ -129,7 +131,7 @@ func attack(cmd *cobra.Command, args []string) {
 
 	logger.Log.Info().Msg("Client initialized successfully")
 
-	result, err := executor.Start(config.ArgsAttack.ExploitPath, config.ArgsAttack.TickTime, config.ArgsAttack.ThreadCount, config.ArgsAttack.ServicePort)
+	result, err := executor.Start(config.ArgsAttackInstance.ExploitPath, config.ArgsAttackInstance.TickTime, config.ArgsAttackInstance.ThreadCount, config.ArgsAttackInstance.ServicePort)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to execute exploit")
 	}
@@ -144,4 +146,53 @@ func attack(cmd *cobra.Command, args []string) {
 	if err := result.Cmd.Wait(); err != nil {
 		logger.Log.Error().Err(err).Msg("Exploit process exited with error")
 	}
+}
+
+// Detach detaches the current process from the terminal re executing itself.
+func Detach() {
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+
+	filteredArgs := []string{}
+	for _, arg := range os.Args[1:] {
+		if arg != "--detach" && arg != "-d" {
+			filteredArgs = append(filteredArgs, arg)
+		}
+	}
+	cmd = exec.Command(os.Args[0], filteredArgs...)
+
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println(logger.Red+"[ERROR]"+logger.Reset+"| Error during detach:", err)
+		os.Exit(1)
+	}
+
+	fmt.Println(logger.Yellow+"[WARN]"+logger.Reset+"| Process detached with PID:", cmd.Process.Pid)
+	os.Exit(0)
+}
+
+// ValidateArgs validates the arguments passed to the program.
+func ValidateArgs(args config.ArgsAttack) error {
+	if args.TickTime < 1 {
+		return errors.New("tick time must be at least 1")
+	}
+
+	exploitPath, err := filepath.Abs(args.ExploitPath)
+	if err != nil {
+		return fmt.Errorf("error resolving exploit path: %v", err)
+	}
+
+	if info, err := os.Stat(exploitPath); err == nil && info.Mode()&0o111 == 0 {
+		return errors.New("exploit file is not executable")
+	}
+
+	if _, err := os.Stat(exploitPath); os.IsNotExist(err) {
+		return errors.New("exploit not found in the exploits directory")
+	}
+
+	return nil
 }

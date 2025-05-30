@@ -3,18 +3,23 @@ package protocols
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path"
+	"path/filepath"
 	"plugin"
 
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
-	"github.com/ByteTheCookies/cookieserver/internal/utils"
 )
 
-type SubmitFunc = func(string, string, []string) ([]models.ResponseProtocol, error)
+type SubmitFunc = func(string, string, []string) ([]ResponseProtocol, error)
 
 func LoadProtocol(protocolName string) (SubmitFunc, error) {
-	pluginPath := path.Join(utils.GetExecutableDir(), "..", "protocols", protocolName+".so")
+	exePath, err := os.Executable()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to get executable path")
+		return nil, fmt.Errorf("failed to get executable path: %w", err)
+	}
+	pluginPath := path.Join(filepath.Dir(exePath), "..", "protocols", protocolName+".so")
 
 	logger.Log.Debug().Str("plugin", pluginPath).Msg("Loading protocol plugin")
 

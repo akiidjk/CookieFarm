@@ -6,8 +6,8 @@ import (
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/filesystem"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
-	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -31,7 +31,7 @@ var resetConfigCmd = &cobra.Command{
 
 func resetConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
-	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
+	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 	err = os.MkdirAll(expandendPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
@@ -46,13 +46,13 @@ func resetConfigFunc(cmd *cobra.Command, args []string) {
 	}
 	defer file.Close()
 
-	err = yaml.Unmarshal([]byte(config.ConfigTemplate), &config.ArgsConfig)
+	err = yaml.Unmarshal([]byte(config.ConfigTemplate), &config.ArgsConfigInstance)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
 		return
 	}
 
-	err = yaml.NewEncoder(file).Encode(config.ArgsConfig)
+	err = yaml.NewEncoder(file).Encode(config.ArgsConfigInstance)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error encoding configuration to YAML")
 		return
@@ -70,7 +70,7 @@ var editConfigCmd = &cobra.Command{
 
 func updateConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
-	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
+	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 	err = os.MkdirAll(expandendPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
@@ -93,7 +93,7 @@ func updateConfigFunc(cmd *cobra.Command, args []string) {
 	}
 	defer file.Close()
 
-	err = yaml.NewEncoder(file).Encode(config.ArgsConfig)
+	err = yaml.NewEncoder(file).Encode(config.ArgsConfigInstance)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error encoding configuration to YAML")
 		return
@@ -111,7 +111,7 @@ var loginConfigCmd = &cobra.Command{
 }
 
 func loginConfigFunc(cmd *cobra.Command, args []string) {
-	err := utils.LoadLocalConfig()
+	err := config.LoadLocalConfig()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error loading local configuration")
 		return
@@ -123,7 +123,7 @@ func loginConfigFunc(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
+	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
 		return
@@ -141,7 +141,7 @@ var logoutConfigCmd = &cobra.Command{
 }
 
 func logoutConfigFunc(cmd *cobra.Command, args []string) {
-	expandendPath, err := utils.ExpandTilde(config.DefaultConfigPath)
+	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
 		return
@@ -161,10 +161,10 @@ func init() {
 	configCmd.AddCommand(loginConfigCmd)
 	configCmd.AddCommand(logoutConfigCmd)
 
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfig.Address, "host", "H", "", "Server host to connect to")
-	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfig.Port, "port", "p", 0, "Server port to connect to")
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfig.Nickname, "username", "u", "", "Username for authenticating to the server")
-	editConfigCmd.Flags().BoolVarP(&config.ArgsConfig.Https, "https", "s", false, "Use HTTPS for secure communication with the server")
+	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "", "Server host to connect to")
+	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 0, "Server port to connect to")
+	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Nickname, "username", "u", "", "Username for authenticating to the server")
+	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.Https, "https", "s", false, "Use HTTPS for secure communication with the server")
 	editConfigCmd.MarkFlagRequired("host")
 	editConfigCmd.MarkFlagRequired("port")
 	editConfigCmd.MarkFlagRequired("username")

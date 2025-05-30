@@ -2,12 +2,12 @@ package server
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -15,22 +15,31 @@ import (
 
 // InitSecret generates a random secret key and assigns it to the config.
 func InitSecret() {
+	if len(config.Secret) != 0 {
+		return
+	}
 	secret := make([]byte, 32)
 	if _, err := rand.Read(secret); err != nil {
-		panic(fmt.Sprintf("failed to generate secret: %v", err))
+		logger.Log.Fatal().Err(err).Msg("failed to generate secret")
 	}
 	config.Secret = secret
 }
 
 // VerifyToken validates the JWT token using the secret key.
 func VerifyToken(token string) error {
-	_, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
+	tok, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return config.Secret, nil
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("token parse error: %w", err)
+	}
+	if !tok.Valid {
+		return errors.New("invalid token")
+	}
+	return nil
 }
 
 // HashPassword hashes the password using bcrypt.
@@ -43,10 +52,10 @@ func HashPassword(password string) (string, error) {
 }
 
 // CreateJWT generates a new JWT token with an expiration time of 24 hours.
-func CreateJWT() (string, int64, error) {
+func CreateJWT(username string) (string, int64, error) {
 	exp := time.Now().Add(24 * time.Hour).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": "cookie",
+		"username": username,
 		"exp":      exp,
 	})
 
@@ -59,7 +68,7 @@ func CreateJWT() (string, int64, error) {
 
 // HandleLogin handles the login request by checking the credentials and generating a JWT token.
 func HandleLogin(c *fiber.Ctx) error {
-	req := new(models.SigninRequest)
+	req := new(SigninRequest)
 	if err := c.BodyParser(req); err != nil {
 		logger.Log.Warn().Err(err).Msg("Invalid login payload")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -81,7 +90,12 @@ func HandleLogin(c *fiber.Ctx) error {
 		})
 	}
 
-	token, _, err := CreateJWT()
+	if req.Username == "" {
+		req.Username = "cookieguest"
+		logger.Log.Debug().Msg("Username not provided, using default 'cookieguest'")
+	}
+
+	token, _, err := CreateJWT(req.Username)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to generate JWT")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -92,7 +106,7 @@ func HandleLogin(c *fiber.Ctx) error {
 	c.Cookie(&fiber.Cookie{
 		Name:     "token",
 		Value:    token,
-		MaxAge:   60 * 60 * 24, // 1 day
+		MaxAge:   60 * 60 * 48, // 2 day
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "Strict",
@@ -104,7 +118,12 @@ func HandleLogin(c *fiber.Ctx) error {
 // CookieAuthMiddleware checks if the user has a valid JWT token in their cookies.
 func CookieAuthMiddleware(c *fiber.Ctx) error {
 	token := c.Cookies("token")
-	if token == "" || VerifyToken(token) != nil {
+	if token == "" {
+		logger.Log.Warn().Msg("JWT cookie missing")
+		return c.Redirect("/login")
+	}
+	if err := VerifyToken(token); err != nil {
+		logger.Log.Warn().Err(err).Msg("JWT verification failed")
 		return c.Redirect("/login")
 	}
 	return nil

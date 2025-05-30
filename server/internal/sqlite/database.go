@@ -1,5 +1,5 @@
-// Package database provides some basic functionality for interacting with a SQLite database.
-package database
+// Package sqlite provides some basic functionality for interacting with a SQLite database.
+package sqlite
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,7 +20,7 @@ import (
 var sqlSchema string
 
 var (
-	dbPath = utils.GetEnv("DB_URL", filepath.Join(utils.GetExecutableDir(), "cookiefarm.db"))
+	dbPath = config.GetEnv("DB_URL", filepath.Join(config.GetExecutableDir(), "cookiefarm.db"))
 	DB     *sql.DB
 )
 

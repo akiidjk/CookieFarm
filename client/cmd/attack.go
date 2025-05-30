@@ -65,12 +65,11 @@ func setupClient() error {
 	}
 
 	if !filesystem.IsPath(config.ArgsAttackInstance.ExploitPath) {
-		defaultPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Error expanding path")
 			return err
 		}
-		config.ArgsAttackInstance.ExploitPath = filepath.Join(defaultPath, config.ArgsAttackInstance.ExploitPath)
+		config.ArgsAttackInstance.ExploitPath = filepath.Join(config.DefaultConfigPath, config.ArgsAttackInstance.ExploitPath)
 	}
 
 	logger.Log.Debug().Str("Exploit path", config.ArgsAttackInstance.ExploitPath).Msg("Using default exploit path")

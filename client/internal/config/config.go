@@ -1,6 +1,8 @@
 // Package config provides functions to manage the CookieFarm client configuration globally.
 package config
 
+import "github.com/ByteTheCookies/cookieclient/internal/filesystem"
+
 var (
 	Token              string     // Token stores the global authentication token.
 	ServerAddress      string     // HostServer holds the global base URL for the server.
@@ -9,7 +11,7 @@ var (
 	Current            Config     // Current holds the global configuration for the client.
 )
 
-const DefaultConfigPath = "~/.config/cookiefarm"
+var DefaultConfigPath, _ = filesystem.ExpandTilde("~/.config/cookiefarm")
 
 var ExploitTemplate = []byte(`#!/usr/bin/env python3
 from cookiefarm_exploiter import exploit_manager

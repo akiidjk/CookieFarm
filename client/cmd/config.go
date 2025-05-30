@@ -70,13 +70,12 @@ var editConfigCmd = &cobra.Command{
 
 func updateConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	err = os.MkdirAll(expandendPath, 0o755)
+	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
 	}
 
-	configPath := filepath.Join(expandendPath, "config.yml")
+	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Configuration file does not exist, creating a new one with default settings")
@@ -123,12 +122,11 @@ func loginConfigFunc(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
 		return
 	}
-	sessionPath := filepath.Join(expandendPath, "session")
+	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
 	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
@@ -141,13 +139,8 @@ var logoutConfigCmd = &cobra.Command{
 }
 
 func logoutConfigFunc(cmd *cobra.Command, args []string) {
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
-		return
-	}
-	sessionPath := filepath.Join(expandendPath, "session")
-	err = os.Remove(sessionPath)
+	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
+	err := os.Remove(sessionPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error removing session file")
 		return
@@ -164,13 +157,7 @@ var showConfigCmd = &cobra.Command{
 }
 
 func showConfigFunc(cmd *cobra.Command, args []string) {
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
-		return
-	}
-
-	configPath := filepath.Join(expandendPath, "config.yml")
+	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
 
 	content, err := os.ReadFile(configPath)
 	if err != nil {

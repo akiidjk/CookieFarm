@@ -28,15 +28,10 @@ func init() {
 }
 
 func Create(cmd *cobra.Command, args []string) {
-	path, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error expanding path")
-		return
-	}
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	var path string = config.DefaultConfigPath
+	if _, err := os.Stat(config.DefaultConfigPath); os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Default exploit path not exists... Creating it")
-		err := os.MkdirAll(path, os.ModePerm)
+		err := os.MkdirAll(config.DefaultConfigPath, os.ModePerm)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Error creating exploit path")
 			return
@@ -45,7 +40,7 @@ func Create(cmd *cobra.Command, args []string) {
 
 	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
 
-	name, err = filesystem.NormalizeNamePathExploit(name)
+	name, err := filesystem.NormalizeNamePathExploit(name)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error normalizing exploit name")
 		return

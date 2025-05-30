@@ -188,13 +188,10 @@ func init() {
 	configCmd.AddCommand(logoutConfigCmd)
 	configCmd.AddCommand(showConfigCmd)
 
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "", "Server host to connect to")
-	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 0, "Server port to connect to")
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Nickname, "username", "u", "", "Username for authenticating to the server")
+	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "localhost", "Server host to connect to")
+	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 8080, "Server port to connect to")
+	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Nickname, "username", "u", "cookieguest", "Username for authenticating to the server")
 	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.Https, "https", "s", false, "Use HTTPS for secure communication with the server")
-	editConfigCmd.MarkFlagRequired("host")
-	editConfigCmd.MarkFlagRequired("port")
-	editConfigCmd.MarkFlagRequired("username")
 
 	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")

@@ -35,7 +35,6 @@ func init() {
 	RootCmd.AddCommand(attackCmd)
 	attackCmd.Flags().StringVarP(&config.ArgsAttackInstance.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
 	attackCmd.Flags().Uint16VarP(&config.ArgsAttackInstance.ServicePort, "port", "p", 0, "Service Port to attack")
-	attackCmd.Flags().StringVarP(&config.ServerAddress, "host", "H", "", "Host of the cookieserver")
 	attackCmd.Flags().BoolVarP(&config.ArgsAttackInstance.Detach, "detach", "d", false, "Run the exploit in the background (detached mode)")
 	attackCmd.Flags().IntVarP(&config.ArgsAttackInstance.TickTime, "tick", "t", 120, "Interval in seconds between exploit executions")
 	attackCmd.Flags().IntVarP(&config.ArgsAttackInstance.ThreadCount, "thread", "T", 5, "Number of concurrent threads to run the exploit with")

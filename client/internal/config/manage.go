@@ -10,7 +10,8 @@ import (
 )
 
 func GetSession() (string, error) {
-	sessionPath := filepath.Join(filesystem.GetExecutableDir(), "session")
+	expandedPath, err := filesystem.ExpandTilde(DefaultConfigPath)
+	sessionPath := filepath.Join(expandedPath, "session")
 	data, err := os.ReadFile(sessionPath)
 	if err != nil {
 		return "", err

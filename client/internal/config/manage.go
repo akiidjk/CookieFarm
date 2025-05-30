@@ -32,8 +32,6 @@ func LoadLocalConfig() error {
 		return fmt.Errorf("error reading config file: %w", err)
 	}
 
-	fmt.Println(string(configFileContent))
-
 	err = yaml.Unmarshal(configFileContent, &ArgsConfigInstance)
 	if err != nil {
 		return err

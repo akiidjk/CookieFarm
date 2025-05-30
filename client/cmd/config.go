@@ -155,11 +155,38 @@ func logoutConfigFunc(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Msg("Logged out successfully. Session file removed.")
 }
 
+// showConfigCmd represents the config show command
+var showConfigCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Show the current client configuration",
+	Long:  `This command displays the current client configuration settings, including server host, port, username, and other parameters.`,
+	Run:   showConfigFunc,
+}
+
+func showConfigFunc(cmd *cobra.Command, args []string) {
+	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
+		return
+	}
+
+	configPath := filepath.Join(expandendPath, "config.yml")
+
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error reading configuration file")
+		return
+	}
+
+	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + string(content) + "```")
+}
+
 func init() {
 	configCmd.AddCommand(resetConfigCmd)
 	configCmd.AddCommand(editConfigCmd)
 	configCmd.AddCommand(loginConfigCmd)
 	configCmd.AddCommand(logoutConfigCmd)
+	configCmd.AddCommand(showConfigCmd)
 
 	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "", "Server host to connect to")
 	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 0, "Server port to connect to")

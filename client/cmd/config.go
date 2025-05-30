@@ -6,7 +6,6 @@ import (
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
-	"github.com/ByteTheCookies/cookieclient/internal/filesystem"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -31,13 +30,12 @@ var resetConfigCmd = &cobra.Command{
 
 func resetConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	err = os.MkdirAll(expandendPath, 0o755)
+	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
 	}
 
-	configPath := filepath.Join(expandendPath, "config.yml")
+	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
 
 	file, err := os.Create(configPath)
 	if err != nil {
@@ -46,7 +44,7 @@ func resetConfigFunc(cmd *cobra.Command, args []string) {
 	}
 	defer file.Close()
 
-	err = yaml.Unmarshal([]byte(config.ConfigTemplate), &config.ArgsConfigInstance)
+	err = yaml.Unmarshal(config.ConfigTemplate, &config.ArgsConfigInstance)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
 		return
@@ -79,7 +77,7 @@ func updateConfigFunc(cmd *cobra.Command, args []string) {
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Configuration file does not exist, creating a new one with default settings")
-		os.WriteFile(configPath, []byte(config.ConfigTemplate), 0o644)
+		os.WriteFile(configPath, config.ConfigTemplate, 0o644)
 	} else if err != nil {
 		logger.Log.Error().Err(err).Msg("Error checking configuration file")
 		return
@@ -128,6 +126,10 @@ func loginConfigFunc(cmd *cobra.Command, args []string) {
 	}
 	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
 	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error writing session token to file")
+		return
+	}
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
 
@@ -178,7 +180,7 @@ func init() {
 	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "localhost", "Server host to connect to")
 	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 8080, "Server port to connect to")
 	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Nickname, "username", "u", "cookieguest", "Username for authenticating to the server")
-	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.Https, "https", "s", false, "Use HTTPS for secure communication with the server")
+	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.HTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
 
 	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")

@@ -28,7 +28,7 @@ func init() {
 }
 
 func Create(cmd *cobra.Command, args []string) {
-	var path string = config.DefaultConfigPath
+	path := config.DefaultConfigPath
 	if _, err := os.Stat(config.DefaultConfigPath); os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Default exploit path not exists... Creating it")
 		err := os.MkdirAll(config.DefaultConfigPath, os.ModePerm)
@@ -40,16 +40,16 @@ func Create(cmd *cobra.Command, args []string) {
 
 	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
 
-	name, err := filesystem.NormalizeNamePathExploit(name)
+	namePathNormalized, err := filesystem.NormalizeNamePathExploit(name)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error normalizing exploit name")
 		return
 	}
 
-	if filesystem.IsPath(name) {
-		path = name
+	if filesystem.IsPath(namePathNormalized) {
+		path = namePathNormalized
 	} else {
-		path = filepath.Join(path, name)
+		path = filepath.Join(path, namePathNormalized)
 	}
 
 	exploitFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0o777)

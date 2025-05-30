@@ -46,6 +46,6 @@ type ArgsAttack struct {
 type ArgsConfig struct {
 	Address  string `json:"address"`  // Host address of the server
 	Port     uint16 `json:"port"`     // Port of the server
-	Https    bool   `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
+	HTTPS    bool   `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
 	Nickname string `json:"nickname"` // Nickname of the client
 }

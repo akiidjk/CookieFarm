@@ -45,7 +45,8 @@ echo "⬇️ Downloading from: $ASSET_URL"
 curl -L "$ASSET_URL" -o "$TMP_DIR/$ASSET_NAME"
 
 echo "🚚 Installing to $INSTALL_DIR..."
-sudo mv "$TMP_DIR/$ASSET_NAME" "$INSTALL_DIR/$FINAL_NAME"
+# sudo mv "$TMP_DIR/$ASSET_NAME" "$INSTALL_DIR/$FINAL_NAME"
+sudo mv "./client/bin/cookieclient" "$INSTALL_DIR/$FINAL_NAME"
 sudo chmod +x "$INSTALL_DIR/$FINAL_NAME"
 
 echo "🔧 Setting up configuration..."

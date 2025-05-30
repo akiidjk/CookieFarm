@@ -4,9 +4,6 @@ package config
 var (
 	Token              string     // Token stores the global authentication token.
 	ServerAddress      string     // HostServer holds the global base URL for the server.
-	Nickname           string     // Nickname holds the global nickname for the client.
-	Protocol           string     // Protocol holds the global protocol (e.g., http, https) for the server connection.
-	ServerPort         uint16     // PortServer holds the global port for the server connection.
 	ArgsAttackInstance ArgsAttack // Struct holding runtime arguments
 	ArgsConfigInstance ArgsConfig // Struct holding configuration arguments
 	Current            Config     // Current holds the global configuration for the client.
@@ -29,5 +26,5 @@ def exploit(ip, port, name_service):
 var ConfigTemplate = []byte(`address: "localhost"
 port: 8080
 https: false
-nickname: "guest"
+nickname: "cookieguest"
 `)

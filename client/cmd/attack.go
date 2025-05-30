@@ -53,6 +53,8 @@ func init() {
 func setupClient() error {
 	var err error
 
+	err = config.LoadLocalConfig()
+
 	if config.ArgsAttackInstance.Detach {
 		fmt.Println(logger.Blue + "[INFO]" + logger.Reset + " | Detaching from terminal")
 		Detach()

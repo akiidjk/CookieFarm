@@ -39,7 +39,7 @@ func SendFlag(flags ...Flag) error {
 		return err
 	}
 
-	ServerURL := "http://" + config.ServerAddress + "/api/v1/submit-flags"
+	ServerURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/submit-flags"
 	req, err := http.NewRequest(http.MethodPost, ServerURL, bytes.NewReader(body))
 	if err != nil {
 		log.Error().Err(err).Str("url", ServerURL).Msg("error creating request")

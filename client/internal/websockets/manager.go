@@ -4,6 +4,7 @@ package websockets
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
@@ -65,7 +66,7 @@ func GetConnection() (*websocket.Conn, error) {
 	}
 
 	for attempts := 0; attempts < maxAttempts; attempts++ {
-		conn, _, err = dialer.Dial("ws://"+config.ServerAddress+"/ws", http.Header{
+		conn, _, err = dialer.Dial("ws://"+config.ArgsConfigInstance.Address+":"+strconv.Itoa(int(config.ArgsConfigInstance.Port))+"/ws", http.Header{
 			"Cookie": []string{"token=" + config.Token},
 		})
 

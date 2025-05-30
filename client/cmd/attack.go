@@ -83,7 +83,6 @@ func setupClient() error {
 		Int("ThreadCount", config.ArgsAttackInstance.ThreadCount).
 		Int("Tick time", config.ArgsAttackInstance.TickTime).
 		Str("ExploitPath", config.ArgsAttackInstance.ExploitPath).
-		Str("HostServer", config.ServerAddress).
 		Msg("Arguments validated")
 
 	config.Token, err = config.GetSession()

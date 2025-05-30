@@ -32,7 +32,7 @@ var (
 func Start(exploitPath string, tickTime int, threadCount int, port uint16) (*ExecutionResult, error) {
 	cmd := exec.Command(
 		exploitPath,
-		config.ServerAddress,
+		config.ArgsConfigInstance.Address+":"+strconv.Itoa(int(config.ArgsConfigInstance.Port)),
 		strconv.Itoa(tickTime),
 		strconv.Itoa(threadCount),
 		strconv.Itoa(int(port)),

@@ -5,7 +5,6 @@ import "github.com/ByteTheCookies/cookieclient/internal/filesystem"
 
 var (
 	Token              string     // Token stores the global authentication token.
-	ServerAddress      string     // HostServer holds the global base URL for the server.
 	ArgsAttackInstance ArgsAttack // Struct holding runtime arguments
 	ArgsConfigInstance ArgsConfig // Struct holding configuration arguments
 	Current            Config     // Current holds the global configuration for the client.

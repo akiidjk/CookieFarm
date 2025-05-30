@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/filesystem"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
-	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ func init() {
 }
 
 func Create(cmd *cobra.Command, args []string) {
-	path, err := utils.ExpandTilde(config.DefaultConfigPath)
+	path, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error expanding path")
 		return
@@ -45,13 +45,13 @@ func Create(cmd *cobra.Command, args []string) {
 
 	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
 
-	name, err = utils.NormalizeNamePathExploit(name)
+	name, err = filesystem.NormalizeNamePathExploit(name)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error normalizing exploit name")
 		return
 	}
 
-	if utils.IsPath(name) {
+	if filesystem.IsPath(name) {
 		path = name
 	} else {
 		path = filepath.Join(path, name)

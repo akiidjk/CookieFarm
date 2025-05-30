@@ -1,20 +1,4 @@
-// Package models defines the core data structures used by both
-// the CookieFarm client and server for handling flags, configuration,
-// and runtime arguments.
-package models
-
-// Flag represents a single flag captured during a CTF round.
-// It includes metadata about the submission and the service context.
-type Flag struct {
-	SubmitTime   uint64 `json:"submit_time"`   // UNIX timestamp when the flag was submitted
-	ResponseTime uint64 `json:"response_time"` // UNIX timestamp when a response was received
-	PortService  uint16 `json:"port_service"`  // Port of the vulnerable service
-	TeamID       uint16 `json:"team_id"`       // ID of the team the flag was captured from
-	Status       string `json:"status"`        // Status of the submission (e.g., "unsubmitted", "accepted", "denied")
-	FlagCode     string `json:"flag_code"`     // Actual flag string
-	ServiceName  string `json:"service_name"`  // Human-readable name of the service
-	Msg          string `json:"msg"`           // Message from the flag checker service
-}
+package config
 
 // Service represents a single vulnerable service as defined in the configuration.
 type Service struct {
@@ -64,25 +48,4 @@ type ArgsConfig struct {
 	Port     uint16 `json:"port"`     // Port of the server
 	Https    bool   `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
 	Nickname string `json:"nickname"` // Nickname of the client
-}
-
-// ParsedFlagOutput represents the output of a parsed flag returned
-// by an exploit run in the exploit_manager, ready to be submitted.
-type ParsedFlagOutput struct {
-	TeamID      uint16 `json:"team_id"`      // ID of the team the flag was extracted from
-	PortService uint16 `json:"port_service"` // Port of the service that produced the flag
-	Status      string `json:"status"`       // Status of the flag submission (eg "success", "failed", "error", "fatal")
-	FlagCode    string `json:"flag_code"`    // The actual flag string
-	NameService string `json:"name_service"` // Human-readable name of the service
-	Message     string `json:"message"`      // Additional message or error information
-}
-
-type EventWS struct {
-	Type    string `json:"type"`
-	Payload []byte `json:"payload"`
-}
-
-type EventWSFlag struct {
-	Type    string `json:"type"`
-	Payload Flag   `json:"payload"`
 }

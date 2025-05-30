@@ -9,17 +9,16 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/flagparser"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
-	"github.com/ByteTheCookies/cookieclient/internal/models"
 	"github.com/ByteTheCookies/cookieclient/internal/submitter"
-	"github.com/ByteTheCookies/cookieclient/internal/utils"
 )
 
 type ExecutionResult struct {
 	Cmd        *exec.Cmd
-	FlagsChan  chan models.Flag
+	FlagsChan  chan api.Flag
 	stopReader chan struct{}
 	done       chan struct{}
 }
@@ -37,7 +36,7 @@ func Start(exploitPath string, tickTime int, threadCount int, port uint16) (*Exe
 		strconv.Itoa(tickTime),
 		strconv.Itoa(threadCount),
 		strconv.Itoa(int(port)),
-		utils.MapPortToService(port),
+		config.MapPortToService(port),
 	)
 
 	logger.Log.Debug().
@@ -61,7 +60,7 @@ func Start(exploitPath string, tickTime int, threadCount int, port uint16) (*Exe
 		return nil, fmt.Errorf("failed to start command: %w", err)
 	}
 
-	flagsChan := make(chan models.Flag, 500)
+	flagsChan := make(chan api.Flag, 500)
 	stopReader := make(chan struct{})
 	done := make(chan struct{})
 
@@ -88,10 +87,10 @@ func RestartGlobal() {
 	logger.Log.Info().Msg("Starting new exploit process...")
 
 	result, err := Start(
-		config.ArgsAttack.ExploitPath,
-		config.ArgsAttack.TickTime,
-		config.ArgsAttack.ThreadCount,
-		config.ArgsAttack.ServicePort,
+		config.ArgsAttackInstance.ExploitPath,
+		config.ArgsAttackInstance.TickTime,
+		config.ArgsAttackInstance.ThreadCount,
+		config.ArgsAttackInstance.ServicePort,
 	)
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to start new exploit")
@@ -146,7 +145,7 @@ func logParsedLineError(err error, status, line string) {
 }
 
 // Read the stdout and parse JSON lines into Flag structs.
-func readStdout(stdout io.Reader, flagsChan chan<- models.Flag, stop <-chan struct{}, done chan<- struct{}) {
+func readStdout(stdout io.Reader, flagsChan chan<- api.Flag, stop <-chan struct{}, done chan<- struct{}) {
 	defer func() { done <- struct{}{} }()
 
 	scanner := bufio.NewScanner(stdout)

@@ -8,8 +8,6 @@ import (
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
-	"github.com/ByteTheCookies/cookieclient/internal/models"
-	"github.com/ByteTheCookies/cookieclient/internal/utils"
 	"github.com/gorilla/websocket"
 )
 
@@ -90,7 +88,7 @@ func GetConnection() (*websocket.Conn, error) {
 
 		if websocket.ErrBadHandshake == err {
 			logger.Log.Error().Err(err).Msg("Bad handshake, retrying login...")
-			config.Token, err = utils.GetSession()
+			config.Token, err = config.GetSession()
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to refresh token")
 				circuitBreaker.RecordFailure()
@@ -147,7 +145,7 @@ func WSHandleMessage(message []byte) error {
 }
 
 func ConfigHandler(payload json.RawMessage) error {
-	var configReceived models.Config
+	var configReceived config.Config
 	if err := json.Unmarshal(payload, &configReceived); err != nil {
 		return err
 	}

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ByteTheCookies/cookieserver/internal/database"
+	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/internal/sqlite"
 )
 
 const (
@@ -18,17 +18,17 @@ const (
 )
 
 func init() {
-	database.GetCollector().Start()
+	sqlite.GetCollector().Start()
 }
 
 // FlagHandler will send out a message to all other participants in the chat
 func FlagHandler(event Event, client *Client) error {
-	var flag models.Flag
+	var flag sqlite.Flag
 	if err := json.Unmarshal(event.Payload, &flag); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 
-	if err := database.GetCollector().AddFlag(flag); err != nil {
+	if err := sqlite.GetCollector().AddFlag(flag); err != nil {
 		logger.Log.Error().Err(err).Msg("Flag buffer add failed in flag handler")
 		return err
 	}
@@ -60,8 +60,8 @@ func FlagHandler(event Event, client *Client) error {
 }
 
 func ConfigHandler(event Event, client *Client) error {
-	var config models.Config
-	if err := json.Unmarshal(event.Payload, &config); err != nil {
+	var configData config.Config
+	if err := json.Unmarshal(event.Payload, &configData); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
 

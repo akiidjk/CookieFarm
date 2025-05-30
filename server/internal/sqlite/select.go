@@ -1,11 +1,10 @@
-package database
+package sqlite
 
 import (
 	"context"
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
 const (
@@ -25,22 +24,22 @@ const (
 // --------- Flag Structs ---------
 
 // GetAllFlags retrieves all flags from the database.
-func GetAllFlags() ([]models.Flag, error) {
+func GetAllFlags() ([]Flag, error) {
 	return queryFlags(queryAllFlags)
 }
 
 // GetUnsubmittedFlags retrieves the first n unsubmitted flags from the database.
-func GetUnsubmittedFlags(limit uint) ([]models.Flag, error) {
+func GetUnsubmittedFlags(limit uint) ([]Flag, error) {
 	return queryFlags(queryUnsubmittedFlags, limit)
 }
 
 // GetFirstNFlags retrieves the first n flags from the database.
-func GetFirstNFlags(limit uint) ([]models.Flag, error) {
+func GetFirstNFlags(limit uint) ([]Flag, error) {
 	return queryFlags(queryFirstNFlags, limit)
 }
 
 // GetPagedFlags retrieves the flags from the database starting at the given offset.
-func GetPagedFlags(limit, offset uint) ([]models.Flag, error) {
+func GetPagedFlags(limit, offset uint) ([]Flag, error) {
 	return queryFlags(queryPagedFlags, limit, offset)
 }
 
@@ -70,7 +69,7 @@ func GetPagedFlagCodeList(limit, offset uint) ([]string, error) {
 
 // queryFlags executes a query to retrieve flags from the database.
 // It prepares and executes a query with the provided arguments and returns a list of flags.
-func queryFlags(query string, args ...any) ([]models.Flag, error) {
+func queryFlags(query string, args ...any) ([]Flag, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -88,8 +87,8 @@ func queryFlags(query string, args ...any) ([]models.Flag, error) {
 	}
 	defer rows.Close()
 
-	var flags []models.Flag
-	flagPtr := new(models.Flag)
+	var flags []Flag
+	flagPtr := new(Flag)
 	for rows.Next() {
 		if err := rows.Scan(
 			&flagPtr.FlagCode, &flagPtr.ServiceName, &flagPtr.PortService,

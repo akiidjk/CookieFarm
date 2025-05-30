@@ -10,10 +10,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"github.com/ByteTheCookies/cookieserver/protocols"
 )
 
-func Submit(host string, team_token string, flags []string) ([]models.ResponseProtocol, error) {
+func Submit(host string, team_token string, flags []string) ([]protocols.ResponseProtocol, error) {
 	jsonData, err := json.Marshal(flags)
 	if err != nil {
 		return nil, fmt.Errorf("error during marshalling: %w", err)
@@ -40,7 +40,7 @@ func Submit(host string, team_token string, flags []string) ([]models.ResponsePr
 		return nil, fmt.Errorf("error during response reading: %w", err)
 	}
 
-	var responses []models.ResponseProtocol
+	var responses []protocols.ResponseProtocol
 	// logger.Debug("Raw body %s", string(body))
 	if err := json.Unmarshal(body, &responses); err != nil {
 		return nil, fmt.Errorf("error during response parsing: %w", err)

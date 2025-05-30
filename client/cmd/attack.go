@@ -35,7 +35,6 @@ func init() {
 	RootCmd.AddCommand(attackCmd)
 	attackCmd.Flags().StringVarP(&config.ArgsAttackInstance.ExploitPath, "exploit", "e", "", "Path to the exploit file to execute")
 	attackCmd.Flags().Uint16VarP(&config.ArgsAttackInstance.ServicePort, "port", "p", 0, "Service Port to attack")
-	attackCmd.Flags().StringVarP(&config.ServerAddress, "host", "H", "", "Host of the cookieserver")
 	attackCmd.Flags().BoolVarP(&config.ArgsAttackInstance.Detach, "detach", "d", false, "Run the exploit in the background (detached mode)")
 	attackCmd.Flags().IntVarP(&config.ArgsAttackInstance.TickTime, "tick", "t", 120, "Interval in seconds between exploit executions")
 	attackCmd.Flags().IntVarP(&config.ArgsAttackInstance.ThreadCount, "thread", "T", 5, "Number of concurrent threads to run the exploit with")
@@ -54,6 +53,8 @@ func init() {
 func setupClient() error {
 	var err error
 
+	err = config.LoadLocalConfig()
+
 	if config.ArgsAttackInstance.Detach {
 		fmt.Println(logger.Blue + "[INFO]" + logger.Reset + " | Detaching from terminal")
 		Detach()
@@ -66,12 +67,11 @@ func setupClient() error {
 	}
 
 	if !filesystem.IsPath(config.ArgsAttackInstance.ExploitPath) {
-		defaultPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Error expanding path")
 			return err
 		}
-		config.ArgsAttackInstance.ExploitPath = filepath.Join(defaultPath, config.ArgsAttackInstance.ExploitPath)
+		config.ArgsAttackInstance.ExploitPath = filepath.Join(config.DefaultConfigPath, config.ArgsAttackInstance.ExploitPath)
 	}
 
 	logger.Log.Debug().Str("Exploit path", config.ArgsAttackInstance.ExploitPath).Msg("Using default exploit path")
@@ -85,7 +85,6 @@ func setupClient() error {
 		Int("ThreadCount", config.ArgsAttackInstance.ThreadCount).
 		Int("Tick time", config.ArgsAttackInstance.TickTime).
 		Str("ExploitPath", config.ArgsAttackInstance.ExploitPath).
-		Str("HostServer", config.ServerAddress).
 		Msg("Arguments validated")
 
 	config.Token, err = config.GetSession()

@@ -6,7 +6,6 @@ import (
 
 	"github.com/ByteTheCookies/cookieclient/internal/api"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
-	"github.com/ByteTheCookies/cookieclient/internal/filesystem"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -31,13 +30,12 @@ var resetConfigCmd = &cobra.Command{
 
 func resetConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	err = os.MkdirAll(expandendPath, 0o755)
+	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
 	}
 
-	configPath := filepath.Join(expandendPath, "config.yml")
+	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
 
 	file, err := os.Create(configPath)
 	if err != nil {
@@ -46,7 +44,7 @@ func resetConfigFunc(cmd *cobra.Command, args []string) {
 	}
 	defer file.Close()
 
-	err = yaml.Unmarshal([]byte(config.ConfigTemplate), &config.ArgsConfigInstance)
+	err = yaml.Unmarshal(config.ConfigTemplate, &config.ArgsConfigInstance)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
 		return
@@ -70,17 +68,16 @@ var editConfigCmd = &cobra.Command{
 
 func updateConfigFunc(cmd *cobra.Command, args []string) {
 	var err error
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	err = os.MkdirAll(expandendPath, 0o755)
+	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
 	}
 
-	configPath := filepath.Join(expandendPath, "config.yml")
+	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Configuration file does not exist, creating a new one with default settings")
-		os.WriteFile(configPath, []byte(config.ConfigTemplate), 0o644)
+		os.WriteFile(configPath, config.ConfigTemplate, 0o644)
 	} else if err != nil {
 		logger.Log.Error().Err(err).Msg("Error checking configuration file")
 		return
@@ -123,13 +120,16 @@ func loginConfigFunc(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
 		return
 	}
-	sessionPath := filepath.Join(expandendPath, "session")
+	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
 	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error writing session token to file")
+		return
+	}
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
 
@@ -141,13 +141,8 @@ var logoutConfigCmd = &cobra.Command{
 }
 
 func logoutConfigFunc(cmd *cobra.Command, args []string) {
-	expandendPath, err := filesystem.ExpandTilde(config.DefaultConfigPath)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error expanding path for config directory")
-		return
-	}
-	sessionPath := filepath.Join(expandendPath, "session")
-	err = os.Remove(sessionPath)
+	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
+	err := os.Remove(sessionPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error removing session file")
 		return
@@ -155,19 +150,37 @@ func logoutConfigFunc(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Msg("Logged out successfully. Session file removed.")
 }
 
+// showConfigCmd represents the config show command
+var showConfigCmd = &cobra.Command{
+	Use:   "show",
+	Short: "Show the current client configuration",
+	Long:  `This command displays the current client configuration settings, including server host, port, username, and other parameters.`,
+	Run:   showConfigFunc,
+}
+
+func showConfigFunc(cmd *cobra.Command, args []string) {
+	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
+
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error reading configuration file")
+		return
+	}
+
+	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + string(content) + "```")
+}
+
 func init() {
 	configCmd.AddCommand(resetConfigCmd)
 	configCmd.AddCommand(editConfigCmd)
 	configCmd.AddCommand(loginConfigCmd)
 	configCmd.AddCommand(logoutConfigCmd)
+	configCmd.AddCommand(showConfigCmd)
 
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "", "Server host to connect to")
-	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 0, "Server port to connect to")
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Nickname, "username", "u", "", "Username for authenticating to the server")
-	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.Https, "https", "s", false, "Use HTTPS for secure communication with the server")
-	editConfigCmd.MarkFlagRequired("host")
-	editConfigCmd.MarkFlagRequired("port")
-	editConfigCmd.MarkFlagRequired("username")
+	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "localhost", "Server host to connect to")
+	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 8080, "Server port to connect to")
+	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Nickname, "username", "u", "cookieguest", "Username for authenticating to the server")
+	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.HTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
 
 	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")

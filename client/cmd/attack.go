@@ -54,6 +54,10 @@ func setupClient() error {
 	var err error
 
 	err = config.LoadLocalConfig()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error loading local configuration, try running `cookieclient config reset`")
+		return err
+	}
 
 	if config.ArgsAttackInstance.Detach {
 		fmt.Println(logger.Blue + "[INFO]" + logger.Reset + " | Detaching from terminal")
@@ -89,7 +93,7 @@ func setupClient() error {
 
 	config.Token, err = config.GetSession()
 	if err != nil {
-		return fmt.Errorf("failed to get session token: %w", err)
+		return fmt.Errorf("failed to get session token: %w, try to run `cookieclient config login -P <password>`", err)
 	}
 
 	config.Current, err = api.GetConfig()

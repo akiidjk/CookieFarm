@@ -77,7 +77,7 @@ Make sure you have the following installed:
 
 1. Run the installation script:
    ```bash
-   sh ./install.sh
+   bash <(curl -fsSL https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/refs/heads/main/install.sh)
    ```
 
    > After installation, the `cookieclient` command is globally accessible.

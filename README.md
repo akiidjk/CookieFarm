@@ -1,47 +1,59 @@
-<div align="center" style="margin-bottom: 20px">
-  <img width="360px" height="auto" src="assets/logo_mucca.png">
+<div align="center">
+  <img width="360px" height="auto" src="assets/logo_mucca.png" alt="CookieFarm Logo">
 </div>
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Language](https://img.shields.io/badge/languages-Go%20%7C%20Python-yellowgreen)
-![Keywords](https://img.shields.io/badge/keywords-CTF%2C%20Exploiting%2C%20Attack%20Defense-red)
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/languages-Go%20%7C%20Python-yellowgreen" alt="Languages">
+  <img src="https://img.shields.io/badge/keywords-CTF%2C%20Exploiting%2C%20Attack%20Defense-red" alt="Keywords">
+</p>
 
-# CookieFarm
+# 🍪 CookieFarm
 
-**CookieFarm** is a Attack/Defense CTF framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookies**. What sets CookieFarm apart is its hybrid Go+Python architecture and "zero distraction" approach: **Your only task: write the exploit logic!**
+**CookieFarm** is an *Attack/Defense CTF* framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookies**.
+Its strength lies in a hybrid **Go + Python** architecture and a **zero-distraction philosophy**:
+> 🎯 *Your only task is to write the exploit!*
 
-The system automatically handles exploit distribution, flag submission, and result monitoring, allowing you to focus exclusively on writing effective exploits.
+CookieFarm automates exploit distribution, flag submission, and result monitoring — allowing you to focus entirely on building powerful exploits.
+
+---
+
+## 🔧 Prerequisites
+
+Make sure you have the following installed:
+
+- ✅ Python 3+
+- ✅ Docker
 
 ---
 
 ## 📁 Repository Structure
 
-- [**`client/`**](./client/) – Directory dedicated to client logic (exploiting and submitting flag to the server)
-- [**`server/`**](./server/) – Directory dedicated to server logic (handling exploit distribution, flag submission, and result monitoring)
+| Directory       | Description |
+|------------------|-------------|
+| [`client/`](./client/) | Handles exploit creation and flag submission |
+| [`server/`](./server/) | Manages exploit distribution, flag collection, and monitoring |
 
 ---
 
-## 📐 Architecture
+## ⚙️ Architecture Overview
 
-<div align="center" style="margin-bottom: 20px">
-  <img width="800px" height="auto" src="assets/arch_farm.png">
+<div align="center">
+  <img width="800px" height="auto" src="assets/arch_farm.png" alt="Architecture Diagram">
 </div>
 
 ---
 
-## ▶️ Usage Guide
+## ▶️ Getting Started
 
-### 💻 Starting the Server
+### 🖥️ Starting the Server
 
-To start the server:
-
-1. Navigate to the `server/` directory:
-
+1. Move into the `server/` directory:
    ```bash
    cd server/
    ```
 
-2. Create a `.env` file in the server directory to configure the environment settings:
+2. Create an `.env` file in the server directory to configure the environment settings:
 
     ```bash
       # Server configuration
@@ -59,50 +71,56 @@ To start the server:
    docker compose up
    ```
 
+   > ⚠️ In production, keep `DEBUG=false` and set a strong, unique password.
 
-### 💻 Running the Client and Exploit
-
-1. Navigate to the `client/` directory:
-
+3. Start the server with Docker Compose:
    ```bash
-   cd client/
+   docker compose up --build
    ```
 
-2. Copy the exploit template (`exploit.py`) to the `exploits/` folder with a new name:
-
-   ```bash
-   cp ./exploits/exploit.py ./exploits/your_exploit.py
-   ```
-
-   > 🔧 *Edit `your_exploit.py` to implement your custom exploit logic.*
-
-3. Run the exploit manager with the following command:
-
-   ```bash
-   cookieclient -e ./exploits/your_exploit.py -b 10.10.23.1:8080 -P Str0ng_p4ssw0rd -p 8080
-   ```
-
-   * `-e`: path to your exploit script
-   * `-b`: target server base URL
-   * `-P`: password for authentication
-   * `-p`: service port
-
-🎉 **Enjoy your exploitation session!**
+📘 For more configuration details, refer to the [server documentation](./server/README.md).
 
 ---
 
-### 🔹 Prerequisites
+### 💻 Using the Client & Running Exploits
 
-Ensure you have installed:
-1. **Python 3+**
-2. **Docker**
+1. Run the installation script:
+   ```bash
+   bash <(curl -fsSL https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/refs/heads/main/install.sh)
+   ```
+
+   > After installation, the `cookieclient` command is globally accessible.
+
+2. Log in and configure the client:
+   ```bash
+   cookieclient config login -P SuperSecret
+   cookieclient config update -h 192.168.1.10 -p 8000 -u your_username
+   ```
+
+3. Install the Python helper module and create a new exploit template:
+   ```bash
+   pip install cookiefarm-exploiter
+   cookieclient create -n your_exploit_name
+   ```
+
+   This will generate `your_exploit_name.py` in `~/.cookiefarm/exploits/`.
+
+4. Run your exploit:
+   ```bash
+   cookieclient attack -e your_exploit_name.py -p 1234 -t 120 -T 40
+   ```
+
+📘 For more usage examples, check out the [client documentation](./client/README.md).
+
+---
 
 ## 🤝 Contributing
 
-Contributions, suggestions, and bug reports are always welcome! Check out [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on how to contribute to the project.
+We welcome contributions, suggestions, and bug reports!
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to get involved.
 
-## 📝 Notes
+---
 
-CookieFarm was designed with particular attention to user experience during high-pressure CTFs. Our goal is to eliminate every distraction and allow you to focus on what really matters: writing effective exploits.
-
-**Created with ❤️ by ByteTheCookies**
+<div align="center">
+  Built with ❤️ by <strong>ByteTheCookies</strong>
+</div>

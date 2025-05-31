@@ -23,7 +23,7 @@ The server is written in **Go** and is designed for easy deployment in both deve
 
 To run the server use docker with:
 ```bash
-docker compose up
+docker compose up --build
 ```
 
 ---

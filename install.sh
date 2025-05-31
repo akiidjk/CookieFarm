@@ -59,7 +59,7 @@ cat <<EOF > "$CONFIG_DIR/config.yml"
 address: "localhost"
 port: 8080
 https: false
-nickname: "cookieguest"
+username: "guest"
 EOF
 
 echo "✅ Installation complete! Run '$FINAL_NAME --help' to get started. Enjoy farming 🍪"

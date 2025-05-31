@@ -27,5 +27,5 @@ def exploit(ip, port, name_service):
 var ConfigTemplate = []byte(`address: "localhost"
 port: 8080
 https: false
-nickname: "cookieguest"
+username: "guest"
 `)

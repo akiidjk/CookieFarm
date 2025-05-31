@@ -71,6 +71,7 @@
 - [x] Installazione del client tramite `install.sh` per averlo globale
 
 ## RELEASE 1.2
+- [ ] new Branch handling
 - [ ] Design con shadcnui @suga
 - [ ] Migrazione da htmx a Next.js @akiidjk
 - [ ] Compatibilità windows/macos @Dabi

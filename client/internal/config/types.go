@@ -43,9 +43,15 @@ type ArgsAttack struct {
 	ExploitPath string `json:"exploit_path"` // Path to the exploit to run
 }
 
+type Exploit struct {
+	Name string `json:"name"` // Name of the exploit
+	PID  int    `json:"pid"`  // Process ID of the exploit
+}
+
 type ArgsConfig struct {
-	Address  string `json:"address"`  // Host address of the server
-	Port     uint16 `json:"port"`     // Port of the server
-	HTTPS    bool   `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
-	Nickname string `json:"nickname"` // Nickname of the client
+	Address  string    `json:"address"`  // Host address of the server
+	Port     uint16    `json:"port"`     // Port of the server
+	HTTPS    bool      `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
+	Nickname string    `json:"nickname"` // Nickname of the client
+	Exploits []Exploit `json:"exploits"` // List of exploits available in the client
 }

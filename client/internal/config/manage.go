@@ -34,6 +34,21 @@ func LoadLocalConfig() error {
 	return nil
 }
 
+func WriteConfig() error {
+	configFilePath := filepath.Join(DefaultConfigPath, "config.yml")
+	configFileContent, err := yaml.Marshal(ArgsConfigInstance)
+	if err != nil {
+		return fmt.Errorf("error marshalling config: %w", err)
+	}
+
+	err = os.WriteFile(configFilePath, configFileContent, 0o644)
+	if err != nil {
+		return fmt.Errorf("error writing config file: %w", err)
+	}
+
+	return nil
+}
+
 // MapPortToService maps a port to a service name.
 func MapPortToService(port uint16) string {
 	for _, service := range Current.ConfigClient.Services {

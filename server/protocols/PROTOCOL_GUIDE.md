@@ -18,7 +18,7 @@ import (
 )
 
 // Submit function sends flags to the Flag Checker service and returns a response.
-func Submit(host string, team_token string, flags []string) ([]models.ResponseProtocol, error) {
+func Submit(host string, team_token string, flags []string) ([]protocols.ResponseProtocol, error) {
 	// Your implementation here
 	return nil, nil
 }
@@ -66,7 +66,7 @@ Where:
 The `Submit` function should be used to interact with the Flag Checker service. The function signature is as follows:
 
 ```go
-func Submit(host string, token string, flags []string) ([]models.ResponseProtocol, error)
+func Submit(host string, token string, flags []string) ([]protocols.ResponseProtocol, error)
 ```
 
 Parameters:
@@ -99,7 +99,7 @@ import (
 	"github.com/ByteTheCookies/cookieserver/internal/models"
 )
 
-func Submit(host string, team_token string, flags []string) ([]models.ResponseProtocol, error) {
+func Submit(host string, team_token string, flags []string) ([]protocols.ResponseProtocol, error) {
 	jsonData, err := json.Marshal(flags)
 	if err != nil {
 		return nil, fmt.Errorf("error during marshalling: %w", err)

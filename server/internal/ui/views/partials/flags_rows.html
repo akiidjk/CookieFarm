@@ -1,6 +1,16 @@
 {{ range .Flags }}
 <tr class="group hover:bg-primary/20">
-    <td class="td">{{ .FlagCode }}</td>
+    <td class="td">
+        <div class="flex items-center">
+        <span class="font-mono text-sm font-medium">{{ .FlagCode }}</span>
+        <button class="btn-outline ml-6 h-10 w-10 relative" id="submit-flag-shortcut" onclick="const flagInput = document.getElementById('flag-input');flagInput.value={{ .FlagCode}};SubmitFlag();flagInput.value='';">
+            <svg xmlns="http://www.w3.org/2000/svg" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" width="24" height="24" viewBox="0 0 1024 1024" transform="rotate(230)"><path fill="currentColor" d="M1004.03 0c-6.096 0-13.52 1.73-22.096 5.361L27.278 410.45c-34.368 14.577-36.544 42.689-4.832 62.449l269.76 168.032c31.712 19.744 73.648 62.08 93.184 94.047l161.712 264.768c9.28 15.184 20.496 22.72 31.28 22.72c11.92 0 23.28-9.152 31.025-27.232L1017.663 41.49C1028.718 15.617 1022.415 0 1004.03 0M325.552 583.922L106.896 447.713l733.616-311.248L368.32 616.657c-14.432-12.8-29.088-24.224-42.768-32.735M572.72 915.265l-130.432-213.52c-7.696-12.609-17.856-26.05-29.185-39.393l474.384-482.384z"/></svg>
+        </button>
+        <button class="btn-outline ml-6 h-10 w-10 relative" id="delete-flag" onclick="const flagInput = document.getElementById('flag-input');flagInput.value={{ .FlagCode}};DeleteFlag();flagInput.value='';">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M7.616 20q-.667 0-1.141-.475T6 18.386V6h-.5q-.213 0-.356-.144T5 5.499t.144-.356T5.5 5H9q0-.31.23-.54t.54-.23h4.46q.31 0 .54.23T15 5h3.5q.213 0 .356.144t.144.357t-.144.356T18.5 6H18v12.385q0 .666-.475 1.14t-1.14.475zm2.692-3q.213 0 .357-.144t.143-.356v-8q0-.213-.144-.356T10.307 8t-.356.144t-.143.356v8q0 .213.144.356q.144.144.356.144m3.385 0q.213 0 .356-.144t.143-.356v-8q0-.213-.144-.356Q13.904 8 13.692 8q-.213 0-.357.144t-.143.356v8q0 .213.144.356t.357.144"/></svg>
+        </button>
+        </div>
+    </td>
     <td class="td">{{ .Msg }}</td>
     <td class="td">
         <span class="bg-secondary p-1 px-4 rounded-full">

@@ -4,12 +4,38 @@ import (
 	"math"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
-	"github.com/ByteTheCookies/cookieserver/internal/database"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/models"
-	"github.com/ByteTheCookies/cookieserver/internal/utils"
+	"github.com/ByteTheCookies/cookieserver/internal/sqlite"
 	"github.com/gofiber/fiber/v2"
 )
+
+const windowSize = 5
+
+func MakePagination(current, totalPages int) []int {
+	pages := []int{}
+
+	half := windowSize / 2
+	start := current - half
+	end := current + half
+
+	if start < 0 {
+		end += -start
+		start = 0
+	}
+
+	if end > totalPages-1 {
+		start -= (end - (totalPages - 1))
+		end = totalPages - 1
+	}
+	if start < 0 {
+		start = 0
+	}
+
+	for i := start; i <= end; i++ {
+		pages = append(pages, i)
+	}
+	return pages
+}
 
 // HandleIndexPage renders the main dashboard page.
 // It checks the cookie-based authentication and sets the default pagination limit.
@@ -24,7 +50,7 @@ func HandleIndexPage(c *fiber.Ctx) error {
 	}
 
 	logger.Log.Debug().Int("Limit", limit).Msg("Index page request")
-	data := models.ViewParamsDashboard{
+	data := ViewParamsDashboard{
 		Limit: limit,
 	}
 	return c.Render("pages/dashboard", data, "layouts/main")
@@ -48,19 +74,19 @@ func HandlePartialsPagination(c *fiber.Ctx) error {
 	}
 	logger.Log.Debug().Int("limit", limit).Msg("Paginated flags request")
 
-	totalFlags, err := database.FlagsNumber(c.Context())
+	totalFlags, err := sqlite.FlagsNumber(c.Context())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving flag count")
 	}
 
-	offset := c.QueryInt("offset", config.DefaultOffeset)
+	offset := c.QueryInt("offset", config.DefaultOffset)
 
 	totalPages := int(math.Ceil(float64(totalFlags) / float64(limit)))
 	current := offset / limit
-	pageList := utils.MakePagination(current, totalPages)
+	pageList := MakePagination(current, totalPages)
 
-	data := models.ViewParamsPagination{
-		Pagination: models.Pagination{
+	data := ViewParamsPagination{
+		Pagination: Pagination{
 			Limit:    limit,
 			Pages:    totalPages,
 			Current:  current,
@@ -85,17 +111,17 @@ func HandlePartialsFlags(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid 'limit' parameter")
 	}
 
-	offset := c.QueryInt("offset", config.DefaultOffeset)
+	offset := c.QueryInt("offset", config.DefaultOffset)
 	logger.Log.Debug().Int("offset", offset).Int("limit", limit).Msg("Paginated flags request")
 
-	flags, err := database.GetPagedFlags(uint(limit), uint(offset))
+	flags, err := sqlite.GetPagedFlags(uint(limit), uint(offset))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving flags")
 	}
 
 	logger.Log.Debug().Int("n_flags", len(flags)).Msg("Paginated flags response")
 
-	data := models.ViewParamsFlags{
+	data := ViewParamsFlags{
 		Flags: flags,
 	}
 

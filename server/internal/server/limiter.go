@@ -5,20 +5,18 @@ import (
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
-	"github.com/ByteTheCookies/cookieserver/internal/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
 
 var (
-	MaxRequests = utils.GetEnvAsInt("RATE_LIMIT_MAX", 50)
-	Window      = utils.GetEnvAsInt("RATE_LIMIT_WINDOW", 1)
+	MaxRequests = config.GetEnvAsInt("RATE_LIMIT_MAX", 50)
+	Window      = config.GetEnvAsInt("RATE_LIMIT_WINDOW", 1)
+	whitelist   = map[string]bool{
+		"127.0.0.1": true,
+		"::1":       true,
+	}
 )
-
-var whitelist = map[string]bool{
-	"127.0.0.1": true,
-	"::1":       true,
-}
 
 // NewLimiter returns a rate limiter middleware for Fiber.
 // When in debug mode, rate limiting is disabled to ease development.

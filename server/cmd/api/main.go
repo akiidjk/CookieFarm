@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieserver/internal/config"
-	"github.com/ByteTheCookies/cookieserver/internal/database"
+	"github.com/ByteTheCookies/cookieserver/internal/core"
 	"github.com/ByteTheCookies/cookieserver/internal/logger"
 	"github.com/ByteTheCookies/cookieserver/internal/server"
+	"github.com/ByteTheCookies/cookieserver/internal/sqlite"
 	flogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/spf13/pflag"
 )
@@ -43,7 +44,7 @@ func main() {
 
 	if *config.ConfigPath != "" {
 		logger.Log.Info().Msg("Using file config...")
-		err := server.LoadConfig(*config.ConfigPath)
+		err := core.LoadConfig(*config.ConfigPath)
 		if err != nil {
 			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
 		}
@@ -61,14 +62,17 @@ func main() {
 	config.Password = &hashed
 	logger.Log.Debug().Str("hashed", *config.Password).Msg("Password after hashing")
 
-	database.DB = database.New()
-	if err := database.DB.Ping(); err != nil {
+	sqlite.DB = sqlite.New()
+	if err := sqlite.DB.Ping(); err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to connect to the database")
 	}
 	logger.Log.Info().Msg("Database initialized")
-	defer database.Close()
+	defer sqlite.Close()
 
-	app := server.New()
+	app, err := server.NewApp()
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to initialize server")
+	}
 
 	app.Use(flogger.New(flogger.Config{
 		Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
@@ -83,29 +87,32 @@ func main() {
 
 	addr := ":" + *config.ServerPort
 
+	errCh := make(chan error, 1)
+
 	go func() {
 		logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")
-		if err := app.Listen(addr); err != nil {
-			logger.Log.Fatal().Err(err).Msg("Server listen error")
+		err := app.Listen(addr)
+		if err != nil {
+			errCh <- err
 		}
 	}()
 
-	<-ctx.Done()
-	logger.Log.Warn().Msg("Shutdown signal received, terminating...")
+	select {
+	case <-ctx.Done():
+		logger.Log.Warn().Msg("Shutdown signal received, terminating...")
 
+	case err := <-errCh:
+		if err != nil {
+			logger.Log.Fatal().Err(err).Msg("Server failed to start")
+		}
+	}
+
+	// Graceful shutdown
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
 		logger.Log.Error().Err(err).Msg("Error during shutdown, forcing exit")
 	}
-
-	go func() {
-		<-ctx.Done()
-		if ctx.Err() == context.Canceled {
-			logger.Log.Info().Msg("Reloading configuration...")
-			server.LoadConfig(*config.ConfigPath)
-		}
-	}()
 
 	logger.Log.Info().Msg("Server stopped gracefully")
 }

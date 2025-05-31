@@ -8,25 +8,38 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/logger"
-	"github.com/ByteTheCookies/cookieclient/internal/models"
 	json "github.com/bytedance/sonic"
 	"github.com/rs/zerolog/log"
 )
 
+// Flag represents a single flag captured during a CTF round.
+// It includes metadata about the submission and the service context.
+type Flag struct {
+	SubmitTime   uint64 `json:"submit_time"`   // UNIX timestamp when the flag was submitted
+	ResponseTime uint64 `json:"response_time"` // UNIX timestamp when a response was received
+	PortService  uint16 `json:"port_service"`  // Port of the vulnerable service
+	TeamID       uint16 `json:"team_id"`       // ID of the team the flag was captured from
+	Status       string `json:"status"`        // Status of the submission (e.g., "unsubmitted", "accepted", "denied")
+	FlagCode     string `json:"flag_code"`     // Actual flag string
+	ServiceName  string `json:"service_name"`  // Human-readable name of the service
+	Msg          string `json:"msg"`           // Message from the flag checker service
+}
+
 var client = &http.Client{}
 
 // SendFlag sends flags to the CookieFarm server API.
-func SendFlag(flags ...models.Flag) error {
-	body, err := json.Marshal(map[string][]models.Flag{"flags": flags})
+func SendFlag(flags ...Flag) error {
+	body, err := json.Marshal(map[string][]Flag{"flags": flags})
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("error during flags marshalling")
 		return err
 	}
 
-	ServerURL := *config.BaseURLServer + "/api/v1/submit-flags"
+	ServerURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/submit-flags"
 	req, err := http.NewRequest(http.MethodPost, ServerURL, bytes.NewReader(body))
 	if err != nil {
 		log.Error().Err(err).Str("url", ServerURL).Msg("error creating request")
@@ -57,28 +70,28 @@ func SendFlag(flags ...models.Flag) error {
 }
 
 // GetConfig retrieves the configuration from the CookieFarm server API.
-func GetConfig() (models.Config, error) {
-	ServerURL := *config.BaseURLServer + "/api/v1/config"
+func GetConfig() (config.Config, error) {
+	ServerURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/config"
 	req, err := http.NewRequest(http.MethodGet, ServerURL, nil)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("error creating config request: %w", err)
+		return config.Config{}, fmt.Errorf("error creating config request: %w", err)
 	}
 	req.Header.Set("Cookie", "token="+config.Token)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("error sending config request: %w", err)
+		return config.Config{}, fmt.Errorf("error sending config request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return models.Config{}, fmt.Errorf("error reading config response: %w", err)
+		return config.Config{}, fmt.Errorf("error reading config response: %w", err)
 	}
 
-	var parsedConfig models.Config
+	var parsedConfig config.Config
 	if err := json.Unmarshal(respBody, &parsedConfig); err != nil {
-		return models.Config{}, fmt.Errorf("error parsing config: %w", err)
+		return config.Config{}, fmt.Errorf("error parsing config: %w", err)
 	}
 
 	logger.Log.Debug().Msgf("Configuration received correctly")
@@ -88,7 +101,7 @@ func GetConfig() (models.Config, error) {
 
 // Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
-	ServerURL := *config.BaseURLServer + "/api/v1/auth/login"
+	ServerURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/auth/login"
 
 	_, err := url.Parse(ServerURL)
 	if err != nil {
@@ -100,7 +113,7 @@ func Login(password string) (string, error) {
 	resp, err := http.Post(
 		ServerURL,
 		"application/x-www-form-urlencoded",
-		bytes.NewBufferString("password="+password),
+		bytes.NewBufferString("username="+config.ArgsConfigInstance.Username+"&password="+password),
 	)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("error sending login request")

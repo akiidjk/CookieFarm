@@ -1,9 +1,12 @@
 package server
 
 import (
+	"time"
+
 	"github.com/ByteTheCookies/cookieserver/internal/config"
-	"github.com/ByteTheCookies/cookieserver/internal/database"
-	"github.com/ByteTheCookies/cookieserver/internal/utils"
+	"github.com/ByteTheCookies/cookieserver/internal/logger"
+	"github.com/ByteTheCookies/cookieserver/internal/sqlite"
+	"github.com/ByteTheCookies/cookieserver/internal/websockets"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	jwtware "github.com/gofiber/jwt/v3"
@@ -12,10 +15,14 @@ import (
 // RegisterRoutes configures all routes and middlewares of the Fiber app,
 // including CORS policies, public and protected API endpoints, and view rendering routes.
 func RegisterRoutes(app *fiber.App) {
+	if len(config.Secret) == 0 {
+		logger.Log.Fatal().Msg("JWT secret not configured")
+	}
+
 	// Enable CORS with dynamic origins from environment variable.
 	// Useful for allowing access from web dashboards or dev clients.
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     utils.GetEnv("ALLOW_ORIGINS", "http://localhost:8080"),
+		AllowOrigins:     config.GetEnv("ALLOW_ORIGINS", "http://localhost:8080"),
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
 		AllowHeaders:     "Accept,Authorization,Content-Type",
 		AllowCredentials: true,
@@ -54,18 +61,24 @@ func RegisterRoutes(app *fiber.App) {
 	privateAPI.Get("/health", HealthHandler)
 	privateAPI.Post("/submit-flags", HandlePostFlags)
 	privateAPI.Post("/submit-flag", HandlePostFlag)
+	privateAPI.Delete("/delete-flag", HandleDeleteFlag)
 	privateAPI.Post("/config", HandlePostConfig)
+
+	websocketsAPI := app.Group("/ws")
+	websockets.GlobalManager = websockets.NewManager()
+	websocketsAPI.Get("/", websockets.GlobalManager.ServeWS)
 }
 
 // GetStatus is a simple public endpoint used to check if the server is online.
 func GetStatus(c *fiber.Ctx) error {
 	resp := fiber.Map{
 		"message": "The cookie is up!!",
+		"time":    time.Now().Format(time.RFC3339),
 	}
 	return c.JSON(resp)
 }
 
 // HealthHandler returns a basic health check result from the database layer.
 func HealthHandler(c *fiber.Ctx) error {
-	return c.JSON(database.Health())
+	return c.JSON(sqlite.Health())
 }

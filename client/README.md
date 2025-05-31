@@ -66,13 +66,16 @@ bash <(curl -fsSL https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/re
    ```bash
    pip install cookiefarm-exploiter
    ```
+  > For more information about the helper module, check the [cookiefarm-exploiter documentation](https://github.com/ByteTheCookies/CookieFarmExploiter)
 
 4. **Create a new exploit template**:
    ```bash
    cookieclient exploit create -n my_exploit
    ```
 
-5. **Run the exploit**:
+5. **Write your exploit** in the created file `~/.cookieclient/exploits/my_exploit.py`.
+
+6. **Run the exploit**:
    ```bash
    cookieclient exploit run -e my_exploit.py -p 1234 -t 120 -T 40
    ```
@@ -129,7 +132,7 @@ Parameters:
 - `-n <exploit_name>`: Name of the exploit template. This can be a path to a file or just a name.
 > If user does not specify the path in the exploit name, it will be created in the `~/.cookieclient/exploits/` directory. Otherwise, it will be created in the specified path.
 
-Example:
+*Example:*
 ```bash
 cookieclient exploit create -n ./my_exploit
 ```
@@ -147,7 +150,7 @@ Parameters:
 - `-T <threads>`: Number of threads to use (default is 10).
 - `-d`: Enable debug mode for more verbose output.
 
-Example:
+*Example:*
 ```bash
 cookieclient exploit run -e my_exploit.py -p 1234 -t 120 -T 40
 # This will return the PID of the running exploit.

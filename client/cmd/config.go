@@ -110,7 +110,7 @@ var loginConfigCmd = &cobra.Command{
 func loginConfigFunc(cmd *cobra.Command, args []string) {
 	err := config.LoadLocalConfig()
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error loading local configuration")
+		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `cookieclient config reset`")
 		return
 	}
 

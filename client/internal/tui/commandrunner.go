@@ -199,34 +199,26 @@ func (r *CommandRunner) ExecuteExploitRun(
 		return "", err
 	}
 
-	// Salva il PID dell'exploit in esecuzione
 	r.currentExploitPID = result.PID
 
-	// Avvia un goroutine per inviare l'output al canale dell'exploit
 	go func() {
 		for line := range result.OutputChan {
 			select {
 			case r.exploitOutputChan <- ExploitOutput{Content: line, PID: result.PID}:
-				// Output inviato correttamente
 			default:
-				// Il canale è pieno, continua senza bloccarsi
 			}
 		}
 	}()
 
-	// Avvia un goroutine per monitorare gli errori
 	go func() {
 		for err := range result.ErrorChan {
 			select {
 			case r.exploitOutputChan <- ExploitOutput{Error: err, PID: result.PID}:
-				// Errore inviato correttamente
 			default:
-				// Il canale è pieno, continua senza bloccarsi
 			}
 		}
 	}()
 
-	// Costruisci un output iniziale per la visualizzazione immediata
 	var initialOutput strings.Builder
 	initialOutput.WriteString(fmt.Sprintf("Exploit started with PID: %d\n", result.PID))
 	initialOutput.WriteString(fmt.Sprintf("Running with %d threads, tick time %d seconds\n", threadCountInt, tickTimeInt))

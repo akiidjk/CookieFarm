@@ -3,7 +3,6 @@ package tui
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -76,11 +75,12 @@ func (r *CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) 
 
 // ExecuteLogin handles the login command
 func (r *CommandRunner) ExecuteLogin(password string) (string, error) {
-	cmd, err := cmd.LoginConfigFunc(password)
+	cmd.Password = password
+	output, err := cmd.LoginConfigFunc(password)
 	if err != nil {
 		return "", fmt.Errorf("login failed: %w", err)
 	}
-	return cmd, nil
+	return output, nil
 }
 
 // ExecuteConfigUpdate handles the config update command
@@ -105,7 +105,7 @@ func (r *CommandRunner) ExecuteConfigUpdate(host, port, username string, useHttp
 func (r *CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 	switch subcommand {
 	case "list":
-		return r.ExecuteCommand(os.Args[0], append([]string{"exploit", "list"}, defaultFlags...)...)
+		return cmd.ListFunc()
 	default:
 		return "", fmt.Errorf("unknown exploit subcommand: %s", subcommand)
 	}
@@ -114,7 +114,8 @@ func (r *CommandRunner) ExecuteExploitCommand(subcommand string) (string, error)
 // ExecuteExploitRun handles running an exploit
 func (r *CommandRunner) ExecuteExploitRun(exploitPath, servicePort string, detach bool, tickTime, threadCount string) (string, error) {
 	// Parse the string arguments into the required types
-	var tickTimeInt, threadCountInt int
+	tickTimeInt := 120  // Default value
+	threadCountInt := 5 // Default value
 	var servicePortUint16 uint16
 	var err error
 
@@ -132,13 +133,15 @@ func (r *CommandRunner) ExecuteExploitRun(exploitPath, servicePort string, detac
 		}
 	}
 
-	if servicePort != "" {
-		port, err := strconv.Atoi(servicePort)
-		if err != nil {
-			return "", fmt.Errorf("invalid service port: %s", servicePort)
-		}
-		servicePortUint16 = uint16(port)
+	if servicePort == "" {
+		return "", fmt.Errorf("service port is required")
 	}
+
+	port, err := strconv.Atoi(servicePort)
+	if err != nil {
+		return "", fmt.Errorf("invalid service port: %s", servicePort)
+	}
+	servicePortUint16 = uint16(port)
 
 	return cmd.AttackFunc(exploitPath, tickTimeInt, threadCountInt, servicePortUint16, detach)
 }
@@ -160,6 +163,10 @@ func (r *CommandRunner) ExecuteExploitStop(pid string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid process ID: %s", pid)
 	}
+	
+	// Set the global Pid variable that StopFunc expects
+	cmd.Pid = pidInt
+	
 	return cmd.StopFunc(pidInt)
 }
 

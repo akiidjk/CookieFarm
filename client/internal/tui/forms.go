@@ -45,15 +45,6 @@ func createLoginForm() ([]textinput.Model, []string) {
 	var inputs []textinput.Model
 	var labels []string
 
-	// Username input
-	usernameInput := textinput.New()
-	usernameInput.Placeholder = "Username"
-	usernameInput.CharLimit = 32
-	usernameInput.Width = 30
-	usernameInput.SetValue(config.ArgsConfigInstance.Username)
-	inputs = append(inputs, usernameInput)
-	labels = append(labels, "Username")
-
 	// Password input
 	passwordInput := textinput.New()
 	passwordInput.Placeholder = "Password"
@@ -216,16 +207,12 @@ func ValidateForm(command string, inputs []textinput.Model) error {
 
 // validateLoginForm validates login form
 func validateLoginForm(inputs []textinput.Model) error {
-	if len(inputs) < 2 {
+	if len(inputs) < 1 {
 		return fmt.Errorf("invalid form structure")
 	}
 
-	username := strings.TrimSpace(inputs[0].Value())
-	password := strings.TrimSpace(inputs[1].Value())
+	password := strings.TrimSpace(inputs[0].Value())
 
-	if username == "" {
-		return fmt.Errorf("username is required")
-	}
 	if password == "" {
 		return fmt.Errorf("password is required")
 	}

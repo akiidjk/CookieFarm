@@ -69,10 +69,21 @@ var showConfigCmd = &cobra.Command{
 
 // reset resets the configuration to defaults
 func reset(cmd *cobra.Command, args []string) {
+	_, err := ResetConfigFunc()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Reset configuration failed")
+		return
+	}
+	logger.Log.Info().Msg("Configuration file reset successfully.")
+}
+
+// ResetConfigFunc resets the configuration to defaults
+func ResetConfigFunc() (string, error) {
 	var err error
 	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
+		return "", err
 	}
 
 	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
@@ -80,30 +91,42 @@ func reset(cmd *cobra.Command, args []string) {
 	file, err := os.Create(configPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error opening configuration file")
-		return
+		return "", err
 	}
 	defer file.Close()
 
 	err = yaml.Unmarshal(config.ConfigTemplate, &config.ArgsConfigInstance)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
-		return
+		return "", err
 	}
 
 	err = yaml.NewEncoder(file).Encode(config.ArgsConfigInstance)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error encoding configuration to YAML")
-		return
+		return "", err
 	}
-	logger.Log.Info().Msg("Configuration file reset successfully.")
+
+	return "Config reset successfully", nil
 }
 
 // update updates the configuration with new values
 func update(cmd *cobra.Command, args []string) {
+	configPath, err := UpdateConfigFunc(config.ArgsConfigInstance)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Update configuration failed")
+		return
+	}
+	logger.Log.Info().Str("path", configPath).Msg("Configuration created or updated successfully. ")
+}
+
+// UpdateConfigFunc updates the configuration with new values
+func UpdateConfigFunc(configuration config.ArgsConfig) (string, error) {
 	var err error
 	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
+		return "", err
 	}
 
 	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
@@ -113,65 +136,89 @@ func update(cmd *cobra.Command, args []string) {
 		os.WriteFile(configPath, config.ConfigTemplate, 0o644)
 	} else if err != nil {
 		logger.Log.Error().Err(err).Msg("Error checking configuration file")
-		return
+		return "", err
 	}
 
 	file, err := os.Create(configPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating or opening configuration file")
-		return
+		return "", err
 	}
 	defer file.Close()
 
-	err = yaml.NewEncoder(file).Encode(config.ArgsConfigInstance)
+	err = yaml.NewEncoder(file).Encode(configuration)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error encoding configuration to YAML")
-		return
+		return "", err
 	}
 
-	logger.Log.Info().Str("path", configPath).Msg("Configuration created or updated successfully. ")
+	return configPath, nil
 }
 
 // login handles user login
 func login(cmd *cobra.Command, args []string) {
-	err := config.LoadLocalConfig()
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `cookieclient config reset`")
-		return
-	}
-
-	config.Token, err = api.Login(Password)
+	sessionPath, err := LoginConfigFunc(Password)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Login failed")
 		return
+	}
+	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
+}
+
+// LoginConfigFunc handles user login
+func LoginConfigFunc(password string) (string, error) {
+	err := config.LoadLocalConfig()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `cookieclient config reset`")
+		return "", err
+	}
+
+	config.Token, err = api.Login(password)
+	if err != nil {
+		return "", err
 	}
 
 	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
 	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error writing session token to file")
-		return
+		return "", err
 	}
-	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
+
+	return sessionPath, nil
 }
 
 // logout handles user logout
 func logout(cmd *cobra.Command, args []string) {
-	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
-	err := os.Remove(sessionPath)
+	_, err := LogoutConfigFunc()
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error removing session file")
+		logger.Log.Error().Err(err).Msg("Logout failed")
 		return
 	}
 	logger.Log.Info().Msg("Logged out successfully. Session file removed.")
 }
 
+// LogoutConfigFunc handles user logout
+func LogoutConfigFunc() (string, error) {
+	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
+	err := os.Remove(sessionPath)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error removing session file")
+		return "", err
+	}
+	return "Logout successfully", nil
+}
+
 func show(cmd *cobra.Command, args []string) {
-	content, _ := ShowConfigFunc()
+	content, err := ShowConfigFunc()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Show configuration failed")
+		return
+	}
 	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + string(content) + "```")
 }
 
-// showConfigFunc displays the current configuration
+// ShowConfigFunc displays the current configuration
 func ShowConfigFunc() (string, error) {
 	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieclient/cmd"
+	"github.com/ByteTheCookies/cookieclient/internal/config"
 )
 
 // CommandRunner handles the execution of commands for the TUI
@@ -65,80 +66,39 @@ func (r *CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) 
 	case "show":
 		return cmd.ShowConfigFunc()
 	case "reset":
-		return r.ExecuteCommand(os.Args[0], append([]string{"config", "reset"}, defaultFlags...)...)
+		return cmd.ResetConfigFunc()
 	case "logout":
-		return r.ExecuteCommand(os.Args[0], append([]string{"config", "logout"}, defaultFlags...)...)
+		return cmd.LogoutConfigFunc()
 	default:
 		return "", fmt.Errorf("unknown config subcommand: %s", subcommand)
 	}
 }
 
 // ExecuteLogin handles the login command
-func (r *CommandRunner) ExecuteLogin(username, password string) (string, error) {
-	cmd := exec.Command(os.Args[0], append([]string{"config", "login"}, defaultFlags...)...)
-
-	// Create input for sending username and password
-	input := username + "\n" + password + "\n"
-
-	// Create buffers for stdin, stdout and stderr
-	var stdin bytes.Buffer
-	var stdout, stderr bytes.Buffer
-
-	// Write to stdin
-	stdin.WriteString(input)
-
-	cmd.Stdin = &stdin
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	// Combine stdout and stderr with appropriate formatting
-	var output strings.Builder
-
-	if stdout.Len() > 0 {
-		output.WriteString(stdout.String())
+func (r *CommandRunner) ExecuteLogin(password string) (string, error) {
+	cmd, err := cmd.LoginConfigFunc(password)
+	if err != nil {
+		return "", fmt.Errorf("login failed: %w", err)
 	}
-
-	if stderr.Len() > 0 {
-		if output.Len() > 0 {
-			output.WriteString("\n\n")
-		}
-		output.WriteString("Error output:\n")
-		output.WriteString(stderr.String())
-	}
-
-	// If there's an error but we have output, return the output and the error
-	if err != nil && output.Len() == 0 {
-		return "", err
-	}
-
-	return output.String(), err
+	return cmd, nil
 }
 
 // ExecuteConfigUpdate handles the config update command
 func (r *CommandRunner) ExecuteConfigUpdate(host, port, username string, useHttps bool) (string, error) {
-	args := append([]string{"config", "update"}, defaultFlags...)
-
-	if host != "" {
-		args = append(args, "--host", host)
+	configuration := config.ArgsConfig{
+		Address:  host,
+		Username: username,
+		HTTPS:    useHttps,
 	}
 
 	if port != "" {
-		args = append(args, "--port", port)
+		portNum, err := strconv.Atoi(port)
+		if err == nil {
+			configuration.Port = uint16(portNum)
+		}
 	}
 
-	if username != "" {
-		args = append(args, "--username", username)
-	}
-
-	if useHttps {
-		args = append(args, "--https", "true")
-	} else {
-		args = append(args, "--https", "false")
-	}
-
-	return r.ExecuteCommand(os.Args[0], args...)
+	return cmd.UpdateConfigFunc(configuration)
 }
 
 // ExecuteExploitCommand executes exploit-related commands
@@ -153,43 +113,54 @@ func (r *CommandRunner) ExecuteExploitCommand(subcommand string) (string, error)
 
 // ExecuteExploitRun handles running an exploit
 func (r *CommandRunner) ExecuteExploitRun(exploitPath, servicePort string, detach bool, tickTime, threadCount string) (string, error) {
-	args := append([]string{"exploit", "run"}, defaultFlags...)
-	args = append(args, "--exploit", exploitPath, "--port", servicePort)
-
-	if detach {
-		args = append(args, "--detach")
-	}
+	// Parse the string arguments into the required types
+	var tickTimeInt, threadCountInt int
+	var servicePortUint16 uint16
+	var err error
 
 	if tickTime != "" {
-		args = append(args, "--tick", tickTime)
+		tickTimeInt, err = strconv.Atoi(tickTime)
+		if err != nil {
+			return "", fmt.Errorf("invalid tick time: %s", tickTime)
+		}
 	}
 
 	if threadCount != "" {
-		args = append(args, "--thread", threadCount)
+		threadCountInt, err = strconv.Atoi(threadCount)
+		if err != nil {
+			return "", fmt.Errorf("invalid thread count: %s", threadCount)
+		}
 	}
 
-	return r.ExecuteCommand(os.Args[0], args...)
+	if servicePort != "" {
+		port, err := strconv.Atoi(servicePort)
+		if err != nil {
+			return "", fmt.Errorf("invalid service port: %s", servicePort)
+		}
+		servicePortUint16 = uint16(port)
+	}
+
+	return cmd.AttackFunc(exploitPath, tickTimeInt, threadCountInt, servicePortUint16, detach)
 }
 
 // ExecuteExploitCreate handles creating an exploit template
 func (r *CommandRunner) ExecuteExploitCreate(name string) (string, error) {
-	return r.ExecuteCommand(os.Args[0], append([]string{"exploit", "create"}, append(defaultFlags, "--name", name)...)...)
+	return cmd.CreateFunc(name)
 }
 
 // ExecuteExploitRemove handles removing an exploit template
 func (r *CommandRunner) ExecuteExploitRemove(name string) (string, error) {
-	return r.ExecuteCommand(os.Args[0], append([]string{"exploit", "remove"}, append(defaultFlags, "--name", name)...)...)
+	return cmd.RemoveFunc(name)
 }
 
 // ExecuteExploitStop handles stopping a running exploit
 func (r *CommandRunner) ExecuteExploitStop(pid string) (string, error) {
 	// Validate that pid is a number
-	_, err := strconv.Atoi(pid)
+	pidInt, err := strconv.Atoi(pid)
 	if err != nil {
 		return "", fmt.Errorf("invalid process ID: %s", pid)
 	}
-
-	return r.ExecuteCommand(os.Args[0], append([]string{"exploit", "stop"}, append(defaultFlags, "--pid", pid)...)...)
+	return cmd.StopFunc(pidInt)
 }
 
 // ExecuteWithTimeout executes a command with a timeout

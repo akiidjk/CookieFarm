@@ -100,14 +100,13 @@ func (h *CommandHandler) executeFormCommand(command string, formData *FormData) 
 
 // handleLogin processes login command
 func (h *CommandHandler) handleLogin(formData *FormData) (string, error) {
-	username := formData.Fields["Username"]
 	password := formData.Fields["Password"]
 
-	if username == "" || password == "" {
+	if password == "" {
 		return "", fmt.Errorf("username and password are required")
 	}
 
-	return h.cmdRunner.ExecuteLogin(username, password)
+	return h.cmdRunner.ExecuteLogin(password)
 }
 
 // handleConfigUpdate processes config update command

@@ -19,7 +19,7 @@ import (
 type ExecutionResult struct {
 	Cmd        *exec.Cmd
 	FlagsChan  chan api.Flag
-	OutputChan chan string    // Channel for streaming output to the TUI
+	OutputChan chan string // Channel for streaming output to the TUI
 	stopReader chan struct{}
 	done       chan struct{}
 }
@@ -160,7 +160,7 @@ func readStdout(stdout io.Reader, flagsChan chan<- api.Flag, outputChan chan<- s
 			return
 		default:
 			line := scanner.Text()
-			
+
 			// Send to output channel for real-time display in TUI
 			select {
 			case outputChan <- "STDOUT: " + line:
@@ -168,7 +168,7 @@ func readStdout(stdout io.Reader, flagsChan chan<- api.Flag, outputChan chan<- s
 			default:
 				// Channel buffer full, continue without blocking
 			}
-			
+
 			flag, status, err := flagparser.ParseLine(line)
 			if err != nil {
 				logParsedLineError(err, status, line)
@@ -200,7 +200,7 @@ func readStderr(stderr io.Reader, outputChan chan<- string, stop <-chan struct{}
 			return
 		default:
 			line := scanner.Text()
-			
+
 			// Send to output channel for real-time display in TUI
 			select {
 			case outputChan <- "STDERR: " + line:
@@ -208,7 +208,7 @@ func readStderr(stderr io.Reader, outputChan chan<- string, stop <-chan struct{}
 			default:
 				// Channel buffer full, continue without blocking
 			}
-			
+
 			logger.Log.Warn().Str("stderr", line).Msg("Exploit stderr")
 		}
 	}

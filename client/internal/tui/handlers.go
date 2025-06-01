@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -103,7 +104,7 @@ func (h *CommandHandler) handleLogin(formData *FormData) (string, error) {
 	password := formData.Fields["Password"]
 
 	if password == "" {
-		return "", fmt.Errorf("username and password are required")
+		return "", errors.New("username and password are required")
 	}
 
 	return h.cmdRunner.ExecuteLogin(password)
@@ -116,9 +117,9 @@ func (h *CommandHandler) handleConfigUpdate(formData *FormData) (string, error) 
 	username := formData.Fields["Username"]
 	httpsStr := formData.Fields["HTTPS (true/false)"]
 
-	useHttps := strings.ToLower(httpsStr) == "true"
+	useHTTPS := strings.ToLower(httpsStr) == "true"
 
-	return h.cmdRunner.ExecuteConfigUpdate(host, port, username, useHttps)
+	return h.cmdRunner.ExecuteConfigUpdate(host, port, username, useHTTPS)
 }
 
 // handleExploitRun processes exploit run command
@@ -130,7 +131,7 @@ func (h *CommandHandler) handleExploitRun(formData *FormData) (string, error) {
 	threadCount := formData.Fields["Thread Count"]
 
 	if exploitPath == "" || servicePort == "" {
-		return "", fmt.Errorf("exploit path and service port are required")
+		return "", errors.New("exploit path and service port are required")
 	}
 
 	detach := strings.ToLower(detachStr) == "true"
@@ -143,7 +144,7 @@ func (h *CommandHandler) handleExploitCreate(formData *FormData) (string, error)
 	name := formData.Fields["Exploit Name"]
 
 	if name == "" {
-		return "", fmt.Errorf("exploit name is required")
+		return "", errors.New("exploit name is required")
 	}
 
 	return h.cmdRunner.ExecuteExploitCreate(name)
@@ -154,7 +155,7 @@ func (h *CommandHandler) handleExploitRemove(formData *FormData) (string, error)
 	name := formData.Fields["Exploit Name"]
 
 	if name == "" {
-		return "", fmt.Errorf("exploit name is required")
+		return "", errors.New("exploit name is required")
 	}
 
 	return h.cmdRunner.ExecuteExploitRemove(name)
@@ -165,14 +166,14 @@ func (h *CommandHandler) handleExploitStop(formData *FormData) (string, error) {
 	pid := formData.Fields["Process ID (PID)"]
 
 	if pid == "" {
-		return "", fmt.Errorf("process ID is required")
+		return "", errors.New("process ID is required")
 	}
 
 	return h.cmdRunner.ExecuteExploitStop(pid)
 }
 
 // HandleNavigation processes navigation commands
-func (h *CommandHandler) HandleNavigation(command string, model *Model) (*Model, tea.Cmd) {
+func (*CommandHandler) HandleNavigation(command string, model *Model) (*Model, tea.Cmd) {
 	switch command {
 	case "quit":
 		model.quitting = true
@@ -215,7 +216,7 @@ func (h *CommandHandler) ProcessFormSubmission(model *Model) (*Model, tea.Cmd) {
 }
 
 // SetupFormForCommand prepares form inputs for a specific command
-func (h *CommandHandler) SetupFormForCommand(model *Model, command string) {
+func (*CommandHandler) SetupFormForCommand(model *Model, command string) {
 	model.activeCommand = command
 	model.inputs, model.inputLabels = CreateForm(command)
 	model.focusIndex = 0

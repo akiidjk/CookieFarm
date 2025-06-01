@@ -1,7 +1,8 @@
 package tui
 
 import (
-	"fmt"
+	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
@@ -76,7 +77,7 @@ func createConfigUpdateForm() ([]textinput.Model, []string) {
 	portInput.Placeholder = "8080"
 	portInput.CharLimit = 5
 	portInput.Width = 10
-	portInput.SetValue(fmt.Sprintf("%d", config.ArgsConfigInstance.Port))
+	portInput.SetValue(strconv.Itoa(int(config.ArgsConfigInstance.Port)))
 	inputs = append(inputs, portInput)
 	labels = append(labels, "Port")
 
@@ -208,13 +209,13 @@ func ValidateForm(command string, inputs []textinput.Model) error {
 // validateLoginForm validates login form
 func validateLoginForm(inputs []textinput.Model) error {
 	if len(inputs) < 1 {
-		return fmt.Errorf("invalid form structure")
+		return errors.New("invalid form structure")
 	}
 
 	password := strings.TrimSpace(inputs[0].Value())
 
 	if password == "" {
-		return fmt.Errorf("password is required")
+		return errors.New("password is required")
 	}
 
 	return nil
@@ -223,7 +224,7 @@ func validateLoginForm(inputs []textinput.Model) error {
 // validateConfigUpdateForm validates config update form
 func validateConfigUpdateForm(inputs []textinput.Model) error {
 	if len(inputs) < 4 {
-		return fmt.Errorf("invalid form structure")
+		return errors.New("invalid form structure")
 	}
 
 	host := strings.TrimSpace(inputs[0].Value())
@@ -233,12 +234,12 @@ func validateConfigUpdateForm(inputs []textinput.Model) error {
 
 	// At least one field should be provided
 	if host == "" && port == "" && username == "" && httpsStr == "" {
-		return fmt.Errorf("at least one field must be provided")
+		return errors.New("at least one field must be provided")
 	}
 
 	// Validate HTTPS field
 	if httpsStr != "" && strings.ToLower(httpsStr) != "true" && strings.ToLower(httpsStr) != "false" {
-		return fmt.Errorf("HTTPS field must be 'true' or 'false'")
+		return errors.New("HTTPS field must be 'true' or 'false'")
 	}
 
 	return nil
@@ -247,7 +248,7 @@ func validateConfigUpdateForm(inputs []textinput.Model) error {
 // validateExploitRunForm validates exploit run form
 func validateExploitRunForm(inputs []textinput.Model) error {
 	if len(inputs) < 5 {
-		return fmt.Errorf("invalid form structure")
+		return errors.New("invalid form structure")
 	}
 
 	exploitPath := strings.TrimSpace(inputs[0].Value())
@@ -255,15 +256,15 @@ func validateExploitRunForm(inputs []textinput.Model) error {
 	detachStr := strings.TrimSpace(inputs[2].Value())
 
 	if exploitPath == "" {
-		return fmt.Errorf("exploit path is required")
+		return errors.New("exploit path is required")
 	}
 	if servicePort == "" {
-		return fmt.Errorf("service port is required")
+		return errors.New("service port is required")
 	}
 
 	// Validate detach field
 	if detachStr != "" && strings.ToLower(detachStr) != "true" && strings.ToLower(detachStr) != "false" {
-		return fmt.Errorf("detach mode must be 'true' or 'false'")
+		return errors.New("detach mode must be 'true' or 'false'")
 	}
 
 	return nil
@@ -272,12 +273,12 @@ func validateExploitRunForm(inputs []textinput.Model) error {
 // validateExploitNameForm validates exploit name form
 func validateExploitNameForm(inputs []textinput.Model) error {
 	if len(inputs) < 1 {
-		return fmt.Errorf("invalid form structure")
+		return errors.New("invalid form structure")
 	}
 
 	name := strings.TrimSpace(inputs[0].Value())
 	if name == "" {
-		return fmt.Errorf("exploit name is required")
+		return errors.New("exploit name is required")
 	}
 
 	return nil
@@ -286,12 +287,12 @@ func validateExploitNameForm(inputs []textinput.Model) error {
 // validateExploitStopForm validates exploit stop form
 func validateExploitStopForm(inputs []textinput.Model) error {
 	if len(inputs) < 1 {
-		return fmt.Errorf("invalid form structure")
+		return errors.New("invalid form structure")
 	}
 
 	pid := strings.TrimSpace(inputs[0].Value())
 	if pid == "" {
-		return fmt.Errorf("process ID is required")
+		return errors.New("process ID is required")
 	}
 
 	return nil

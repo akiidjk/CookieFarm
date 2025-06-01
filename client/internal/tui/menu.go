@@ -9,7 +9,7 @@ func InitializeMenus() (list.Model, list.Model, list.Model) {
 	mainMenu := createMainMenu()
 	configMenu := createConfigMenu()
 	exploitMenu := createExploitMenu()
-	
+
 	return mainMenu, configMenu, exploitMenu
 }
 
@@ -84,15 +84,15 @@ func GetSelectedItem(menu list.Model) (menuItem, bool) {
 func UpdateMenuSize(mainMenu, configMenu, exploitMenu *list.Model, width, height int) {
 	headerHeight := 4 // Banner + title
 	footerHeight := 2 // Help section
-	
+
 	menuHeight := height - headerHeight - footerHeight
-	
+
 	mainMenu.SetWidth(width)
 	mainMenu.SetHeight(menuHeight)
-	
+
 	configMenu.SetWidth(width)
 	configMenu.SetHeight(menuHeight)
-	
+
 	exploitMenu.SetWidth(width)
 	exploitMenu.SetHeight(menuHeight)
 }

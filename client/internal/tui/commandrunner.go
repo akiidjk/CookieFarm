@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strconv"
@@ -62,19 +63,17 @@ func (r *CommandRunner) GetCurrentExploitPID() int {
 	return r.currentExploitPID
 }
 
-var defaultFlags = []string{"--no-tui", "--no-banner"}
-
 // ExecuteCommand executes a generic shell command and returns its output
-func (r *CommandRunner) ExecuteCommand(command string, args ...string) (string, error) {
-	cmd := exec.Command(command, args...)
+func (*CommandRunner) ExecuteCommand(command string, args ...string) (string, error) {
+	cmdH := exec.Command(command, args...)
 
 	// Create buffers for stdout and stderr
 	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmdH.Stdout = &stdout
+	cmdH.Stderr = &stderr
 
 	// Execute the command
-	err := cmd.Run()
+	err := cmdH.Run()
 
 	// Combine stdout and stderr with appropriate formatting
 	var output strings.Builder
@@ -100,7 +99,7 @@ func (r *CommandRunner) ExecuteCommand(command string, args ...string) (string, 
 }
 
 // ExecuteConfigCommand executes configuration-related commands
-func (r *CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
+func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
 	switch subcommand {
 	case "show":
 		return cmd.ShowConfigFunc()
@@ -114,7 +113,7 @@ func (r *CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) 
 }
 
 // ExecuteLogin handles the login command
-func (r *CommandRunner) ExecuteLogin(password string) (string, error) {
+func (*CommandRunner) ExecuteLogin(password string) (string, error) {
 	cmd.Password = password
 	output, err := cmd.LoginConfigFunc(password)
 	if err != nil {
@@ -124,11 +123,11 @@ func (r *CommandRunner) ExecuteLogin(password string) (string, error) {
 }
 
 // ExecuteConfigUpdate handles the config update command
-func (r *CommandRunner) ExecuteConfigUpdate(host, port, username string, useHttps bool) (string, error) {
+func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS bool) (string, error) {
 	configuration := config.ArgsConfig{
 		Address:  host,
 		Username: username,
-		HTTPS:    useHttps,
+		HTTPS:    useHTTPS,
 	}
 
 	if port != "" {
@@ -142,7 +141,7 @@ func (r *CommandRunner) ExecuteConfigUpdate(host, port, username string, useHttp
 }
 
 // ExecuteExploitCommand executes exploit-related commands
-func (r *CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
+func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 	switch subcommand {
 	case "list":
 		return cmd.ListFunc()
@@ -179,7 +178,7 @@ func (r *CommandRunner) ExecuteExploitRun(
 	}
 
 	if servicePort == "" {
-		return "", fmt.Errorf("service port is required")
+		return "", errors.New("service port is required")
 	}
 	port, err := strconv.Atoi(servicePort)
 	if err != nil {
@@ -237,17 +236,17 @@ func (r *CommandRunner) ExecuteExploitRun(
 }
 
 // ExecuteExploitCreate handles creating an exploit template
-func (r *CommandRunner) ExecuteExploitCreate(name string) (string, error) {
+func (*CommandRunner) ExecuteExploitCreate(name string) (string, error) {
 	return cmd.CreateFunc(name)
 }
 
 // ExecuteExploitRemove handles removing an exploit template
-func (r *CommandRunner) ExecuteExploitRemove(name string) (string, error) {
+func (*CommandRunner) ExecuteExploitRemove(name string) (string, error) {
 	return cmd.RemoveFunc(name)
 }
 
 // ExecuteExploitStop handles stopping a running exploit
-func (r *CommandRunner) ExecuteExploitStop(pid string) (string, error) {
+func (*CommandRunner) ExecuteExploitStop(pid string) (string, error) {
 	// Validate that pid is a number
 	pidInt, err := strconv.Atoi(pid)
 	if err != nil {
@@ -261,30 +260,30 @@ func (r *CommandRunner) ExecuteExploitStop(pid string) (string, error) {
 }
 
 // ExecuteWithTimeout executes a command with a timeout
-func (r *CommandRunner) ExecuteWithTimeout(timeout time.Duration, command string, args ...string) (string, error) {
+func (*CommandRunner) ExecuteWithTimeout(timeout time.Duration, command string, args ...string) (string, error) {
 	// Create the command
-	cmd := exec.Command(command, args...)
+	cmdH := exec.Command(command, args...)
 
 	// Create buffers for stdout and stderr
 	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	cmdH.Stdout = &stdout
+	cmdH.Stderr = &stderr
 
 	// Start the command
-	if err := cmd.Start(); err != nil {
+	if err := cmdH.Start(); err != nil {
 		return "", err
 	}
 
 	// Create a channel for the command to finish
 	done := make(chan error, 1)
 	go func() {
-		done <- cmd.Wait()
+		done <- cmdH.Wait()
 	}()
 
 	// Wait for either the command to finish or the timeout
 	select {
 	case <-time.After(timeout):
-		if err := cmd.Process.Kill(); err != nil {
+		if err := cmdH.Process.Kill(); err != nil {
 			return "", fmt.Errorf("timeout reached but failed to kill process: %v", err)
 		}
 		return "", fmt.Errorf("command timed out after %v", timeout)
@@ -314,14 +313,14 @@ func (r *CommandRunner) ExecuteWithTimeout(timeout time.Duration, command string
 }
 
 // ExecuteBackgroundCommand starts a command in the background and returns immediately
-func (r *CommandRunner) ExecuteBackgroundCommand(command string, args ...string) (string, error) {
-	cmd := exec.Command(command, args...)
+func (*CommandRunner) ExecuteBackgroundCommand(command string, args ...string) (string, error) {
+	cmdH := exec.Command(command, args...)
 
 	// Start the command without waiting for it to complete
-	if err := cmd.Start(); err != nil {
+	if err := cmdH.Start(); err != nil {
 		return "", err
 	}
 
 	// Return the PID for tracking
-	return fmt.Sprintf("Background process started with PID: %d", cmd.Process.Pid), nil
+	return fmt.Sprintf("Background process started with PID: %d", cmdH.Process.Pid), nil
 }

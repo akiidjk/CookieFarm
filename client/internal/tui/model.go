@@ -168,7 +168,6 @@ func (m *Model) AppendCommandOutput(output string) {
 	// Update streaming timestamp
 	if m.streaming {
 		m.lastUpdate = time.Now().UnixNano()
-
 	}
 }
 

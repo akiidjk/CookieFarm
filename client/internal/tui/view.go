@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -41,7 +42,7 @@ func (r *ViewRenderer) RenderView(m *Model) string {
 }
 
 // renderBanner renders the application banner
-func (r *ViewRenderer) renderBanner(banner string) string {
+func (*ViewRenderer) renderBanner(banner string) string {
 	if banner == "" {
 		return ""
 	}
@@ -89,7 +90,7 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 	banner := r.renderBanner(m.banner)
 
 	// Command title
-	commandTitle := SubtitleStyle.Render(fmt.Sprintf("Command: %s", m.activeCommand))
+	commandTitle := SubtitleStyle.Render("Command: " + m.activeCommand)
 
 	// Render form inputs
 	var inputViews []string
@@ -128,7 +129,7 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 
 	// Add error message if present
 	if m.err != nil {
-		errorMsg := ErrorStyle.Render(fmt.Sprintf("Error: %s", m.err.Error()))
+		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
 		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
 	}
 
@@ -160,7 +161,7 @@ func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 
 	// Add error message if present
 	if m.err != nil {
-		errorMsg := ErrorStyle.Render(fmt.Sprintf("Error: %s", m.err.Error()))
+		errorMsg := ErrorStyle.Render("Error:" + m.err.Error())
 		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
 	}
 
@@ -178,7 +179,7 @@ func (r *ViewRenderer) formatCommandOutput(output string) string {
 	}
 
 	lines := strings.Split(output, "\n")
-	var formattedLines []string
+	formattedLines := make([]string, 0, len(lines))
 
 	for i, line := range lines {
 		if strings.TrimSpace(line) == "" {
@@ -191,7 +192,7 @@ func (r *ViewRenderer) formatCommandOutput(output string) string {
 			Foreground(mutedColor).
 			Width(4).
 			Align(lipgloss.Right).
-			Render(fmt.Sprintf("%d", i+1))
+			Render(strconv.Itoa(i + 1))
 
 		// Style line based on content
 		styledLine := r.styleOutputLine(line)
@@ -210,7 +211,7 @@ func (r *ViewRenderer) formatCommandOutput(output string) string {
 }
 
 // styleOutputLine applies appropriate styling to individual output lines
-func (r *ViewRenderer) styleOutputLine(line string) string {
+func (*ViewRenderer) styleOutputLine(line string) string {
 	lowerLine := strings.ToLower(line)
 
 	switch {
@@ -230,7 +231,7 @@ func (r *ViewRenderer) styleOutputLine(line string) string {
 }
 
 // renderHelpFooter renders the help/instruction footer
-func (r *ViewRenderer) renderHelpFooter() string {
+func (*ViewRenderer) renderHelpFooter() string {
 	helpText := "↑/↓: Navigate • Enter: Select • q: Quit • ESC: Back"
 	return HelpStyle.Render(helpText)
 }
@@ -250,70 +251,5 @@ func (r *ViewRenderer) renderQuitMessage() string {
 		lipgloss.Center,
 		lipgloss.Center,
 		message,
-	)
-}
-
-// renderLoadingIndicator renders a loading indicator
-func (r *ViewRenderer) renderLoadingIndicator(message string) string {
-	spinner := "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
-
-	loadingText := lipgloss.NewStyle().
-		Foreground(primaryColor).
-		Bold(true).
-		Render(fmt.Sprintf("%c %s", spinner[0], message))
-
-	return loadingText
-}
-
-// renderStatusBar renders a status bar with current state information
-func (r *ViewRenderer) renderStatusBar(m *Model) string {
-	var statusItems []string
-
-	// Current view
-	viewStatus := fmt.Sprintf("View: %s", strings.Title(m.GetActiveView()))
-	statusItems = append(statusItems, viewStatus)
-
-	// Command status
-	if m.IsRunningCommand() {
-		statusItems = append(statusItems, "Status: Running")
-	} else if m.IsInputMode() {
-		statusItems = append(statusItems, "Status: Input")
-	} else {
-		statusItems = append(statusItems, "Status: Ready")
-	}
-
-	statusText := strings.Join(statusItems, " • ")
-
-	return lipgloss.NewStyle().
-		Background(mutedColor).
-		Foreground(textColor).
-		Padding(0, 1).
-		Width(r.width).
-		Render(statusText)
-}
-
-// renderBox renders content within a styled box
-func (r *ViewRenderer) renderBox(title, content string, style lipgloss.Style) string {
-	if title != "" {
-		titleStyle := lipgloss.NewStyle().
-			Bold(true).
-			Foreground(primaryColor).
-			Padding(0, 1)
-
-		styledTitle := titleStyle.Render(title)
-		content = lipgloss.JoinVertical(lipgloss.Left, styledTitle, "", content)
-	}
-
-	return style.Render(content)
-}
-
-// centerContent centers content within the available space
-func (r *ViewRenderer) centerContent(content string) string {
-	return lipgloss.Place(
-		r.width,
-		r.height,
-		lipgloss.Center,
-		lipgloss.Center,
-		content,
 	)
 }

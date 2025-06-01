@@ -215,7 +215,7 @@ func show(cmd *cobra.Command, args []string) {
 		logger.Log.Error().Err(err).Msg("Show configuration failed")
 		return
 	}
-	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + string(content) + "```")
+	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + content + "```")
 }
 
 // ShowConfigFunc displays the current configuration

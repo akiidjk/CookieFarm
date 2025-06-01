@@ -47,11 +47,13 @@ func FormatOutput(text string) string {
 		line := scanner.Text()
 
 		// Highlight errors and infos
-		if strings.Contains(strings.ToLower(line), "error") {
+		loweredLine := strings.ToLower(line)
+		switch {
+		case strings.Contains(loweredLine, "error"):
 			line = ErrorText(line)
-		} else if strings.Contains(strings.ToLower(line), "info") {
+		case strings.Contains(loweredLine, "info"):
 			line = InfoText(line)
-		} else if strings.Contains(strings.ToLower(line), "warn") {
+		case strings.Contains(loweredLine, "warn"):
 			line = WarningText(line)
 		}
 
@@ -142,7 +144,7 @@ func FormatError(err error) string {
 		return ""
 	}
 
-	return ErrorStyle.Render(fmt.Sprintf("Error: %s", err.Error()))
+	return ErrorStyle.Render("Error: " + err.Error())
 }
 
 // FormatSuccess returns a formatted success message

@@ -29,7 +29,7 @@ func New(banner string) Model {
 type tickMsg struct{}
 
 // Init initializes the TUI
-func (m Model) Init() tea.Cmd {
+func (Model) Init() tea.Cmd {
 	return nil
 }
 
@@ -51,21 +51,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Handle special keys
-		newM, cmd, handled := m.handleKeyPress(msg)
+		newM, cmdH, handled := m.handleKeyPress(msg)
 		if handled {
-			return newM, cmd
+			return newM, cmdH
 		}
 
 		// If not handled, let menus handle the key (like arrow keys)
 		switch m.GetActiveView() {
 		case "main":
-			m.mainMenu, cmd = m.mainMenu.Update(msg)
+			m.mainMenu, cmdH = m.mainMenu.Update(msg)
 		case "config":
-			m.configMenu, cmd = m.configMenu.Update(msg)
+			m.configMenu, cmdH = m.configMenu.Update(msg)
 		case "exploit":
-			m.exploitMenu, cmd = m.exploitMenu.Update(msg)
+			m.exploitMenu, cmdH = m.exploitMenu.Update(msg)
 		}
-		return m, cmd
+		return m, cmdH
 
 	case CommandOutput:
 		m.SetCommandOutput(msg.Output)

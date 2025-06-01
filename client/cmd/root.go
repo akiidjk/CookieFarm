@@ -9,6 +9,7 @@ import (
 )
 
 // RootCmd represents the base command when called without any subcommands
+// Exported for TUI usage
 var RootCmd = &cobra.Command{
 	Use:   "cookieclient",
 	Short: "The client cli for CookieFarm",
@@ -28,8 +29,10 @@ func Execute() {
 }
 
 func init() {
-	RootCmd.AddCommand(configCmd)
+	RootCmd.AddCommand(ConfigCmd)
 	RootCmd.PersistentFlags().BoolVarP(&config.ArgsAttackInstance.Debug, "debug", "D", false, "Enable debug logging")
+	RootCmd.PersistentFlags().BoolVarP(&config.UseTUI, "no-tui", "N", false, "Disable TUI mode")
+	RootCmd.PersistentFlags().BoolVarP(&config.UseBanner, "no-banner", "B", false, "Remove banner on startup")
 
 	RootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if config.ArgsAttackInstance.Debug {

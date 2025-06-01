@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/rs/zerolog"
 )
 
@@ -30,7 +31,7 @@ var (
 	// Log is the logger instance for the CookieFarm client.
 	Log zerolog.Logger
 	// logFile represents the log file for the CookieFarm client.
-	logFile *os.File
+	LogFile *os.File
 )
 
 // Setup configures the logger with the specified log level and returns the log file path.
@@ -44,7 +45,7 @@ func Setup(level string) string {
 	_ = os.MkdirAll("/tmp/cookielogs", 0o755)
 	logPath := filepath.Join("/", "tmp", "cookielogs", "clientfarm-"+strconv.Itoa(int(time.Now().UnixMilli()))) + ".log"
 
-	logFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0o666)
+	LogFile, err = os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0o666)
 	if err != nil {
 		panic("cannot create log file: " + err.Error())
 	}
@@ -80,7 +81,11 @@ func Setup(level string) string {
 		},
 	}
 
-	multi := zerolog.MultiLevelWriter(consoleWriter, logFile)
+	multi := zerolog.MultiLevelWriter(consoleWriter, LogFile)
+
+	if !config.UseTUI {
+		multi = zerolog.MultiLevelWriter(LogFile)
+	}
 
 	if level == "debug" {
 		Log = zerolog.New(multi).With().Timestamp().Caller().Logger()
@@ -95,7 +100,7 @@ func Setup(level string) string {
 
 // Close shuts down the logger by closing the log file if it is open.
 func Close() {
-	if logFile != nil {
-		_ = logFile.Close()
+	if LogFile != nil {
+		_ = LogFile.Close()
 	}
 }

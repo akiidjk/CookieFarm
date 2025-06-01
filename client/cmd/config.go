@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -17,7 +18,8 @@ var Password string
 // ===== CONFIG COMMAND DEFINITIONS =====
 
 // configCmd represents the main config command
-var configCmd = &cobra.Command{
+// Exported for TUI usage
+var ConfigCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage client configuration",
 	Long:  `This command allows you to manage the client configuration, including setting the server host, port, and other parameters.`,
@@ -28,7 +30,7 @@ var resetConfigCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Reset the client configuration",
 	Long:  `This command resets the client configuration to its default state, removing any custom settings that have been applied.`,
-	Run:   resetConfigFunc,
+	Run:   reset,
 }
 
 // editConfigCmd represents the config update command
@@ -36,7 +38,7 @@ var editConfigCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update client configuration",
 	Long:  `This command allows you to edit the client configuration interactively. It opens the configuration file in your default text editor, enabling you to make changes to settings such as server host, port, and other parameters.`,
-	Run:   updateConfigFunc,
+	Run:   update,
 }
 
 // loginConfigCmd represents the config login command
@@ -44,7 +46,7 @@ var loginConfigCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Login to the client",
 	Long:  `This command allows you to log in to the client, providing your credentials to access protected resources. It will prompt for your username and password, and store the session information securely.`,
-	Run:   loginConfigFunc,
+	Run:   login,
 }
 
 // logoutConfigCmd represents the config logout command
@@ -52,7 +54,7 @@ var logoutConfigCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Remove client session",
 	Long:  `This command removes the current client session, effectively logging you out of the client. It clears any stored session information, ensuring that subsequent requests will require re-authentication.`,
-	Run:   logoutConfigFunc,
+	Run:   logout,
 }
 
 // showConfigCmd represents the config show command
@@ -60,13 +62,13 @@ var showConfigCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show the current client configuration",
 	Long:  `This command displays the current client configuration settings, including server host, port, username, and other parameters.`,
-	Run:   showConfigFunc,
+	Run:   show,
 }
 
 // ===== CONFIG COMMAND FUNCTIONS =====
 
-// resetConfigFunc resets the configuration to defaults
-func resetConfigFunc(cmd *cobra.Command, args []string) {
+// reset resets the configuration to defaults
+func reset(cmd *cobra.Command, args []string) {
 	var err error
 	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
@@ -96,8 +98,8 @@ func resetConfigFunc(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Msg("Configuration file reset successfully.")
 }
 
-// updateConfigFunc updates the configuration with new values
-func updateConfigFunc(cmd *cobra.Command, args []string) {
+// update updates the configuration with new values
+func update(cmd *cobra.Command, args []string) {
 	var err error
 	err = os.MkdirAll(config.DefaultConfigPath, 0o755)
 	if err != nil {
@@ -130,8 +132,8 @@ func updateConfigFunc(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Str("path", configPath).Msg("Configuration created or updated successfully. ")
 }
 
-// loginConfigFunc handles user login
-func loginConfigFunc(cmd *cobra.Command, args []string) {
+// login handles user login
+func login(cmd *cobra.Command, args []string) {
 	err := config.LoadLocalConfig()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `cookieclient config reset`")
@@ -153,8 +155,8 @@ func loginConfigFunc(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
 
-// logoutConfigFunc handles user logout
-func logoutConfigFunc(cmd *cobra.Command, args []string) {
+// logout handles user logout
+func logout(cmd *cobra.Command, args []string) {
 	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
 	err := os.Remove(sessionPath)
 	if err != nil {
@@ -164,33 +166,38 @@ func logoutConfigFunc(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Msg("Logged out successfully. Session file removed.")
 }
 
+func show(cmd *cobra.Command, args []string) {
+	content, _ := ShowConfigFunc()
+	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + string(content) + "```")
+}
+
 // showConfigFunc displays the current configuration
-func showConfigFunc(cmd *cobra.Command, args []string) {
+func ShowConfigFunc() (string, error) {
 	configPath := filepath.Join(config.DefaultConfigPath, "config.yml")
 
 	content, err := os.ReadFile(configPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error reading configuration file")
-		return
+		return "", fmt.Errorf("Error reading configuration file: " + err.Error())
 	}
 
-	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + string(content) + "```")
+	return string(content), nil
 }
 
 // ===== COMMAND INITIALIZATION =====
 
 func init() {
 	// Add subcommands to config command
-	configCmd.AddCommand(resetConfigCmd)
-	configCmd.AddCommand(editConfigCmd)
-	configCmd.AddCommand(loginConfigCmd)
-	configCmd.AddCommand(logoutConfigCmd)
-	configCmd.AddCommand(showConfigCmd)
+	ConfigCmd.AddCommand(resetConfigCmd)
+	ConfigCmd.AddCommand(editConfigCmd)
+	ConfigCmd.AddCommand(loginConfigCmd)
+	ConfigCmd.AddCommand(logoutConfigCmd)
+	ConfigCmd.AddCommand(showConfigCmd)
 
 	// Setup flags for editConfigCmd
 	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "localhost", "Server host to connect to")
 	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 8080, "Server port to connect to")
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Nickname, "username", "u", "cookieguest", "Username for authenticating to the server")
+	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Username, "username", "u", "cookieguest", "Username for authenticating to the server")
 	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.HTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
 
 	// Setup flags for loginConfigCmd

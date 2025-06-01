@@ -3,14 +3,40 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"os"
 
 	"github.com/ByteTheCookies/cookieclient/cmd"
+	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/tui"
 )
 
 //go:embed banner.txt
 var banner string
 
 func main() {
-	fmt.Println(banner)
-	cmd.Execute()
+	config.UseTUI = true
+	config.UseBanner = true
+	for _, arg := range os.Args {
+		if arg == "--no-tui" {
+			config.UseTUI = false
+		}
+		if arg == "--no-banner" {
+			config.UseBanner = false
+		}
+	}
+
+	if config.UseTUI && os.Getenv("COOKIECLIENT_NO_TUI") == "" {
+		if err := tui.StartTUI(banner); err != nil {
+			fmt.Printf("Error starting TUI: %v\nFalling back to CLI mode\n", err)
+			if config.UseBanner {
+				fmt.Println(banner)
+			}
+			cmd.Execute()
+		}
+	} else {
+		if config.UseBanner {
+			fmt.Println(banner)
+		}
+		cmd.Execute()
+	}
 }

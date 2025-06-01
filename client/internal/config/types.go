@@ -52,6 +52,6 @@ type ArgsConfig struct {
 	Address  string    `json:"address"`  // Host address of the server
 	Port     uint16    `json:"port"`     // Port of the server
 	HTTPS    bool      `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
-	Nickname string    `json:"nickname"` // Nickname of the client
+	Username string    `json:"username"` // Username of the client
 	Exploits []Exploit `json:"exploits"` // List of exploits available in the client
 }

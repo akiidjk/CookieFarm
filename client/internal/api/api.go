@@ -113,7 +113,7 @@ func Login(password string) (string, error) {
 	resp, err := http.Post(
 		ServerURL,
 		"application/x-www-form-urlencoded",
-		bytes.NewBufferString("username="+config.ArgsConfigInstance.Nickname+"&password="+password),
+		bytes.NewBufferString("username="+config.ArgsConfigInstance.Username+"&password="+password),
 	)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("error sending login request")

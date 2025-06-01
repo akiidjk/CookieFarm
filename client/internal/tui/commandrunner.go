@@ -10,16 +10,56 @@ import (
 
 	"github.com/ByteTheCookies/cookieclient/cmd"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
+	tea "github.com/charmbracelet/bubbletea"
 )
+
+// ExploitOutput represents output from a running exploit
+type ExploitOutput struct {
+	Content string
+	Error   error
+	PID     int
+}
 
 // CommandRunner handles the execution of commands for the TUI
 type CommandRunner struct {
-	// Additional fields could be added here for configuration
+	// Channel for streaming exploit output
+	exploitOutputChan chan ExploitOutput
+	currentExploitPID int
 }
 
 // NewCommandRunner creates a new command runner
 func NewCommandRunner() *CommandRunner {
-	return &CommandRunner{}
+	return &CommandRunner{
+		exploitOutputChan: make(chan ExploitOutput, 100),
+	}
+}
+
+// GetExploitOutputCmd returns a tea.Cmd that streams exploit output
+func (r *CommandRunner) GetExploitOutputCmd() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case output, ok := <-r.exploitOutputChan:
+			if !ok {
+				return nil
+			}
+			return output
+		case <-time.After(100 * time.Millisecond):
+			// Periodically refresh to ensure UI updates
+			return nil
+		}
+	}
+}
+
+// CloseExploitOutput closes the exploit output channel
+func (r *CommandRunner) CloseExploitOutput() {
+	if r.exploitOutputChan != nil {
+		close(r.exploitOutputChan)
+	}
+}
+
+// GetCurrentExploitPID returns the PID of the currently running exploit
+func (r *CommandRunner) GetCurrentExploitPID() int {
+	return r.currentExploitPID
 }
 
 var defaultFlags = []string{"--no-tui", "--no-banner"}
@@ -111,11 +151,16 @@ func (r *CommandRunner) ExecuteExploitCommand(subcommand string) (string, error)
 	}
 }
 
-// ExecuteExploitRun handles running an exploit
-func (r *CommandRunner) ExecuteExploitRun(exploitPath, servicePort string, detach bool, tickTime, threadCount string) (string, error) {
-	// Parse the string arguments into the required types
-	tickTimeInt := 120  // Default value
-	threadCountInt := 5 // Default value
+// ExecuteExploitRun gestisce l’esecuzione di un exploit e restituisce
+// tutto ciò che RunFuncTui ha scritto su stdout/stderr.
+func (r *CommandRunner) ExecuteExploitRun(
+	exploitPath, servicePort string,
+	detach bool,
+	tickTime, threadCount string,
+) (string, error) {
+	// 1) Parsing degli argomenti string -> tipi corretti
+	tickTimeInt := 120  // default
+	threadCountInt := 5 // default
 	var servicePortUint16 uint16
 	var err error
 
@@ -136,16 +181,59 @@ func (r *CommandRunner) ExecuteExploitRun(exploitPath, servicePort string, detac
 	if servicePort == "" {
 		return "", fmt.Errorf("service port is required")
 	}
-
 	port, err := strconv.Atoi(servicePort)
 	if err != nil {
 		return "", fmt.Errorf("invalid service port: %s", servicePort)
 	}
 	servicePortUint16 = uint16(port)
 
-	cmd.RunFunc(exploitPath, tickTimeInt, threadCountInt, servicePortUint16, detach)
+	// 2) Avvia l'exploit con streaming in tempo reale
+	result, err := cmd.RunFuncTui(
+		exploitPath,
+		tickTimeInt,
+		threadCountInt,
+		servicePortUint16,
+		detach,
+	)
 
-	return fmt.Sprintf("Exploit started successfully on port %d with tick time %d and thread count %d", servicePortUint16, tickTimeInt, threadCountInt), nil
+	if err != nil {
+		return "", err
+	}
+
+	// Salva il PID dell'exploit in esecuzione
+	r.currentExploitPID = result.PID
+
+	// Avvia un goroutine per inviare l'output al canale dell'exploit
+	go func() {
+		for line := range result.OutputChan {
+			select {
+			case r.exploitOutputChan <- ExploitOutput{Content: line, PID: result.PID}:
+				// Output inviato correttamente
+			default:
+				// Il canale è pieno, continua senza bloccarsi
+			}
+		}
+	}()
+
+	// Avvia un goroutine per monitorare gli errori
+	go func() {
+		for err := range result.ErrorChan {
+			select {
+			case r.exploitOutputChan <- ExploitOutput{Error: err, PID: result.PID}:
+				// Errore inviato correttamente
+			default:
+				// Il canale è pieno, continua senza bloccarsi
+			}
+		}
+	}()
+
+	// Costruisci un output iniziale per la visualizzazione immediata
+	var initialOutput strings.Builder
+	initialOutput.WriteString(fmt.Sprintf("Exploit started with PID: %d\n", result.PID))
+	initialOutput.WriteString(fmt.Sprintf("Running with %d threads, tick time %d seconds\n", threadCountInt, tickTimeInt))
+	initialOutput.WriteString("Output streaming started. Live updates will appear below...\n")
+
+	return initialOutput.String(), nil
 }
 
 // ExecuteExploitCreate handles creating an exploit template

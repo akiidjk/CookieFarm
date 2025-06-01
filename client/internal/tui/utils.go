@@ -77,8 +77,6 @@ func CaptureOutput(fn func()) string {
 		defer func() {
 			tempFile.Close()
 			os.Remove(tempFile.Name())
-			// Try to reconnect the logger to its default location
-			logger.Setup("info")
 		}()
 	}
 

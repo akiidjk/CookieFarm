@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -26,6 +28,8 @@ type Model struct {
 	runningCommand bool
 	commandOutput  string
 	cmdRunner      *CommandRunner
+	streaming      bool  // Whether streaming mode is active
+	lastUpdate     int64 // Last update timestamp for streaming output
 }
 
 // CommandOutput represents the result of a command execution
@@ -137,11 +141,35 @@ func (m *Model) SetInputMode(state bool) {
 // SetRunningCommand sets the running command state
 func (m *Model) SetRunningCommand(state bool) {
 	m.runningCommand = state
+
+	// When stopping command execution, also stop streaming
+	if !state {
+		m.streaming = false
+	}
 }
 
 // SetCommandOutput sets the command output
 func (m *Model) SetCommandOutput(output string) {
 	m.commandOutput = output
+}
+
+// AppendCommandOutput appends to the existing command output
+func (m *Model) AppendCommandOutput(output string) {
+	if output == "" {
+		return
+	}
+
+	if m.commandOutput == "" {
+		m.commandOutput = output
+	} else {
+		m.commandOutput += "\n" + output
+	}
+
+	// Update streaming timestamp
+	if m.streaming {
+		m.lastUpdate = time.Now().UnixNano()
+
+	}
 }
 
 // GetActiveView returns the current active view

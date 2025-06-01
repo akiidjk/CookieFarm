@@ -83,7 +83,7 @@ func Setup(level string) string {
 
 	multi := zerolog.MultiLevelWriter(consoleWriter, LogFile)
 
-	if !config.UseTUI {
+	if !config.NoTUI {
 		multi = zerolog.MultiLevelWriter(LogFile)
 	}
 

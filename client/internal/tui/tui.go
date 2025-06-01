@@ -1,8 +1,10 @@
 package tui
 
 import (
+	"strings"
+	"time"
+
 	"github.com/ByteTheCookies/cookieclient/internal/config"
-	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -10,9 +12,6 @@ import (
 
 // New creates a new TUI model
 func New(banner string) Model {
-	// Setup logger
-	logger.Setup("info")
-
 	// Initialize menus
 	mainMenu, configMenu, exploitMenu := InitializeMenus()
 
@@ -26,6 +25,8 @@ func New(banner string) Model {
 		cmdRunner:   NewCommandRunner(),
 	}
 }
+
+type tickMsg struct{}
 
 // Init initializes the TUI
 func (m Model) Init() tea.Cmd {
@@ -48,13 +49,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.IsInputMode() {
 			return m.handleInputMode(msg)
 		}
-		
+
 		// Handle special keys
 		newM, cmd, handled := m.handleKeyPress(msg)
 		if handled {
 			return newM, cmd
 		}
-		
+
 		// If not handled, let menus handle the key (like arrow keys)
 		switch m.GetActiveView() {
 		case "main":
@@ -71,6 +72,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.SetRunningCommand(true)
 		if msg.Error != nil {
 			m.SetError(msg.Error)
+		}
+		return m, nil
+
+	case ExploitOutput:
+		// Append to existing output for exploit commands
+		if m.IsRunningCommand() && strings.HasPrefix(m.activeCommand, "exploit") {
+			if msg.Content != "" {
+				m.AppendCommandOutput(msg.Content)
+			}
+			if msg.Error != nil {
+				m.SetError(msg.Error)
+			}
+			// Continue streaming output - this is critical for continuous updates
+			return m, tea.Batch(
+				tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg {
+					return tickMsg{}
+				}),
+				m.cmdRunner.GetExploitOutputCmd(),
+			)
 		}
 		return m, nil
 	}
@@ -137,7 +157,14 @@ func (m Model) handleBackAction() (tea.Model, tea.Cmd) {
 // handleEnterAction handles the enter key
 func (m Model) handleEnterAction(handler *CommandHandler) (tea.Model, tea.Cmd) {
 	if m.IsInputMode() {
-		return handler.ProcessFormSubmission(&m)
+		newModel, cmd := handler.ProcessFormSubmission(&m)
+
+		// If we're running an exploit command, also start the streaming output
+		if strings.HasPrefix(newModel.activeCommand, "exploit run") {
+			return newModel, tea.Batch(cmd, newModel.GetExploitStreamCmd())
+		}
+
+		return newModel, cmd
 	}
 
 	selectedItem, ok := m.getSelectedMenuItem()
@@ -145,7 +172,14 @@ func (m Model) handleEnterAction(handler *CommandHandler) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	return m.processMenuSelection(selectedItem, handler)
+	newModel, cmd := m.processMenuSelection(selectedItem, handler)
+
+	// If we're running an exploit command, also start the streaming output
+	if mTyped, ok := newModel.(Model); ok && mTyped.IsRunningCommand() && strings.HasPrefix(mTyped.activeCommand, "exploit run") {
+		return newModel, tea.Batch(cmd, mTyped.GetExploitStreamCmd())
+	}
+
+	return newModel, cmd
 }
 
 // getSelectedMenuItem gets the currently selected menu item
@@ -227,10 +261,18 @@ func (m Model) View() string {
 	return renderer.RenderView(&m)
 }
 
+// GetExploitStreamCmd returns a command that periodically checks for exploit output
+func (m Model) GetExploitStreamCmd() tea.Cmd {
+	if m.IsRunningCommand() && strings.HasPrefix(m.activeCommand, "exploit run") {
+		return m.cmdRunner.GetExploitOutputCmd()
+	}
+	return nil
+}
+
 // StartTUI launches the TUI application
 func StartTUI(banner string) error {
 	// Set TUI mode in config
-	config.UseTUI = true
+	config.NoTUI = true
 
 	p := tea.NewProgram(
 		New(banner),

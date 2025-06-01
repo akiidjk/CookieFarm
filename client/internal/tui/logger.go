@@ -62,9 +62,6 @@ package tui
 // 	// Create a multi-writer for zerolog
 // 	writers := []io.Writer{tuiWriter}
 
-// 	// Try to add file logger if possible
-// 	logPath := logger.Setup(level)
-
 // 	// Ensure we have a separate log file for TUI
 // 	tuiLogDir := filepath.Join(os.TempDir(), "cookieclient-tui")
 // 	_ = os.MkdirAll(tuiLogDir, 0755)

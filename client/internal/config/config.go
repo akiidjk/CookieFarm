@@ -8,8 +8,9 @@ var (
 	ArgsAttackInstance ArgsAttack // Struct holding runtime arguments
 	ArgsConfigInstance ArgsConfig // Struct holding configuration arguments
 	Current            Config     // Current holds the global configuration for the client.
-	UseTUI             bool       // UseTUI indicates whether to use the TUI mode or not
-	UseBanner          bool       // NoBanner indicates whether to disable the banner on startup
+	NoTUI              bool       // UseTUI indicates whether to use the TUI mode or not
+
+	UseBanner bool // NoBanner indicates whether to disable the banner on startup
 )
 
 var DefaultConfigPath, _ = filesystem.ExpandTilde("~/.config/cookiefarm")

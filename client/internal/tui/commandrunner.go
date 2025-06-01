@@ -143,7 +143,9 @@ func (r *CommandRunner) ExecuteExploitRun(exploitPath, servicePort string, detac
 	}
 	servicePortUint16 = uint16(port)
 
-	return cmd.AttackFunc(exploitPath, tickTimeInt, threadCountInt, servicePortUint16, detach)
+	cmd.RunFunc(exploitPath, tickTimeInt, threadCountInt, servicePortUint16, detach)
+
+	return fmt.Sprintf("Exploit started successfully on port %d with tick time %d and thread count %d", servicePortUint16, tickTimeInt, threadCountInt), nil
 }
 
 // ExecuteExploitCreate handles creating an exploit template
@@ -163,10 +165,10 @@ func (r *CommandRunner) ExecuteExploitStop(pid string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid process ID: %s", pid)
 	}
-	
+
 	// Set the global Pid variable that StopFunc expects
 	cmd.Pid = pidInt
-	
+
 	return cmd.StopFunc(pidInt)
 }
 

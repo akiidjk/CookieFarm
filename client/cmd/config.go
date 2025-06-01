@@ -225,7 +225,7 @@ func ShowConfigFunc() (string, error) {
 	content, err := os.ReadFile(configPath)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error reading configuration file")
-		return "", fmt.Errorf("Error reading configuration file: " + err.Error())
+		return "", fmt.Errorf("%s", "Error reading configuration file: "+err.Error())
 	}
 
 	return string(content), nil

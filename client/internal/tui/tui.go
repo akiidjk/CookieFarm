@@ -7,6 +7,7 @@ import (
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -14,6 +15,11 @@ import (
 func New(banner string) Model {
 	// Initialize menus
 	mainMenu, configMenu, exploitMenu := InitializeMenus()
+
+	// Initialize spinner
+	s := spinner.New()
+	s.Spinner = spinner.Points
+	s.Style = SpinnerStyle
 
 	return Model{
 		activeView:  "main",
@@ -23,14 +29,15 @@ func New(banner string) Model {
 		help:        help.New(),
 		banner:      banner,
 		cmdRunner:   NewCommandRunner(),
+		spinner:     s,
 	}
 }
 
 type tickMsg struct{}
 
 // Init initializes the TUI
-func (Model) Init() tea.Cmd {
-	return nil
+func (m Model) Init() tea.Cmd {
+	return m.spinner.Tick
 }
 
 // Update handles TUI state updates
@@ -70,6 +77,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case CommandOutput:
 		m.SetCommandOutput(msg.Output)
 		m.SetRunningCommand(true)
+		m.SetLoading(false) // Command completed, stop loading spinner
 		if msg.Error != nil {
 			m.SetError(msg.Error)
 		}
@@ -93,6 +101,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 		}
 		return m, nil
+	}
+
+	// Handle spinner updates
+	if m.loading {
+		var spinnerCmd tea.Cmd
+		m.spinner, spinnerCmd = m.spinner.Update(msg)
+		cmds = append(cmds, spinnerCmd)
 	}
 
 	// Handle other message types and menu updates for non-KeyMsg events
@@ -157,14 +172,15 @@ func (m Model) handleBackAction() (tea.Model, tea.Cmd) {
 // handleEnterAction handles the enter key
 func (m Model) handleEnterAction(handler *CommandHandler) (tea.Model, tea.Cmd) {
 	if m.IsInputMode() {
+		m.SetLoading(true) // Show loading spinner when submitting the form
 		newModel, cmd := handler.ProcessFormSubmission(&m)
 
 		// If we're running an exploit command, also start the streaming output
 		if strings.HasPrefix(newModel.activeCommand, "exploit run") {
-			return newModel, tea.Batch(cmd, newModel.GetExploitStreamCmd())
+			return newModel, tea.Batch(cmd, newModel.GetExploitStreamCmd(), m.spinner.Tick)
 		}
 
-		return newModel, cmd
+		return newModel, tea.Batch(cmd, m.spinner.Tick)
 	}
 
 	selectedItem, ok := m.getSelectedMenuItem()
@@ -209,6 +225,7 @@ func (m Model) processMenuSelection(selectedItem menuItem, handler *CommandHandl
 	if IsDirectCommand(command) {
 		m.activeCommand = command
 		m.SetRunningCommand(true)
+		m.SetLoading(true)
 		return m, handler.HandleCommand(command, nil)
 	}
 
@@ -236,6 +253,7 @@ func (m Model) handleInputMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyEnter:
 			// Process form submission
 			handler := NewCommandHandler()
+			m.SetLoading(true) // Show loading spinner during form submission
 			return handler.ProcessFormSubmission(&m)
 		case tea.KeyEscape:
 			// Cancel form input

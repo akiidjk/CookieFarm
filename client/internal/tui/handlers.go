@@ -134,8 +134,7 @@ func (h *CommandHandler) handleExploitRun(formData *FormData) (string, error) {
 		return "", errors.New("exploit path and service port are required")
 	}
 
-	detach := strings.ToLower(detachStr) == "true"
-
+	detach := strings.TrimSpace(strings.ToLower(detachStr)) == "true"
 	return h.cmdRunner.ExecuteExploitRun(exploitPath, servicePort, detach, tickTime, threadCount)
 }
 

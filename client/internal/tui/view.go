@@ -146,10 +146,24 @@ func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 	// Format output with styling
 	formattedOutput := r.formatCommandOutput(m.commandOutput)
 
+	// Create output box with or without spinner
+	var outputContent string
+	if m.loading {
+		loadingText := LoadingStyle.Render(" Loading...")
+		spinner := m.spinner.View() + loadingText
+		if m.commandOutput != "" {
+			outputContent = spinner + "\n\n" + formattedOutput
+		} else {
+			outputContent = spinner
+		}
+	} else {
+		outputContent = formattedOutput
+	}
+
 	// Create output box
 	outputBox := CommandOutputStyle.
 		Width(r.width - 4).
-		Render(formattedOutput)
+		Render(outputContent)
 
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -161,7 +175,7 @@ func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 
 	// Add error message if present
 	if m.err != nil {
-		errorMsg := ErrorStyle.Render("Error:" + m.err.Error())
+		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
 		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
 	}
 
@@ -175,7 +189,7 @@ func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 // formatCommandOutput applies styling to command output
 func (r *ViewRenderer) formatCommandOutput(output string) string {
 	if output == "" {
-		return DimmedStyle("No output")
+		return DimmedStyle("No output yet")
 	}
 
 	lines := strings.Split(output, "\n")

@@ -1,17 +1,18 @@
 package tui
 
 import (
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/lipgloss"
 )
 
 var (
 	// Colors
-	primaryColor   = lipgloss.Color("#FF5733")
-	secondaryColor = lipgloss.Color("#4CAF50")
-	textColor      = lipgloss.Color("#FFFFFF")
+	primaryColor   = lipgloss.Color("#CDA157")
+	secondaryColor = lipgloss.Color("#D9D9D9")
+	textColor      = lipgloss.Color("#EDEDED")
 	mutedColor     = lipgloss.Color("#888888")
-	errorColor     = lipgloss.Color("#FF0000")
-	successColor   = lipgloss.Color("#00FF00")
+	errorColor     = lipgloss.Color("#E74C3C")
+	successColor   = lipgloss.Color("#219B54")
 	warningColor   = lipgloss.Color("#FFC107")
 	infoColor      = lipgloss.Color("#2196F3")
 
@@ -88,15 +89,32 @@ var (
 			Foreground(textColor).
 			Padding(0, 1)
 
+	// Spinner styles
+	SpinnerStyle = lipgloss.NewStyle().
+			Foreground(primaryColor).
+			Bold(true)
+
 	// Command output style
 	CommandOutputStyle = lipgloss.NewStyle().
 				BorderStyle(lipgloss.RoundedBorder()).
 				BorderForeground(primaryColor).
 				Padding(1)
 
+	// Loading indicator style
+	LoadingStyle = lipgloss.NewStyle().
+			Foreground(secondaryColor).
+			Bold(true)
+
 	// Footer styles
 	FooterStyle = lipgloss.NewStyle().
 			Foreground(mutedColor)
+
+	ListStyle = list.DefaultItemStyles{
+		NormalTitle:   lipgloss.NewStyle().Foreground(lipgloss.Color("#F7CD82")),
+		NormalDesc:    lipgloss.NewStyle().Foreground(lipgloss.Color("#5B584F")),
+		SelectedTitle: lipgloss.NewStyle().Foreground(lipgloss.Color("#F2F1EF")),
+		SelectedDesc:  lipgloss.NewStyle().Foreground(lipgloss.Color("#E0D5AD")),
+	}
 )
 
 // DimmedStyle returns a dimmed version of the given text

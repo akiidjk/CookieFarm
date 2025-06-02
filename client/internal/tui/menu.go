@@ -21,7 +21,10 @@ func createMainMenu() list.Model {
 		menuItem{title: "Quit", description: "Exit the application", command: "quit"},
 	}
 
-	mainMenuList := list.New(mainMenuItems, list.NewDefaultDelegate(), 0, 0)
+	delegate := list.NewDefaultDelegate()
+	delegate.Styles = ListStyle
+
+	mainMenuList := list.New(mainMenuItems, delegate, 0, 0)
 	mainMenuList.Title = "CookieFarm Client"
 	mainMenuList.SetShowStatusBar(false)
 	mainMenuList.SetFilteringEnabled(false)
@@ -40,8 +43,9 @@ func createConfigMenu() list.Model {
 		menuItem{title: "Logout", description: "Logout from the server", command: "config logout"},
 		menuItem{title: "Back", description: "Return to main menu", command: "back"},
 	}
-
-	configMenuList := list.New(configMenuItems, list.NewDefaultDelegate(), 0, 0)
+	delegate := list.NewDefaultDelegate()
+	delegate.Styles = ListStyle
+	configMenuList := list.New(configMenuItems, delegate, 0, 0)
 	configMenuList.Title = "Configuration Menu"
 	configMenuList.SetShowStatusBar(false)
 	configMenuList.SetFilteringEnabled(false)
@@ -61,7 +65,9 @@ func createExploitMenu() list.Model {
 		menuItem{title: "Back", description: "Return to main menu", command: "back"},
 	}
 
-	exploitMenuList := list.New(exploitMenuItems, list.NewDefaultDelegate(), 0, 0)
+	delegate := list.NewDefaultDelegate()
+	delegate.Styles = ListStyle
+	exploitMenuList := list.New(exploitMenuItems, delegate, 0, 0)
 	exploitMenuList.Title = "Exploit Menu"
 	exploitMenuList.SetShowStatusBar(false)
 	exploitMenuList.SetFilteringEnabled(false)
@@ -82,7 +88,7 @@ func GetSelectedItem(menu list.Model) (menuItem, bool) {
 
 // UpdateMenuSize updates the size of all menus
 func UpdateMenuSize(mainMenu, configMenu, exploitMenu *list.Model, width, height int) {
-	headerHeight := 4 // Banner + title
+	headerHeight := 6 // Banner + title
 	footerHeight := 2 // Help section
 
 	menuHeight := height - headerHeight - footerHeight

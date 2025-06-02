@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
@@ -30,6 +31,8 @@ type Model struct {
 	cmdRunner      *CommandRunner
 	streaming      bool  // Whether streaming mode is active
 	lastUpdate     int64 // Last update timestamp for streaming output
+	spinner        spinner.Model // Spinner for loading state
+	loading        bool // Whether a command is currently loading
 }
 
 // CommandOutput represents the result of a command execution
@@ -142,9 +145,10 @@ func (m *Model) SetInputMode(state bool) {
 func (m *Model) SetRunningCommand(state bool) {
 	m.runningCommand = state
 
-	// When stopping command execution, also stop streaming
+	// When stopping command execution, also stop streaming and loading
 	if !state {
 		m.streaming = false
+		m.loading = false
 	}
 }
 
@@ -179,4 +183,14 @@ func (m *Model) GetActiveView() string {
 // SetActiveView sets the active view
 func (m *Model) SetActiveView(view string) {
 	m.activeView = view
+}
+
+// SetLoading sets the loading state
+func (m *Model) SetLoading(state bool) {
+	m.loading = state
+}
+
+// IsLoading returns true if the model is in loading state
+func (m *Model) IsLoading() bool {
+	return m.loading
 }

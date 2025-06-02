@@ -115,11 +115,11 @@ func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
 // ExecuteLogin handles the login command
 func (*CommandRunner) ExecuteLogin(password string) (string, error) {
 	cmd.Password = password
-	output, err := cmd.LoginConfigFunc(password)
+	pathSession, err := cmd.LoginConfigFunc(password)
 	if err != nil {
 		return "", fmt.Errorf("login failed: %w", err)
 	}
-	return output, nil
+	return fmt.Sprintf("Login successfully session saved at %s", pathSession), nil
 }
 
 // ExecuteConfigUpdate handles the config update command
@@ -137,7 +137,11 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 		}
 	}
 
-	return cmd.UpdateConfigFunc(configuration)
+	path, err := cmd.UpdateConfigFunc(configuration)
+	if err != nil {
+		return "", fmt.Errorf("failed to update configuration: %w", err)
+	}
+	return fmt.Sprintf("Configuration updated successfully. File saved at: %s", path), nil
 }
 
 // ExecuteExploitCommand executes exploit-related commands
@@ -194,7 +198,6 @@ func (r *CommandRunner) ExecuteExploitRun(
 		servicePortUint16,
 		detach,
 	)
-
 	if err != nil {
 		return "", err
 	}

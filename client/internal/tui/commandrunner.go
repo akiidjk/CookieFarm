@@ -154,14 +154,11 @@ func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 	}
 }
 
-// ExecuteExploitRun gestisce l’esecuzione di un exploit e restituisce
-// tutto ciò che RunFuncTui ha scritto su stdout/stderr.
 func (r *CommandRunner) ExecuteExploitRun(
 	exploitPath, servicePort string,
 	detach bool,
 	tickTime, threadCount string,
 ) (string, error) {
-	// 1) Parsing degli argomenti string -> tipi corretti
 	tickTimeInt := 120  // default
 	threadCountInt := 5 // default
 	var servicePortUint16 uint16
@@ -190,7 +187,6 @@ func (r *CommandRunner) ExecuteExploitRun(
 	}
 	servicePortUint16 = uint16(port)
 
-	// 2) Avvia l'exploit con streaming in tempo reale
 	result, err := cmd.RunFuncTui(
 		exploitPath,
 		tickTimeInt,

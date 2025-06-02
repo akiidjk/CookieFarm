@@ -3,6 +3,7 @@ package tui
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -27,6 +28,10 @@ func (h *CommandHandler) HandleCommand(command string, formData *FormData) tea.C
 	}
 
 	if RequiresInput(command) && formData != nil {
+		if command == "exploit stop" {
+			// Skip since we handle this specially in ProcessFormSubmission
+			return nil
+		}
 		return h.executeFormCommand(command, formData)
 	}
 
@@ -86,7 +91,8 @@ func (h *CommandHandler) executeFormCommand(command string, formData *FormData) 
 			case "exploit remove":
 				output, err = h.handleExploitRemove(formData)
 			case "exploit stop":
-				output, err = h.handleExploitStop(formData)
+				// This is now handled specially in ProcessFormSubmission
+				output = "Exploit stop command executed"
 			default:
 				err = fmt.Errorf("unknown form command: %s", command)
 			}
@@ -161,13 +167,14 @@ func (h *CommandHandler) handleExploitRemove(formData *FormData) (string, error)
 }
 
 // handleExploitStop processes exploit stop command
-func (h *CommandHandler) handleExploitStop(formData *FormData) (string, error) {
-	pid := formData.Fields["Process ID (PID)"]
-
-	if pid == "" {
-		return "", errors.New("process ID is required")
+func (h *CommandHandler) handleExploitStop(formData *FormData, selectedProcess *ExploitProcess) (string, error) {
+	if selectedProcess == nil {
+		return "", errors.New("no exploit process selected")
 	}
-
+	
+	// Convert PID to string for the command runner
+	pid := strconv.Itoa(selectedProcess.PID)
+	
 	return h.cmdRunner.ExecuteExploitStop(pid)
 }
 
@@ -208,17 +215,50 @@ func (h *CommandHandler) ProcessFormSubmission(model *Model) (*Model, tea.Cmd) {
 	// Switch to command execution mode
 	model.SetInputMode(false)
 	model.SetRunningCommand(true)
+	model.SetProcessListVisible(false) // Hide process list if visible
 	model.ClearError()
 
-	// Execute command
+	// For exploit stop command, use the selected process
+	if model.activeCommand == "exploit stop" {
+		selectedProcess := model.GetSelectedProcess()
+		
+		return model, func() tea.Msg {
+			output, err := h.handleExploitStop(&formData, selectedProcess)
+			return CommandOutput{
+				Output: output,
+				Error:  err,
+			}
+		}
+	}
+
+	// Execute command for other commands
 	return model, h.HandleCommand(model.activeCommand, &formData)
 }
 
 // SetupFormForCommand prepares form inputs for a specific command
-func (*CommandHandler) SetupFormForCommand(model *Model, command string) {
+func (h *CommandHandler) SetupFormForCommand(model *Model, command string) {
 	model.activeCommand = command
 	model.inputs, model.inputLabels = CreateForm(command)
 	model.focusIndex = 0
 	model.SetInputMode(true)
 	model.ClearError()
+	
+	// For exploit stop command, load the exploit processes and show the selection list
+	if command == "exploit stop" {
+		processes, err := h.cmdRunner.GetRunningExploits()
+		if err != nil {
+			model.SetError(err)
+			return
+		}
+		
+		if len(processes) == 0 {
+			model.SetError(errors.New("no running exploits found"))
+			return
+		}
+		
+		model.SetExploitProcesses(processes)
+		model.SetProcessListVisible(true)
+	} else {
+		model.SetProcessListVisible(false)
+	}
 }

@@ -178,11 +178,13 @@ func createExploitStopForm() ([]textinput.Model, []string) {
 	var inputs []textinput.Model
 	var labels []string
 
-	// PID input
+	// We'll use selection list instead, but keeping an empty input for compatibility
+	// (the actual logic will be handled in handlers.go)
 	pidInput := textinput.New()
-	pidInput.Placeholder = "Process ID"
+	pidInput.Placeholder = "Select from list"
 	pidInput.CharLimit = 10
 	pidInput.Width = 15
+	// Note: We'll use selection list instead of this input
 	inputs = append(inputs, pidInput)
 	labels = append(labels, "Process ID (PID)")
 
@@ -285,16 +287,9 @@ func validateExploitNameForm(inputs []textinput.Model) error {
 }
 
 // validateExploitStopForm validates exploit stop form
+// Skip validation since we're using a selection list
 func validateExploitStopForm(inputs []textinput.Model) error {
-	if len(inputs) < 1 {
-		return errors.New("invalid form structure")
-	}
-
-	pid := strings.TrimSpace(inputs[0].Value())
-	if pid == "" {
-		return errors.New("process ID is required")
-	}
-
+	// Selection is handled by handlers.go, so validation is always successful
 	return nil
 }
 

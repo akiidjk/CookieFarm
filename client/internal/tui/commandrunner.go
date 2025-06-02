@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/ByteTheCookies/cookieclient/cmd"
@@ -148,10 +151,75 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 	switch subcommand {
 	case "list":
-		return cmd.ListFunc()
+		output, err := cmd.ListFunc()
+		if err != nil {
+			return "", err
+		}
+		return formatExploitListOutput(output)
 	default:
 		return "", fmt.Errorf("unknown exploit subcommand: %s", subcommand)
 	}
+}
+
+// formatExploitListOutput formats the exploit list output as a table
+func formatExploitListOutput(output string) (string, error) {
+	if strings.Contains(output, "No running exploits found") {
+		return output, nil
+	}
+
+	lines := strings.Split(output, "\n")
+	var header, footer string
+	var exploitLines []string
+
+	// Extract header, footer, and exploit lines
+	for _, line := range lines {
+		if strings.Contains(line, "===== Running Exploits =====") {
+			header = line
+		} else if strings.Contains(line, "Total:") {
+			footer = line
+		} else if strings.TrimSpace(line) != "" && !strings.HasPrefix(line, "=") {
+			// This looks like an exploit entry
+			exploitLines = append(exploitLines, line)
+		}
+	}
+
+	if len(exploitLines) == 0 {
+		return output, nil // Return original if no exploits found
+	}
+
+	// Create a formatted table
+	var result strings.Builder
+	result.WriteString(header + "\n\n")
+
+	// Add table header
+	result.WriteString(fmt.Sprintf("  %-5s | %-30s | %-10s\n", "ID", "NAME", "PID"))
+	result.WriteString(fmt.Sprintf("  %s-+-%s-+-%s\n", strings.Repeat("-", 5), strings.Repeat("-", 30), strings.Repeat("-", 10)))
+
+	// Add exploit entries
+	for _, line := range exploitLines {
+		// Extract data using regex (simplified here with string splitting)
+		parts := strings.Split(line, "Name: ")
+		if len(parts) < 2 {
+			continue
+		}
+
+		idPart := strings.TrimSpace(parts[0])
+		namePidParts := strings.Split(parts[1], "PID: ")
+		if len(namePidParts) < 2 {
+			continue
+		}
+
+		id := strings.TrimSpace(strings.Trim(idPart, "."))
+		name := strings.TrimSpace(namePidParts[0])
+		pid := strings.TrimSpace(namePidParts[1])
+
+		result.WriteString(fmt.Sprintf("  %-5s | %-30s | %-10s\n", id, name, pid))
+	}
+
+	// Add footer
+	result.WriteString("\n" + footer)
+
+	return result.String(), nil
 }
 
 func (r *CommandRunner) ExecuteExploitRun(
@@ -234,6 +302,45 @@ func (*CommandRunner) ExecuteExploitCreate(name string) (string, error) {
 // ExecuteExploitRemove handles removing an exploit template
 func (*CommandRunner) ExecuteExploitRemove(name string) (string, error) {
 	return cmd.RemoveFunc(name)
+}
+
+// ExploitProcess represents a running exploit process
+type ExploitProcess struct {
+	ID   int
+	Name string
+	PID  int
+}
+
+// GetRunningExploits returns a list of running exploit processes
+func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
+	// Load config to get current exploits
+	if err := config.LoadLocalConfig(); err != nil {
+		return nil, fmt.Errorf("error loading configuration: %w", err)
+	}
+
+	var processes []ExploitProcess
+	id := 1
+
+	// Check each exploit process
+	for _, exploitS := range config.ArgsConfigInstance.Exploits {
+		proc, err := os.FindProcess(exploitS.PID)
+		if err != nil || proc == nil {
+			continue // Skip invalid processes
+		}
+
+		// Check if process is running
+		err = proc.Signal(syscall.Signal(0))
+		if err == nil {
+			processes = append(processes, ExploitProcess{
+				ID:   id,
+				Name: filepath.Base(exploitS.Name),
+				PID:  exploitS.PID,
+			})
+			id++
+		}
+	}
+
+	return processes, nil
 }
 
 // ExecuteExploitStop handles stopping a running exploit

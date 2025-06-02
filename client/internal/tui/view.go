@@ -92,6 +92,11 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 	// Command title
 	commandTitle := SubtitleStyle.Render("Command: " + m.activeCommand)
 
+	// For exploit stop command, show process selection list
+	if m.IsProcessListVisible() && m.activeCommand == "exploit stop" {
+		return r.renderProcessSelectionList(m, banner, commandTitle)
+	}
+
 	// Render form inputs
 	var inputViews []string
 	for i, input := range m.inputs {
@@ -123,6 +128,75 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 		commandTitle,
 		"",
 		formContent,
+		"",
+		instructions,
+	)
+
+	// Add error message if present
+	if m.err != nil {
+		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
+		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
+	}
+
+	return content
+}
+
+// renderProcessSelectionList renders the exploit process selection list
+func (r *ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle string) string {
+	// Table header
+	header := lipgloss.JoinVertical(
+		lipgloss.Left,
+		SubtitleStyle.Render("Select a running exploit to stop:"),
+		"",
+		lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			lipgloss.NewStyle().Width(6).Render("ID"),
+			lipgloss.NewStyle().Width(40).Render("Name"),
+			lipgloss.NewStyle().Width(10).Render("PID"),
+		),
+		lipgloss.NewStyle().Foreground(mutedColor).Render(strings.Repeat("─", 56)),
+	)
+
+	// Render process list
+	var processViews []string
+	for i, process := range m.exploitProcesses {
+		var style lipgloss.Style
+		if i == m.selectedProcess {
+			// Highlight selected process
+			style = lipgloss.NewStyle().
+				Foreground(primaryColor).
+				Bold(true)
+			
+			// Add selection indicator
+			processViews = append(processViews, lipgloss.JoinHorizontal(
+				lipgloss.Left,
+				style.Width(6).Render(fmt.Sprintf("▶ %d", process.ID)),
+				style.Width(40).Render(process.Name),
+				style.Width(10).Render(fmt.Sprintf("%d", process.PID)),
+			))
+		} else {
+			style = lipgloss.NewStyle()
+			processViews = append(processViews, lipgloss.JoinHorizontal(
+				lipgloss.Left,
+				style.Width(6).Render(fmt.Sprintf("  %d", process.ID)),
+				style.Width(40).Render(process.Name),
+				style.Width(10).Render(fmt.Sprintf("%d", process.PID)),
+			))
+		}
+	}
+
+	processList := lipgloss.JoinVertical(lipgloss.Left, processViews...)
+
+	// Instructions
+	instructions := FooterStyle.Render("↑/↓: Navigate • Enter: Select process to stop • ESC: Cancel")
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		banner,
+		commandTitle,
+		"",
+		header,
+		processList,
 		"",
 		instructions,
 	)

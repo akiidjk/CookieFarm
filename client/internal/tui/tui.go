@@ -243,6 +243,31 @@ func (m Model) handleInputMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		// Special handling for process selection list
+		if m.IsProcessListVisible() && m.activeCommand == "exploit stop" {
+			switch keyMsg.Type {
+			case tea.KeyUp:
+				m.SelectPreviousProcess()
+				return m, nil
+			case tea.KeyDown:
+				m.SelectNextProcess()
+				return m, nil
+			case tea.KeyEnter:
+				// Process form submission with selected exploit
+				handler := NewCommandHandler()
+				m.SetLoading(true)
+				return handler.ProcessFormSubmission(&m)
+			case tea.KeyEscape:
+				// Cancel process selection
+				m.SetInputMode(false)
+				m.SetProcessListVisible(false)
+				m.ClearError()
+				return m, nil
+			}
+			return m, nil
+		}
+
+		// Normal input handling
 		switch keyMsg.Type {
 		case tea.KeyTab:
 			m.focusIndex = NavigateForm(m.inputs, m.focusIndex, 1)

@@ -33,6 +33,11 @@ type Model struct {
 	lastUpdate     int64 // Last update timestamp for streaming output
 	spinner        spinner.Model // Spinner for loading state
 	loading        bool // Whether a command is currently loading
+	
+	// Selection list for exploit processes to stop
+	exploitProcesses []ExploitProcess // List of running exploit processes
+	selectedProcess  int              // Index of selected process
+	showProcessList  bool             // Whether to show process selection list
 }
 
 // CommandOutput represents the result of a command execution
@@ -193,4 +198,44 @@ func (m *Model) SetLoading(state bool) {
 // IsLoading returns true if the model is in loading state
 func (m *Model) IsLoading() bool {
 	return m.loading
+}
+
+// SetExploitProcesses sets the list of running exploit processes
+func (m *Model) SetExploitProcesses(processes []ExploitProcess) {
+	m.exploitProcesses = processes
+	m.selectedProcess = 0 // Reset selection
+}
+
+// GetSelectedProcess returns the currently selected exploit process
+func (m *Model) GetSelectedProcess() *ExploitProcess {
+	if len(m.exploitProcesses) == 0 || m.selectedProcess < 0 || m.selectedProcess >= len(m.exploitProcesses) {
+		return nil
+	}
+	return &m.exploitProcesses[m.selectedProcess]
+}
+
+// SetProcessListVisible shows or hides the process selection list
+func (m *Model) SetProcessListVisible(visible bool) {
+	m.showProcessList = visible
+}
+
+// IsProcessListVisible returns whether the process list is visible
+func (m *Model) IsProcessListVisible() bool {
+	return m.showProcessList
+}
+
+// SelectNextProcess selects the next process in the list
+func (m *Model) SelectNextProcess() {
+	if len(m.exploitProcesses) == 0 {
+		return
+	}
+	m.selectedProcess = (m.selectedProcess + 1) % len(m.exploitProcesses)
+}
+
+// SelectPreviousProcess selects the previous process in the list
+func (m *Model) SelectPreviousProcess() {
+	if len(m.exploitProcesses) == 0 {
+		return
+	}
+	m.selectedProcess = (m.selectedProcess - 1 + len(m.exploitProcesses)) % len(m.exploitProcesses)
 }

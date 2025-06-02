@@ -129,10 +129,10 @@ func createExploitRunForm() ([]textinput.Model, []string) {
 
 	// Detach mode input
 	detachInput := textinput.New()
-	detachInput.Placeholder = "false"
+	detachInput.Placeholder = "true"
 	detachInput.CharLimit = 5
 	detachInput.Width = 10
-	detachInput.SetValue("false")
+	detachInput.SetValue("true")
 	inputs = append(inputs, detachInput)
 	labels = append(labels, "Detach Mode (true/false)")
 

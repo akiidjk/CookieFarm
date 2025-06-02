@@ -17,10 +17,10 @@ func main() {
 	config.NoTUI = true
 	config.UseBanner = true
 	for _, arg := range os.Args {
-		if arg == "--no-tui" {
+		if arg == "--no-tui" || arg == "-N" {
 			config.NoTUI = false
 		}
-		if arg == "--no-banner" {
+		if arg == "--no-banner" || arg == "-B" {
 			config.UseBanner = false
 		}
 	}

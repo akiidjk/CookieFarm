@@ -4,11 +4,21 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ByteTheCookies/cookieclient/cmd"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/ByteTheCookies/cookieclient/internal/tui"
 )
+
+func isCompletionCommand() bool {
+	for _, arg := range os.Args {
+		if strings.Contains(arg, "__complete") || strings.Contains(arg, "completion") {
+			return true
+		}
+	}
+	return false
+}
 
 //go:embed banner.txt
 var banner string
@@ -29,13 +39,17 @@ func main() {
 		if err := tui.StartTUI(banner); err != nil {
 			fmt.Printf("Error starting TUI: %v\nFalling back to CLI mode\n", err)
 			if config.UseBanner {
-				fmt.Println(banner)
+				if !isCompletionCommand() {
+					fmt.Println(banner)
+				}
 			}
 			cmd.Execute()
 		}
 	} else {
 		if config.UseBanner {
-			fmt.Println(banner)
+			if !isCompletionCommand() {
+				fmt.Println(banner)
+			}
 		}
 		cmd.Execute()
 	}

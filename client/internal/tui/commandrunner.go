@@ -147,6 +147,9 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 	return fmt.Sprintf("Configuration updated successfully. File saved at: %s", path), nil
 }
 
+// Globale per condividere i dati della tabella
+var ExploitTableData []ExploitProcess
+
 // ExecuteExploitCommand executes exploit-related commands
 func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 	switch subcommand {
@@ -155,13 +158,22 @@ func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return formatExploitListOutput(output)
+		
+		// Parse the output and store data for table view
+		formattedOutput, err := formatExploitListOutput(output)
+		if err != nil {
+			return "", err
+		}
+		
+		// Return original output for text view
+		return formattedOutput, nil
 	default:
 		return "", fmt.Errorf("unknown exploit subcommand: %s", subcommand)
 	}
 }
 
 // formatExploitListOutput formats the exploit list output as a table
+// Returns both string output and structured data for table display
 func formatExploitListOutput(output string) (string, error) {
 	if strings.Contains(output, "No running exploits found") {
 		return output, nil
@@ -187,17 +199,10 @@ func formatExploitListOutput(output string) (string, error) {
 		return output, nil // Return original if no exploits found
 	}
 
-	// Create a formatted table
-	var result strings.Builder
-	result.WriteString(header + "\n\n")
-
-	// Add table header
-	result.WriteString(fmt.Sprintf("  %-5s | %-30s | %-10s\n", "ID", "NAME", "PID"))
-	result.WriteString(fmt.Sprintf("  %s-+-%s-+-%s\n", strings.Repeat("-", 5), strings.Repeat("-", 30), strings.Repeat("-", 10)))
-
-	// Add exploit entries
+	// Parse exploit entries
+	var exploitData []ExploitProcess
 	for _, line := range exploitLines {
-		// Extract data using regex (simplified here with string splitting)
+		// Extract data using string splitting
 		parts := strings.Split(line, "Name: ")
 		if len(parts) < 2 {
 			continue
@@ -209,15 +214,32 @@ func formatExploitListOutput(output string) (string, error) {
 			continue
 		}
 
-		id := strings.TrimSpace(strings.Trim(idPart, "."))
+		idStr := strings.TrimSpace(strings.Trim(idPart, ". "))
+		id, _ := strconv.Atoi(idStr)
 		name := strings.TrimSpace(namePidParts[0])
-		pid := strings.TrimSpace(namePidParts[1])
+		pidStr := strings.TrimSpace(namePidParts[1])
+		pid, _ := strconv.Atoi(pidStr)
 
-		result.WriteString(fmt.Sprintf("  %-5s | %-30s | %-10s\n", id, name, pid))
+		exploitData = append(exploitData, ExploitProcess{
+			ID:   id,
+			Name: name,
+			PID:  pid,
+		})
 	}
 
-	// Add footer
+	// Create a formatted simple text table as fallback
+	var result strings.Builder
+	result.WriteString(header + "\n\n")
+	result.WriteString(fmt.Sprintf("  %-5s | %-30s | %-10s\n", "ID", "NAME", "PID"))
+	result.WriteString(fmt.Sprintf("  %s-+-%s-+-%s\n", strings.Repeat("-", 5), strings.Repeat("-", 30), strings.Repeat("-", 10)))
+
+	for _, exploit := range exploitData {
+		result.WriteString(fmt.Sprintf("  %-5d | %-30s | %-10d\n", exploit.ID, exploit.Name, exploit.PID))
+	}
 	result.WriteString("\n" + footer)
+
+	// Store the parsed exploit data for the table component
+	ExploitTableData = exploitData
 
 	return result.String(), nil
 }

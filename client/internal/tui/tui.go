@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -21,15 +23,34 @@ func New(banner string) Model {
 	s.Spinner = spinner.Points
 	s.Style = SpinnerStyle
 
+	// Initialize exploit table with columns
+	exploitTable := table.New(
+		table.WithColumns([]table.Column{
+			{Title: "ID", Width: 6},
+			{Title: "NAME", Width: 40},
+			{Title: "PID", Width: 10},
+		}),
+		table.WithFocused(true),
+		table.WithHeight(10),
+	)
+
+	// Style the table
+	exploitTable.SetStyles(table.Styles{
+		Header:   TableHeaderStyle,
+		Selected: TableSelectedRowStyle,
+		Cell:     TableRowStyle,
+	})
+
 	return Model{
-		activeView:  "main",
-		mainMenu:    mainMenu,
-		configMenu:  configMenu,
-		exploitMenu: exploitMenu,
-		help:        help.New(),
-		banner:      banner,
-		cmdRunner:   NewCommandRunner(),
-		spinner:     s,
+		activeView:   "main",
+		mainMenu:     mainMenu,
+		configMenu:   configMenu,
+		exploitMenu:  exploitMenu,
+		help:         help.New(),
+		banner:       banner,
+		cmdRunner:    NewCommandRunner(),
+		spinner:      s,
+		exploitTable: exploitTable,
 	}
 }
 
@@ -40,10 +61,23 @@ func (m Model) Init() tea.Cmd {
 	return m.spinner.Tick
 }
 
+// TableUpdateMsg is a message to update the table data
+type TableUpdateMsg struct {
+	Rows []table.Row
+	Show bool
+}
+
 // Update handles TUI state updates
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
+
+	// Handle table update message
+	if updateMsg, ok := msg.(TableUpdateMsg); ok {
+		m.exploitTable.SetRows(updateMsg.Rows)
+		m.showTable = updateMsg.Show
+		return m, nil
+	}
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -55,6 +89,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Handle input mode first
 		if m.IsInputMode() {
 			return m.handleInputMode(msg)
+		}
+
+		// Handle table navigation when table is visible
+		if m.showTable && (m.activeCommand == "exploit list" || m.activeCommand == "exploit stop") {
+			switch msg.String() {
+			case "enter":
+				if m.activeCommand == "exploit stop" {
+					// Process form submission with selected table row
+					handler := NewCommandHandler()
+					m.SetLoading(true)
+					return handler.ProcessFormSubmission(&m)
+				}
+				return m, nil
+			case "esc", "q":
+				// Exit table view via handleBackAction for consistent state management
+				return m.handleBackAction()
+			}
+			// Let the table handle other keys like up/down for table navigation
+			m.exploitTable, cmd = m.exploitTable.Update(msg)
+			return m, cmd
 		}
 
 		// Handle special keys
@@ -110,6 +164,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, spinnerCmd)
 	}
 
+	// Handle table updates
+	if m.showTable && (m.activeCommand == "exploit list" || m.activeCommand == "exploit stop") {
+		var tableCmd tea.Cmd
+		m.exploitTable, tableCmd = m.exploitTable.Update(msg)
+		cmds = append(cmds, tableCmd)
+	}
+
 	// Handle other message types and menu updates for non-KeyMsg events
 	switch m.GetActiveView() {
 	case "main":
@@ -148,6 +209,24 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 
 // handleBackAction handles the back/escape key
 func (m Model) handleBackAction() (tea.Model, tea.Cmd) {
+	// First, check if we're in table view mode
+	if m.showTable {
+		m.showTable = false
+		m.ClearError()
+
+		// If it was for stop command, also exit input mode
+		if m.activeCommand == "exploit stop" {
+			m.SetInputMode(false)
+		}
+
+		// Clear running command state if it's not a streaming command
+		if !strings.HasPrefix(m.activeCommand, "exploit run") {
+			m.SetRunningCommand(false)
+		}
+
+		return m, nil
+	}
+
 	if m.IsInputMode() {
 		m.SetInputMode(false)
 		m.ClearError()
@@ -191,8 +270,14 @@ func (m Model) handleEnterAction(handler *CommandHandler) (tea.Model, tea.Cmd) {
 	newModel, cmd := m.processMenuSelection(selectedItem, handler)
 
 	// If we're running an exploit command, also start the streaming output
-	if mTyped, ok := newModel.(Model); ok && mTyped.IsRunningCommand() && strings.HasPrefix(mTyped.activeCommand, "exploit run") {
-		return newModel, tea.Batch(cmd, mTyped.GetExploitStreamCmd())
+	if mTyped, ok := newModel.(Model); ok && mTyped.IsRunningCommand() {
+		if strings.HasPrefix(mTyped.activeCommand, "exploit run") {
+			return newModel, tea.Batch(cmd, mTyped.GetExploitStreamCmd())
+		}
+		// For exploit list, setup the table
+		if mTyped.activeCommand == "exploit list" {
+			return newModel, tea.Batch(cmd, mTyped.SetupExploitTableCmd())
+		}
 	}
 
 	return newModel, cmd
@@ -226,6 +311,15 @@ func (m Model) processMenuSelection(selectedItem menuItem, handler *CommandHandl
 		m.activeCommand = command
 		m.SetRunningCommand(true)
 		m.SetLoading(true)
+
+		// For exploit list command, set up the table view
+		if command == "exploit list" {
+			return m, tea.Batch(
+				handler.HandleCommand(command, nil),
+				m.SetupExploitTableCmd(),
+			)
+		}
+
 		return m, handler.HandleCommand(command, nil)
 	}
 
@@ -234,6 +328,8 @@ func (m Model) processMenuSelection(selectedItem menuItem, handler *CommandHandl
 		handler.SetupFormForCommand(&m, command)
 		return m, nil
 	}
+
+	// We handle exploit list commands in the direct command section now
 
 	return m, nil
 }
@@ -258,10 +354,12 @@ func (m Model) handleInputMode(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.SetLoading(true)
 				return handler.ProcessFormSubmission(&m)
 			case tea.KeyEscape:
-				// Cancel process selection
+				// Cancel process selection; clear command and reset view to exploit menu.
 				m.SetInputMode(false)
 				m.SetProcessListVisible(false)
 				m.ClearError()
+				m.activeCommand = ""
+				m.SetActiveView("exploit")
 				return m, nil
 			}
 			return m, nil
@@ -310,6 +408,55 @@ func (m Model) GetExploitStreamCmd() tea.Cmd {
 		return m.cmdRunner.GetExploitOutputCmd()
 	}
 	return nil
+}
+
+// SetupExploitTableCmd returns a command to update the exploit table with data
+func (m Model) SetupExploitTableCmd() tea.Cmd {
+	return func() tea.Msg {
+		// Short delay to allow command to complete
+		time.Sleep(100 * time.Millisecond)
+
+		// Get exploit data from command runner
+		processes, err := m.cmdRunner.GetRunningExploits()
+		if err != nil {
+			return CommandOutput{
+				Output: "Error fetching exploit data: " + err.Error(),
+				Error:  err,
+			}
+		}
+
+		if len(processes) == 0 {
+			return CommandOutput{
+				Output: "No running exploits found",
+				Error:  nil,
+			}
+		}
+
+		rows := []table.Row{}
+
+		// Convert processes to table rows
+		for _, p := range processes {
+			rows = append(rows, table.Row{
+				strconv.Itoa(p.ID),
+				p.Name,
+				strconv.Itoa(p.PID),
+			})
+		}
+
+		// Reset the table's selected row to the first row
+		modelCopy := m
+		modelCopy.exploitTable.SetRows(rows)
+		modelCopy.exploitTable.SetCursor(0) // Set cursor to first row
+		modelCopy.showTable = true
+
+		// Create a messenger that will update the model
+		return func() tea.Msg {
+			return TableUpdateMsg{
+				Rows: rows,
+				Show: true,
+			}
+		}()
+	}
 }
 
 // StartTUI launches the TUI application

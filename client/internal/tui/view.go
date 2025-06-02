@@ -41,6 +41,38 @@ func (r *ViewRenderer) RenderView(m *Model) string {
 	}
 }
 
+// renderExploitTable renders the exploit list in a nice table format
+func (r *ViewRenderer) renderExploitTable(m *Model, banner, title string) string {
+	// Adjust table size to fit the window
+	m.exploitTable.SetWidth(r.width - 10)
+	m.exploitTable.SetHeight(r.height - 15)
+
+	// Render the table
+	tableView := m.exploitTable.View()
+
+	// Instructions
+	instructions := FooterStyle.Render("↑/↓: Navigate table • Enter: Select exploit to stop • ESC: Back")
+
+	// Combine all elements
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		banner,
+		title,
+		"",
+		tableView,
+		"",
+		instructions,
+	)
+
+	// Add error message if present
+	if m.err != nil {
+		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
+		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
+	}
+
+	return content
+}
+
 // renderBanner renders the application banner
 func (*ViewRenderer) renderBanner(banner string) string {
 	if banner == "" {
@@ -166,7 +198,7 @@ func (r *ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle
 			style = lipgloss.NewStyle().
 				Foreground(primaryColor).
 				Bold(true)
-			
+
 			// Add selection indicator
 			processViews = append(processViews, lipgloss.JoinHorizontal(
 				lipgloss.Left,
@@ -216,6 +248,11 @@ func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 
 	// Command title
 	commandTitle := SubtitleStyle.Render("Command Output:")
+
+	// For exploit list, show table view instead of text output
+	if m.activeCommand == "exploit list" && m.showTable {
+		return r.renderExploitTable(m, banner, commandTitle)
+	}
 
 	// Format output with styling
 	formattedOutput := r.formatCommandOutput(m.commandOutput)

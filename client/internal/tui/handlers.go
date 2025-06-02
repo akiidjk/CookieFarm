@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -91,7 +92,6 @@ func (h *CommandHandler) executeFormCommand(command string, formData *FormData) 
 			case "exploit remove":
 				output, err = h.handleExploitRemove(formData)
 			case "exploit stop":
-				// This is now handled specially in ProcessFormSubmission
 				output = "Exploit stop command executed"
 			default:
 				err = fmt.Errorf("unknown form command: %s", command)
@@ -171,11 +171,17 @@ func (h *CommandHandler) handleExploitStop(formData *FormData, selectedProcess *
 	if selectedProcess == nil {
 		return "", errors.New("no exploit process selected")
 	}
-	
+
 	// Convert PID to string for the command runner
 	pid := strconv.Itoa(selectedProcess.PID)
-	
-	return h.cmdRunner.ExecuteExploitStop(pid)
+
+	result, err := h.cmdRunner.ExecuteExploitStop(pid)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("Successfully stopped exploit: %s (PID: %d)\n\n%s",
+		selectedProcess.Name, selectedProcess.PID, result), nil
 }
 
 // HandleNavigation processes navigation commands
@@ -216,12 +222,20 @@ func (h *CommandHandler) ProcessFormSubmission(model *Model) (*Model, tea.Cmd) {
 	model.SetInputMode(false)
 	model.SetRunningCommand(true)
 	model.SetProcessListVisible(false) // Hide process list if visible
+	model.showTable = false            // Hide table if visible
 	model.ClearError()
 
 	// For exploit stop command, use the selected process
 	if model.activeCommand == "exploit stop" {
-		selectedProcess := model.GetSelectedProcess()
-		
+		var selectedProcess *ExploitProcess
+
+		// Get process from table if visible
+		if model.showTable {
+			selectedProcess = model.GetSelectedExploitFromTable()
+		} else {
+			selectedProcess = model.GetSelectedProcess()
+		}
+
 		return model, func() tea.Msg {
 			output, err := h.handleExploitStop(&formData, selectedProcess)
 			return CommandOutput{
@@ -242,23 +256,39 @@ func (h *CommandHandler) SetupFormForCommand(model *Model, command string) {
 	model.focusIndex = 0
 	model.SetInputMode(true)
 	model.ClearError()
-	
-	// For exploit stop command, load the exploit processes and show the selection list
+
+	// For exploit stop command, load the exploit processes and show the table
 	if command == "exploit stop" {
 		processes, err := h.cmdRunner.GetRunningExploits()
 		if err != nil {
 			model.SetError(err)
 			return
 		}
-		
+
 		if len(processes) == 0 {
 			model.SetError(errors.New("no running exploits found"))
 			return
 		}
-		
+
+		// Create table rows from processes
+		var rows []table.Row
+		for _, p := range processes {
+			rows = append(rows, table.Row{
+				strconv.Itoa(p.ID),
+				p.Name,
+				strconv.Itoa(p.PID),
+			})
+		}
+
+		// Update table and make it visible
+		model.exploitTable.SetRows(rows)
+		model.showTable = true
+
+		// Also keep the process list for backwards compatibility
 		model.SetExploitProcesses(processes)
 		model.SetProcessListVisible(true)
 	} else {
+		model.showTable = false
 		model.SetProcessListVisible(false)
 	}
 }

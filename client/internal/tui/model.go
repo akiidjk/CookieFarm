@@ -1,12 +1,14 @@
 package tui
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
@@ -38,6 +40,10 @@ type Model struct {
 	exploitProcesses []ExploitProcess // List of running exploit processes
 	selectedProcess  int              // Index of selected process
 	showProcessList  bool             // Whether to show process selection list
+	
+	// Table for displaying exploit data
+	exploitTable     table.Model      // Table for displaying exploit data
+	showTable        bool             // Whether to show the table view
 }
 
 // CommandOutput represents the result of a command execution
@@ -198,6 +204,36 @@ func (m *Model) SetLoading(state bool) {
 // IsLoading returns true if the model is in loading state
 func (m *Model) IsLoading() bool {
 	return m.loading
+}
+
+// GetSelectedTableRow returns the currently selected table row
+func (m *Model) GetSelectedTableRow() table.Row {
+	return m.exploitTable.SelectedRow()
+}
+
+// GetSelectedExploitFromTable returns the exploit process from the selected table row
+func (m *Model) GetSelectedExploitFromTable() *ExploitProcess {
+	row := m.exploitTable.SelectedRow()
+	if len(row) < 3 {
+		return nil
+	}
+	
+	// Parse ID and PID from the row
+	id, err := strconv.Atoi(row[0])
+	if err != nil {
+		return nil
+	}
+	
+	pid, err := strconv.Atoi(row[2])
+	if err != nil {
+		return nil
+	}
+	
+	return &ExploitProcess{
+		ID:   id,
+		Name: row[1],
+		PID:  pid,
+	}
 }
 
 // SetExploitProcesses sets the list of running exploit processes

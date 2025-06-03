@@ -16,9 +16,6 @@ var RootCmd = &cobra.Command{
 	Long: `CookieFarm is a exploiter writed by the team ByteTheCookies for CyberChallenge
 	competition. This is the client cli for the CookieFarm server for attack the teams with exploits.`, // Da migliorare
 	Version: "v1.1.0",
-	CompletionOptions: cobra.CompletionOptions{
-		DisableDefaultCmd: true,
-	},
 }
 
 func Execute() {

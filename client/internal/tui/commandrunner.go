@@ -155,16 +155,7 @@ var ExploitTableData []ExploitProcess
 func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 	switch subcommand {
 	case "list":
-		output, err := cmd.ListFunc()
-		if err != nil {
-			return "", err
-		}
-
-		// Parse the output and store data for table view
-		formattedOutput := formatExploitListOutput(output)
-
-		// Return original output for text view
-		return formattedOutput, nil
+		return "", nil
 	default:
 		return "", fmt.Errorf("unknown exploit subcommand: %s", subcommand)
 	}

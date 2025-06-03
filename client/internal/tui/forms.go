@@ -127,15 +127,6 @@ func createExploitRunForm() ([]textinput.Model, []string) {
 	inputs = append(inputs, servicePortInput)
 	labels = append(labels, "Service Port")
 
-	// Detach mode input
-	detachInput := textinput.New()
-	detachInput.Placeholder = "true"
-	detachInput.CharLimit = 5
-	detachInput.Width = 10
-	detachInput.SetValue("true")
-	inputs = append(inputs, detachInput)
-	labels = append(labels, "Detach Mode (true/false)")
-
 	// Tick time input
 	tickTimeInput := textinput.New()
 	tickTimeInput.Placeholder = "120"
@@ -249,24 +240,18 @@ func validateConfigUpdateForm(inputs []textinput.Model) error {
 
 // validateExploitRunForm validates exploit run form
 func validateExploitRunForm(inputs []textinput.Model) error {
-	if len(inputs) < 5 {
+	if len(inputs) < 4 {
 		return errors.New("invalid form structure")
 	}
 
 	exploitPath := strings.TrimSpace(inputs[0].Value())
 	servicePort := strings.TrimSpace(inputs[1].Value())
-	detachStr := strings.TrimSpace(inputs[2].Value())
 
 	if exploitPath == "" {
 		return errors.New("exploit path is required")
 	}
 	if servicePort == "" {
 		return errors.New("service port is required")
-	}
-
-	// Validate detach field
-	if detachStr != "" && strings.ToLower(detachStr) != "true" && strings.ToLower(detachStr) != "false" {
-		return errors.New("detach mode must be 'true' or 'false'")
 	}
 
 	return nil

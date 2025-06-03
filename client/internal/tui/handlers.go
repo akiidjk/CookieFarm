@@ -132,7 +132,6 @@ func (h *CommandHandler) handleConfigUpdate(formData *FormData) (string, error) 
 func (h *CommandHandler) handleExploitRun(formData *FormData) (string, error) {
 	exploitPath := formData.Fields["Exploit Path"]
 	servicePort := formData.Fields["Service Port"]
-	detachStr := formData.Fields["Detach Mode (true/false)"]
 	tickTime := formData.Fields["Tick Time (seconds)"]
 	threadCount := formData.Fields["Thread Count"]
 
@@ -140,8 +139,7 @@ func (h *CommandHandler) handleExploitRun(formData *FormData) (string, error) {
 		return "", errors.New("exploit path and service port are required")
 	}
 
-	detach := strings.TrimSpace(strings.ToLower(detachStr)) == "true"
-	return h.cmdRunner.ExecuteExploitRun(exploitPath, servicePort, detach, tickTime, threadCount)
+	return h.cmdRunner.ExecuteExploitRun(exploitPath, servicePort, tickTime, threadCount)
 }
 
 // handleExploitCreate processes exploit create command

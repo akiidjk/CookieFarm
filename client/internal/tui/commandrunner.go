@@ -245,7 +245,6 @@ func formatExploitListOutput(output string) string {
 
 func (r *CommandRunner) ExecuteExploitRun(
 	exploitPath, servicePort string,
-	detach bool,
 	tickTime, threadCount string,
 ) (string, error) {
 	tickTimeInt := 120  // default
@@ -281,7 +280,6 @@ func (r *CommandRunner) ExecuteExploitRun(
 		tickTimeInt,
 		threadCountInt,
 		servicePortUint16,
-		detach,
 	)
 	if err != nil {
 		return "", err

@@ -462,7 +462,7 @@ func (m Model) SetupExploitTableCmd() tea.Cmd {
 // StartTUI launches the TUI application
 func StartTUI(banner string) error {
 	// Set TUI mode in config
-	config.NoTUI = true
+	config.UseTUI = true
 
 	p := tea.NewProgram(
 		New(banner),

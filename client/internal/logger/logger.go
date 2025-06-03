@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ByteTheCookies/cookieclient/internal/config"
 	"github.com/rs/zerolog"
 )
 
@@ -32,7 +31,16 @@ var (
 	Log zerolog.Logger
 	// logFile represents the log file for the CookieFarm client.
 	LogFile *os.File
+	useTUI  bool // NoTUI indicates whether to disable the TUI mode for logging
 )
+
+func SetTUI(value bool) {
+	useTUI = value
+}
+
+func GetNoTUI() bool {
+	return useTUI
+}
 
 // Setup configures the logger with the specified log level and returns the log file path.
 func Setup(level string) string {
@@ -83,7 +91,7 @@ func Setup(level string) string {
 
 	multi := zerolog.MultiLevelWriter(consoleWriter, LogFile)
 
-	if !config.NoTUI {
+	if !useTUI {
 		multi = zerolog.MultiLevelWriter(LogFile)
 	}
 

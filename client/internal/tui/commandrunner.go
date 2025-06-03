@@ -14,6 +14,7 @@ import (
 
 	"github.com/ByteTheCookies/cookieclient/cmd"
 	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/exploit"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -105,11 +106,11 @@ func (*CommandRunner) ExecuteCommand(command string, args ...string) (string, er
 func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
 	switch subcommand {
 	case "show":
-		return cmd.ShowConfigFunc()
+		return config.Show()
 	case "reset":
-		return cmd.ResetConfigFunc()
+		return config.Reset()
 	case "logout":
-		return cmd.LogoutConfigFunc()
+		return config.Logout()
 	default:
 		return "", fmt.Errorf("unknown config subcommand: %s", subcommand)
 	}
@@ -118,7 +119,7 @@ func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
 // ExecuteLogin handles the login command
 func (*CommandRunner) ExecuteLogin(password string) (string, error) {
 	cmd.Password = password
-	pathSession, err := cmd.LoginConfigFunc(password)
+	pathSession, err := cmd.LoginHandler(password)
 	if err != nil {
 		return "", fmt.Errorf("login failed: %w", err)
 	}
@@ -140,7 +141,7 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 		}
 	}
 
-	path, err := cmd.UpdateConfigFunc(configuration)
+	path, err := config.Update(configuration)
 	if err != nil {
 		return "", fmt.Errorf("failed to update configuration: %w", err)
 	}
@@ -158,13 +159,13 @@ func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		
+
 		// Parse the output and store data for table view
 		formattedOutput, err := formatExploitListOutput(output)
 		if err != nil {
 			return "", err
 		}
-		
+
 		// Return original output for text view
 		return formattedOutput, nil
 	default:
@@ -277,7 +278,7 @@ func (r *CommandRunner) ExecuteExploitRun(
 	}
 	servicePortUint16 = uint16(port)
 
-	result, err := cmd.RunFuncTui(
+	result, err := exploit.Run(
 		exploitPath,
 		tickTimeInt,
 		threadCountInt,
@@ -318,12 +319,12 @@ func (r *CommandRunner) ExecuteExploitRun(
 
 // ExecuteExploitCreate handles creating an exploit template
 func (*CommandRunner) ExecuteExploitCreate(name string) (string, error) {
-	return cmd.CreateFunc(name)
+	return exploit.Create(name)
 }
 
 // ExecuteExploitRemove handles removing an exploit template
 func (*CommandRunner) ExecuteExploitRemove(name string) (string, error) {
-	return cmd.RemoveFunc(name)
+	return exploit.Remove(name)
 }
 
 // ExploitProcess represents a running exploit process
@@ -374,9 +375,9 @@ func (*CommandRunner) ExecuteExploitStop(pid string) (string, error) {
 	}
 
 	// Set the global Pid variable that StopFunc expects
-	cmd.Pid = pidInt
+	config.PID = pidInt
 
-	return cmd.StopFunc(pidInt)
+	return exploit.Stop(pidInt)
 }
 
 // ExecuteWithTimeout executes a command with a timeout

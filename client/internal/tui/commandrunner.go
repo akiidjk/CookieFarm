@@ -123,7 +123,7 @@ func (*CommandRunner) ExecuteLogin(password string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("login failed: %w", err)
 	}
-	return fmt.Sprintf("Login successfully session saved at %s", pathSession), nil
+	return "Login successfully session saved at " + pathSession, nil
 }
 
 // ExecuteConfigUpdate handles the config update command
@@ -145,7 +145,7 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 	if err != nil {
 		return "", fmt.Errorf("failed to update configuration: %w", err)
 	}
-	return fmt.Sprintf("Configuration updated successfully. File saved at: %s", path), nil
+	return "Configuration updated successfully. File saved at:" + path, nil
 }
 
 // Globale per condividere i dati della tabella
@@ -161,10 +161,7 @@ func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 		}
 
 		// Parse the output and store data for table view
-		formattedOutput, err := formatExploitListOutput(output)
-		if err != nil {
-			return "", err
-		}
+		formattedOutput := formatExploitListOutput(output)
 
 		// Return original output for text view
 		return formattedOutput, nil
@@ -175,9 +172,9 @@ func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 
 // formatExploitListOutput formats the exploit list output as a table
 // Returns both string output and structured data for table display
-func formatExploitListOutput(output string) (string, error) {
+func formatExploitListOutput(output string) string {
 	if strings.Contains(output, "No running exploits found") {
-		return output, nil
+		return output
 	}
 
 	lines := strings.Split(output, "\n")
@@ -186,22 +183,23 @@ func formatExploitListOutput(output string) (string, error) {
 
 	// Extract header, footer, and exploit lines
 	for _, line := range lines {
-		if strings.Contains(line, "===== Running Exploits =====") {
+		switch {
+		case strings.Contains(line, "===== Running Exploits ====="):
 			header = line
-		} else if strings.Contains(line, "Total:") {
+		case strings.Contains(line, "Total:"):
 			footer = line
-		} else if strings.TrimSpace(line) != "" && !strings.HasPrefix(line, "=") {
-			// This looks like an exploit entry
+		case strings.TrimSpace(line) != "" && !strings.HasPrefix(line, "="):
 			exploitLines = append(exploitLines, line)
 		}
 	}
 
 	if len(exploitLines) == 0 {
-		return output, nil // Return original if no exploits found
+		return output // Return original if no exploits found
 	}
 
 	// Parse exploit entries
-	var exploitData []ExploitProcess
+	// Preallocate the array based on the number of exploit lines
+	exploitData := make([]ExploitProcess, 0, len(exploitLines))
 	for _, line := range exploitLines {
 		// Extract data using string splitting
 		parts := strings.Split(line, "Name: ")
@@ -234,15 +232,15 @@ func formatExploitListOutput(output string) (string, error) {
 	result.WriteString(fmt.Sprintf("  %-5s | %-30s | %-10s\n", "ID", "NAME", "PID"))
 	result.WriteString(fmt.Sprintf("  %s-+-%s-+-%s\n", strings.Repeat("-", 5), strings.Repeat("-", 30), strings.Repeat("-", 10)))
 
-	for _, exploit := range exploitData {
-		result.WriteString(fmt.Sprintf("  %-5d | %-30s | %-10d\n", exploit.ID, exploit.Name, exploit.PID))
+	for _, exploitS := range exploitData {
+		result.WriteString(fmt.Sprintf("  %-5d | %-30s | %-10d\n", exploitS.ID, exploitS.Name, exploitS.PID))
 	}
 	result.WriteString("\n" + footer)
 
 	// Store the parsed exploit data for the table component
 	ExploitTableData = exploitData
 
-	return result.String(), nil
+	return result.String()
 }
 
 func (r *CommandRunner) ExecuteExploitRun(

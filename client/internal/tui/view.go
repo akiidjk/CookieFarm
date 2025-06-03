@@ -174,7 +174,7 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 }
 
 // renderProcessSelectionList renders the exploit process selection list
-func (r *ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle string) string {
+func (*ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle string) string {
 	// Table header
 	header := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -202,17 +202,17 @@ func (r *ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle
 			// Add selection indicator
 			processViews = append(processViews, lipgloss.JoinHorizontal(
 				lipgloss.Left,
-				style.Width(6).Render(fmt.Sprintf("▶ %d", process.ID)),
+				style.Width(6).Render(strconv.Itoa(process.ID)),
 				style.Width(40).Render(process.Name),
-				style.Width(10).Render(fmt.Sprintf("%d", process.PID)),
+				style.Width(10).Render(strconv.Itoa(process.PID)),
 			))
 		} else {
 			style = lipgloss.NewStyle()
 			processViews = append(processViews, lipgloss.JoinHorizontal(
 				lipgloss.Left,
-				style.Width(6).Render(fmt.Sprintf("  %d", process.ID)),
+				style.Width(6).Render(strconv.Itoa(process.ID)),
 				style.Width(40).Render(process.Name),
-				style.Width(10).Render(fmt.Sprintf("%d", process.PID)),
+				style.Width(10).Render(strconv.Itoa(process.PID)),
 			))
 		}
 	}

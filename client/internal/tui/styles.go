@@ -104,20 +104,19 @@ var (
 	LoadingStyle = lipgloss.NewStyle().
 			Foreground(secondaryColor).
 			Bold(true)
-			
 	// Process list styles
 	ProcessListStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(primaryColor).
-			Padding(1)
-			
+				BorderStyle(lipgloss.RoundedBorder()).
+				BorderForeground(primaryColor).
+				Padding(1)
+
 	ProcessHeaderStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
-			Bold(true)
-			
+				Foreground(secondaryColor).
+				Bold(true)
+
 	ProcessSelectedStyle = lipgloss.NewStyle().
-			Foreground(primaryColor).
-			Bold(true)
+				Foreground(primaryColor).
+				Bold(true)
 
 	// Footer styles
 	FooterStyle = lipgloss.NewStyle().
@@ -129,21 +128,21 @@ var (
 		SelectedTitle: lipgloss.NewStyle().Foreground(lipgloss.Color("#F2F1EF")).Bold(true),
 		SelectedDesc:  lipgloss.NewStyle().Foreground(lipgloss.Color("#E0D5AD")),
 	}
-	
+
 	// Table styles
 	TableHeaderStyle = lipgloss.NewStyle().
-		Foreground(primaryColor).
-		Bold(true)
-	
+				Foreground(primaryColor).
+				Bold(true)
+
 	TableBorderStyle = lipgloss.NewStyle().
-		Foreground(mutedColor)
-		
+				Foreground(mutedColor)
+
 	TableRowStyle = lipgloss.NewStyle().
-		Foreground(textColor)
-		
+			Foreground(textColor)
+
 	TableSelectedRowStyle = lipgloss.NewStyle().
-		Foreground(primaryColor).
-		Bold(true)
+				Foreground(primaryColor).
+				Bold(true)
 )
 
 // DimmedStyle returns a dimmed version of the given text

@@ -95,29 +95,6 @@ func login(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
 
-// LoginHandler handles user login
-func LoginHandler(password string) (string, error) {
-	err := config.LoadLocalConfig()
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `cookieclient config reset`")
-		return "", err
-	}
-
-	config.Token, err = api.Login(password)
-	if err != nil {
-		return "", err
-	}
-
-	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
-	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error writing session token to file")
-		return "", err
-	}
-
-	return sessionPath, nil
-}
-
 // logout handles user logout
 func logout(cmd *cobra.Command, args []string) {
 	_, err := config.Logout()
@@ -156,4 +133,27 @@ func init() {
 	// Setup flags for loginConfigCmd
 	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")
+}
+
+// LoginHandler handles user login
+func LoginHandler(password string) (string, error) {
+	err := config.LoadLocalConfig()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `cookieclient config reset`")
+		return "", err
+	}
+
+	config.Token, err = api.Login(password)
+	if err != nil {
+		return "", err
+	}
+
+	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
+	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error writing session token to file")
+		return "", err
+	}
+
+	return sessionPath, nil
 }

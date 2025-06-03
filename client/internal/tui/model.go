@@ -31,19 +31,19 @@ type Model struct {
 	runningCommand bool
 	commandOutput  string
 	cmdRunner      *CommandRunner
-	streaming      bool  // Whether streaming mode is active
-	lastUpdate     int64 // Last update timestamp for streaming output
+	streaming      bool          // Whether streaming mode is active
+	lastUpdate     int64         // Last update timestamp for streaming output
 	spinner        spinner.Model // Spinner for loading state
-	loading        bool // Whether a command is currently loading
-	
+	loading        bool          // Whether a command is currently loading
+
 	// Selection list for exploit processes to stop
 	exploitProcesses []ExploitProcess // List of running exploit processes
 	selectedProcess  int              // Index of selected process
 	showProcessList  bool             // Whether to show process selection list
-	
+
 	// Table for displaying exploit data
-	exploitTable     table.Model      // Table for displaying exploit data
-	showTable        bool             // Whether to show the table view
+	exploitTable table.Model // Table for displaying exploit data
+	showTable    bool        // Whether to show the table view
 }
 
 // CommandOutput represents the result of a command execution
@@ -217,18 +217,18 @@ func (m *Model) GetSelectedExploitFromTable() *ExploitProcess {
 	if len(row) < 3 {
 		return nil
 	}
-	
+
 	// Parse ID and PID from the row
 	id, err := strconv.Atoi(row[0])
 	if err != nil {
 		return nil
 	}
-	
+
 	pid, err := strconv.Atoi(row[2])
 	if err != nil {
 		return nil
 	}
-	
+
 	return &ExploitProcess{
 		ID:   id,
 		Name: row[1],

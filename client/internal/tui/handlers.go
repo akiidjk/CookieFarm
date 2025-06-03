@@ -167,7 +167,7 @@ func (h *CommandHandler) handleExploitRemove(formData *FormData) (string, error)
 }
 
 // handleExploitStop processes exploit stop command
-func (h *CommandHandler) handleExploitStop(formData *FormData, selectedProcess *ExploitProcess) (string, error) {
+func (h *CommandHandler) handleExploitStop(selectedProcess *ExploitProcess) (string, error) {
 	if selectedProcess == nil {
 		return "", errors.New("no exploit process selected")
 	}
@@ -237,7 +237,7 @@ func (h *CommandHandler) ProcessFormSubmission(model *Model) (*Model, tea.Cmd) {
 		}
 
 		return model, func() tea.Msg {
-			output, err := h.handleExploitStop(&formData, selectedProcess)
+			output, err := h.handleExploitStop(selectedProcess)
 			return CommandOutput{
 				Output: output,
 				Error:  err,

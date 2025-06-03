@@ -30,31 +30,30 @@ func Start(flagsChan <-chan api.Flag) error {
 
 	go websockets.WSReader(conn)
 
-	for {
-		select {
-		case flag := <-flagsChan:
-			flagObj := EventWSFlag{
-				Type:    websockets.FlagEvent,
-				Payload: flag,
+	for flag := range flagsChan {
+		flagObj := EventWSFlag{
+			Type:    websockets.FlagEvent,
+			Payload: flag,
+		}
+		marshalFlag, err := json.Marshal(flagObj)
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("Error marshalling flag")
+			continue
+		}
+		if err := conn.WriteMessage(gorilla.TextMessage, marshalFlag); err != nil {
+			logger.Log.Error().Err(err).Msg("Error sending flag, attempting reconnection")
+			newConn, reconnectErr := websockets.GetConnection()
+			if reconnectErr != nil {
+				logger.Log.Fatal().Err(reconnectErr).Msg("Failed to reconnect to WebSocket")
+			} else {
+				conn = newConn
+				logger.Log.Info().Msg("Successfully reconnected to WebSocket")
 			}
-			marshalFlag, err := json.Marshal(flagObj)
-			if err != nil {
-				logger.Log.Error().Err(err).Msg("Error marshalling flag")
-				continue
-			}
-			if err := conn.WriteMessage(gorilla.TextMessage, marshalFlag); err != nil {
-				logger.Log.Error().Err(err).Msg("Error sending flag, attempting reconnection")
-				newConn, reconnectErr := websockets.GetConnection()
-				if reconnectErr != nil {
-					logger.Log.Fatal().Err(reconnectErr).Msg("Failed to reconnect to WebSocket")
-				} else {
-					conn = newConn
-					logger.Log.Info().Msg("Successfully reconnected to WebSocket")
-				}
-				continue
-			}
+			continue
 		}
 	}
+	logger.Log.Info().Msg("Submission loop finished")
+	return nil
 }
 
 // TODO: Sistema di accumulo in caso di non connesione fino a 2 minuti

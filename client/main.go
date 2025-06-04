@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"github.com/ByteTheCookies/cookieclient/cmd"
+	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/logger"
+	"github.com/ByteTheCookies/cookieclient/internal/tui"
 )
 
 func isCompletionCommand() bool {
@@ -22,8 +25,34 @@ func isCompletionCommand() bool {
 var banner string
 
 func main() {
-	if !isCompletionCommand() {
-		fmt.Println(banner)
+	config.UseTUI = true
+	config.UseBanner = true
+	for _, arg := range os.Args {
+		if arg == "--no-tui" || arg == "-N" {
+			config.UseTUI = false
+			logger.SetTUI(false)
+		}
+		if arg == "--no-banner" || arg == "-B" {
+			config.UseBanner = false
+		}
 	}
-	cmd.Execute()
+
+	if config.UseTUI && os.Getenv("COOKIECLIENT_NO_TUI") == "" {
+		if err := tui.StartTUI(banner); err != nil {
+			fmt.Printf("Error starting TUI: %v\nFalling back to CLI mode\n", err)
+			if config.UseBanner {
+				if !isCompletionCommand() {
+					fmt.Println(banner)
+				}
+			}
+			cmd.Execute()
+		}
+	} else {
+		if config.UseBanner {
+			if !isCompletionCommand() {
+				fmt.Println(banner)
+			}
+		}
+		cmd.Execute()
+	}
 }

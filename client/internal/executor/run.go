@@ -19,6 +19,7 @@ import (
 type ExecutionResult struct {
 	Cmd        *exec.Cmd
 	FlagsChan  chan api.Flag
+	OutputChan chan string // Channel for streaming output to the TUI
 	stopReader chan struct{}
 	done       chan struct{}
 }
@@ -61,15 +62,17 @@ func Start(exploitPath string, tickTime int, threadCount int, port uint16) (*Exe
 	}
 
 	flagsChan := make(chan api.Flag, 500)
+	outputChan := make(chan string, 100) // Buffer for real-time output
 	stopReader := make(chan struct{})
 	done := make(chan struct{})
 
-	go readStdout(stdout, flagsChan, stopReader, done)
-	go readStderr(stderr, stopReader, done)
+	go readStdout(stdout, flagsChan, outputChan, stopReader, done)
+	go readStderr(stderr, outputChan, stopReader, done)
 
 	return &ExecutionResult{
 		Cmd:        cmd,
 		FlagsChan:  flagsChan,
+		OutputChan: outputChan,
 		stopReader: stopReader,
 		done:       done,
 	}, nil
@@ -124,6 +127,7 @@ func (e *ExecutionResult) Shutdown() error {
 	<-e.done
 
 	close(e.FlagsChan)
+	close(e.OutputChan)
 
 	logger.Log.Info().Msg("Exploit shutdown completed.")
 	return nil
@@ -145,7 +149,7 @@ func logParsedLineError(err error, status, line string) {
 }
 
 // Read the stdout and parse JSON lines into Flag structs.
-func readStdout(stdout io.Reader, flagsChan chan<- api.Flag, stop <-chan struct{}, done chan<- struct{}) {
+func readStdout(stdout io.Reader, flagsChan chan<- api.Flag, outputChan chan<- string, stop <-chan struct{}, done chan<- struct{}) {
 	defer func() { done <- struct{}{} }()
 
 	scanner := bufio.NewScanner(stdout)
@@ -156,6 +160,15 @@ func readStdout(stdout io.Reader, flagsChan chan<- api.Flag, stop <-chan struct{
 			return
 		default:
 			line := scanner.Text()
+
+			// Send to output channel for real-time display in TUI
+			select {
+			case outputChan <- "STDOUT: " + line:
+				// Successfully sent to output channel
+			default:
+				// Channel buffer full, continue without blocking
+			}
+
 			flag, status, err := flagparser.ParseLine(line)
 			if err != nil {
 				logParsedLineError(err, status, line)
@@ -176,7 +189,7 @@ func readStdout(stdout io.Reader, flagsChan chan<- api.Flag, stop <-chan struct{
 }
 
 // Read the stderr and log any errors.
-func readStderr(stderr io.Reader, stop <-chan struct{}, done chan<- struct{}) {
+func readStderr(stderr io.Reader, outputChan chan<- string, stop <-chan struct{}, done chan<- struct{}) {
 	defer func() { done <- struct{}{} }()
 
 	scanner := bufio.NewScanner(stderr)
@@ -186,7 +199,17 @@ func readStderr(stderr io.Reader, stop <-chan struct{}, done chan<- struct{}) {
 			logger.Log.Info().Msg("readStderr received shutdown signal")
 			return
 		default:
-			logger.Log.Warn().Str("stderr", scanner.Text()).Msg("Exploit stderr")
+			line := scanner.Text()
+
+			// Send to output channel for real-time display in TUI
+			select {
+			case outputChan <- "STDERR: " + line:
+				// Successfully sent to output channel
+			default:
+				// Channel buffer full, continue without blocking
+			}
+
+			logger.Log.Warn().Str("stderr", line).Msg("Exploit stderr")
 		}
 	}
 	if err := scanner.Err(); err != nil {

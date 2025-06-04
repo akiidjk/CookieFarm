@@ -33,7 +33,7 @@ The CookieFarm client has two interface modes:
 
 1. **Interactive TUI Mode** (default): A colorful, user-friendly interface with menus and keyboard navigation
    ```bash
-   cookieclient  
+   cookieclient
    # TUI starts automatically
    ```
 
@@ -43,6 +43,8 @@ The CookieFarm client has two interface modes:
    # OR
    COOKIECLIENT_NO_TUI=1 cookieclient
    ```
+
+> In the rest of this guide, commands will be shown for both TUI and CLI modes. The `-N` flag is used to indicate that the command should run in CLI mode without TUI. If you set the environment variable `COOKIECLIENT_NO_TUI=1`, you can run commands without the `-N` flag.
 
 ## 🚀 Client Command Overview
 
@@ -72,18 +74,18 @@ The CookieFarm client has two interface modes:
 
 1. **Log in** to the server:
    ```bash
-   # In CLI mode:
-   cookieclient config login -P SuperSecret
-   
+   # In CLI mode (with no environment variable setted):
+   cookieclient config login -P SuperSecret -N
+
    # In TUI mode:
    # Navigate to: Configuration → Login → Enter credentials
    ```
 
 2. **Update configuration** with server details:
    ```bash
-   # In CLI mode:
-   cookieclient config update -h 192.168.1.10 -p 8000 -u CookieMonster
-   
+   # In CLI mode (with no environment variable setted):
+   cookieclient config update -h 192.168.1.10 -p 8000 -u CookieMonster -N
+
    # In TUI mode:
    # Navigate to: Configuration → Update Config → Fill the form
    ```
@@ -96,9 +98,9 @@ The CookieFarm client has two interface modes:
 
 4. **Create a new exploit template**:
    ```bash
-   # In CLI mode:
-   cookieclient exploit create -n my_exploit
-   
+   # In CLI mode (with no environment variable setted):
+   cookieclient exploit create -n my_exploit -N
+
    # In TUI mode:
    # Navigate to: Exploits → Create Exploit → Enter name
    ```
@@ -107,9 +109,9 @@ The CookieFarm client has two interface modes:
 
 6. **Run the exploit**:
    ```bash
-   # In CLI mode:
-   cookieclient exploit run -e my_exploit.py -p 1234 -t 120 -T 40
-   
+   # In CLI mode (with no environment variable setted):
+   cookieclient exploit run -e my_exploit.py -p 1234 -t 120 -T 40 -N
+
    # In TUI mode:
    # Navigate to: Exploits → Run Exploit → Complete the form
    ```
@@ -130,7 +132,7 @@ The interactive TUI provides easy navigation with the following keyboard shortcu
 
 The TUI offers these main views:
 - **Main Menu**: Choose between Configuration and Exploit operations
-- **Config Menu**: Configuration management commands 
+- **Config Menu**: Configuration management commands
 - **Exploit Menu**: Exploit management commands
 - **Input Forms**: Fill in required parameters for commands
 - **Output View**: See command results with syntax highlighting
@@ -142,7 +144,11 @@ The TUI offers these main views:
 ### Config Login Command
 Authenticate with the server using a password:
 ```bash
-cookieclient config login -P <password>
+# In CLI mode (with no environment variable setted):
+cookieclient config login -P <password> -N
+
+# In TUI mode:
+# Navigate to: Configuration → Login → Enter password
 ```
 Parameters:
 - `-P <password>`: The password for the server. This is required for authentication.
@@ -150,7 +156,11 @@ Parameters:
 ### Config Update Command
 Update the client configuration (all fields optional, at least one required):
 ```bash
-cookieclient config update -h <server_ip> -p <port> -u <username> [-s]
+# In CLI mode (with no environment variable setted):
+cookieclient config update -h <server_ip> -p <port> -u <username> [-s] -N
+
+# In TUI mode:
+# Navigate to: Configuration → Update Config → Fill the form
 ```
 Parameters:
 - `-h <server_ip>`: IP address of the server.
@@ -161,19 +171,31 @@ Parameters:
 ### Config Show Command
 Display the current configuration:
 ```bash
-cookieclient config show
+# In CLI mode (with no environment variable setted):
+cookieclient config show -N
+
+# In TUI mode:
+# Navigate to: Configuration → Show Config
 ```
 
 ### Config Reset Command
 Reset the configuration to default:
 ```bash
-cookieclient config reset
+# In CLI mode (with no environment variable setted):
+cookieclient config reset -N
+
+# In TUI mode:
+# Navigate to: Configuration → Reset Config
 ```
 
 ### Config Logout Command
 Log out and clear the current session:
 ```bash
-cookieclient config logout
+# In CLI mode (with no environment variable setted):
+cookieclient config logout -N
+
+# In TUI mode:
+# Navigate to: Configuration → Logout
 ```
 
 ---
@@ -181,7 +203,11 @@ cookieclient config logout
 ### Exploit Create Command
 Create a new exploit template:
 ```bash
-cookieclient exploit create -n <exploit_name>
+# In CLI mode (with no environment variable setted):
+cookieclient exploit create -n <exploit_name> -N
+
+# In TUI mode:
+# Navigate to: Exploits → Create Exploit → Enter name
 ```
 Parameters:
 - `-n <exploit_name>`: Name of the exploit template. This can be a path to a file or just a name.
@@ -189,14 +215,22 @@ Parameters:
 
 *Example:*
 ```bash
-cookieclient exploit create -n ./my_exploit
+# In CLI mode (with no environment variable setted):
+cookieclient exploit create -n ./my_exploit -N
+
+# In TUI mode:
+# Navigate to: Exploits → Create Exploit → Enter name as `./my_exploit`
 ```
 In this case, the exploit will be created in the current directory.
 
 ### Exploit Run Command
 Run an exploit:
 ```bash
-cookieclient exploit run -e <exploit_file> -p <port> [-t <timeout>] [-T <threads>] [-d]
+# In CLI mode (with no environment variable setted):
+cookieclient exploit run -e <exploit_file> -p <port> [-t <timeout>] [-T <threads>] [-d] -N
+
+# In TUI mode:
+# Navigate to: Exploits → Run Exploit → Fill the form
 ```
 Parameters:
 - `-e <exploit_file>`: Path to the exploit file (Python script).
@@ -205,22 +239,37 @@ Parameters:
 - `-T <threads>`: Number of threads to use (default is 10).
 - `-d`: Enable debug mode for more verbose output.
 
+> [!IMPORTANT]
+> When you run an exploit in TUI mode, it will run in the background, allowing you to continue using the client while monitoring the exploit's progress.
 *Example:*
 ```bash
-cookieclient exploit run -e my_exploit.py -p 1234 -t 120 -T 40
+# In CLI mode (with no environment variable setted):
+cookieclient exploit run -e my_exploit.py -p 1234 -t 120 -T 40 -N
 # This will return the PID of the running exploit.
+#
+# In TUI mode:
+# # Navigate to: Exploits → Run Exploit → Enter the exploit file, port, timeout, and threads
+# # The exploit will run in the background, and you can monitor its progress.
 ```
 
 ### Exploit List Command
 List all running exploits:
 ```bash
-cookieclient exploit list
+# In CLI mode (with no environment variable setted):
+cookieclient exploit list -N
+
+# In TUI mode:
+# Navigate to: Exploits → List Running Exploits
 ```
 
 ### Exploit Remove Command
 Remove a saved exploit template:
 ```bash
-cookieclient exploit remove -n <exploit_name>
+# In CLI mode (with no environment variable setted):
+cookieclient exploit remove -n <exploit_name> -N
+
+# In TUI mode:
+# Navigate to: Exploits → Remove Exploit → Enter exploit name
 ```
 Parameters:
 - `-n <exploit_name>`: Name of the exploit template to remove. This can be a path to a file or just a name.
@@ -228,7 +277,11 @@ Parameters:
 ### Exploit Stop Command
 Stop a running exploit:
 ```bash
-cookieclient exploit stop -p <pid>
+# In CLI mode (with no environment variable setted):
+cookieclient exploit stop -p <pid> -N
+
+# In TUI mode:
+# Navigate to: Exploits → Stop Exploit → Enter PID
 ```
 Parameters:
 - `-p <pid>`: Process ID of the exploit to stop.

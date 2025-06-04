@@ -93,21 +93,21 @@ Make sure you have the following installed:
 
 2. Log in and configure the client:
    ```bash
-   cookieclient config login -P SuperSecret
-   cookieclient config update -h 192.168.1.10 -p 8000 -u your_username
+   cookieclient config login -P SuperSecret -N
+   cookieclient config update -h 192.168.1.10 -p 8000 -u your_username -N
    ```
 
 3. Install the Python helper module and create a new exploit template:
    ```bash
    pip install cookiefarm-exploiter
-   cookieclient create -n your_exploit_name
+   cookieclient create -n your_exploit_name -N
    ```
 
    This will generate `your_exploit_name.py` in `~/.cookiefarm/exploits/`.
 
 4. Run your exploit:
    ```bash
-   cookieclient attack -e your_exploit_name.py -p 1234 -t 120 -T 40
+   cookieclient attack -e your_exploit_name.py -p 1234 -t 120 -T 40 -N
    ```
 
 📘 For more usage examples, check out the [client documentation](./client/README.md).

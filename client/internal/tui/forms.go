@@ -33,7 +33,6 @@ func CreateForm(command string) ([]textinput.Model, []string) {
 		inputs, labels = createExploitStopForm()
 	}
 
-	// Set focus on first input if any exist
 	if len(inputs) > 0 {
 		inputs[0].Focus()
 	}
@@ -46,7 +45,6 @@ func createLoginForm() ([]textinput.Model, []string) {
 	var inputs []textinput.Model
 	var labels []string
 
-	// Password input
 	passwordInput := textinput.New()
 	passwordInput.Placeholder = "Password"
 	passwordInput.EchoMode = textinput.EchoPassword
@@ -169,13 +167,10 @@ func createExploitStopForm() ([]textinput.Model, []string) {
 	var inputs []textinput.Model
 	var labels []string
 
-	// We'll use selection list instead, but keeping an empty input for compatibility
-	// (the actual logic will be handled in handlers.go)
 	pidInput := textinput.New()
 	pidInput.Placeholder = "Select from list"
 	pidInput.CharLimit = 10
 	pidInput.Width = 15
-	// Note: We'll use selection list instead of this input
 	inputs = append(inputs, pidInput)
 	labels = append(labels, "Process ID (PID)")
 
@@ -225,12 +220,10 @@ func validateConfigUpdateForm(inputs []textinput.Model) error {
 	username := strings.TrimSpace(inputs[2].Value())
 	httpsStr := strings.TrimSpace(inputs[3].Value())
 
-	// At least one field should be provided
 	if host == "" && port == "" && username == "" && httpsStr == "" {
 		return errors.New("at least one field must be provided")
 	}
 
-	// Validate HTTPS field
 	if httpsStr != "" && strings.ToLower(httpsStr) != "true" && strings.ToLower(httpsStr) != "false" {
 		return errors.New("HTTPS field must be 'true' or 'false'")
 	}
@@ -274,7 +267,6 @@ func validateExploitNameForm(inputs []textinput.Model) error {
 // validateExploitStopForm validates exploit stop form
 // Skip validation since we're using a selection list
 func validateExploitStopForm(inputs []textinput.Model) error {
-	// Selection is handled by handlers.go, so validation is always successful
 	return nil
 }
 
@@ -297,7 +289,6 @@ func NavigateForm(inputs []textinput.Model, currentFocus int, direction int) int
 		return 0
 	}
 
-	// Calculate new focus index
 	newFocus := currentFocus + direction
 	if newFocus < 0 {
 		newFocus = len(inputs) - 1
@@ -305,7 +296,6 @@ func NavigateForm(inputs []textinput.Model, currentFocus int, direction int) int
 		newFocus = 0
 	}
 
-	// Update focus
 	for i := range inputs {
 		if i == newFocus {
 			inputs[i].Focus()

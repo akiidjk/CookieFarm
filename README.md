@@ -3,9 +3,10 @@
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
-  <img src="https://img.shields.io/badge/languages-Go%20%7C%20Python-yellowgreen" alt="Languages">
-  <img src="https://img.shields.io/badge/keywords-CTF%2C%20Exploiting%2C%20Attack%20Defense-red" alt="Keywords">
+  <img src="https://img.shields.io/badge/relase-1.1.0-red?style=flat-square" alt="Version">
+  <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/ByteTheCookies/CookieFarm?filename=.%2Fclient%2Fgo.mod&style=flat-square">
+  <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/ByteTheCookies/CookieFarm?color=7289DA&style=flat-square">
+  <img alt="GitHub License" src="https://img.shields.io/github/license/ByteTheCookies/CookieFarm?color=orange&style=flat-square">
 </p>
 
 # 🍪 CookieFarm
@@ -119,7 +120,16 @@ Make sure you have the following installed:
 We welcome contributions, suggestions, and bug reports!
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to get involved.
 
----
+
+## 📈 Star History
+
+<a href="https://star-history.com/#ByteTheCookies/CookieFarm&Date&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ByteTheCookies/CookieFarm&type=Date&theme=dark&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ByteTheCookies/CookieFarm&type=Date&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ByteTheCookies/CookieFarm&type=Date&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==" />
+ </picture>
+</a>
 
 <div align="center">
   Built with ❤️ by <strong>ByteTheCookies</strong>

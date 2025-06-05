@@ -15,7 +15,7 @@ func NewStatsController() *StatsController {
 }
 
 // GetFlagStats return the statistics of the flag collector
-func (c *StatsController) GetFlagStats(ctx *fiber.Ctx) error {
+func (*StatsController) GetFlagStats(ctx *fiber.Ctx) error {
 	collector := sqlite.GetCollector()
 	stats := collector.GetStats()
 	bufferSize := collector.GetBufferSize()
@@ -37,7 +37,7 @@ func (c *StatsController) GetFlagStats(ctx *fiber.Ctx) error {
 }
 
 // ForceFlushFlags force a flush of the flags in the collector
-func (c *StatsController) ForceFlushFlags(ctx *fiber.Ctx) error {
+func (*StatsController) ForceFlushFlags(ctx *fiber.Ctx) error {
 	collector := sqlite.GetCollector()
 
 	statsBefore := collector.GetStats()

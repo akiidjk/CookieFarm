@@ -29,50 +29,17 @@ type Flag struct {
 	Msg          string `json:"msg"`           // Message from the flag checker service
 }
 
-var client = &http.Client{}
-
-// SendFlag sends flags to the CookieFarm server API.
-func SendFlag(flags ...Flag) error {
-	body, err := json.Marshal(map[string][]Flag{"flags": flags})
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("error during flags marshalling")
-		return err
-	}
-
-	ServerURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/submit-flags"
-	req, err := http.NewRequest(http.MethodPost, ServerURL, bytes.NewReader(body))
-	if err != nil {
-		log.Error().Err(err).Str("url", ServerURL).Msg("error creating request")
-		return err
-	}
-
-	req.Header.Set("Cookie", "token="+config.Token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Log.Error().Err(err).Str("url", ServerURL).Msg("error during flags submission request")
-		return err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("error reading response")
-		return err
-	}
-
-	logger.Log.Debug().
-		Int("status", resp.StatusCode).
-		Msgf("Server response from submit-flags: %s", string(respBody))
-
-	return nil
-}
-
 // GetConfig retrieves the configuration from the CookieFarm server API.
 func GetConfig() (config.Config, error) {
-	ServerURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/config"
-	req, err := http.NewRequest(http.MethodGet, ServerURL, nil)
+	serverURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/config"
+	client := &http.Client{}
+
+	_, err := url.Parse(serverURL)
+	if err != nil {
+		log.Fatal().Msg("Invalid base URL in config")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, serverURL, nil)
 	if err != nil {
 		return config.Config{}, fmt.Errorf("error creating config request: %w", err)
 	}
@@ -101,17 +68,17 @@ func GetConfig() (config.Config, error) {
 
 // Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
-	ServerURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/auth/login"
+	serverURL := "http://" + config.ArgsConfigInstance.Address + ":" + strconv.Itoa(int(config.ArgsConfigInstance.Port)) + "/api/v1/auth/login"
 
-	_, err := url.Parse(ServerURL)
+	_, err := url.Parse(serverURL)
 	if err != nil {
 		log.Fatal().Msg("Invalid base URL in config")
 	}
 
-	logger.Log.Debug().Str("url", ServerURL).Msg("Login attempt")
+	logger.Log.Debug().Str("url", serverURL).Msg("Login attempt")
 
 	resp, err := http.Post(
-		ServerURL,
+		serverURL,
 		"application/x-www-form-urlencoded",
 		bytes.NewBufferString("username="+config.ArgsConfigInstance.Username+"&password="+password),
 	)

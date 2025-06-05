@@ -66,7 +66,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
-	// Handle table update message
 	if updateMsg, ok := msg.(TableUpdateMsg); ok {
 		m.exploitTable.SetRows(updateMsg.Rows)
 		m.showTable = updateMsg.Show
@@ -84,7 +83,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleInputMode(msg)
 		}
 
-		// Handle table navigation when table is visible
 		if m.showTable && (m.activeCommand == "exploit list" || m.activeCommand == "exploit stop") {
 			switch msg.String() {
 			case "enter":
@@ -143,21 +141,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Handle spinner updates
 	if m.loading {
 		var spinnerCmd tea.Cmd
 		m.spinner, spinnerCmd = m.spinner.Update(msg)
 		cmds = append(cmds, spinnerCmd)
 	}
 
-	// Handle table updates
 	if m.showTable && (m.activeCommand == "exploit list" || m.activeCommand == "exploit stop") {
 		var tableCmd tea.Cmd
 		m.exploitTable, tableCmd = m.exploitTable.Update(msg)
 		cmds = append(cmds, tableCmd)
 	}
 
-	// Handle other message types and menu updates for non-KeyMsg events
 	switch m.GetActiveView() {
 	case "main":
 		m.mainMenu, cmd = m.mainMenu.Update(msg)

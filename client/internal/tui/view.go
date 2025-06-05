@@ -43,17 +43,13 @@ func (r *ViewRenderer) RenderView(m *Model) string {
 
 // renderExploitTable renders the exploit list in a nice table format
 func (r *ViewRenderer) renderExploitTable(m *Model, banner, title string) string {
-	// Adjust table size to fit the window
 	m.exploitTable.SetWidth(r.width - 10)
 	m.exploitTable.SetHeight(r.height - 15)
 
-	// Render the table
 	tableView := m.exploitTable.View()
 
-	// Instructions
 	instructions := FooterStyle.Render("↑/↓: Navigate table • Enter: Select exploit to stop • ESC: Back")
 
-	// Combine all elements
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		banner,
@@ -64,7 +60,6 @@ func (r *ViewRenderer) renderExploitTable(m *Model, banner, title string) string
 		instructions,
 	)
 
-	// Add error message if present
 	if m.err != nil {
 		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
 		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
@@ -121,21 +116,17 @@ func (r *ViewRenderer) renderMenu(m *Model) string {
 func (r *ViewRenderer) renderInputForm(m *Model) string {
 	banner := r.renderBanner(m.banner)
 
-	// Command title
 	commandTitle := SubtitleStyle.Render("Command: " + m.activeCommand)
 
-	// For exploit stop command, show process selection list
 	if m.IsProcessListVisible() && m.activeCommand == "exploit stop" {
 		return r.renderProcessSelectionList(m, banner, commandTitle)
 	}
 
-	// Render form inputs
 	var inputViews []string
 	for i, input := range m.inputs {
 		if i < len(m.inputLabels) {
 			var label string
 			if i == m.focusIndex {
-				// Highlight focused input label
 				label = lipgloss.NewStyle().
 					Foreground(primaryColor).
 					Bold(true).
@@ -151,7 +142,6 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 
 	formContent := lipgloss.JoinVertical(lipgloss.Left, inputViews...)
 
-	// Instructions
 	instructions := FooterStyle.Render("Tab: Next field • Shift+Tab: Previous field • Enter: Submit • ESC: Cancel")
 
 	content := lipgloss.JoinVertical(
@@ -164,7 +154,6 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 		instructions,
 	)
 
-	// Add error message if present
 	if m.err != nil {
 		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
 		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
@@ -175,7 +164,6 @@ func (r *ViewRenderer) renderInputForm(m *Model) string {
 
 // renderProcessSelectionList renders the exploit process selection list
 func (*ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle string) string {
-	// Table header
 	header := lipgloss.JoinVertical(
 		lipgloss.Left,
 		SubtitleStyle.Render("Select a running exploit to stop:"),
@@ -189,17 +177,14 @@ func (*ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle s
 		lipgloss.NewStyle().Foreground(mutedColor).Render(strings.Repeat("─", 56)),
 	)
 
-	// Render process list
 	var processViews []string
 	for i, process := range m.exploitProcesses {
 		var style lipgloss.Style
 		if i == m.selectedProcess {
-			// Highlight selected process
 			style = lipgloss.NewStyle().
 				Foreground(primaryColor).
 				Bold(true)
 
-			// Add selection indicator
 			processViews = append(processViews, lipgloss.JoinHorizontal(
 				lipgloss.Left,
 				style.Width(6).Render(strconv.Itoa(process.ID)),
@@ -219,7 +204,6 @@ func (*ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle s
 
 	processList := lipgloss.JoinVertical(lipgloss.Left, processViews...)
 
-	// Instructions
 	instructions := FooterStyle.Render("↑/↓: Navigate • Enter: Select process to stop • ESC: Cancel")
 
 	content := lipgloss.JoinVertical(
@@ -233,7 +217,6 @@ func (*ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle s
 		instructions,
 	)
 
-	// Add error message if present
 	if m.err != nil {
 		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
 		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
@@ -246,18 +229,14 @@ func (*ViewRenderer) renderProcessSelectionList(m *Model, banner, commandTitle s
 func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 	banner := r.renderBanner(m.banner)
 
-	// Command title
 	commandTitle := SubtitleStyle.Render("Command Output:")
 
-	// For exploit list, show table view instead of text output
 	if m.activeCommand == "exploit list" && m.showTable {
 		return r.renderExploitTable(m, banner, commandTitle)
 	}
 
-	// Format output with styling
 	formattedOutput := r.formatCommandOutput(m.commandOutput)
 
-	// Create output box with or without spinner
 	var outputContent string
 	if m.loading {
 		loadingText := LoadingStyle.Render(" Loading...")
@@ -271,7 +250,6 @@ func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 		outputContent = formattedOutput
 	}
 
-	// Create output box
 	outputBox := CommandOutputStyle.
 		Width(r.width - 4).
 		Render(outputContent)
@@ -284,13 +262,11 @@ func (r *ViewRenderer) renderCommandOutput(m *Model) string {
 		outputBox,
 	)
 
-	// Add error message if present
 	if m.err != nil {
 		errorMsg := ErrorStyle.Render("Error: " + m.err.Error())
 		content = lipgloss.JoinVertical(lipgloss.Left, content, "", errorMsg)
 	}
 
-	// Instructions
 	instructions := FooterStyle.Render("Press ESC to go back")
 	content = lipgloss.JoinVertical(lipgloss.Left, content, "", instructions)
 
@@ -312,14 +288,12 @@ func (r *ViewRenderer) formatCommandOutput(output string) string {
 			continue
 		}
 
-		// Add line numbers
 		lineNum := lipgloss.NewStyle().
 			Foreground(mutedColor).
 			Width(4).
 			Align(lipgloss.Right).
 			Render(strconv.Itoa(i + 1))
 
-		// Style line based on content
 		styledLine := r.styleOutputLine(line)
 
 		formattedLine := lipgloss.JoinHorizontal(

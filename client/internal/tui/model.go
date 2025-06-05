@@ -218,7 +218,6 @@ func (m *Model) GetSelectedExploitFromTable() *ExploitProcess {
 		return nil
 	}
 
-	// Parse ID and PID from the row
 	id, err := strconv.Atoi(row[0])
 	if err != nil {
 		return nil

@@ -32,4 +32,4 @@ EXPOSE ${BACKEND_PORT}
 COPY run.sh run.sh
 RUN chmod +x run.sh
 
-ENTRYPOINT ["/bin/bash","run.sh"]
+ENTRYPOINT ["/bin/sh","run.sh"]

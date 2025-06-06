@@ -28,11 +28,15 @@ func main() {
 	config.UseTUI = true
 	config.UseBanner = true
 	for _, arg := range os.Args {
-		if arg == "--no-tui" || arg == "-N" {
+		switch arg {
+		case "--no-tui", "-N", "-h", "--help":
 			config.UseTUI = false
 			logger.SetTUI(false)
-		}
-		if arg == "--no-banner" || arg == "-B" {
+		case "--no-banner", "-B":
+			config.UseBanner = false
+		case "-v", "--version":
+			config.UseTUI = false
+			logger.SetTUI(false)
 			config.UseBanner = false
 		}
 	}

@@ -1,11 +1,11 @@
+# setup_df.ps1
 # Windows setup script for DestructiveFarm integration with CookieFarm
-# PowerShell version of setup_df.sh
 
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [int]$numContainers,
-    
-    [Parameter(Mandatory=$true)]
+
+    [Parameter(Mandatory = $true)]
     [string]$pathDf
 )
 
@@ -20,9 +20,13 @@ if ($numContainers -lt 1 -or $numContainers -gt 10) {
 # === CLEANUP FUNCTION ===
 function Cleanup {
     Write-Host "🧹 Cleaning up... Closing terminals and Docker..."
-    Get-Process | Where-Object { $_.MainWindowTitle -match "flagchecker|cookieserver|service|frontend|destructivefarm" } | Stop-Process -Force
+    Get-Process |
+        Where-Object { $_.MainWindowTitle -match "flagchecker|cookieserver|service|frontend|destructivefarm" } |
+        Stop-Process -Force
+
     Set-Location "..\tests\"
     docker compose down
+
     Set-Location "..\scripts\"
     exit
 }
@@ -46,7 +50,7 @@ function Start-ProcessInNewWindow {
         [string]$Title,
         [string]$Command
     )
-    
+
     $encodedCommand = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($Command))
     Start-Process powershell -ArgumentList "-NoExit", "-NoProfile", "-EncodedCommand $encodedCommand" -WindowStyle Normal
 }
@@ -71,6 +75,7 @@ Set-Location "..\scripts\"
 
 # Copy configuration to DestructiveFarm
 Copy-Item -Path ".\config_df.py" -Destination "$pathDf\server\config.py" -Force
+
 $dfCmd = "Set-Location '$pathDf\server\'; python start_server.py"
 Start-ProcessInNewWindow -Title "destructivefarm" -Command $dfCmd
 Write-Host "🚀 DestructiveFarm started!"

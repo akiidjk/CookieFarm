@@ -66,14 +66,6 @@ Make sure you have the following installed:
 
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
 
-3. Launch the server using Docker Compose:
-
-   ```bash
-   docker compose up
-   ```
-
-   > ⚠️ In production, keep `DEBUG=false` and set a strong, unique password.
-
 3. Start the server with Docker Compose:
    ```bash
    docker compose up --build

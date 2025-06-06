@@ -1,3 +1,4 @@
+# golanci-lint configuration file from https://github.com/docker/cli
 version: "2"
 
 run:

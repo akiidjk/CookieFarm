@@ -28,19 +28,6 @@ if [[ -z "$ASSET_URL" || -z "$LATEST_VERSION" ]]; then
   exit 1
 fi
 
-# # Check if binary already installed and version matches
-# if command -v "$FINAL_NAME" &>/dev/null; then
-#   INSTALLED_VERSION=$("$FINAL_NAME" --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-#   if [[ "$INSTALLED_VERSION" == "${LATEST_VERSION#v}" ]]; then
-#     echo "✅ $FINAL_NAME is already up to date (v$INSTALLED_VERSION)."
-#     exit 0
-#   else
-#     echo "🔁 Updating $FINAL_NAME from v$INSTALLED_VERSION to $LATEST_VERSION..."
-#   fi
-# else
-#   echo "📦 $FINAL_NAME is not installed. Proceeding with fresh install..."
-# fi
-
 echo "⬇️ Downloading from: $ASSET_URL"
 curl -L "$ASSET_URL" -o "$TMP_DIR/$ASSET_NAME"
 
@@ -51,7 +38,6 @@ sudo chmod +x "$INSTALL_DIR/$FINAL_NAME"
 echo "🔧 Setting up configuration..."
 CONFIG_DIR="$HOME/.config/cookiefarm"
 mkdir -p "$CONFIG_DIR"
-cp -r ./client/exploits/utils "$CONFIG_DIR" 2>/dev/null || true
 echo "# Configuration directory for CookieFarm" > "$CONFIG_DIR/.readme"
 
 echo "📄 Creating default configuration file..."
@@ -65,6 +51,3 @@ EOF
 echo "✅ Installation complete! Run '$FINAL_NAME --help' to get started. Enjoy farming 🍪"
 
 rm -rf "$TMP_DIR"
-
-
-# bash <(curl -fsSL https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/refs/heads/dev-akiidjk-cli/install.sh)

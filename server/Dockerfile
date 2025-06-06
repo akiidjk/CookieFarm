@@ -29,7 +29,7 @@ RUN touch ./cookiefarm.db
 
 EXPOSE ${BACKEND_PORT}
 
-COPY run.sh /run.sh
-RUN chmod +x /run.sh
+COPY run.sh run.sh
+RUN chmod +x ./run.sh
 
-ENTRYPOINT ["/run.sh"]
+ENTRYPOINT ["./run.sh"]

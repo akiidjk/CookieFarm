@@ -105,7 +105,7 @@ The CookieFarm client has two interface modes:
    # Navigate to: Exploits → Create Exploit → Enter name
    ```
 
-5. **Write your exploit** in the created file `~/.cookieclient/exploits/my_exploit.py`.
+5. **Write your exploit** in the created file `~/.config/cookiefarm/exploits/my_exploit.py`.
 
 6. **Run the exploit**:
    ```bash
@@ -211,7 +211,7 @@ cookieclient exploit create -n <exploit_name> -N
 ```
 Parameters:
 - `-n <exploit_name>`: Name of the exploit template. This can be a path to a file or just a name.
-> If user does not specify the path in the exploit name, it will be created in the `~/.cookieclient/exploits/` directory. Otherwise, it will be created in the specified path.
+> If user does not specify the path in the exploit name, it will be created in the `~/.config/cookiefarm/exploits/` directory. Otherwise, it will be created in the specified path.
 
 *Example:*
 ```bash

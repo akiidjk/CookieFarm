@@ -1,4 +1,3 @@
-import { LUCIDE } from './icons';
 
 export interface Route {
   path: string;
@@ -20,7 +19,6 @@ export const routes: Route[] = [
   {
     path: '/dashboard',
     label: 'Dashboard',
-    icon: LUCIDE.DASHBOARD,
   },
 ];
 

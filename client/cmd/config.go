@@ -117,20 +117,17 @@ func show(cmd *cobra.Command, args []string) {
 // ===== COMMAND INITIALIZATION =====
 
 func init() {
-	// Add subcommands to config command
 	ConfigCmd.AddCommand(resetConfigCmd)
 	ConfigCmd.AddCommand(editConfigCmd)
 	ConfigCmd.AddCommand(loginConfigCmd)
 	ConfigCmd.AddCommand(logoutConfigCmd)
 	ConfigCmd.AddCommand(showConfigCmd)
 
-	// Setup flags for editConfigCmd
 	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "localhost", "Server host to connect to")
 	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 8080, "Server port to connect to")
 	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Username, "username", "u", "cookieguest", "Username for authenticating to the server")
 	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.HTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
 
-	// Setup flags for loginConfigCmd
 	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")
 }

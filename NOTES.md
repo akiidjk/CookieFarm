@@ -71,10 +71,9 @@
 - [x] Installazione del client tramite `install.sh` per averlo globale
 
 ## RELEASE 1.2
-- [ ] new Branch handling
+- [ ] Better handling of Local and Shared config (Singleton architecture for race condition, better handling of config file, etc)
 - [ ] Design con shadcnui @suga
-- [ ] Migrazione da htmx a Next.js @akiidjk
-- [ ] Compatibilità windows/macos @Dabi
+- [-] Compatibilità windows/macos @Dabi @akiidjk
 - [ ] Tutorial nella dashboard @suga
 - [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)
@@ -82,6 +81,8 @@
 - [ ] TTL per le flag senza condizione statistiche
 - [ ] Completed cli (create template, RealTime consumo di risorse di tutti i client e boh altre info, flag che sono state inviate al server)
 - [ ] Exploit Manager che runna più di un exploit (by Matte)
+- [x] Migrazione da htmx a Next.js @akiidjk
+- [x] new Branch handling
 - [x] Filtri
    Filtri componibili fatti da SQL
    - [x] Filtri per servizi

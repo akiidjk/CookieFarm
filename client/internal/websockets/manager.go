@@ -66,7 +66,7 @@ func GetConnection() (*websocket.Conn, error) {
 	}
 
 	for attempts := 0; attempts < maxAttempts; attempts++ {
-		conn, _, err = dialer.Dial("ws://"+config.ArgsConfigInstance.Address+":"+strconv.Itoa(int(config.ArgsConfigInstance.Port))+"/ws/", http.Header{
+		conn, _, err = dialer.Dial("ws://"+config.LocalConfig.Address+":"+strconv.Itoa(int(config.LocalConfig.Port))+"/ws/", http.Header{
 			"Cookie": []string{"token=" + config.Token},
 		})
 
@@ -111,6 +111,7 @@ func GetConnection() (*websocket.Conn, error) {
 	return nil, err
 }
 
+// WSReader reads messages from the WebSocket connection and handles them
 func WSReader(conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
@@ -127,6 +128,7 @@ func WSReader(conn *websocket.Conn) {
 	}
 }
 
+// WSHandleMessage processes incoming WebSocket messages based on their type
 func WSHandleMessage(message []byte) error {
 	var event Event
 	if err := json.Unmarshal(message, &event); err != nil {
@@ -145,13 +147,14 @@ func WSHandleMessage(message []byte) error {
 	return nil
 }
 
+// ConfigHandler processes the configuration update received from the WebSocket server
 func ConfigHandler(payload json.RawMessage) error {
-	var configReceived config.Config
+	var configReceived config.ConfigShared
 	if err := json.Unmarshal(payload, &configReceived); err != nil {
 		return err
 	}
 
-	config.Current = configReceived
+	config.SharedConfig = configReceived
 
 	if OnNewConfig != nil {
 		go OnNewConfig()

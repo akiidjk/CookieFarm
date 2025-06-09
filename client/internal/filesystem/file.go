@@ -6,6 +6,7 @@ import (
 	"regexp"
 )
 
+// pathRegex is a regular expression to match paths starting with ~.
 var pathRegex = regexp.MustCompile(`(~)([^/]*)(/?.*)`)
 
 // GetExecutableDir returns the directory of the executable.
@@ -17,6 +18,7 @@ func GetExecutableDir() string {
 	return filepath.Dir(exePath)
 }
 
+// IsValidFile checks if a file exists and is writable. If it does not exist, it attempts to create it.
 func IsValidFile(fp string) bool {
 	if _, err := os.Stat(fp); err == nil {
 		return true

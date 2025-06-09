@@ -12,14 +12,14 @@ import (
 )
 
 var (
-	Token              string     // Token stores the global authentication token.
-	ArgsAttackInstance ArgsAttack // Struct holding runtime arguments
-	ArgsConfigInstance ArgsConfig // Struct holding configuration arguments
-	Current            Config     // Current holds the global configuration for the client.
-	UseTUI             bool       // UseTUI indicates whether to use the TUI mode or not
-	PID                int        // PID is the process ID of the running exploit
-	ExploitName        string     // ExploitName is the name of the exploit being run
-	UseBanner          bool       // NoBanner indicates whether to disable the banner on startup
+	Token              string       // Token stores the global authentication token.
+	ArgsAttackInstance ArgsAttack   // Struct holding runtime arguments
+	LocalConfig        ConfigLocal  // Struct holding configuration arguments
+	SharedConfig       ConfigShared // Current holds the global configuration for the client.
+	UseTUI             bool         // UseTUI indicates whether to use the TUI mode or not
+	PID                int          // PID is the process ID of the running exploit
+	ExploitName        string       // ExploitName is the name of the exploit being run
+	UseBanner          bool         // NoBanner indicates whether to disable the banner on startup
 )
 
 var DefaultConfigPath, _ = filesystem.ExpandTilde("~/.config/cookiefarm")
@@ -43,7 +43,7 @@ username: "cookieguest"
 `)
 
 // ResetConfigFunc resets the configuration to defaults
-func GetConfig() (string, error) {
+func GetLocalConfig() (string, error) {
 	var err error
 	err = os.MkdirAll(DefaultConfigPath, 0o755)
 	if err != nil {
@@ -60,13 +60,13 @@ func GetConfig() (string, error) {
 	}
 	defer file.Close()
 
-	err = yaml.Unmarshal(ConfigTemplate, &ArgsConfigInstance)
+	err = yaml.Unmarshal(ConfigTemplate, &LocalConfig)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
 		return "", err
 	}
 
-	err = yaml.NewEncoder(file).Encode(ArgsConfigInstance)
+	err = yaml.NewEncoder(file).Encode(LocalConfig)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error encoding configuration to YAML")
 		return "", err
@@ -75,8 +75,8 @@ func GetConfig() (string, error) {
 	return "Config reset successfully", nil
 }
 
-// Reset resets the configuration to defaults
-func Reset() (string, error) {
+// ResetLocalConfig resets the configuration to defaults
+func ResetLocalConfig() (string, error) {
 	var err error
 	err = os.MkdirAll(DefaultConfigPath, 0o755)
 	if err != nil {
@@ -93,13 +93,13 @@ func Reset() (string, error) {
 	}
 	defer file.Close()
 
-	err = yaml.Unmarshal(ConfigTemplate, &ArgsConfigInstance)
+	err = yaml.Unmarshal(ConfigTemplate, &LocalConfig)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
 		return "", err
 	}
 
-	err = yaml.NewEncoder(file).Encode(ArgsConfigInstance)
+	err = yaml.NewEncoder(file).Encode(LocalConfig)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error encoding configuration to YAML")
 		return "", err
@@ -108,8 +108,8 @@ func Reset() (string, error) {
 	return "Config reset successfully", nil
 }
 
-// Update updates the configuration with new values
-func Update(configuration ArgsConfig) (string, error) {
+// UpdateLocalConfig updates the configuration with new values
+func UpdateLocalConfig(configuration ConfigLocal) (string, error) {
 	var err error
 	err = os.MkdirAll(DefaultConfigPath, 0o755)
 	if err != nil {
@@ -154,8 +154,8 @@ func Logout() (string, error) {
 	return "Logout successfully", nil
 }
 
-// Show displays the current configuration
-func Show() (string, error) {
+// ShowLocalConfig displays the current configuration
+func ShowLocalConfig() (string, error) {
 	configPath := filepath.Join(DefaultConfigPath, "config.yml")
 
 	content, err := os.ReadFile(configPath)

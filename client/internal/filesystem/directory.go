@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// IsPath checks if the provided string is a path exploit.
 func IsPath(pathExploit string) bool {
 	if strings.HasPrefix(pathExploit, "/") || strings.HasPrefix(pathExploit, ".") || strings.HasPrefix(pathExploit, "~") {
 		return true
@@ -50,6 +51,7 @@ func ExpandTilde(p string) (string, error) {
 	return path.Join(tildePath, results[1]), nil
 }
 
+// NormalizeNamePathExploit normalizes a given name path exploit by ensuring it has a .py extension
 func NormalizeNamePathExploit(name string) (string, error) {
 	if !strings.HasSuffix(name, ".py") {
 		name += ".py"

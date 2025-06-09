@@ -24,9 +24,9 @@ type ConfigClient struct {
 	RegexFlag     string    `json:"regex_flag" yaml:"regex_flag"`           // Regex used to identify flags in output
 }
 
-// Config aggregates both server and client configuration,
+// ConfigShared aggregates both server and client configuration,
 // and includes a flag indicating whether the configuration is initialized.
-type Config struct {
+type ConfigShared struct {
 	Configured   bool         `json:"configured" yaml:"configured"` // True if configuration has been loaded and validated
 	ConfigServer ConfigServer `json:"server" yaml:"server"`         // Server-specific configuration
 	ConfigClient ConfigClient `json:"client" yaml:"client"`         // Client-specific configuration
@@ -48,7 +48,7 @@ type Exploit struct {
 	PID  int    `json:"pid"`  // Process ID of the exploit
 }
 
-type ArgsConfig struct {
+type ConfigLocal struct {
 	Address  string    `json:"address"`  // Host address of the server
 	Port     uint16    `json:"port"`     // Port of the server
 	HTTPS    bool      `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)

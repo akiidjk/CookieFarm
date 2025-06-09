@@ -101,9 +101,9 @@ func (*CommandRunner) ExecuteCommand(command string, args ...string) (string, er
 func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
 	switch subcommand {
 	case "show":
-		return config.Show()
+		return config.ShowLocalConfig()
 	case "reset":
-		return config.Reset()
+		return config.ResetLocalConfig()
 	case "logout":
 		return config.Logout()
 	default:
@@ -123,7 +123,7 @@ func (*CommandRunner) ExecuteLogin(password string) (string, error) {
 
 // ExecuteConfigUpdate handles the config update command
 func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS bool) (string, error) {
-	configuration := config.ArgsConfig{
+	configuration := config.ConfigLocal{
 		Address:  host,
 		Username: username,
 		HTTPS:    useHTTPS,
@@ -136,7 +136,7 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 		}
 	}
 
-	path, err := config.Update(configuration)
+	path, err := config.UpdateLocalConfig(configuration)
 	if err != nil {
 		return "", fmt.Errorf("failed to update configuration: %w", err)
 	}
@@ -248,10 +248,10 @@ func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
 		return nil, fmt.Errorf("error loading configuration: %w", err)
 	}
 
-	processes := make([]ExploitProcess, 0, len(config.ArgsConfigInstance.Exploits))
+	processes := make([]ExploitProcess, 0, len(config.LocalConfig.Exploits))
 	id := 1
-	filtered := make([]config.Exploit, 0, len(config.ArgsConfigInstance.Exploits))
-	for _, exploitS := range config.ArgsConfigInstance.Exploits {
+	filtered := make([]config.Exploit, 0, len(config.LocalConfig.Exploits))
+	for _, exploitS := range config.LocalConfig.Exploits {
 		proc, err := os.FindProcess(exploitS.PID)
 		if err != nil || proc == nil || proc.Signal(syscall.Signal(0)) != nil {
 			logger.Log.Warn().Str("exploit", exploitS.Name).Msg("Exploit removed due to invalid or inactive process")
@@ -265,7 +265,7 @@ func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
 		id++
 		filtered = append(filtered, exploitS)
 	}
-	config.ArgsConfigInstance.Exploits = filtered
+	config.LocalConfig.Exploits = filtered
 	config.WriteConfig()
 	return processes, nil
 }

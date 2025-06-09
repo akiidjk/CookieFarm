@@ -25,21 +25,15 @@ const (
 )
 
 var (
-	// LogLevel defines the log level for the logger.
-	LogLevel zerolog.Level
-	// Log is the logger instance for the CookieFarm client.
-	Log zerolog.Logger
-	// logFile represents the log file for the CookieFarm client.
-	LogFile *os.File
-	useTUI  bool // NoTUI indicates whether to disable the TUI mode for logging
+	LogLevel zerolog.Level  // LogLevel defines the log level for the logger.
+	Log      zerolog.Logger // Log is the logger instance for the CookieFarm client.
+	LogFile  *os.File       // logFile represents the log file for the CookieFarm client.
+	useTUI   bool           // NoTUI indicates whether to disable the TUI mode for logging
 )
 
+// SetTUI sets the useTUI variable to enable or disable TUI mode for logging.
 func SetTUI(value bool) {
 	useTUI = value
-}
-
-func GetNoTUI() bool {
-	return useTUI
 }
 
 // Setup configures the logger with the specified log level and returns the log file path.

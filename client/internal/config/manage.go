@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// GetSession function to obtain the current stored session
 func GetSession() (string, error) {
 	sessionPath := filepath.Join(DefaultConfigPath, "session")
 	data, err := os.ReadFile(sessionPath)
@@ -17,6 +18,7 @@ func GetSession() (string, error) {
 	return string(data), nil
 }
 
+// LoadLocalConfig loads the local configuration from the default path.
 func LoadLocalConfig() error {
 	configFileContent, err := os.ReadFile(filepath.Join(DefaultConfigPath, "config.yml"))
 	if err != nil {
@@ -26,7 +28,7 @@ func LoadLocalConfig() error {
 		return fmt.Errorf("error reading config file: %w", err)
 	}
 
-	err = yaml.Unmarshal(configFileContent, &ArgsConfigInstance)
+	err = yaml.Unmarshal(configFileContent, &LocalConfig)
 	if err != nil {
 		return err
 	}
@@ -34,9 +36,10 @@ func LoadLocalConfig() error {
 	return nil
 }
 
+// WriteConfig writes the current configuration to the default config file.
 func WriteConfig() error {
 	configFilePath := filepath.Join(DefaultConfigPath, "config.yml")
-	configFileContent, err := yaml.Marshal(ArgsConfigInstance)
+	configFileContent, err := yaml.Marshal(LocalConfig)
 	if err != nil {
 		return fmt.Errorf("error marshalling config: %w", err)
 	}
@@ -51,7 +54,7 @@ func WriteConfig() error {
 
 // MapPortToService maps a port to a service name.
 func MapPortToService(port uint16) string {
-	for _, service := range Current.ConfigClient.Services {
+	for _, service := range SharedConfig.ConfigClient.Services {
 		if service.Port == port {
 			return service.Name
 		}

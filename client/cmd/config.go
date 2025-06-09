@@ -67,7 +67,7 @@ var showConfigCmd = &cobra.Command{
 
 // reset resets the configuration to defaults
 func reset(cmd *cobra.Command, args []string) {
-	_, err := config.Reset()
+	_, err := config.ResetLocalConfig()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Reset configuration failed")
 		return
@@ -77,7 +77,7 @@ func reset(cmd *cobra.Command, args []string) {
 
 // update updates the configuration with new values
 func update(cmd *cobra.Command, args []string) {
-	configPath, err := config.Update(config.ArgsConfigInstance)
+	configPath, err := config.UpdateLocalConfig(config.LocalConfig)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Update configuration failed")
 		return
@@ -106,7 +106,7 @@ func logout(cmd *cobra.Command, args []string) {
 }
 
 func show(cmd *cobra.Command, args []string) {
-	content, err := config.Show()
+	content, err := config.ShowLocalConfig()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Show configuration failed")
 		return
@@ -123,10 +123,10 @@ func init() {
 	ConfigCmd.AddCommand(logoutConfigCmd)
 	ConfigCmd.AddCommand(showConfigCmd)
 
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Address, "host", "H", "localhost", "Server host to connect to")
-	editConfigCmd.Flags().Uint16VarP(&config.ArgsConfigInstance.Port, "port", "p", 8080, "Server port to connect to")
-	editConfigCmd.Flags().StringVarP(&config.ArgsConfigInstance.Username, "username", "u", "cookieguest", "Username for authenticating to the server")
-	editConfigCmd.Flags().BoolVarP(&config.ArgsConfigInstance.HTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
+	editConfigCmd.Flags().StringVarP(&config.LocalConfig.Address, "host", "H", "localhost", "Server host to connect to")
+	editConfigCmd.Flags().Uint16VarP(&config.LocalConfig.Port, "port", "p", 8080, "Server port to connect to")
+	editConfigCmd.Flags().StringVarP(&config.LocalConfig.Username, "username", "u", "cookieguest", "Username for authenticating to the server")
+	editConfigCmd.Flags().BoolVarP(&config.LocalConfig.HTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
 
 	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")

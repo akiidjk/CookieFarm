@@ -26,7 +26,7 @@ var banner string
 
 func main() {
 	cm := config.GetConfigManager()
-	var debug bool = false
+	debug := false
 	cm.SetUseTUI(true)
 	logger.SetTUI(true)
 

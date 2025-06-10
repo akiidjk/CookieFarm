@@ -209,10 +209,14 @@ func (cm *ConfigManager) WriteLocalConfigToFile() error {
 
 // ResetLocalConfigToDefaults resets the local configuration to defaults
 func (cm *ConfigManager) ResetLocalConfigToDefaults() (string, error) {
+	err := cm.LoadLocalConfigFromFile()
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("Could not load existing config, proceeding with empty exploits")
+	}
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	err := os.MkdirAll(DefaultConfigPath, 0o755)
+	err = os.MkdirAll(DefaultConfigPath, 0o755)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error creating config directory")
 		return "", err
@@ -227,11 +231,16 @@ func (cm *ConfigManager) ResetLocalConfigToDefaults() (string, error) {
 	}
 	defer file.Close()
 
-	err = yaml.Unmarshal(ConfigTemplate, &cm.localConfig)
+	var tmpLocalconfig ConfigLocal
+	err = yaml.Unmarshal(ConfigTemplate, &tmpLocalconfig)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
 		return "", err
 	}
+
+	existingExploits := cm.localConfig.Exploits
+	cm.localConfig = tmpLocalconfig
+	cm.localConfig.Exploits = existingExploits
 
 	err = yaml.NewEncoder(file).Encode(cm.localConfig)
 	if err != nil {
@@ -239,7 +248,7 @@ func (cm *ConfigManager) ResetLocalConfigToDefaults() (string, error) {
 		return "", err
 	}
 
-	return "Local config resetted successfully", nil
+	return "Local config reset successfully", nil
 }
 
 // UpdateLocalConfigToFile updates the local configuration and writes to file

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ByteTheCookies/cookieclient/internal/config"
+	"github.com/ByteTheCookies/cookieclient/internal/logger"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -416,8 +417,18 @@ func (m Model) SetupExploitTableCmd() tea.Cmd {
 }
 
 // StartTUI launches the TUI application
-func StartTUI(banner string) error {
-	config.UseTUI = true
+func StartTUI(banner string, debug bool) error {
+	cm := config.GetConfigManager()
+	err := cm.LoadLocalConfigFromFile()
+	if err != nil {
+		return err
+	}
+
+	if debug {
+		logger.Setup("debug")
+	} else {
+		logger.Setup("info")
+	}
 
 	p := tea.NewProgram(
 		New(banner),
@@ -425,6 +436,6 @@ func StartTUI(banner string) error {
 		tea.WithMouseCellMotion(),
 	)
 
-	_, err := p.Run()
+	_, err = p.Run()
 	return err
 }

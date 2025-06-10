@@ -8,6 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	debug     bool
+	useTUI    bool
+	useBanner bool
+)
+
 // RootCmd represents the base command when called without any subcommands
 // Exported for TUI usage
 var RootCmd = &cobra.Command{
@@ -27,12 +33,14 @@ func Execute() {
 
 func init() {
 	RootCmd.AddCommand(ConfigCmd)
-	RootCmd.PersistentFlags().BoolVarP(&config.ArgsAttackInstance.Debug, "debug", "D", false, "Enable debug logging")
-	RootCmd.PersistentFlags().BoolVarP(&config.UseTUI, "no-tui", "N", false, "Disable TUI mode")
-	RootCmd.PersistentFlags().BoolVarP(&config.UseBanner, "no-banner", "B", false, "Remove banner on startup")
+	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
+	RootCmd.PersistentFlags().BoolVarP(&useTUI, "no-tui", "N", false, "Disable TUI mode")
+	RootCmd.PersistentFlags().BoolVarP(&useBanner, "no-banner", "B", false, "Remove banner on startup")
 
 	RootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if config.ArgsAttackInstance.Debug {
+		cm := config.GetConfigManager()
+		cm.SetUseBanner(useBanner)
+		if debug {
 			logger.Setup("debug")
 		} else {
 			logger.Setup("info")

@@ -11,7 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Password string
+var (
+	Password    string
+	cliHost     string
+	cliPort     uint16
+	cliUsername string
+	cliHTTPS    bool
+)
 
 // ===== CONFIG COMMAND DEFINITIONS =====
 
@@ -67,7 +73,8 @@ var showConfigCmd = &cobra.Command{
 
 // reset resets the configuration to defaults
 func reset(cmd *cobra.Command, args []string) {
-	_, err := config.ResetLocalConfig()
+	cm := config.GetConfigManager()
+	_, err := cm.ResetLocalConfigToDefaults()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Reset configuration failed")
 		return
@@ -77,7 +84,15 @@ func reset(cmd *cobra.Command, args []string) {
 
 // update updates the configuration with new values
 func update(cmd *cobra.Command, args []string) {
-	configPath, err := config.UpdateLocalConfig(config.LocalConfig)
+	cm := config.GetConfigManager()
+	localConfig := config.ConfigLocal{
+		Host:     cliHost,
+		Port:     cliPort,
+		Username: cliUsername,
+		HTTPS:    cliHTTPS,
+	}
+	cm.SetLocalConfig(localConfig)
+	configPath, err := cm.UpdateLocalConfigToFile(localConfig)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Update configuration failed")
 		return
@@ -97,7 +112,8 @@ func login(cmd *cobra.Command, args []string) {
 
 // logout handles user logout
 func logout(cmd *cobra.Command, args []string) {
-	_, err := config.Logout()
+	cm := config.GetConfigManager()
+	_, err := cm.Logout()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Logout failed")
 		return
@@ -106,7 +122,8 @@ func logout(cmd *cobra.Command, args []string) {
 }
 
 func show(cmd *cobra.Command, args []string) {
-	content, err := config.ShowLocalConfig()
+	cm := config.GetConfigManager()
+	content, err := cm.ShowLocalConfigContent()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Show configuration failed")
 		return
@@ -123,10 +140,10 @@ func init() {
 	ConfigCmd.AddCommand(logoutConfigCmd)
 	ConfigCmd.AddCommand(showConfigCmd)
 
-	editConfigCmd.Flags().StringVarP(&config.LocalConfig.Address, "host", "H", "localhost", "Server host to connect to")
-	editConfigCmd.Flags().Uint16VarP(&config.LocalConfig.Port, "port", "p", 8080, "Server port to connect to")
-	editConfigCmd.Flags().StringVarP(&config.LocalConfig.Username, "username", "u", "cookieguest", "Username for authenticating to the server")
-	editConfigCmd.Flags().BoolVarP(&config.LocalConfig.HTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
+	editConfigCmd.Flags().StringVarP(&cliHost, "host", "H", "localhost", "Server host to connect to")
+	editConfigCmd.Flags().Uint16VarP(&cliPort, "port", "p", 8080, "Server port to connect to")
+	editConfigCmd.Flags().StringVarP(&cliUsername, "username", "u", "cookieguest", "Username for authenticating to the server")
+	editConfigCmd.Flags().BoolVarP(&cliHTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
 
 	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")
@@ -134,19 +151,22 @@ func init() {
 
 // LoginHandler handles user login
 func LoginHandler(password string) (string, error) {
-	err := config.LoadLocalConfig()
+	cm := config.GetConfigManager()
+
+	err := cm.LoadLocalConfigFromFile()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `cookieclient config reset`")
 		return "", err
 	}
 
-	config.Token, err = api.Login(password)
-	if err != nil {
+	if token, err := api.Login(password); err != nil {
 		return "", err
+	} else {
+		cm.SetToken(token)
 	}
 
 	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
-	err = os.WriteFile(sessionPath, []byte(config.Token), 0o644)
+	err = os.WriteFile(sessionPath, []byte(cm.GetToken()), 0o644)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error writing session token to file")
 		return "", err

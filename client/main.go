@@ -25,26 +25,32 @@ func isCompletionCommand() bool {
 var banner string
 
 func main() {
-	config.UseTUI = true
-	config.UseBanner = true
+	cm := config.GetConfigManager()
+	var debug bool = false
+	cm.SetUseTUI(true)
+	logger.SetTUI(true)
+
 	for _, arg := range os.Args {
 		switch arg {
+		case "-D", "--debug":
+			debug = true
 		case "--no-tui", "-N", "-h", "--help":
-			config.UseTUI = false
+			cm.SetUseTUI(false)
 			logger.SetTUI(false)
 		case "--no-banner", "-B":
-			config.UseBanner = false
+			cm.SetUseBanner(false)
+
 		case "-v", "--version":
-			config.UseTUI = false
+			cm.SetUseTUI(false)
 			logger.SetTUI(false)
-			config.UseBanner = false
+			cm.SetUseBanner(false)
 		}
 	}
 
-	if config.UseTUI && os.Getenv("COOKIECLIENT_NO_TUI") == "" {
-		if err := tui.StartTUI(banner); err != nil {
+	if cm.GetUseTUI() && os.Getenv("COOKIECLIENT_NO_TUI") == "" {
+		if err := tui.StartTUI(banner, debug); err != nil {
 			fmt.Printf("Error starting TUI: %v\nFalling back to CLI mode\n", err)
-			if config.UseBanner {
+			if cm.GetUseBanner() {
 				if !isCompletionCommand() {
 					fmt.Println(banner)
 				}
@@ -52,7 +58,7 @@ func main() {
 			cmd.Execute()
 		}
 	} else {
-		if config.UseBanner {
+		if cm.GetUseBanner() {
 			if !isCompletionCommand() {
 				fmt.Println(banner)
 			}

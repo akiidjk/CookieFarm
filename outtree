@@ -1,0 +1,265 @@
+.
+├── assets
+│   ├── arch_farm.png
+│   ├── logo_mucca.png
+│   └── logo.png
+├── BENCHMARKS.md
+├── cmd
+│   ├── api
+│   │   ├── banner.txt
+│   │   └── main.go
+│   └── client
+│       ├── banner.txt
+│       ├── cmd
+│       │   ├── config.go
+│       │   ├── exploit.go
+│       │   └── root.go
+│       └── main.go
+├── config.yml
+├── CONTRIBUITING.md
+├── docker-compose.yml
+├── Dockerfile
+├── docs
+│   ├── client
+│   │   └── README.md
+│   └── server
+│       └── README.md
+├── go.mod
+├── go.sum
+├── install.sh
+├── internal
+│   ├── client
+│   │   ├── api
+│   │   │   └── api.go
+│   │   ├── config
+│   │   │   ├── config.go
+│   │   │   ├── manager.go
+│   │   │   └── types.go
+│   │   ├── exploit
+│   │   │   ├── detach_unix.go
+│   │   │   ├── detach_windows.go
+│   │   │   ├── exploit.go
+│   │   │   ├── parse.go
+│   │   │   ├── process_unix.go
+│   │   │   ├── process_windows.go
+│   │   │   ├── run.go
+│   │   │   └── setup.go
+│   │   ├── filesystem
+│   │   │   ├── directory.go
+│   │   │   └── file.go
+│   │   ├── logger
+│   │   │   └── logger.go
+│   │   ├── tui
+│   │   │   ├── commandrunner.go
+│   │   │   ├── forms.go
+│   │   │   ├── handlers.go
+│   │   │   ├── menu.go
+│   │   │   ├── model.go
+│   │   │   ├── styles.go
+│   │   │   ├── tui.go
+│   │   │   └── view.go
+│   │   └── websockets
+│   │       ├── circuit.go
+│   │       ├── manager.go
+│   │       ├── monitoring.go
+│   │       └── submitter.go
+│   └── server
+│       ├── assets
+│       │   ├── css
+│       │   │   └── global.css
+│       │   └── js
+│       │       ├── api.js
+│       │       └── utils.js
+│       ├── config
+│       │   ├── config.go
+│       │   ├── env.go
+│       │   └── types.go
+│       ├── controllers
+│       │   └── stats_controller.go
+│       ├── core
+│       │   ├── config.go
+│       │   └── flag_loop.go
+│       ├── frontend
+│       │   ├── bun.lock
+│       │   ├── Dockerfile
+│       │   ├── eslint.config.mjs
+│       │   ├── next.config.ts
+│       │   ├── package.json
+│       │   ├── postcss.config.mjs
+│       │   ├── public
+│       │   │   ├── file.svg
+│       │   │   ├── globe.svg
+│       │   │   ├── images
+│       │   │   │   ├── 1024
+│       │   │   │   │   ├── cookie-black.png
+│       │   │   │   │   ├── cookie-trasp.png
+│       │   │   │   │   └── cookie-white.png
+│       │   │   │   ├── 256
+│       │   │   │   │   ├── cookie-black.png
+│       │   │   │   │   ├── cookie-trasp.png
+│       │   │   │   │   └── cookie-white.png
+│       │   │   │   ├── 512
+│       │   │   │   │   ├── cookie-black.png
+│       │   │   │   │   ├── cookie-trasp.png
+│       │   │   │   │   └── cookie-white.png
+│       │   │   │   ├── favicon.ico
+│       │   │   │   ├── logo.png
+│       │   │   │   └── logo-white.png
+│       │   │   ├── next.svg
+│       │   │   ├── vercel.svg
+│       │   │   └── window.svg
+│       │   ├── src
+│       │   │   └── app
+│       │   │       ├── favicon.ico
+│       │   │       ├── globals.css
+│       │   │       ├── layout.tsx
+│       │   │       └── page.tsx
+│       │   └── tsconfig.json
+│       ├── logger
+│       │   └── logger.go
+│       ├── protocols
+│       │   ├── cc_http.go
+│       │   ├── PROTOCOL_GUIDE.md
+│       │   ├── protocols.go
+│       │   └── types.go
+│       ├── public
+│       │   ├── css
+│       │   │   ├── output.css
+│       │   │   └── output.css.fiber.gz
+│       │   ├── images
+│       │   │   ├── 1024
+│       │   │   │   ├── cookie-black.png
+│       │   │   │   ├── cookie-trasp.png
+│       │   │   │   └── cookie-white.png
+│       │   │   ├── 256
+│       │   │   │   ├── cookie-black.png
+│       │   │   │   ├── cookie-trasp.png
+│       │   │   │   └── cookie-white.png
+│       │   │   ├── 512
+│       │   │   │   ├── cookie-black.png
+│       │   │   │   ├── cookie-trasp.png
+│       │   │   │   └── cookie-white.png
+│       │   │   ├── favicon.ico
+│       │   │   ├── favicon.ico.fiber.gz
+│       │   │   ├── logo.png
+│       │   │   └── logo-white.png
+│       │   └── js
+│       │       ├── htmx.min.js
+│       │       ├── htmx.min.js.fiber.gz
+│       │       ├── output.min.js
+│       │       └── output.min.js.fiber.gz
+│       ├── server
+│       │   ├── auth.go
+│       │   ├── handler_api.go
+│       │   ├── handler_view.go
+│       │   ├── limiter.go
+│       │   ├── routes.go
+│       │   ├── server.go
+│       │   └── types.go
+│       ├── sqlite
+│       │   ├── database.go
+│       │   ├── delete.go
+│       │   ├── flag_collector.go
+│       │   ├── insert.go
+│       │   ├── schema.sql
+│       │   ├── select.go
+│       │   ├── types.go
+│       │   └── update.go
+│       ├── tailwindcss.config.js
+│       ├── ui
+│       │   ├── templates.go
+│       │   └── views
+│       │       ├── layouts
+│       │       │   └── main.html
+│       │       ├── pages
+│       │       │   ├── dashboard.html
+│       │       │   ├── login.html
+│       │       │   └── test.html
+│       │       └── partials
+│       │           ├── flags_rows.html
+│       │           ├── header.html
+│       │           ├── modal.html
+│       │           └── pagination.html
+│       └── websockets
+│           ├── clients_handling.go
+│           ├── event.go
+│           ├── manager.go
+│           └── types.go
+├── LICENSE
+├── Makefile
+├── monitoring
+│   ├── docker-compose.yml
+│   └── process_monitor_dashboard.json
+├── NOTES.md
+├── outtree
+├── pkg
+├── README.md
+├── RELEASE_TEMPLATE.md
+├── run.sh
+├── scripts
+│   ├── config_df.py
+│   ├── config.json
+│   ├── README.md
+│   ├── riempire_db_daiii.py
+│   ├── setup_df.sh
+│   ├── setup.sh
+│   └── shitcurl.py
+├── SECURITY.md
+├── tests
+│   ├── app
+│   │   ├── Dockerfile
+│   │   ├── service.py
+│   │   ├── templates
+│   │   │   └── index.html
+│   │   └── text.txt
+│   ├── app-nc
+│   │   ├── exploit.py
+│   │   └── main.go
+│   ├── docker-compose.yml
+│   ├── exploits
+│   │   ├── example_1.py
+│   │   ├── example_2.py
+│   │   ├── example_3.py
+│   │   ├── example_4.py
+│   │   ├── example_5.py
+│   │   ├── example_pwn.py
+│   │   └── example_total.py
+│   ├── flagchecker.py
+│   ├── start_containers.sh
+│   └── tests
+│       ├── app
+│       │   ├── Dockerfile
+│       │   ├── service.py
+│       │   ├── templates
+│       │   │   └── index.html
+│       │   └── text.txt
+│       ├── app-nc
+│       │   ├── app-nc
+│       │   ├── docker-compose.yml
+│       │   ├── Dockerfile
+│       │   ├── exploit.py
+│       │   ├── go.mod
+│       │   └── main.go
+│       ├── docker-compose.yml
+│       ├── exploits
+│       │   ├── example_1.py
+│       │   ├── example_2.py
+│       │   ├── example_3.py
+│       │   ├── example_4.py
+│       │   ├── example_5.py
+│       │   ├── example_pwn.py
+│       │   └── example_total.py
+│       ├── flagchecker.py
+│       ├── README.md
+│       ├── start_containers.sh
+│       └── vulnify
+│           ├── docker-compose.yml
+│           ├── Dockerfile
+│           ├── Makefile
+│           ├── vulnify
+│           ├── vulnify.c
+│           └── vulnify.h
+├── tools
+└── uninstall.sh
+
+65 directories, 198 files

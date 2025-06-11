@@ -71,7 +71,7 @@
 - [x] Installazione del client tramite `install.sh` per averlo globale
 
 ## RELEASE 1.2
-- [ ] Better handling of Local and Shared config (Singleton architecture for race condition, better handling of config file, etc)
+
 - [ ] Design con shadcnui @suga
 - [-] Compatibilità windows/macos @Dabi @akiidjk
 - [ ] Tutorial nella dashboard @suga
@@ -81,6 +81,7 @@
 - [ ] TTL per le flag senza condizione statistiche
 - [ ] Completed cli (create template, RealTime consumo di risorse di tutti i client e boh altre info, flag che sono state inviate al server)
 - [ ] Exploit Manager che runna più di un exploit (by Matte)
+- [x] Better handling of Local and Shared config (Singleton architecture for race condition, better handling of config file, etc)
 - [x] Migrazione da htmx a Next.js @akiidjk
 - [x] new Branch handling
 - [x] Filtri

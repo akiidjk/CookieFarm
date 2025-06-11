@@ -72,10 +72,15 @@
 
 ## RELEASE 1.2
 
+- [ ] Install cookieclient (binary) with pip @suga
+- [ ] Update data structure:
+  1. Rename Flag struct to ClientData
+  2. Add username, exploit name
+  3. Addare nella config del server: ticktime, ad_start
 - [ ] Design con shadcnui @suga
+  - [ ] Tutorial nella dashboard @suga
+  - [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Compatibilità macos @Dabi
-- [ ] Tutorial nella dashboard @suga
-- [ ] Possibilità di scaricare dal server il client @suga -> dependes on (Tutorial nella dashboard @suga)
 - [ ] Aggiungere un display che misura ram e cpu del processo (cli - client, web - server)
 - [ ] Aggiungere numero client attacanti realtime displayato sulla dashboard,
 - [ ] TTL per le flag senza condizione statistiche

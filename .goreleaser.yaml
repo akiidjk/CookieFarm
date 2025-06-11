@@ -5,7 +5,6 @@
 # Feel free to remove those if you don't want/need to use them.
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
-# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 
 version: 2
 
@@ -14,7 +13,22 @@ before:
     - go mod tidy
 
 builds:
-  - env:
+  - main: ./cmd/client/
+    id: "client"
+    binary: "cookieclient"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+  - main: ./cmd/server/
+    id: "server"
+    binary: "cookieserver"
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -44,11 +58,29 @@ changelog:
   filters:
     exclude:
       - "^docs:"
-      - "^test:"
+      - "^tests:"
+      - "^scripts:"
+      - "^tools:"
+      - "^monitoring:"
 
 release:
-  footer: >-
+  name_template: "Release {{.Tag}}"
+  header: |
+    ## CookieFarm {{.Tag}}
 
-    ---
+    Welcome to this new release of CookieFarm! 🍪
 
-    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+    ### What's New
+
+  footer: |
+    **Full Changelog**: https://github.com/ByteTheCookies/CookieFarm/compare/{{.PreviousTag}}...{{.Tag}}
+
+report_sizes: true
+
+announce:
+  discord:
+    enabled: true
+    message_template: "New CookieFarm release {{.Tag}} is out!"
+    author: "akiidjk & suga"
+    color: "CDA158"
+    icon_url: "https://bytethecookies.github.io/logo/logo.png"

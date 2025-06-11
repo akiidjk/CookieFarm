@@ -10,7 +10,7 @@ CYAN := \033[36m
 
 # === SERVER VARIABLES ===
 SERVER_BIN_DIR := ./bin
-SERVER_CMD_DIR := ./cmd/api/
+SERVER_CMD_DIR := ./cmd/server/
 SERVER_LOGS_DIR := ./logs
 SERVER_MAIN_FILE := main.go
 SERVER_BINARY_NAME := cookieserver

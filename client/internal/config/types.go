@@ -38,7 +38,6 @@ type ArgsAttack struct {
 	ServicePort uint16 `json:"port"`         // Service Port
 	TickTime    int    `json:"tick_time"`    // Optional custom tick time
 	ThreadCount int    `json:"thread_count"` // Optional number of concurrent threads (coroutine) to use
-	Debug       bool   `json:"debug"`        // Enable debug mode if true
 	Detach      bool   `json:"detach"`       // Run in background if true
 	ExploitPath string `json:"exploit_path"` // Path to the exploit to run
 }
@@ -49,7 +48,7 @@ type Exploit struct {
 }
 
 type ConfigLocal struct {
-	Address  string    `json:"address"`  // Host address of the server
+	Host     string    `json:"host"`     // Host address of the server
 	Port     uint16    `json:"port"`     // Port of the server
 	HTTPS    bool      `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
 	Username string    `json:"username"` // Username of the client

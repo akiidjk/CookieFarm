@@ -31,7 +31,8 @@ type Flag struct {
 
 // GetConfig retrieves the configuration from the CookieFarm server API.
 func GetConfig() (config.ConfigShared, error) {
-	serverURL := "http://" + config.LocalConfig.Address + ":" + strconv.Itoa(int(config.LocalConfig.Port)) + "/api/v1/config"
+	cm := config.GetConfigManager()
+	serverURL := "http://" + cm.GetLocalConfig().Host + ":" + strconv.Itoa(int(cm.GetLocalConfig().Port)) + "/api/v1/config"
 	client := &http.Client{}
 
 	_, err := url.Parse(serverURL)
@@ -43,7 +44,7 @@ func GetConfig() (config.ConfigShared, error) {
 	if err != nil {
 		return config.ConfigShared{}, fmt.Errorf("error creating config request: %w", err)
 	}
-	req.Header.Set("Cookie", "token="+config.Token)
+	req.Header.Set("Cookie", "token="+cm.GetToken())
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -68,7 +69,8 @@ func GetConfig() (config.ConfigShared, error) {
 
 // Login sends a login request to the CookieFarm server API.
 func Login(password string) (string, error) {
-	serverURL := "http://" + config.LocalConfig.Address + ":" + strconv.Itoa(int(config.LocalConfig.Port)) + "/api/v1/auth/login"
+	cm := config.GetConfigManager()
+	serverURL := "http://" + cm.GetLocalConfig().Host + ":" + strconv.Itoa(int(cm.GetLocalConfig().Port)) + "/api/v1/auth/login"
 
 	_, err := url.Parse(serverURL)
 	if err != nil {
@@ -80,7 +82,7 @@ func Login(password string) (string, error) {
 	resp, err := http.Post(
 		serverURL,
 		"application/x-www-form-urlencoded",
-		bytes.NewBufferString("username="+config.LocalConfig.Username+"&password="+password),
+		bytes.NewBufferString("username="+cm.GetLocalConfig().Username+"&password="+password),
 	)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("error sending login request")

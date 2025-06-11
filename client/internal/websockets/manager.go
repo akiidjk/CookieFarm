@@ -44,6 +44,7 @@ type NewMessageEvent struct {
 // bad handshake (401)
 // connection refused (503)
 func GetConnection() (*websocket.Conn, error) {
+	cm := config.GetConfigManager()
 	var conn *websocket.Conn
 	var err error
 
@@ -66,8 +67,8 @@ func GetConnection() (*websocket.Conn, error) {
 	}
 
 	for attempts := 0; attempts < maxAttempts; attempts++ {
-		conn, _, err = dialer.Dial("ws://"+config.LocalConfig.Address+":"+strconv.Itoa(int(config.LocalConfig.Port))+"/ws/", http.Header{
-			"Cookie": []string{"token=" + config.Token},
+		conn, _, err = dialer.Dial("ws://"+cm.GetLocalConfig().Host+":"+strconv.Itoa(int(cm.GetLocalConfig().Port))+"/ws/", http.Header{
+			"Cookie": []string{"token=" + cm.GetToken()},
 		})
 
 		if err == nil {
@@ -89,13 +90,14 @@ func GetConnection() (*websocket.Conn, error) {
 
 		if websocket.ErrBadHandshake == err {
 			logger.Log.Error().Err(err).Msg("Bad handshake, retrying login...")
-			config.Token, err = config.GetSession()
+			token, err := cm.GetSession()
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to refresh token")
 				circuitBreaker.RecordFailure()
 				monitor.SetStatus(StatusFailed)
 				return nil, err
 			}
+			cm.SetToken(token)
 			continue
 		}
 
@@ -149,12 +151,13 @@ func WSHandleMessage(message []byte) error {
 
 // ConfigHandler processes the configuration update received from the WebSocket server
 func ConfigHandler(payload json.RawMessage) error {
+	cm := config.GetConfigManager()
 	var configReceived config.ConfigShared
 	if err := json.Unmarshal(payload, &configReceived); err != nil {
 		return err
 	}
 
-	config.SharedConfig = configReceived
+	cm.SetSharedConfig(configReceived)
 
 	if OnNewConfig != nil {
 		go OnNewConfig()

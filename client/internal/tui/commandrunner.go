@@ -99,13 +99,14 @@ func (*CommandRunner) ExecuteCommand(command string, args ...string) (string, er
 
 // ExecuteConfigCommand executes configuration-related commands
 func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
+	cm := config.GetConfigManager()
 	switch subcommand {
 	case "show":
-		return config.ShowLocalConfig()
+		return cm.ShowLocalConfigContent()
 	case "reset":
-		return config.ResetLocalConfig()
+		return cm.ResetLocalConfigToDefaults()
 	case "logout":
-		return config.Logout()
+		return cm.Logout()
 	default:
 		return "", fmt.Errorf("unknown config subcommand: %s", subcommand)
 	}
@@ -123,8 +124,9 @@ func (*CommandRunner) ExecuteLogin(password string) (string, error) {
 
 // ExecuteConfigUpdate handles the config update command
 func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS bool) (string, error) {
+	cm := config.GetConfigManager()
 	configuration := config.ConfigLocal{
-		Address:  host,
+		Host:     host,
 		Username: username,
 		HTTPS:    useHTTPS,
 	}
@@ -136,9 +138,10 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 		}
 	}
 
-	path, err := config.UpdateLocalConfig(configuration)
+	cm.SetLocalConfig(configuration)
+	path, err := cm.UpdateLocalConfigToFile(configuration)
 	if err != nil {
-		return "", fmt.Errorf("failed to update configuration: %w", err)
+		return "", fmt.Errorf("error during update of config in the file: %s", err)
 	}
 	return "Configuration updated successfully. File saved at:" + path, nil
 }
@@ -244,14 +247,15 @@ type ExploitProcess struct {
 
 // GetRunningExploits returns a list of running exploit processes
 func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
-	if err := config.LoadLocalConfig(); err != nil {
+	cm := config.GetConfigManager()
+	if err := cm.LoadLocalConfigFromFile(); err != nil {
 		return nil, fmt.Errorf("error loading configuration: %w", err)
 	}
 
-	processes := make([]ExploitProcess, 0, len(config.LocalConfig.Exploits))
 	id := 1
-	filtered := make([]config.Exploit, 0, len(config.LocalConfig.Exploits))
-	for _, exploitS := range config.LocalConfig.Exploits {
+	processes := make([]ExploitProcess, 0, len(cm.GetLocalConfig().Exploits))
+	filtered := make([]config.Exploit, 0, len(cm.GetLocalConfig().Exploits))
+	for _, exploitS := range cm.GetLocalConfig().Exploits {
 		proc, err := os.FindProcess(exploitS.PID)
 		if err != nil || proc == nil || proc.Signal(syscall.Signal(0)) != nil {
 			logger.Log.Warn().Str("exploit", exploitS.Name).Msg("Exploit removed due to invalid or inactive process")
@@ -265,8 +269,13 @@ func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
 		id++
 		filtered = append(filtered, exploitS)
 	}
-	config.LocalConfig.Exploits = filtered
-	config.WriteConfig()
+
+	localConfig := cm.GetLocalConfig()
+	localConfig.Exploits = filtered
+	cm.SetLocalConfig(localConfig)
+	if err := cm.WriteLocalConfigToFile(); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to write configuration after filtering exploits")
+	}
 	return processes, nil
 }
 
@@ -276,6 +285,7 @@ func (*CommandRunner) ExecuteExploitStop(pid string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid process ID: %s", pid)
 	}
-	config.PID = pidInt
+	cm := config.GetConfigManager()
+	cm.SetPID(pidInt)
 	return exploit.Stop(pidInt)
 }

@@ -7,7 +7,7 @@ if [ -z "$version" ]; then
   exit 1
 fi
 
-git flow release finish "$version" --nodevelopmerge -Fp
+git flow release finish $version --nodevelopmerge -Fp
 
 git checkout -b temp-clean-release main
 

@@ -11,8 +11,12 @@ if [ -z "$type" ] || [ -z "$version" ]; then
 fi
 
 if [ "$type" == "release" ]; then
-  git flow release finish "$version" --nodevelopmerge -Fp
-  SOURCE_BRANCH="release/$version"
+    SOURCE_BRANCH="release/$version"
+    git switch $SOURCE_BRANCH
+    git rm -r $FILES_TO_REMOVE 2>/dev/null
+    git commit -m "Pulizia file non destinati alla produzione"
+    git push
+    git flow release finish "$version" --nodevelopmerge -Fp
 elif [ "$type" == "hotfix" ]; then
   git flow hotfix finish "$version" -Fp
   SOURCE_BRANCH="hotfix/$version"
@@ -21,24 +25,23 @@ else
   exit 1
 fi
 
-TEMP_BRANCH="temp-clean-$type-$version"
-git checkout -b "$TEMP_BRANCH" main
+# TEMP_BRANCH="temp-clean-$type-$version"
+# git checkout -b "$TEMP_BRANCH" main
 
-git merge --no-commit "$SOURCE_BRANCH"
+# git merge --no-commit "$SOURCE_BRANCH"
 
-git rm -r $FILES_TO_REMOVE 2>/dev/null
-git commit -m "Pulizia file non destinati alla produzione"
+# git checkout main
+# git merge "$TEMP_BRANCH"
 
-git checkout main
-git merge "$TEMP_BRANCH"
+# git push origin main
+# git push origin --tags
 
-git push origin main
-git push origin --tags
+# if [ "$type" == "release" ]; then
+#   git checkout dev
+#   git merge "$SOURCE_BRANCH"
+#   git push origin dev
+# fi
 
-if [ "$type" == "release" ]; then
-  git checkout dev
-  git merge "$SOURCE_BRANCH"
-  git push origin dev
-fi
-
-git branch -d "$TEMP_BRANCH"
+# git branch -d "$TEMP_BRANCH"
+#
+git switch main

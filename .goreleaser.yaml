@@ -82,5 +82,5 @@ announce:
     enabled: true
     message_template: "New CookieFarm release {{.Tag}} is out!"
     author: "akiidjk & suga"
-    color: "cda158"
+    # color: "cda158"
     icon_url: "https://bytethecookies.github.io/logo/logo.png"

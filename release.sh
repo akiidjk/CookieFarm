@@ -26,7 +26,7 @@ git checkout -b "$TEMP_BRANCH" main
 
 git merge --no-commit "$SOURCE_BRANCH"
 
-git rm -r --cached $FILES_TO_REMOVE 2>/dev/null
+git rm -r $FILES_TO_REMOVE 2>/dev/null
 git commit -m "Pulizia file non destinati alla produzione"
 
 git checkout main

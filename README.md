@@ -3,9 +3,10 @@
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
-  <img src="https://img.shields.io/badge/languages-Go%20%7C%20Python-yellowgreen" alt="Languages">
-  <img src="https://img.shields.io/badge/keywords-CTF%2C%20Exploiting%2C%20Attack%20Defense-red" alt="Keywords">
+  <img src="https://img.shields.io/badge/relase-1.1.0-red?style=flat-square" alt="Version">
+  <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/ByteTheCookies/CookieFarm?filename=.%2Fclient%2Fgo.mod&style=flat-square">
+  <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/ByteTheCookies/CookieFarm?color=7289DA&style=flat-square">
+  <img alt="GitHub License" src="https://img.shields.io/github/license/ByteTheCookies/CookieFarm?color=orange&style=flat-square">
 </p>
 
 # 🍪 CookieFarm
@@ -58,20 +59,12 @@ Make sure you have the following installed:
     ```bash
       # Server configuration
       DEBUG=false                   # Enable debug mode for verbose logging
-      SERVER_PASSWORD=SuperSecret  # Set a strong password for authentication
+      PASSWORD=SuperSecret  # Set a strong password for authentication
       CONFIG_FROM_FILE=config.yml  # Set if the server takes the config from config.yml in the filesystem; otherwise, do not set the variable
-      SERVER_PORT=8080            # Define the port the server will listen on
+      PORT=8080            # Define the port the server will listen on
     ```
 
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
-
-3. Launch the server using Docker Compose:
-
-   ```bash
-   docker compose up
-   ```
-
-   > ⚠️ In production, keep `DEBUG=false` and set a strong, unique password.
 
 3. Start the server with Docker Compose:
    ```bash
@@ -93,21 +86,21 @@ Make sure you have the following installed:
 
 2. Log in and configure the client:
    ```bash
-   cookieclient config login -P SuperSecret
-   cookieclient config update -h 192.168.1.10 -p 8000 -u your_username
+   cookieclient config login -P SuperSecret -N
+   cookieclient config update -h 192.168.1.10 -p 8000 -u your_username -N
    ```
 
 3. Install the Python helper module and create a new exploit template:
    ```bash
    pip install cookiefarm-exploiter
-   cookieclient create -n your_exploit_name
+   cookieclient create -n your_exploit_name -N
    ```
 
    This will generate `your_exploit_name.py` in `~/.cookiefarm/exploits/`.
 
 4. Run your exploit:
    ```bash
-   cookieclient attack -e your_exploit_name.py -p 1234 -t 120 -T 40
+   cookieclient attack -e your_exploit_name.py -p 1234 -t 120 -T 40 -N
    ```
 
 📘 For more usage examples, check out the [client documentation](./client/README.md).
@@ -119,7 +112,16 @@ Make sure you have the following installed:
 We welcome contributions, suggestions, and bug reports!
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for details on how to get involved.
 
----
+
+## 📈 Star History
+
+<a href="https://star-history.com/#ByteTheCookies/CookieFarm&Date&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ByteTheCookies/CookieFarm&type=Date&theme=dark&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ByteTheCookies/CookieFarm&type=Date&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=ByteTheCookies/CookieFarm&type=Date&secret=Z2hwX1AzVkd6OTFZR2h1RkZWNjJHZnplTTFZZU1Yb3pHMTFKeHlDdw==" />
+ </picture>
+</a>
 
 <div align="center">
   Built with ❤️ by <strong>ByteTheCookies</strong>

@@ -26,23 +26,4 @@ else
   exit 1
 fi
 
-# TEMP_BRANCH="temp-clean-$type-$version"
-# git checkout -b "$TEMP_BRANCH" main
-
-# git merge --no-commit "$SOURCE_BRANCH"
-
-# git checkout main
-# git merge "$TEMP_BRANCH"
-
-# git push origin main
-# git push origin --tags
-
-# if [ "$type" == "release" ]; then
-#   git checkout dev
-#   git merge "$SOURCE_BRANCH"
-#   git push origin dev
-# fi
-
-# git branch -d "$TEMP_BRANCH"
-#
 git switch main

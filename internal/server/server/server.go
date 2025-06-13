@@ -59,9 +59,9 @@ func PrepareStatic(app *fiber.App) error {
 	}
 
 	routes := []staticRoute{
-		{"/css", "./public/css"},
-		{"/js", "./public/js"},
-		{"/images", "./public/images"},
+		{"/css", "./internal/server/public/css"},
+		{"/js", "./internal/server/public/js"},
+		{"/images", "./internal/server/public/images"},
 	}
 
 	var staticCfg fiber.Static

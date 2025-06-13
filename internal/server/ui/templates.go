@@ -9,7 +9,7 @@ import (
 )
 
 func InitTemplateEngine(debug bool) *html.Engine {
-	path, err := filepath.Abs("internal/ui/views")
+	path, err := filepath.Abs("internal/server/ui/views")
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Unable to resolve absolute template path")
 	}

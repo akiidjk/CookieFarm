@@ -52,8 +52,13 @@ func main() {
 		logger.Log.Info().Msg("Using web config...")
 	}
 
-	server.InitSecret()
+	var err error
+	config.Secret, err = server.InitSecret()
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to initialize secret key")
+	}
 	logger.Log.Debug().Str("plain", *config.Password).Msg("Plain password before hashing")
+	logger.Log.Debug().Str("Secret", string(config.Secret)).Msg("Secret key for JWT")
 
 	hashed, err := server.HashPassword(*config.Password)
 	if err != nil {

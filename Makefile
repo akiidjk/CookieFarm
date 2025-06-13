@@ -87,7 +87,7 @@ server-build-prod:
 	@echo -e "$(GREEN)[+] Production build complete!$(RESET)"
 
 server-run: server-build server-build-plugins minify
-	@$(SERVER_BIN_DIR)/$(SERVER_BINARY_NAME)
+	@$(SERVER_BIN_DIR)/$(SERVER_BINARY_NAME) -c config.yml -d
 
 server-install: tailwindcss-build server-build-prod server-build-plugins-prod
 	@go install .
@@ -96,17 +96,17 @@ server-clean:
 	@rm -rf $(SERVER_BIN_DIR)/* $(SERVER_LOGS_DIR)/*
 
 server-build-plugins:
-	@for file in $$(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
+	@for file in $$(find ./internal/server/protocols -name '*.go' ! -name 'protocols.go'); do \
 		filename=$$(basename $$file); \
 		pluginname=$${filename%.go}; \
-		go build -race -gcflags -m -buildmode=plugin -o "protocols/$$pluginname.so" "$$file"; \
+		go build -race -gcflags -m -buildmode=plugin -o "./internal/server/protocols/$$pluginname.so" "$$file"; \
 	done
 
 server-build-plugins-prod:
-	@for file in $$(find ./protocols -name '*.go' ! -name 'protocols.go'); do \
+	@for file in $$(find ./internal/server/protocols -name '*.go' ! -name 'protocols.go'); do \
 		filename=$$(basename $$file); \
 		pluginname=$${filename%.go}; \
-		GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath -buildmode=plugin -ldflags="-s -w" -o "protocols/$$pluginname.so" "$$file"; \
+		GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath -buildmode=plugin -ldflags="-s -w" -o "./internal/server/protocols/$$pluginname.so" "$$file"; \
 	done
 
 server-watch:

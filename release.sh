@@ -13,8 +13,9 @@ fi
 if [ "$type" == "release" ]; then
     SOURCE_BRANCH="release/$version"
     git switch $SOURCE_BRANCH
-    git rm -r $FILES_TO_REMOVE 2>/dev/null
+    git rm -r $FILES_TO_REMOVE
     git commit -m "Pulizia file non destinati alla produzione"
+    git flow release publish "$version"
     git push
     git flow release finish "$version" --nodevelopmerge -Fp
 elif [ "$type" == "hotfix" ]; then

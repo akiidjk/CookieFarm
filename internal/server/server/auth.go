@@ -41,7 +41,6 @@ func VerifyToken(token string) error {
 		return errors.New("invalid token")
 	}
 
-	// Check expiration explicitly
 	if claims, ok := tok.Claims.(jwt.MapClaims); ok {
 		if exp, ok := claims["exp"].(float64); ok {
 			if time.Now().Unix() > int64(exp) {

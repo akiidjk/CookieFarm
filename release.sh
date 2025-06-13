@@ -11,10 +11,10 @@ if [ -z "$type" ] || [ -z "$version" ]; then
 fi
 
 if [ "$type" == "release" ]; then
-  git flow release finish "$version" --nodevelopmerge --nomainmerge -Fp
+  git flow release finish "$version" --nodevelopmerge -Fp
   SOURCE_BRANCH="release/$version"
 elif [ "$type" == "hotfix" ]; then
-  git flow hotfix finish "$version" --nomainmerge -Fp
+  git flow hotfix finish "$version" -Fp
   SOURCE_BRANCH="hotfix/$version"
 else
   echo "Invalid type: must be 'release' or 'hotfix'"
@@ -36,9 +36,9 @@ git push origin main
 git push origin --tags
 
 if [ "$type" == "release" ]; then
-  git checkout develop
+  git checkout dev
   git merge "$SOURCE_BRANCH"
-  git push origin develop
+  git push origin dev
 fi
 
 git branch -d "$TEMP_BRANCH"

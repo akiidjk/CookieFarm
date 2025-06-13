@@ -85,6 +85,10 @@ func reset(cmd *cobra.Command, args []string) {
 // update updates the configuration with new values
 func update(cmd *cobra.Command, args []string) {
 	cm := config.GetConfigManager()
+	if cliHost == "localhost" && cliPort == 8080 && cliUsername == "cookieguest" && !cliHTTPS {
+		logger.Log.Warn().Msg("All default args detected. Update skipped. For available options, run `cookieclient config update --help`")
+		return
+	}
 	localConfig := config.ConfigLocal{
 		Host:     cliHost,
 		Port:     cliPort,

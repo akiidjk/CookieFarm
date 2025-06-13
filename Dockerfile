@@ -1,4 +1,4 @@
-FROM golang:1.24.2-alpine AS build
+FROM golang:1.24.4-alpine AS build
 
 RUN apk add --no-cache alpine-sdk make
 
@@ -20,10 +20,10 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat dos2unix
 
 COPY --from=build /app/bin/cookieserver /app/bin/cookieserver
-COPY --from=build /app/public /app/public
+COPY --from=build /app/internal/server/public /app/public
 COPY --from=build /app/config.yml /app/config.yml
-COPY --from=build /app/protocols /app/protocols
-COPY --from=build /app/internal/ui/views /app/internal/ui/views
+COPY --from=build /app/internal/server/protocols /app/protocols
+COPY --from=build /app/internal/server/ui/views /app/internal/ui/views
 
 RUN touch ./cookiefarm.db
 

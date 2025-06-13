@@ -108,7 +108,6 @@ func HandleLogin(c *fiber.Ctx) error {
 		Value:    token,
 		MaxAge:   60 * 60 * 48, // 2 day
 		HTTPOnly: true,
-		Secure:   true,
 		SameSite: "Strict",
 	})
 

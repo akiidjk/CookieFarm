@@ -34,6 +34,8 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK_ID: ${{ env.DISCORD_WEBHOOK_ID }}
+          DISCORD_WEBHOOK_TOKEN: ${{ env.DISCORD_WEBHOOK_TOKEN }}
       - uses: actions/attest-build-provenance@v2
         with:
           subject-checksums: ./dist/checksums.txt

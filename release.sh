@@ -10,9 +10,6 @@ if [ -z "$type" ] || [ -z "$version" ]; then
   exit 1
 fi
 
-git rm -r $FILES_TO_REMOVE 2>/dev/null
-git commit -m "Pulizia file non destinati alla produzione"
-
 if [ "$type" == "release" ]; then
   git flow release finish "$version" --nodevelopmerge -Fp
   SOURCE_BRANCH="release/$version"
@@ -28,6 +25,9 @@ TEMP_BRANCH="temp-clean-$type-$version"
 git checkout -b "$TEMP_BRANCH" main
 
 git merge --no-commit "$SOURCE_BRANCH"
+
+git rm -r $FILES_TO_REMOVE 2>/dev/null
+git commit -m "Pulizia file non destinati alla produzione"
 
 git checkout main
 git merge "$TEMP_BRANCH"

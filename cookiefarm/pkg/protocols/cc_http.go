@@ -13,7 +13,7 @@ import (
 	"protocols"
 )
 
-func Submit(url string, team_token string, flags []string) ([]protocols.ResponseProtocol, error) {
+func Submit(url string, teamToken string, flags []string) ([]protocols.ResponseProtocol, error) {
 	jsonData, err := json.Marshal(flags)
 	if err != nil {
 		return nil, fmt.Errorf("error during marshalling: %w", err)
@@ -25,7 +25,7 @@ func Submit(url string, team_token string, flags []string) ([]protocols.Response
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Team-Token", team_token)
+	req.Header.Set("X-Team-Token", teamToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

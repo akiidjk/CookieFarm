@@ -81,7 +81,8 @@ func (h *CommandHandler) executeFormCommand(command string, formData *FormData) 
 			case "exploit create":
 				output, err = h.handleExploitCreate(formData)
 			case "exploit remove":
-				output, err = h.handleExploitRemove(formData)
+				h.handleExploitRemove(formData)
+				output = "Exploit remove command executed"
 			case "exploit stop":
 				output = "Exploit stop command executed"
 			default:
@@ -176,14 +177,15 @@ func (h *CommandHandler) handleExploitCreate(formData *FormData) (string, error)
 }
 
 // handleExploitRemove processes exploit remove command
-func (h *CommandHandler) handleExploitRemove(formData *FormData) (string, error) {
+func (h *CommandHandler) handleExploitRemove(formData *FormData) error {
 	name := formData.Fields["Exploit Name"]
 
 	if name == "" {
-		return "", errors.New("exploit name is required")
+		return errors.New("exploit name is required")
 	}
 
-	return h.cmdRunner.ExecuteExploitRemove(name)
+	h.cmdRunner.ExecuteExploitRemove(name)
+	return nil
 }
 
 // handleExploitStop processes exploit stop command
@@ -194,13 +196,13 @@ func (h *CommandHandler) handleExploitStop(selectedProcess *ExploitProcess) (str
 
 	pid := strconv.Itoa(selectedProcess.PID)
 
-	result, err := h.cmdRunner.ExecuteExploitStop(pid)
+	err := h.cmdRunner.ExecuteExploitStop(pid)
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("Successfully stopped exploit: %s (PID: %d)\n\n%s",
-		selectedProcess.Name, selectedProcess.PID, result), nil
+	return fmt.Sprintf("Successfully stopped exploit: %s (PID: %d)",
+		selectedProcess.Name, selectedProcess.PID), nil
 }
 
 // ========== Utility Handling for navigation and forms ==========

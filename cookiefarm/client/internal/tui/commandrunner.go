@@ -16,6 +16,7 @@ import (
 	"client/cmd"
 	"client/config"
 	"client/exploit"
+	"client/template"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -87,12 +88,12 @@ func (*CommandRunner) ExecuteCommand(command string, args ...string) (string, er
 
 // ExecuteConfigCommand executes configuration-related commands
 func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
-	cm := config.GetConfigManager()
+	cm := config.GetInstance()
 	switch subcommand {
 	case "show":
 		return cm.ShowLocalConfigContent()
 	case "reset":
-		return cm.ResetLocalConfigToDefaults()
+		return "", cm.Reset()
 	case "logout":
 		return cm.Logout()
 	default:
@@ -111,18 +112,18 @@ func (*CommandRunner) ExecuteExploitCommand(subcommand string) (string, error) {
 
 // ExecuteLogin handles the login command
 func (*CommandRunner) ExecuteLogin(password, host, username string, port uint16, https bool) (string, error) {
-	cm := config.GetConfigManager()
-	configuration := config.ConfigLocal{
-		Host:     host,
-		Username: username,
-		Port:     port,
-		HTTPS:    https,
-	}
-	_, err := cm.SetLocalConfig(configuration)
+	cm := config.GetInstance()
+
+	cm.SetHost(host)
+	cm.SetUsername(username)
+	cm.SetPort(port)
+	cm.SetHTTPS(https)
+
+	err := cm.Write()
 	if err != nil {
 		return "", fmt.Errorf("error during update of config in the file: %s", err)
 	}
-	cmd.Password = password
+
 	pathSession, err := cmd.LoginHandler(password)
 	if err != nil {
 		return "", fmt.Errorf("login failed: %w", err)
@@ -132,25 +133,24 @@ func (*CommandRunner) ExecuteLogin(password, host, username string, port uint16,
 
 // ExecuteConfigUpdate handles the config update command
 func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS bool) (string, error) {
-	cm := config.GetConfigManager()
-	configuration := config.ConfigLocal{
-		Host:     host,
-		Username: username,
-		HTTPS:    useHTTPS,
-	}
+	cm := config.GetInstance()
+
+	cm.SetHost(host)
+	cm.SetUsername(username)
+	cm.SetHTTPS(useHTTPS)
 
 	if port != "" {
 		portNum, err := strconv.Atoi(port)
 		if err == nil {
-			configuration.Port = uint16(portNum)
+			cm.SetPort(uint16(portNum))
 		}
 	}
 
-	path, err := cm.SetLocalConfig(configuration)
+	err := cm.Write()
 	if err != nil {
 		return "", fmt.Errorf("error during update of config in the file: %s", err)
 	}
-	return "Configuration updated successfully. File saved at:" + path, nil
+	return "Configuration updated successfully. File saved at:" + config.DefaultPath, nil
 }
 
 func executeExploit(
@@ -179,14 +179,15 @@ func executeExploit(
 		return "", errors.New("service port is required")
 	}
 
-	err = exploit.Run(
-		exploitPath,
-		tickTimeInt,
-		threadCountInt,
-		serviceName,
-		isTest,
-		submitValue,
-	)
+	args := exploit.ExploitArgs {
+		ExploitPath: exploitPath,
+		TickTime:    tickTimeInt,
+		ThreadCount: threadCountInt,
+		ServiceName: serviceName,
+	}
+	
+	ex := exploit.GetInstance()
+	_, err = ex.Start(args, isTest)
 	if err != nil {
 		return "", err
 	}
@@ -214,25 +215,25 @@ func (*CommandRunner) ExecuteExploitRun(
 
 // ExecuteExploitCreate handles creating an exploit template
 func (*CommandRunner) ExecuteExploitCreate(name string) (string, error) {
-	return exploit.Create(name)
+	return template.Create(name)
 }
 
 // ExecuteExploitRemove handles removing an exploit template
-func (*CommandRunner) ExecuteExploitRemove(name string) (string, error) {
-	return exploit.Remove(name)
+func (*CommandRunner) ExecuteExploitRemove(name string) {
+	ex := exploit.GetInstance()
+	ex.RemoveByName(name)
 }
 
 // GetRunningExploits returns a list of running exploit processes
 func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
-	cm := config.GetConfigManager()
-	if err := cm.LoadLocalConfigFromFile(); err != nil {
-		return nil, fmt.Errorf("error loading configuration: %w", err)
-	}
-
+	
 	id := 1
-	processes := make([]ExploitProcess, 0, len(cm.GetLocalConfig().Exploits))
-	filtered := make([]config.Exploit, 0, len(cm.GetLocalConfig().Exploits))
-	for _, exploitS := range cm.GetLocalConfig().Exploits {
+	ex := exploit.GetInstance()
+	
+	processes := make([]ExploitProcess, 0, len(ex.List()))
+	filtered := make([]exploit.Exploit, 0, len(ex.List()))
+
+	for _, exploitS := range ex.List() {
 		proc, err := os.FindProcess(exploitS.PID)
 		if err != nil || proc == nil || proc.Signal(syscall.Signal(0)) != nil {
 			logger.Log.Warn().Str("exploit", exploitS.Name).Msg("Exploit removed due to invalid or inactive process")
@@ -247,22 +248,15 @@ func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
 		filtered = append(filtered, exploitS)
 	}
 
-	localConfig := cm.GetLocalConfig()
-	localConfig.Exploits = filtered
-
-	if _, err := cm.SetLocalConfig(localConfig); err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to write configuration after filtering exploits")
-	}
 	return processes, nil
 }
 
 // ExecuteExploitStop handles stopping a running exploit
-func (*CommandRunner) ExecuteExploitStop(pid string) (string, error) {
+func (*CommandRunner) ExecuteExploitStop(pid string) error {
 	pidInt, err := strconv.Atoi(pid)
 	if err != nil {
-		return "", fmt.Errorf("invalid process ID: %s", pid)
+		return fmt.Errorf("invalid process ID: %s", pid)
 	}
-	cm := config.GetConfigManager()
-	cm.SetPID(pidInt)
+	
 	return exploit.Stop(pidInt)
 }

@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"client/config"
-
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
@@ -97,13 +95,7 @@ func (m Model) View() string {
 }
 
 // StartTUI launches the TUI application
-func StartTUI(banner string) error {
-	cm := config.GetConfigManager()
-	err := cm.LoadLocalConfigFromFile()
-	if err != nil {
-		return err
-	}
-
+func StartTUI(banner string) error {	
 	logger.Setup("info", true)
 
 	p := tea.NewProgram(
@@ -112,7 +104,7 @@ func StartTUI(banner string) error {
 		tea.WithMouseCellMotion(),
 	)
 
-	_, err = p.Run()
+	_, err := p.Run()
 	return err
 }
 

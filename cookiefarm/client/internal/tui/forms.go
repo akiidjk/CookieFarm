@@ -40,7 +40,7 @@ func CreateForm(command string) ([]textinput.Model, []string) {
 
 // createLoginForm creates form for login command
 func createLoginForm() ([]textinput.Model, []string) {
-	cm := config.GetConfigManager()
+	cm := config.GetInstance()
 	inputs := make([]textinput.Model, 0, 5)
 	labels := make([]string, 0, 5)
 
@@ -57,7 +57,7 @@ func createLoginForm() ([]textinput.Model, []string) {
 	hostInput.Placeholder = "localhost"
 	hostInput.CharLimit = 64
 	hostInput.Width = 30
-	hostInput.SetValue(cm.GetLocalConfig().Host)
+	hostInput.SetValue(cm.GetHost())
 	inputs = append(inputs, hostInput)
 	labels = append(labels, "Host")
 
@@ -66,7 +66,7 @@ func createLoginForm() ([]textinput.Model, []string) {
 	portInput.Placeholder = "8080"
 	portInput.CharLimit = 5
 	portInput.Width = 10
-	portInput.SetValue(strconv.Itoa(int(cm.GetLocalConfig().Port)))
+	portInput.SetValue(strconv.Itoa(int(cm.GetPort())))
 	inputs = append(inputs, portInput)
 	labels = append(labels, "Port")
 
@@ -75,7 +75,7 @@ func createLoginForm() ([]textinput.Model, []string) {
 	usernameInput.Placeholder = "cookieguest"
 	usernameInput.CharLimit = 32
 	usernameInput.Width = 30
-	usernameInput.SetValue(cm.GetLocalConfig().Username)
+	usernameInput.SetValue(cm.GetUsername())
 	inputs = append(inputs, usernameInput)
 	labels = append(labels, "Username")
 
@@ -84,7 +84,7 @@ func createLoginForm() ([]textinput.Model, []string) {
 	httpsInput.Placeholder = "false"
 	httpsInput.CharLimit = 5
 	httpsInput.Width = 10
-	if cm.GetLocalConfig().HTTPS {
+	if cm.GetHTTPS() {
 		httpsInput.SetValue("true")
 	} else {
 		httpsInput.SetValue("false")
@@ -97,7 +97,7 @@ func createLoginForm() ([]textinput.Model, []string) {
 
 // createConfigUpdateForm creates form for config update command
 func createConfigUpdateForm() ([]textinput.Model, []string) {
-	cm := config.GetConfigManager()
+	cm := config.GetInstance()
 	inputs := make([]textinput.Model, 0, 5)
 	labels := make([]string, 0, 5)
 
@@ -106,7 +106,7 @@ func createConfigUpdateForm() ([]textinput.Model, []string) {
 	hostInput.Placeholder = "localhost"
 	hostInput.CharLimit = 64
 	hostInput.Width = 30
-	hostInput.SetValue(cm.GetLocalConfig().Host)
+	hostInput.SetValue(cm.GetHost())
 	inputs = append(inputs, hostInput)
 	labels = append(labels, "Host")
 
@@ -115,7 +115,7 @@ func createConfigUpdateForm() ([]textinput.Model, []string) {
 	portInput.Placeholder = "8080"
 	portInput.CharLimit = 5
 	portInput.Width = 10
-	portInput.SetValue(strconv.Itoa(int(cm.GetLocalConfig().Port)))
+	portInput.SetValue(strconv.Itoa(int(cm.GetPort())))
 	inputs = append(inputs, portInput)
 	labels = append(labels, "Port")
 
@@ -124,7 +124,7 @@ func createConfigUpdateForm() ([]textinput.Model, []string) {
 	usernameInput.Placeholder = "cookieguest"
 	usernameInput.CharLimit = 32
 	usernameInput.Width = 30
-	usernameInput.SetValue(cm.GetLocalConfig().Username)
+	usernameInput.SetValue(cm.GetUsername())
 	inputs = append(inputs, usernameInput)
 	labels = append(labels, "Username")
 
@@ -133,7 +133,7 @@ func createConfigUpdateForm() ([]textinput.Model, []string) {
 	httpsInput.Placeholder = "false"
 	httpsInput.CharLimit = 5
 	httpsInput.Width = 10
-	if cm.GetLocalConfig().HTTPS {
+	if cm.GetHTTPS() {
 		httpsInput.SetValue("true")
 	} else {
 		httpsInput.SetValue("false")

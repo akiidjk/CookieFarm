@@ -22,7 +22,7 @@ type Config struct {
 	port      uint16    `json:"port"`     // Port of the server
 	https     bool      `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
 
-	services           map[string]uint16 
+	services  map[string]uint16 
 }
 
 type ConfigManager struct {

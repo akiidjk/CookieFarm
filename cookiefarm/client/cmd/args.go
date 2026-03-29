@@ -1,4 +1,3 @@
-// Package cmd contains commands for the CookieFarm client
 package cmd
 
 import (
@@ -13,24 +12,19 @@ import (
 )
 
 var (
-	Password    string
-	cliHost     string
-	cliUsername string
-	cliPort     uint16
-	cliHTTPS    bool
+	port     uint16
+	https    bool
+	host     string
+	username string
+	password string
 )
 
-// ===== CONFIG COMMAND DEFINITIONS =====
-
-// configCmd represents the main config command
-// Exported for TUI usage
-var ConfigCmd = &cobra.Command{
+var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage client configuration",
 	Long:  `This command allows you to manage the client configuration, including setting the server host, port, and other parameters.`,
 }
 
-// resetConfigCmd represents the config reset command
 var resetConfigCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Reset the client configuration",
@@ -38,7 +32,6 @@ var resetConfigCmd = &cobra.Command{
 	Run:   reset,
 }
 
-// editConfigCmd represents the config update command
 var editConfigCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update client configuration",
@@ -46,7 +39,6 @@ var editConfigCmd = &cobra.Command{
 	Run:   update,
 }
 
-// loginConfigCmd represents the config login command
 var loginConfigCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Login to the client",
@@ -54,7 +46,6 @@ var loginConfigCmd = &cobra.Command{
 	Run:   login,
 }
 
-// logoutConfigCmd represents the config logout command
 var logoutConfigCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Remove client session",
@@ -62,7 +53,6 @@ var logoutConfigCmd = &cobra.Command{
 	Run:   logout,
 }
 
-// showConfigCmd represents the config show command
 var showConfigCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Show the current client configuration",
@@ -70,34 +60,31 @@ var showConfigCmd = &cobra.Command{
 	Run:   show,
 }
 
-// ===== COMMAND INITIALIZATION =====
+func buildConfigCmd() *cobra.Command {
+	editConfigCmd.Flags().StringVarP(&host, "host", "H", "localhost", "Server host to connect to")
+	editConfigCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "Server port to connect to")
+	editConfigCmd.Flags().StringVarP(&username, "username", "u", "cookieguest", "Username for authenticating to the server")
+	editConfigCmd.Flags().BoolVarP(&https, "https", "s", false, "Use HTTPS for secure communication with the server")
 
-func init() {
-	ConfigCmd.AddCommand(resetConfigCmd)
-	ConfigCmd.AddCommand(editConfigCmd)
-	ConfigCmd.AddCommand(loginConfigCmd)
-	ConfigCmd.AddCommand(logoutConfigCmd)
-	ConfigCmd.AddCommand(showConfigCmd)
-
-	editConfigCmd.Flags().StringVarP(&cliHost, "host", "H", "localhost", "Server host to connect to")
-	editConfigCmd.Flags().Uint16VarP(&cliPort, "port", "p", 8080, "Server port to connect to")
-	editConfigCmd.Flags().StringVarP(&cliUsername, "username", "u", "cookieguest", "Username for authenticating to the server")
-	editConfigCmd.Flags().BoolVarP(&cliHTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
-
-	loginConfigCmd.Flags().StringVarP(&cliHost, "host", "H", "localhost", "Server host to connect to")
-	loginConfigCmd.Flags().Uint16VarP(&cliPort, "port", "p", 8080, "Server port to connect to")
-	loginConfigCmd.Flags().StringVarP(&cliUsername, "username", "u", "cookieguest", "Username for authenticating to the server")
-	loginConfigCmd.Flags().BoolVarP(&cliHTTPS, "https", "s", false, "Use HTTPS for secure communication with the server")
-	loginConfigCmd.Flags().StringVarP(&Password, "password", "P", "", "Password for authenticating to the server")
+	loginConfigCmd.Flags().StringVarP(&host, "host", "H", "localhost", "Server host to connect to")
+	loginConfigCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "Server port to connect to")
+	loginConfigCmd.Flags().StringVarP(&username, "username", "u", "cookieguest", "Username for authenticating to the server")
+	loginConfigCmd.Flags().BoolVarP(&https, "https", "s", false, "Use HTTPS for secure communication with the server")
+	loginConfigCmd.Flags().StringVarP(&password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")
+
+	configCmd.AddCommand(resetConfigCmd)
+	configCmd.AddCommand(editConfigCmd)
+	configCmd.AddCommand(loginConfigCmd)
+	configCmd.AddCommand(logoutConfigCmd)
+	configCmd.AddCommand(showConfigCmd)
+	
+	return configCmd
 }
 
-// ===== CONFIG COMMAND FUNCTIONS =====
-
-// reset resets the configuration to defaults
 func reset(cmd *cobra.Command, args []string) {
-	cm := config.GetConfigManager()
-	_, err := cm.ResetLocalConfigToDefaults()
+	cm := config.GetInstance()
+	err := cm.Reset()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Reset configuration failed")
 		return
@@ -105,31 +92,28 @@ func reset(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Msg("Configuration file reset successfully.")
 }
 
-// update updates the configuration with new values
 func update(cmd *cobra.Command, args []string) {
-	cm := config.GetConfigManager()
-	if cliHost == "localhost" && cliPort == 8080 && cliUsername == "cookieguest" && !cliHTTPS {
+	cm := config.GetInstance()
+	if host == "localhost" && port == 8080 && username == "cookieguest" && !https {
 		logger.Log.Warn().Msg("All default args detected. Update skipped. For available options, run `ckc config update --help`")
 		return
 	}
-	localConfig := config.ConfigLocal{
-		Host:     cliHost,
-		Port:     cliPort,
-		Username: cliUsername,
-		HTTPS:    cliHTTPS,
-	}
-	configPath, err := cm.SetLocalConfig(localConfig)
+
+	cm.SetHost(host)
+	cm.SetPort(port)
+	cm.SetUsername(username)
+	cm.SetHTTPS(https)
+	
+	err := cm.Write()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Update configuration failed")
 		return
 	}
-	logger.Log.Info().Str("path", configPath).Msg("Configuration created or updated successfully. ")
 }
 
-// login handles user login
 func login(cmd *cobra.Command, args []string) {
 	update(cmd, args)
-	sessionPath, err := LoginHandler(Password)
+	sessionPath, err := LoginHandler(password)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Login failed")
 		return
@@ -137,9 +121,8 @@ func login(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
 
-// logout handles user logout
 func logout(cmd *cobra.Command, args []string) {
-	cm := config.GetConfigManager()
+	cm := config.GetInstance()
 	_, err := cm.Logout()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Logout failed")
@@ -149,7 +132,7 @@ func logout(cmd *cobra.Command, args []string) {
 }
 
 func show(cmd *cobra.Command, args []string) {
-	cm := config.GetConfigManager()
+	cm := config.GetInstance()
 	content, err := cm.ShowLocalConfigContent()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Show configuration failed")
@@ -158,22 +141,15 @@ func show(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + content + "```")
 }
 
-// LoginHandler handles user login
 func LoginHandler(password string) (string, error) {
-	cm := config.GetConfigManager()
-	err := cm.LoadLocalConfigFromFile()
+	cm := config.GetInstance()
+	
+	err := api.Login(cm.GetUsername(), password)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error loading local configuration, try to run: `ckc config reset`")
 		return "", err
 	}
-
-	if token, err := api.Login(password); err != nil {
-		return "", err
-	} else {
-		cm.SetToken(token)
-	}
-
-	sessionPath := filepath.Join(config.DefaultConfigPath, "session")
+	
+	sessionPath := filepath.Join(config.DefaultPath, "session")
 	err = os.WriteFile(sessionPath, []byte(cm.GetToken()), 0o644)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error writing session token to file")

@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	circuitBreaker = &CircuitBreaker{ // circuitBreaker is the instance of the circuit breaker
+	circuitBreaker = &CircuitBreaker{
 		state:        StateClosed,
 		failureCount: 0,
 	}
@@ -15,13 +15,10 @@ var (
 )
 
 const (
-	// Circuit breaker constants
 	failureThreshold = 2                // Number of failed attempts before opening the circuit
 	resetTimeout     = 30 * time.Second // Time to wait before switching to half-open state
 	halfOpenMaxRetry = 1                // Try one more time in half-open state
 )
-
-// CircuitBreaker methods
 
 // RecordSuccess registers a successful connection and resets the failure count
 func (cb *CircuitBreaker) RecordSuccess() {

@@ -1,4 +1,3 @@
-// Package websockets used for communicating with the server via WebSocket protocol
 package websockets
 
 import (

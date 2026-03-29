@@ -9,12 +9,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// ========== Circuit Breaker States =========
-
-// CircuitState state of the circuit breaker
 type CircuitState int
 
-// CircuitBreaker is a struct that implements the circuit breaker pattern
 type CircuitBreaker struct {
 	state           CircuitState
 	failureCount    int
@@ -22,14 +18,11 @@ type CircuitBreaker struct {
 	mutex           sync.Mutex
 }
 
-// ========== WebSocket Event Types =========
-
 type Event struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"payload"`
 }
 
-// NewMessageEvent represents a new message event
 type NewMessageEvent struct {
 	Sent time.Time `json:"sent"`
 }
@@ -43,8 +36,6 @@ type EventWSFlag struct {
 	Type    string        `json:"type"`
 	Payload database.Flag `json:"payload"`
 }
-
-// ========= WebSocket Connection Monitoring =========
 
 // ConnectionStatus represents the current status of the WebSocket connection
 type (
@@ -80,7 +71,6 @@ const (
 	StatusFailed
 )
 
-// ConnectionStats holds statistics about the WebSocket connection
 type ConnectionStats struct {
 	ConnectionTracking ConnectionTracking
 	MessageTracking    ConnectionMessages
@@ -90,7 +80,6 @@ type ConnectionStats struct {
 	LatencyTracking    LatencyTracking
 }
 
-// ConnectionMonitor monitors WebSocket connections and provides statistics
 type ConnectionMonitor struct {
 	stats        ConnectionStats
 	mutex        sync.RWMutex

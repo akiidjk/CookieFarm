@@ -1,42 +1,39 @@
 package main
 
 import (
-	_ "embed"
 	"logger"
-	"os"
 
 	"client/cmd"
 	"client/config"
 	"client/tui"
 )
 
-func main() {
-	cm := config.GetConfigManager()
+var (
+	useBanner bool
+	useTUI    bool
+)
 
-	// If no arguments are provided, set TUI mode to false
-	if len(os.Args) != 1 {
-		cm.SetUseTUI(false)
-	}
+const VERSION = "v1.2.0"
 
-	// Check if print the banner is enabled
-	for _, arg := range os.Args {
-		if arg == "--no-banner" || arg == "-B" {
-			cm.SetUseBanner(false)
-		}
-	}
-
-	if cm.GetUseTUI() {
-		if err := tui.StartTUI(logger.GetBanner("client")); err != nil {
-			logger.Log.Error().Err(err).Msg("Error starting TUI")
-			if !logger.IsCompletionCommand() {
-				logger.PrintBanner(cm.GetUseBanner(), "client")
-			}
-			cmd.Execute()
-		}
-	} else {
+func startTui() {
+	err := tui.StartTUI(logger.GetBanner("client"))	
+	if  err != nil {
+		logger.Log.Error().Err(err).Msg("Error starting TUI")
 		if !logger.IsCompletionCommand() {
-			logger.PrintBanner(cm.GetUseBanner(), "client")
+			logger.PrintBanner(useBanner, "client")
 		}
-		cmd.Execute()
+	}
+}
+
+func main() {
+	cm := config.GetInstance()
+	cm.Read()
+	
+	cmd.ParseArgs(VERSION, logger.CookieCLIColorSchema, &useBanner)
+
+	if useTUI {
+		startTui()
+	} else if !logger.IsCompletionCommand() {
+		logger.PrintBanner(useBanner, "client")
 	}
 }

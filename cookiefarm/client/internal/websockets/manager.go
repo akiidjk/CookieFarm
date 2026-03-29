@@ -1,15 +1,14 @@
-// Package websockets used for communicating with the server via WebSocket protocol
 package websockets
 
 import (
 	"encoding/json"
 	"errors"
 	"logger"
-	"models"
 	"net/http"
 	"strconv"
 	"time"
 
+	"sharedconfig"
 	"client/config"
 
 	"github.com/gorilla/websocket"
@@ -56,8 +55,8 @@ func setHandler(conn *websocket.Conn) {
 }
 
 func tryToConnect(cm *config.ConfigManager, maxAttempts int, dialer *websocket.Dialer) (*websocket.Conn, error) {
-	host := cm.GetLocalConfig().Host
-	port := strconv.Itoa(int(cm.GetLocalConfig().Port))
+	host := cm.GetHost()
+	port := strconv.Itoa(int(cm.GetPort()))
 	for attempts := range maxAttempts {
 		conn, resp, err := dialer.Dial("ws://"+host+":"+port+"/ws/", http.Header{
 			"Cookie": []string{"token=" + cm.GetToken()},
@@ -99,7 +98,7 @@ func tryToConnect(cm *config.ConfigManager, maxAttempts int, dialer *websocket.D
 // bad handshake (401)
 // connection refused (503)
 func GetConnection() (*websocket.Conn, error) {
-	cm := config.GetConfigManager()
+	cm := config.GetInstance()
 	var err error
 
 	monitor := GetMonitor()
@@ -172,13 +171,14 @@ func WSHandleMessage(message []byte) error {
 
 // ConfigHandler processes the configuration update received from the WebSocket server
 func ConfigHandler(payload json.RawMessage) error {
-	cm := config.GetConfigManager()
-	var configReceived models.ConfigShared
+	sharedConfig := sharedconfig.GetInstance()
+	var configReceived sharedconfig.Shared
+	
 	if err := json.Unmarshal(payload, &configReceived); err != nil {
 		return err
 	}
 
-	cm.SetSharedConfig(configReceived)
+	sharedConfig.Set(configReceived)
 
 	if OnNewConfig != nil {
 		go OnNewConfig()

@@ -95,7 +95,7 @@ func (m Model) View() string {
 }
 
 // StartTUI launches the TUI application
-func StartTUI(banner string) error {	
+func StartTUI(banner string) error {
 	logger.Setup("info", true)
 
 	p := tea.NewProgram(

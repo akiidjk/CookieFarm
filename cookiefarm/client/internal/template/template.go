@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"system"
-	
+
 	"client/config"
 )
 
@@ -28,7 +28,6 @@ def exploit(ip, port, name_service, flag_ids: list):
 `
 
 func verifyAndHandlePath(path string) error {
-	
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Default exploit path not exists... Creating it")
 		err := os.MkdirAll(config.DefaultPath, os.ModePerm)
@@ -40,7 +39,7 @@ func verifyAndHandlePath(path string) error {
 	return nil
 }
 
-func Create(name string) (string, error) {	
+func Create(name string) (string, error) {
 	if err := verifyAndHandlePath(config.DefaultPath); err != nil {
 		return "", err
 	}
@@ -53,7 +52,7 @@ func Create(name string) (string, error) {
 	}
 
 	var path string
-	
+
 	if system.IsPath(namePathNormalized) {
 		path = namePathNormalized
 	} else {
@@ -64,7 +63,7 @@ func Create(name string) (string, error) {
 		path = filepath.Join(exploitsDir, namePathNormalized)
 	}
 
-	exploitFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0777)
+	exploitFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0o777)
 	if err != nil {
 		return "", fmt.Errorf("error creating exploit file: %v", err)
 	}
@@ -88,7 +87,7 @@ func Remove(name string) (string, error) {
 	}
 
 	var path string
-	
+
 	if system.IsPath(namePathNormalized) {
 		path = namePathNormalized
 	} else {

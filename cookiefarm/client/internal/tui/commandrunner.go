@@ -179,13 +179,13 @@ func executeExploit(
 		return "", errors.New("service port is required")
 	}
 
-	args := exploit.ExploitArgs {
+	args := exploit.ExploitArgs{
 		ExploitPath: exploitPath,
 		TickTime:    tickTimeInt,
 		ThreadCount: threadCountInt,
 		ServiceName: serviceName,
 	}
-	
+
 	ex := exploit.GetInstance()
 	_, err = ex.Start(args, isTest)
 	if err != nil {
@@ -226,10 +226,9 @@ func (*CommandRunner) ExecuteExploitRemove(name string) {
 
 // GetRunningExploits returns a list of running exploit processes
 func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
-	
 	id := 1
 	ex := exploit.GetInstance()
-	
+
 	processes := make([]ExploitProcess, 0, len(ex.List()))
 	filtered := make([]exploit.Exploit, 0, len(ex.List()))
 
@@ -257,6 +256,6 @@ func (*CommandRunner) ExecuteExploitStop(pid string) error {
 	if err != nil {
 		return fmt.Errorf("invalid process ID: %s", pid)
 	}
-	
+
 	return exploit.Stop(pidInt)
 }

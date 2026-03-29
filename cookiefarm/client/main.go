@@ -16,8 +16,8 @@ var (
 const VERSION = "v1.2.0"
 
 func startTui() {
-	err := tui.StartTUI(logger.GetBanner("client"))	
-	if  err != nil {
+	err := tui.StartTUI(logger.GetBanner("client"))
+	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error starting TUI")
 		if !logger.IsCompletionCommand() {
 			logger.PrintBanner(useBanner, "client")
@@ -28,7 +28,7 @@ func startTui() {
 func main() {
 	cm := config.GetInstance()
 	cm.Read()
-	
+
 	cmd.ParseArgs(VERSION, logger.CookieCLIColorSchema, &useBanner)
 
 	if useTUI {

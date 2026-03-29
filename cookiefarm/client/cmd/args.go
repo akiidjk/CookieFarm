@@ -78,7 +78,7 @@ func buildConfigCmd() *cobra.Command {
 	configCmd.AddCommand(loginConfigCmd)
 	configCmd.AddCommand(logoutConfigCmd)
 	configCmd.AddCommand(showConfigCmd)
-	
+
 	return configCmd
 }
 
@@ -103,7 +103,7 @@ func update(cmd *cobra.Command, args []string) {
 	cm.SetPort(port)
 	cm.SetUsername(username)
 	cm.SetHTTPS(https)
-	
+
 	err := cm.Write()
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Update configuration failed")
@@ -143,12 +143,12 @@ func show(cmd *cobra.Command, args []string) {
 
 func LoginHandler(password string) (string, error) {
 	cm := config.GetInstance()
-	
+
 	err := api.Login(cm.GetUsername(), password)
 	if err != nil {
 		return "", err
 	}
-	
+
 	sessionPath := filepath.Join(config.DefaultPath, "session")
 	err = os.WriteFile(sessionPath, []byte(cm.GetToken()), 0o644)
 	if err != nil {

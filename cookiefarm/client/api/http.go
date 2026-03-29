@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	AUTHED = true
+	AUTHED     = true
 	NOT_AUTHED = false
 )
 
@@ -65,7 +65,7 @@ func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, co
 		}
 		req.Header.Set("Cookie", "token="+c.token)
 	}
-	
+
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}

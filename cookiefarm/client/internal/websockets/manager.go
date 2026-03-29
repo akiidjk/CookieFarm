@@ -5,10 +5,10 @@ import (
 	"errors"
 	"logger"
 	"net/http"
+	"sharedconfig"
 	"strconv"
 	"time"
 
-	"sharedconfig"
 	"client/config"
 
 	"github.com/gorilla/websocket"
@@ -173,7 +173,7 @@ func WSHandleMessage(message []byte) error {
 func ConfigHandler(payload json.RawMessage) error {
 	sharedConfig := sharedconfig.GetInstance()
 	var configReceived sharedconfig.Shared
-	
+
 	if err := json.Unmarshal(payload, &configReceived); err != nil {
 		return err
 	}

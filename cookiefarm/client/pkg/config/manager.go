@@ -30,7 +30,7 @@ func GetInstance() *ConfigManager {
 func (cm *ConfigManager) GetHost() string {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
-	return cm.cfg.host	
+	return cm.cfg.host
 }
 
 func (cm *ConfigManager) SetHost(host string) {
@@ -78,7 +78,7 @@ func (cm *ConfigManager) SetToken(token string) {
 func (cm *ConfigManager) GetUsername() string {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
-	return cm.cfg.username;
+	return cm.cfg.username
 }
 
 func (cm *ConfigManager) SetUsername(username string) {
@@ -150,7 +150,7 @@ func (cm *ConfigManager) MapServiceToPort(serviceName string) uint16 {
 		return 0
 	}
 
-	return port	
+	return port
 }
 
 func (cm *ConfigManager) Read() error {

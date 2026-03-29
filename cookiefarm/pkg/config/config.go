@@ -1,9 +1,8 @@
 package sharedconfig
 
 import (
-	"sync"
-
 	"models"
+	"sync"
 )
 
 type Shared struct {

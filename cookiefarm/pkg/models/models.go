@@ -2,52 +2,17 @@ package models
 
 import "server/database"
 
-// Service represents a single vulnerable service as defined in the configuration.
+const (
+	StatusUnsubmitted = iota // Status for unsubmitted flags
+	StatusAccepted           // Status for accepted flags
+	StatusDenied             // Status for denied flags
+	StatusError              // Status for error flags
+)
+
 type Service struct {
 	Name string `json:"name" yaml:"name"` // Name identifier of the service
 	Port uint16 `json:"port" yaml:"port"` // Port where the service is exposed
 }
-
-// ConfigServer holds configuration data required by the server to submit and validate flags.
-type ConfigServer struct {
-	URLFlagChecker        string `json:"url_flag_checker" yaml:"url_flag_checker"`                 // Address of the flagchecker server
-	TeamToken             string `json:"team_token" yaml:"team_token"`                             // Authentication token for team identity
-	Protocol              string `json:"protocol" yaml:"protocol"`                                 // Protocol used to communicate with the flagchecker server
-	StartTime             string `json:"start_time" yaml:"start_time"`                             // CTF competition start time (HH:MM:SS format)
-	EndTime               string `json:"end_time" yaml:"end_time"`                                 // CTF competition end time (HH:MM:SS format)
-	MaxFlagBatchSize      uint   `json:"max_flag_batch_size" yaml:"max_flag_batch_size"`           // Max number of flags to send in a single batch
-	TickTime              int    `json:"tick_time" yaml:"tick_time"`                               // Duration of one game tick in seconds
-	SubmitFlagCheckerTime uint64 `json:"submit_flag_checker_time" yaml:"submit_flag_checker_time"` // Time interval (s) to check and submit flags
-	FlagTTL               uint64 `json:"flag_ttl" yaml:"flag_ttl"`                                 // Time-to-live for flags in ticks
-}
-
-// ConfigClient contains all client-side configuration options.
-type ConfigClient struct {
-	Services      []Service `json:"services" yaml:"services"`               // List of services to exploit
-	RegexFlag     string    `json:"regex_flag" yaml:"regex_flag"`           // Regex used to identify flags in output
-	FormatIPTeams string    `json:"format_ip_teams" yaml:"format_ip_teams"` // Format string for generating team IPs
-	MyTeamID      int       `json:"my_team_id" yaml:"my_team_id"`           // ID of the current team
-	URLFlagIds    string    `json:"url_flag_ids" yaml:"url_flag_ids"`       // URLFlagIds is the where the flagsId server is running
-	NOPTeam       int       `json:"nop_team" yaml:"nop_team"`               // The id of the nop team in the ctf
-	RangeIPTeams  uint8     `json:"range_ip_teams" yaml:"range_ip_teams"`   // Number of teams / IP range
-}
-
-// ConfigShared aggregates both server and client configuration,
-// and includes a flag indicating whether the configuration is initialized.
-type ConfigShared struct {
-	ConfigServer ConfigServer `json:"server" yaml:"server"`         // Server-specific configuration
-	ConfigClient ConfigClient `json:"client" yaml:"client"`         // Client-specific configuration
-	Configured   bool         `json:"configured" yaml:"configured"` // True if configuration has been loaded and validated
-}
-
-const (
-	StatusUnsubmitted = "UNSUBMITTED" // Status for unsubmitted flags
-	StatusAccepted    = "ACCEPTED"    // Status for accepted flags
-	StatusDenied      = "DENIED"      // Status for denied flags
-	StatusError       = "ERROR"       // Status for error flags
-
-	VERSION = "v1.2.0"
-)
 
 // SubmitFlagsRequest the struct for the requests from the client to server
 type SubmitFlagsRequest struct {

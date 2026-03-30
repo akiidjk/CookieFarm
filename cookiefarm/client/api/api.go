@@ -1,220 +1,101 @@
-// Package api provides functions to interact with the CookieFarm server API.
 package api
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
-	"io"
 	"logger"
 	"models"
-	"net/http"
 	"net/url"
 	"server/database"
-	"strconv"
-
-	"client/config"
+	"sharedconfig"
 
 	json "github.com/bytedance/sonic"
 )
 
-const (
-	invalidURLMessage          = "Invalid base URL in config"
-	cookieName                 = "token"
-	sucessMessage              = "Flags submitted successfully"
-	errorCreatingConfigRequest = "error creating config request: %w"
-	errorSendingConfigRequest  = "error sending config request: %w"
-)
-
-func parseURL(host, port, endpoint string) (string, error) {
-	URL := "http://" + host + ":" + port + endpoint
-	_, err := url.Parse(URL)
-	if err != nil {
-		return "", err
+func doJSON[T any](respBody []byte, out *T) error {
+	if err := json.Unmarshal(respBody, out); err != nil {
+		return fmt.Errorf("json decode error: %w", err)
 	}
-	return URL, nil
+	return nil
 }
 
-// GetConfig retrieves the configuration from the CookieFarm server API.
-func GetConfig() (models.ConfigShared, error) {
-	cm := config.GetConfigManager()
-	localConfig := cm.GetLocalConfig()
-	client := &http.Client{}
-
-	serverURL, err := parseURL(localConfig.Host, strconv.Itoa(int(localConfig.Port)), "/api/v1/config")
-	if err != nil {
-		logger.Log.Error().Err(err).Msg(invalidURLMessage)
+func checkStatus(code int, body []byte) error {
+	if code != 200 {
+		return fmt.Errorf("status %d: %s", code, body)
 	}
-
-	req, err := http.NewRequest(http.MethodGet, serverURL, nil)
-	if err != nil {
-		return models.ConfigShared{}, fmt.Errorf(errorCreatingConfigRequest, err)
-	}
-	req.Header.Set("Cookie", cookieName+"="+cm.GetToken())
-
-	resp, err := client.Do(req) //nolint:gosec
-	if err != nil {
-		return models.ConfigShared{}, fmt.Errorf(errorSendingConfigRequest, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Msgf("Error fetching config: %s", body)
-		return models.ConfigShared{}, fmt.Errorf("error fetching config: %s", body)
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return models.ConfigShared{}, fmt.Errorf("error reading config response: %w", err)
-	}
-
-	var parsedConfig models.ConfigShared
-	if err := json.Unmarshal(respBody, &parsedConfig); err != nil {
-		return models.ConfigShared{}, fmt.Errorf("error parsing config: %w", err)
-	}
-
-	logger.Log.Debug().Msgf("Configuration received correctly")
-
-	return parsedConfig, nil
+	return nil
 }
 
-// Login sends a login request to the CookieFarm server API.
-func Login(password string) (string, error) {
-	cm := config.GetConfigManager()
-	localConfig := cm.GetLocalConfig()
-
-	serverURL, err := parseURL(localConfig.Host, strconv.Itoa(int(localConfig.Port)), "/api/v1/auth/login")
+func GetConfig() (sharedconfig.Shared, error) {
+	resp, body, err := client.get("/api/v1/config", NOT_AUTHED)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg(invalidURLMessage)
+		return sharedconfig.Shared{}, err
 	}
 
-	logger.Log.Debug().Str("url", serverURL).Msg("Login attempt")
-
-	resp, err := http.Post( //nolint:gosec
-		serverURL,
-		"application/x-www-form-urlencoded",
-		bytes.NewBufferString("username="+cm.GetLocalConfig().Username+"&password="+password),
-	)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("error sending login request")
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	cookies := resp.Cookies()
-	for _, c := range cookies {
-		if c.Name == cookieName {
-			logger.Log.Debug().Str("token", c.Value).Msg("Token found")
-			logger.Log.Info().Msg("Login successfully")
-			return c.Value, nil
-		}
+	if err := checkStatus(resp.StatusCode, body); err != nil {
+		logger.Log.Error().Msg(err.Error())
+		return sharedconfig.Shared{}, err
 	}
 
-	logger.Log.Warn().Msg("Token not found in Set-Cookie")
-	return "", errors.New("token not found in Set-Cookie")
+	var cfg sharedconfig.Shared
+	if err := doJSON(body, &cfg); err != nil {
+		return sharedconfig.Shared{}, err
+	}
+
+	return cfg, nil
 }
 
-// SubmitBatchDirect sends a batch of flags directly to the CookieFarm server API.
-//
-// @IMPORTANT: I do not raccomend using this function, use websockets instead.
-func SubmitBatchDirect(flags []database.Flag) (string, error) {
-	cm := config.GetConfigManager()
-	localConfig := cm.GetLocalConfig()
-	client := &http.Client{}
+func Login(username string, password string) error {
+	data := url.Values{}
+	data.Set("username", username)
+	data.Set("password", password)
 
-	serverURL, err := parseURL(localConfig.Host, strconv.Itoa(int(localConfig.Port)), "/api/v1/submit-flags-standalone")
+	resp, body, err := client.postForm("/api/v1/auth/login", data, NOT_AUTHED)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg(invalidURLMessage)
+		return err
 	}
-	logger.Log.Debug().Str("url", serverURL).Msg("Submit flag attempt")
 
-	flagMarshalled, err := json.Marshal(models.SubmitFlagsRequest{Flags: flags})
+	if err := checkStatus(resp.StatusCode, body); err != nil {
+		return err
+	}
+
+	token, err := getCookie(resp, "token")
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("error marshalling flags")
-		return "", err
+		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, serverURL, nil)
-	if err != nil {
-		return "", fmt.Errorf(errorCreatingConfigRequest, err)
-	}
-	req.Header.Set("Cookie", cookieName+"="+cm.GetToken())
-	req.Header.Set("Content-Type", "application/json")
-	req.Body = io.NopCloser(bytes.NewReader(flagMarshalled))
-
-	resp, err := client.Do(req) //nolint:gosec
-	if err != nil {
-		return "", fmt.Errorf(errorSendingConfigRequest, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Msgf("Error submitting flags: %s", body)
-		return "", fmt.Errorf("error submitting flags: %s", body)
-	}
-
-	if resp.StatusCode == http.StatusOK {
-		logger.Log.Info().Msg(sucessMessage)
-		return sucessMessage, nil
-	} else {
-		body, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Msgf("Unexpected response status: %d, body: %s", resp.StatusCode, body)
-		return "", fmt.Errorf("unexpected response status: %d, body: %s", resp.StatusCode, body)
-	}
+	client.setToken(token)
+	return nil
 }
 
-// SubmitDirect sends a single flag directly to the CookieFarm server API.
-func SubmitDirect(flag database.Flag) (string, error) {
-	cm := config.GetConfigManager()
-	localConfig := cm.GetLocalConfig()
-	client := &http.Client{}
-
-	serverURL, err := parseURL(localConfig.Host, strconv.Itoa(int(localConfig.Port)), "/api/v1/submit-flag")
+// @IMPORTANT: prefer websockets
+func SubmitBatchDirect(flags []database.Flag) error {
+	payload, err := json.Marshal(models.SubmitFlagsRequest{
+		Flags: flags,
+	})
 	if err != nil {
-		logger.Log.Error().Err(err).Msg(invalidURLMessage)
+		return err
 	}
-	logger.Log.Debug().Str("url", serverURL).Msg("Login attempt")
 
-	flagMarshalled, err := json.Marshal(models.SubmitFlagRequest{Flag: flag})
+	resp, body, err := client.postJSON("/api/v1/submit-flags-standalone", payload, AUTHED)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("error marshalling flags")
-		return "", err
+		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, serverURL, nil)
+	return checkStatus(resp.StatusCode, body)
+}
+
+func SubmitFlag(flag database.Flag) error {
+	payload, err := json.Marshal(models.SubmitFlagRequest{
+		Flag: flag,
+	})
 	if err != nil {
-		return "", fmt.Errorf(errorCreatingConfigRequest, err)
+		return err
 	}
-	req.Header.Set("Cookie", cookieName+"="+cm.GetToken())
-	req.Header.Set("Content-Type", "application/json")
-	req.Body = io.NopCloser(bytes.NewReader(flagMarshalled))
 
-	resp, err := client.Do(req) //nolint:gosec
+	resp, body, err := client.postJSON("/api/v1/submit-flag", payload, AUTHED)
 	if err != nil {
-		return "", fmt.Errorf(errorSendingConfigRequest, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Msgf("Error submitting flags: %s", body)
-		return "", fmt.Errorf("error submitting flags: %s", body)
+		return err
 	}
 
-	logger.Log.Debug().Msgf("Response status code: %d", resp.StatusCode)
-	logger.Log.Debug().Msgf("Response headers: %v", resp.Header)
-	logger.Log.Debug().Msgf("Response body: %s", func() string {
-		body, _ := io.ReadAll(resp.Body)
-		return string(body)
-	}())
-
-	if resp.StatusCode == http.StatusOK {
-		return sucessMessage, nil
-	} else {
-		body, _ := io.ReadAll(resp.Body)
-		logger.Log.Error().Msgf("Unexpected response status: %d, body: %s", resp.StatusCode, body)
-		return "", fmt.Errorf("unexpected response status: %d, body: %s", resp.StatusCode, body)
-	}
+	return checkStatus(resp.StatusCode, body)
 }

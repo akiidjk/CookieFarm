@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (r *Runner) ValidateFlagTTL(ctx context.Context, flagTTL uint64, tickTime int) {
+func (r *Runner) ValidateFlagTTL(ctx context.Context, flagTTL uint64, tickTime uint64) {
 	interval := time.Duration(tickTime) * time.Second
 	if interval <= 0 {
 		logger.Log.Warn().Msgf("Invalid tickTime %d, defaulting to 60 seconds", tickTime)
@@ -15,7 +15,7 @@ func (r *Runner) ValidateFlagTTL(ctx context.Context, flagTTL uint64, tickTime i
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	totalSecond := flagTTL * uint64(tickTime)
+	totalSecond := flagTTL * tickTime
 	for {
 		logger.Log.Debug().Msg("Waiting for clean flags process...")
 		select {

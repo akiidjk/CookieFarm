@@ -18,25 +18,17 @@ import (
 // --- UpdateFlags --------------------------------------------------------------
 
 func TestUpdateFlags_NilSlice_DoesNotPanic(t *testing.T) {
-	t.Parallel()
 	r := newTestRunner(t)
-	assert.NotPanics(t, func() {
-		r.UpdateFlags(nil)
-	})
+	assert.NotPanics(t, func() { r.UpdateFlags(nil) })
 }
 
 func TestUpdateFlags_EmptySlice_DoesNotPanic(t *testing.T) {
-	t.Parallel()
 	r := newTestRunner(t)
-	assert.NotPanics(t, func() {
-		r.UpdateFlags([]protocols.ResponseProtocol{})
-	})
+	assert.NotPanics(t, func() { r.UpdateFlags([]protocols.ResponseProtocol{}) })
 }
 
 func TestUpdateFlags_EmptySlice_NoDBWrites(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	f := sampleFlag("FLAG{no_write}")
 	insertFlag(t, store, f)
@@ -44,13 +36,11 @@ func TestUpdateFlags_EmptySlice_NoDBWrites(t *testing.T) {
 	r.UpdateFlags([]protocols.ResponseProtocol{})
 
 	got := mustGetFlag(t, store, f.FlagCode)
-	assert.Equal(t, "UNSUBMITTED", got.Status, "status must be unchanged after empty UpdateFlags")
+	assert.EqualValues(t, 0, got.Status, "status must be unchanged after empty UpdateFlags")
 }
 
 func TestUpdateFlags_AllAccepted_AllUpdatedInDB(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	codes := []string{"FLAG{acc_001}", "FLAG{acc_002}", "FLAG{acc_003}"}
 	for _, c := range codes {
@@ -66,119 +56,97 @@ func TestUpdateFlags_AllAccepted_AllUpdatedInDB(t *testing.T) {
 
 	for _, c := range codes {
 		got := mustGetFlag(t, store, c)
-		assert.Equal(t, models.StatusAccepted, got.Status, "flag %q should be ACCEPTED", c)
+		assert.Equal(t, int64(models.StatusAccepted), got.Status, "flag %q should be ACCEPTED", c)
 	}
 }
 
 func TestUpdateFlags_AllDenied_AllUpdatedInDB(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	codes := []string{"FLAG{den_001}", "FLAG{den_002}"}
 	for _, c := range codes {
 		insertFlag(t, store, sampleFlag(c))
 	}
 
-	responses := []protocols.ResponseProtocol{
+	r.UpdateFlags([]protocols.ResponseProtocol{
 		{Flag: "FLAG{den_001}", Status: models.StatusDenied, Msg: "already submitted"},
 		{Flag: "FLAG{den_002}", Status: models.StatusDenied, Msg: "already submitted"},
-	}
-
-	r.UpdateFlags(responses)
+	})
 
 	for _, c := range codes {
-		got := mustGetFlag(t, store, c)
-		assert.Equal(t, models.StatusDenied, got.Status)
+		assert.EqualValues(t, models.StatusDenied, mustGetFlag(t, store, c).Status)
 	}
 }
 
 func TestUpdateFlags_AllError_AllUpdatedInDB(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	codes := []string{"FLAG{err_001}", "FLAG{err_002}"}
 	for _, c := range codes {
 		insertFlag(t, store, sampleFlag(c))
 	}
 
-	responses := []protocols.ResponseProtocol{
+	r.UpdateFlags([]protocols.ResponseProtocol{
 		{Flag: "FLAG{err_001}", Status: models.StatusError, Msg: "checker error"},
 		{Flag: "FLAG{err_002}", Status: models.StatusError, Msg: "checker error"},
-	}
-
-	r.UpdateFlags(responses)
+	})
 
 	for _, c := range codes {
-		got := mustGetFlag(t, store, c)
-		assert.Equal(t, models.StatusError, got.Status)
+		assert.EqualValues(t, models.StatusError, mustGetFlag(t, store, c).Status)
 	}
 }
 
 func TestUpdateFlags_MixedStatuses_EachUpdatedCorrectly(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
-	flags := []database.Flag{
+	insertFlags(t, store, []database.Flag{
 		sampleFlag("FLAG{mix_acc}"),
 		sampleFlag("FLAG{mix_den}"),
 		sampleFlag("FLAG{mix_err}"),
-	}
-	insertFlags(t, store, flags)
+	})
 
-	responses := []protocols.ResponseProtocol{
+	r.UpdateFlags([]protocols.ResponseProtocol{
 		{Flag: "FLAG{mix_acc}", Status: models.StatusAccepted, Msg: "ok"},
 		{Flag: "FLAG{mix_den}", Status: models.StatusDenied, Msg: "dup"},
 		{Flag: "FLAG{mix_err}", Status: models.StatusError, Msg: "fail"},
-	}
+	})
 
-	r.UpdateFlags(responses)
-
-	assert.Equal(t, models.StatusAccepted, mustGetFlag(t, store, "FLAG{mix_acc}").Status)
-	assert.Equal(t, models.StatusDenied, mustGetFlag(t, store, "FLAG{mix_den}").Status)
-	assert.Equal(t, models.StatusError, mustGetFlag(t, store, "FLAG{mix_err}").Status)
+	assert.EqualValues(t, models.StatusAccepted, mustGetFlag(t, store, "FLAG{mix_acc}").Status)
+	assert.EqualValues(t, models.StatusDenied, mustGetFlag(t, store, "FLAG{mix_den}").Status)
+	assert.EqualValues(t, models.StatusError, mustGetFlag(t, store, "FLAG{mix_err}").Status)
 }
 
 func TestUpdateFlags_UnknownStatus_FilteredOut_DBUnchanged(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	f := sampleFlag("FLAG{unknown_status}")
-	f.Status = "UNSUBMITTED"
+	f.Status = 0
 	insertFlag(t, store, f)
 
 	r.UpdateFlags([]protocols.ResponseProtocol{
-		{Flag: "FLAG{unknown_status}", Status: "TOTALLY_MADE_UP", Msg: "?"},
+		{Flag: "FLAG{unknown_status}", Status: 99, Msg: "?"},
 	})
 
-	got := mustGetFlag(t, store, f.FlagCode)
-	assert.Equal(t, "UNSUBMITTED", got.Status, "unknown status must not mutate the DB row")
+	assert.EqualValues(t, 0, mustGetFlag(t, store, f.FlagCode).Status, "unknown status must not mutate the DB row")
 }
 
 func TestUpdateFlags_UnknownStatus_MixedWithValid_ValidAreStillUpdated(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	insertFlag(t, store, sampleFlag("FLAG{valid_one}"))
 	insertFlag(t, store, sampleFlag("FLAG{bad_status}"))
 
 	r.UpdateFlags([]protocols.ResponseProtocol{
 		{Flag: "FLAG{valid_one}", Status: models.StatusAccepted, Msg: "ok"},
-		{Flag: "FLAG{bad_status}", Status: "GARBAGE", Msg: "?"},
+		{Flag: "FLAG{bad_status}", Status: 98, Msg: "?"},
 	})
 
-	assert.Equal(t, models.StatusAccepted, mustGetFlag(t, store, "FLAG{valid_one}").Status)
-	assert.Equal(t, "UNSUBMITTED", mustGetFlag(t, store, "FLAG{bad_status}").Status)
+	assert.EqualValues(t, models.StatusAccepted, mustGetFlag(t, store, "FLAG{valid_one}").Status)
+	assert.EqualValues(t, 0, mustGetFlag(t, store, "FLAG{bad_status}").Status)
 }
 
 func TestUpdateFlags_ResponseMsgIsPersisted(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	insertFlag(t, store, sampleFlag("FLAG{msg_check}"))
 
@@ -186,14 +154,11 @@ func TestUpdateFlags_ResponseMsgIsPersisted(t *testing.T) {
 		{Flag: "FLAG{msg_check}", Status: models.StatusAccepted, Msg: "well done!"},
 	})
 
-	got := mustGetFlag(t, store, "FLAG{msg_check}")
-	assert.Equal(t, "well done!", got.Msg)
+	assert.Equal(t, "well done!", mustGetFlag(t, store, "FLAG{msg_check}").Msg)
 }
 
 func TestUpdateFlags_ResponseTimeIsUpdated(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	f := sampleFlag("FLAG{rt_update}")
 	f.ResponseTime = 0
@@ -211,9 +176,7 @@ func TestUpdateFlags_ResponseTimeIsUpdated(t *testing.T) {
 }
 
 func TestUpdateFlags_FlagNotInDB_DoesNotPanic(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, _ := newRunnerWithStore(t)
 
 	// No flag inserted — the update is a no-op (UPDATE WHERE flag_code = ?
 	// matches 0 rows) and must not return an error or panic.
@@ -225,10 +188,8 @@ func TestUpdateFlags_FlagNotInDB_DoesNotPanic(t *testing.T) {
 }
 
 func TestUpdateFlags_LargeBatch_AllUpdated(t *testing.T) {
-	t.Parallel()
 	const n = 500
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	responses := make([]protocols.ResponseProtocol, n)
 	for i := range n {
@@ -243,9 +204,7 @@ func TestUpdateFlags_LargeBatch_AllUpdated(t *testing.T) {
 }
 
 func TestUpdateFlags_AllThreeStatuses_CountsAreCorrect(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	insertFlag(t, store, sampleFlag("FLAG{cnt_acc}"))
 	insertFlag(t, store, sampleFlag("FLAG{cnt_den}"))
@@ -263,9 +222,7 @@ func TestUpdateFlags_AllThreeStatuses_CountsAreCorrect(t *testing.T) {
 }
 
 func TestUpdateFlags_OnlyUnknownStatuses_NothingUpdated(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	codes := []string{"FLAG{unk_a}", "FLAG{unk_b}"}
 	for _, c := range codes {
@@ -273,20 +230,17 @@ func TestUpdateFlags_OnlyUnknownStatuses_NothingUpdated(t *testing.T) {
 	}
 
 	r.UpdateFlags([]protocols.ResponseProtocol{
-		{Flag: "FLAG{unk_a}", Status: "INVALID_A"},
-		{Flag: "FLAG{unk_b}", Status: "INVALID_B"},
+		{Flag: "FLAG{unk_a}", Status: 97},
+		{Flag: "FLAG{unk_b}", Status: 96},
 	})
 
 	for _, c := range codes {
-		got := mustGetFlag(t, store, c)
-		assert.Equal(t, "UNSUBMITTED", got.Status)
+		assert.EqualValues(t, 0, mustGetFlag(t, store, c).Status)
 	}
 }
 
 func TestUpdateFlags_ConcurrentCalls_NoPanic(t *testing.T) {
-	t.Parallel()
-	store := newTestStore(t)
-	r := NewRunner(store)
+	r, store := newRunnerWithStore(t)
 
 	const goroutines = 10
 	const flagsPerGoroutine = 20
@@ -294,8 +248,7 @@ func TestUpdateFlags_ConcurrentCalls_NoPanic(t *testing.T) {
 	// Pre-insert all flags.
 	for g := range goroutines {
 		for i := range flagsPerGoroutine {
-			code := "FLAG{conc_" + itoa(g*flagsPerGoroutine+i) + "}"
-			insertFlag(t, store, sampleFlag(code))
+			insertFlag(t, store, sampleFlag("FLAG{conc_"+itoa(g*flagsPerGoroutine+i)+"}"))
 		}
 	}
 
@@ -306,9 +259,8 @@ func TestUpdateFlags_ConcurrentCalls_NoPanic(t *testing.T) {
 			defer wg.Done()
 			responses := make([]protocols.ResponseProtocol, flagsPerGoroutine)
 			for i := range flagsPerGoroutine {
-				code := "FLAG{conc_" + itoa(g*flagsPerGoroutine+i) + "}"
 				responses[i] = protocols.ResponseProtocol{
-					Flag:   code,
+					Flag:   "FLAG{conc_" + itoa(g*flagsPerGoroutine+i) + "}",
 					Status: models.StatusAccepted,
 					Msg:    "ok",
 				}
@@ -324,30 +276,43 @@ func TestUpdateFlags_ConcurrentCalls_NoPanic(t *testing.T) {
 // setupProcessingLoop wires config.Submit to the provided stub and returns a
 // cancel func for the context passed to StartFlagProcessingLoop.  The caller is
 // responsible for calling cancel when the test is done.
-func setupProcessingLoop(t *testing.T, submitFn func(string, string, []string) ([]protocols.ResponseProtocol, error)) (store *database.Store, r *Runner, cancel context.CancelFunc) {
+func setupProcessingLoop(t *testing.T, submitFn func(string, string, []string) ([]protocols.ResponseProtocol, error)) (store *database.Store,
+	r *Runner,
+	cfg *config.ConfigManager,
+	cancel context.CancelFunc,
+) {
 	t.Helper()
 	store = newTestStore(t)
-	r = NewRunner(store)
+	cfg = newTestConfig(t)
+	r = NewRunner(store, cfg)
 
 	// Wire the fake submit function into global config.
 	config.Submit = submitFn
-	config.SharedConfig.ConfigServer.MaxFlagBatchSize = 10
+	cfg.SetMaxFlagBatchSize(10)
 
 	// Very short tick so the loop fires quickly in tests.
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 1
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(1)
 	t.Cleanup(func() {
-		config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval
+		cfg.SetSubmitFlagCheckerTime(origInterval)
 		config.Submit = nil
 	})
 
 	_, cancelFn := context.WithCancel(context.Background())
 	t.Cleanup(cancelFn)
-	return store, r, cancelFn
+	return store, r, cfg, cancelFn
+}
+
+// insertUnsubmittedFlag inserts a flag with Status=0 (unsubmitted) into the store.
+func insertUnsubmittedFlag(t *testing.T, store *database.Store, code string) {
+	t.Helper()
+	f := sampleFlag(code)
+	f.Status = 0
+	insertFlag(t, store, f)
 }
 
 func TestStartFlagProcessingLoop_ContextCancelled_LoopExits(t *testing.T) {
-	_, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, nil, nil))
+	_, r, _, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, nil, nil))
 	defer cancel()
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
@@ -374,8 +339,7 @@ func TestStartFlagProcessingLoop_NoUnsubmittedFlags_SubmitNotCalled(t *testing.T
 	var mu sync.Mutex
 	var calls [][]string
 
-	store, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
-	_ = store
+	_, r, _, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
 	go r.StartFlagProcessingLoop(ctx)
@@ -394,12 +358,10 @@ func TestStartFlagProcessingLoop_UnsubmittedFlags_SubmitIsCalled(t *testing.T) {
 	var mu sync.Mutex
 	var calls [][]string
 
-	store, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
+	store, r, _, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
 	defer cancel()
-	// Insert a flag in UNSUBMITTED state.
-	f := sampleFlag("FLAG{loop_submit_001}")
-	f.Status = "UNSUBMITTED"
-	insertFlag(t, store, f)
+
+	insertUnsubmittedFlag(t, store, "FLAG{loop_submit_001}")
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
 	go r.StartFlagProcessingLoop(ctx)
@@ -415,12 +377,10 @@ func TestStartFlagProcessingLoop_UnsubmittedFlags_SubmitIsCalled(t *testing.T) {
 }
 
 func TestStartFlagProcessingLoop_UnsubmittedFlag_UpdatedToAccepted(t *testing.T) {
-	store, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, nil, nil))
+	store, r, _, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, nil, nil))
 	defer cancel()
 
-	f := sampleFlag("FLAG{loop_accepted}")
-	f.Status = "UNSUBMITTED"
-	insertFlag(t, store, f)
+	insertUnsubmittedFlag(t, store, "FLAG{loop_accepted}")
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
 	go r.StartFlagProcessingLoop(ctx)
@@ -430,12 +390,10 @@ func TestStartFlagProcessingLoop_UnsubmittedFlag_UpdatedToAccepted(t *testing.T)
 }
 
 func TestStartFlagProcessingLoop_UnsubmittedFlag_UpdatedToDenied(t *testing.T) {
-	store, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusDenied, nil, nil))
+	store, r, _, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusDenied, nil, nil))
 	defer cancel()
 
-	f := sampleFlag("FLAG{loop_denied}")
-	f.Status = "UNSUBMITTED"
-	insertFlag(t, store, f)
+	insertUnsubmittedFlag(t, store, "FLAG{loop_denied}")
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
 	go r.StartFlagProcessingLoop(ctx)
@@ -446,12 +404,12 @@ func TestStartFlagProcessingLoop_UnsubmittedFlag_UpdatedToDenied(t *testing.T) {
 
 func TestStartFlagProcessingLoop_MultipleBatches_AllFlagsEventuallySubmitted(t *testing.T) {
 	// Limit batch size to 2 so we exercise multi-batch behaviour.
-	origBatch := config.SharedConfig.ConfigServer.MaxFlagBatchSize
-	config.SharedConfig.ConfigServer.MaxFlagBatchSize = 2
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.MaxFlagBatchSize = origBatch })
-
-	store, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, nil, nil))
+	store, r, cfg, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, nil, nil))
 	defer cancel()
+
+	origBatch := cfg.GetMaxFlagBatchSize()
+	cfg.SetMaxFlagBatchSize(2)
+	t.Cleanup(func() { cfg.SetMaxFlagBatchSize(origBatch) })
 
 	flags := []database.Flag{
 		sampleFlag("FLAG{batch_001}"),
@@ -460,7 +418,7 @@ func TestStartFlagProcessingLoop_MultipleBatches_AllFlagsEventuallySubmitted(t *
 		sampleFlag("FLAG{batch_004}"),
 	}
 	for i := range flags {
-		flags[i].Status = "UNSUBMITTED"
+		flags[i].Status = 0
 	}
 	insertFlags(t, store, flags)
 
@@ -475,12 +433,10 @@ func TestStartFlagProcessingLoop_MultipleBatches_AllFlagsEventuallySubmitted(t *
 
 func TestStartFlagProcessingLoop_SubmitError_LoopContinues(t *testing.T) {
 	// submit always errors.
-	store, r, cancel := setupProcessingLoop(t, errorSubmit(errSubmit))
+	store, r, _, cancel := setupProcessingLoop(t, errorSubmit(errSubmit))
 	defer cancel()
 
-	f := sampleFlag("FLAG{submit_err}")
-	f.Status = "UNSUBMITTED"
-	insertFlag(t, store, f)
+	insertUnsubmittedFlag(t, store, "FLAG{submit_err}")
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
 	go r.StartFlagProcessingLoop(ctx)
@@ -490,20 +446,19 @@ func TestStartFlagProcessingLoop_SubmitError_LoopContinues(t *testing.T) {
 	cancelLoop()
 
 	// The flag must still be UNSUBMITTED (submit failed, no update).
-	got := mustGetFlag(t, store, "FLAG{submit_err}")
-	assert.Equal(t, "UNSUBMITTED", got.Status)
+	assert.Equal(t, int64(0), mustGetFlag(t, store, "FLAG{submit_err}").Status)
 }
 
 func TestStartFlagProcessingLoop_SubmitFuncNil_LoopDoesNotPanic(t *testing.T) {
 	// config.Submit is nil — this simulates no protocol loaded.
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	store := newTestStore(t)
+	cfg := newTestConfig(t)
+	r := NewRunner(store, cfg)
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
 	config.Submit = nil
-
-	store := newTestStore(t)
-	r := NewRunner(store)
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
 	t.Cleanup(cancelLoop)
@@ -530,18 +485,16 @@ func TestStartFlagProcessingLoop_MaxBatchSizeRespected(t *testing.T) {
 	var mu sync.Mutex
 	var calls [][]string
 
-	store, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
+	store, r, cfg, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
 	defer cancel()
 
-	origBatch := config.SharedConfig.ConfigServer.MaxFlagBatchSize
-	config.SharedConfig.ConfigServer.MaxFlagBatchSize = batchSize
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.MaxFlagBatchSize = origBatch })
+	origBatch := cfg.GetMaxFlagBatchSize()
+	cfg.SetMaxFlagBatchSize(batchSize)
+	t.Cleanup(func() { cfg.SetMaxFlagBatchSize(origBatch) })
 
 	// Insert more flags than the batch size.
 	for i := range batchSize + 5 {
-		f := sampleFlag("FLAG{maxbatch_" + itoa(i) + "}")
-		f.Status = "UNSUBMITTED"
-		insertFlag(t, store, f)
+		insertUnsubmittedFlag(t, store, "FLAG{maxbatch_"+itoa(i)+"}")
 	}
 
 	ctx, cancelLoop := context.WithCancel(context.Background())
@@ -566,7 +519,7 @@ func TestStartFlagProcessingLoop_AlreadyAcceptedFlags_NotResubmitted(t *testing.
 	var mu sync.Mutex
 	var calls [][]string
 
-	store, r, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
+	store, r, _, cancel := setupProcessingLoop(t, fakeSubmit(models.StatusAccepted, &mu, &calls))
 	defer cancel()
 
 	// Insert a flag that is already ACCEPTED — should never be picked up.

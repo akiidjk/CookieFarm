@@ -235,7 +235,7 @@ func TestQueriesWithTx_UpdateInsideTx(t *testing.T) {
 	q := New(db)
 
 	flag := sampleFlag("FLAG{withtx_update_001}")
-	flag.Status = "UNSUBMITTED"
+	flag.Status = 0
 	insertFlag(t, q, flag)
 
 	tx, err := db.BeginTx(context.Background(), nil)
@@ -246,7 +246,7 @@ func TestQueriesWithTx_UpdateInsideTx(t *testing.T) {
 	txQ := q.WithTx(tx)
 	if err := txQ.UpdateFlagStatusByCode(context.Background(), UpdateFlagStatusByCodeParams{
 		FlagCode:     flag.FlagCode,
-		Status:       "ACCEPTED",
+		Status:       1,
 		Msg:          "updated inside tx",
 		ResponseTime: 99999,
 	}); err != nil {
@@ -259,8 +259,8 @@ func TestQueriesWithTx_UpdateInsideTx(t *testing.T) {
 	}
 
 	got := mustGetFlag(t, q, flag.FlagCode)
-	if got.Status != "ACCEPTED" {
-		t.Errorf("Status: want ACCEPTED, got %q", got.Status)
+	if got.Status != 1 {
+		t.Errorf("Status: want ACCEPTED, got %d", got.Status)
 	}
 	if got.Msg != "updated inside tx" {
 		t.Errorf("Msg: want %q, got %q", "updated inside tx", got.Msg)
@@ -449,7 +449,7 @@ func TestUpdateFlagStatusByCode_ExecContextError_ReturnsError(t *testing.T) {
 	q := &Queries{db: &errorDB{}}
 	err := q.UpdateFlagStatusByCode(context.Background(), UpdateFlagStatusByCodeParams{
 		FlagCode:     "FLAG{exec_err_update}",
-		Status:       "ACCEPTED",
+		Status:       1,
 		Msg:          "test",
 		ResponseTime: 1,
 	})

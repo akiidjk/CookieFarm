@@ -94,17 +94,19 @@ func Run(cmd *cobra.Command, args []string) {
 		level = "info"
 	}
 
-	cfg := database.Config{
+	cfg := config.GetInstance()
+
+	cfgDB := database.Config{
 		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL",
 		MaxOpenConns:    25,
 		MaxIdleConns:    5,
 		ConnMaxLifetime: 5 * time.Minute,
 		ConnMaxIdleTime: 1 * time.Minute,
 	}
-	db, _ := database.NewDB(cfg)
+	db, _ := database.NewDB(cfgDB)
 	store := database.NewStore(db)
 	database.GetCollector().SetStore(store)
-	runner := core.NewRunner(store)
+	runner := core.NewRunner(store, cfg)
 
 	logger.Setup(level, false)
 	defer logger.Close()
@@ -144,7 +146,7 @@ func Run(cmd *cobra.Command, args []string) {
 		TimeFormat: time.RFC3339,
 		TimeZone:   "Local",
 	}))
-	handler := api.NewHandler(store, runner)
+	handler := api.NewHandler(store, runner, cfg)
 	handler.RegisterRoutes(app)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)

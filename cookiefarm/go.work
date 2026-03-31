@@ -15,8 +15,9 @@ use (
 	./pkg/protocols
 	./pkg/system
 	./server
-	./server/internal/config
 	./server/api
+	./server/internal/config
+	./server/internal/controllers
 	./server/internal/core
 	./server/internal/database
 	./server/internal/ui

@@ -2,6 +2,7 @@ package database
 
 import (
 	"protocols"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -16,7 +17,7 @@ func TestMapFromFlagToDBParams_FullyPopulated_AllFieldsCopied(t *testing.T) {
 		SubmitTime:   1_700_000_000,
 		ResponseTime: 1_700_000_100,
 		Msg:          "flag accepted",
-		Status:       "ACCEPTED",
+		Status:       1,
 		TeamID:       42,
 		Username:     "alice",
 		ExploitName:  "exploit_alpha",
@@ -43,7 +44,7 @@ func TestMapFromFlagToDBParams_FullyPopulated_AllFieldsCopied(t *testing.T) {
 		t.Errorf("Msg: want %q, got %q", input.Msg, got.Msg)
 	}
 	if got.Status != input.Status {
-		t.Errorf("Status: want %q, got %q", input.Status, got.Status)
+		t.Errorf("Status: want %d, got %d", input.Status, got.Status)
 	}
 	if got.TeamID != input.TeamID {
 		t.Errorf("TeamID: want %d, got %d", input.TeamID, got.TeamID)
@@ -79,8 +80,8 @@ func TestMapFromFlagToDBParams_ZeroValue_AllFieldsZero(t *testing.T) {
 	if got.Msg != "" {
 		t.Errorf("Msg: want empty string, got %q", got.Msg)
 	}
-	if got.Status != "" {
-		t.Errorf("Status: want empty string, got %q", got.Status)
+	if got.Status != 0 {
+		t.Errorf("Status: want 0, got %d", got.Status)
 	}
 	if got.TeamID != 0 {
 		t.Errorf("TeamID: want 0, got %d", got.TeamID)
@@ -163,13 +164,13 @@ func TestMapFromFlagToDBParams_ReturnsValueNotReference_OriginalUnchanged(t *tes
 
 	got := MapFromFlagToDBParams(input)
 	got.FlagCode = "FLAG{mutated}"
-	got.Status = "MUTATED"
+	got.Status = 3
 
 	// The original input must not have changed.
 	if input.FlagCode == "FLAG{mutated}" {
 		t.Error("MapFromFlagToDBParams returned a reference: mutating result changed input.FlagCode")
 	}
-	if input.Status == "MUTATED" {
+	if input.Status == 3 {
 		t.Error("MapFromFlagToDBParams returned a reference: mutating result changed input.Status")
 	}
 }
@@ -179,7 +180,7 @@ func TestMapFromFlagToDBParams_ReturnsValueNotReference_OriginalUnchanged(t *tes
 func TestMapFromResponseProtocolToParamsToUpdate_FullyPopulated_FieldsMapped(t *testing.T) {
 	input := protocols.ResponseProtocol{
 		Flag:   "FLAG{response_001}",
-		Status: "ACCEPTED",
+		Status: 1,
 		Msg:    "congratulations",
 	}
 
@@ -189,7 +190,7 @@ func TestMapFromResponseProtocolToParamsToUpdate_FullyPopulated_FieldsMapped(t *
 		t.Errorf("FlagCode: want %q, got %q", input.Flag, got.FlagCode)
 	}
 	if got.Status != input.Status {
-		t.Errorf("Status: want %q, got %q", input.Status, got.Status)
+		t.Errorf("Status: want %d, got %d", input.Status, got.Status)
 	}
 	if got.Msg != input.Msg {
 		t.Errorf("Msg: want %q, got %q", input.Msg, got.Msg)
@@ -207,8 +208,8 @@ func TestMapFromResponseProtocolToParamsToUpdate_ZeroValue_StringFieldsEmptyTime
 	if got.FlagCode != "" {
 		t.Errorf("FlagCode: want empty string, got %q", got.FlagCode)
 	}
-	if got.Status != "" {
-		t.Errorf("Status: want empty string, got %q", got.Status)
+	if got.Status != 0 {
+		t.Errorf("Status: want 0, got %d", got.Status)
 	}
 	if got.Msg != "" {
 		t.Errorf("Msg: want empty string, got %q", got.Msg)
@@ -230,7 +231,7 @@ func TestMapFromResponseProtocolToParamsToUpdate_ResponseTimeIsCurrentTimestamp(
 
 	input := protocols.ResponseProtocol{
 		Flag:   "FLAG{rt_timestamp}",
-		Status: "DENIED",
+		Status: 2,
 		Msg:    "already submitted",
 	}
 
@@ -247,20 +248,20 @@ func TestMapFromResponseProtocolToParamsToUpdate_ResponseTimeIsCurrentTimestamp(
 }
 
 func TestMapFromResponseProtocolToParamsToUpdate_StatusVariants_AllPreserved(t *testing.T) {
-	statuses := []string{"ACCEPTED", "DENIED", "ERROR", "UNSUBMITTED", "custom_status"}
+	statuses := []int64{1, 2, 3, 0}
 
 	for _, status := range statuses {
-		t.Run("status_"+status, func(t *testing.T) {
+		t.Run("status_"+strconv.Itoa(int(status)), func(t *testing.T) {
 			input := protocols.ResponseProtocol{
 				Flag:   "FLAG{status_test}",
 				Status: status,
-				Msg:    "msg for " + status,
+				Msg:    "msg for " + strconv.FormatInt(status, 10),
 			}
 
 			got := MapFromResponseProtocolToParamsToUpdate(input)
 
 			if got.Status != status {
-				t.Errorf("Status: want %q, got %q", status, got.Status)
+				t.Errorf("Status: want %d, got %d", status, got.Status)
 			}
 		})
 	}
@@ -271,7 +272,7 @@ func TestMapFromResponseProtocolToParamsToUpdate_FlagFieldMapped_NotMsg(t *testi
 	// UpdateFlagStatusByCodeParams.FlagCode, not into Msg or any other field.
 	input := protocols.ResponseProtocol{
 		Flag:   "FLAG{field_guard}",
-		Status: "ACCEPTED",
+		Status: 1,
 		Msg:    "different_value",
 	}
 
@@ -288,7 +289,7 @@ func TestMapFromResponseProtocolToParamsToUpdate_FlagFieldMapped_NotMsg(t *testi
 func TestMapFromResponseProtocolToParamsToUpdate_ReturnsValueNotReference(t *testing.T) {
 	input := protocols.ResponseProtocol{
 		Flag:   "FLAG{ref_guard}",
-		Status: "ACCEPTED",
+		Status: 1,
 		Msg:    "ok",
 	}
 

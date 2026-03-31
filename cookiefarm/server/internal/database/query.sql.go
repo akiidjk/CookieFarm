@@ -24,7 +24,7 @@ type AddFlagParams struct {
 	PortService  uint16 `json:"port_service"`
 	SubmitTime   uint64 `json:"submit_time"`
 	ResponseTime uint64 `json:"response_time"`
-	Status       string `json:"status"`
+	Status       int64  `json:"status"`
 	TeamID       int64  `json:"team_id"`
 	Msg          string `json:"msg"`
 	Username     string `json:"username"`
@@ -51,7 +51,7 @@ const countFilteredFlags = `-- name: CountFilteredFlags :one
 SELECT COUNT(*) FROM flags
 WHERE
     (team_id = ?1 OR ?1 IS NULL)
-    AND (status = ?2 OR ?2 IS NULL)
+    AND (status = ?2 OR ?2 is NULL)
     AND (service_name = ?3 OR ?3 IS NULL)
     AND (
         ?4 IS NULL
@@ -74,7 +74,7 @@ WHERE
 
 type CountFilteredFlagsParams struct {
 	TeamID      sql.NullInt64  `json:"team_id"`
-	Status      sql.NullString `json:"status"`
+	Status      sql.NullInt64  `json:"status"`
 	ServiceName sql.NullString `json:"service_name"`
 	Search      interface{}    `json:"search"`
 	SearchField interface{}    `json:"search_field"`
@@ -226,7 +226,7 @@ LIMIT ?7 OFFSET ?6
 
 type GetFilteredFlagsParams struct {
 	TeamID      sql.NullInt64  `json:"team_id"`
-	Status      sql.NullString `json:"status"`
+	Status      sql.NullInt64  `json:"status"`
 	Search      interface{}    `json:"search"`
 	SearchField interface{}    `json:"search_field"`
 	SearchLike  sql.NullString `json:"search_like"`
@@ -499,7 +499,7 @@ func (q *Queries) GetPagedFlags(ctx context.Context, arg GetPagedFlagsParams) ([
 
 const getUnsubmittedFlagCodes = `-- name: GetUnsubmittedFlagCodes :many
 SELECT flag_code FROM flags
-WHERE status = 'UNSUBMITTED'
+WHERE status = 0
 LIMIT ?
 `
 
@@ -529,7 +529,7 @@ func (q *Queries) GetUnsubmittedFlagCodes(ctx context.Context, limit int64) ([]s
 const getUnsubmittedFlags = `-- name: GetUnsubmittedFlags :many
 SELECT flag_code, service_name, port_service, submit_time, response_time, msg, status, team_id, username, exploit_name
 FROM flags
-WHERE status = 'UNSUBMITTED'
+WHERE status = 0
 ORDER BY submit_time ASC
 LIMIT ?
 `
@@ -578,7 +578,7 @@ WHERE flag_code = ?
 `
 
 type UpdateFlagStatusByCodeParams struct {
-	Status       string `json:"status"`
+	Status       int64  `json:"status"`
 	Msg          string `json:"msg"`
 	ResponseTime uint64 `json:"response_time"`
 	FlagCode     string `json:"flag_code"`

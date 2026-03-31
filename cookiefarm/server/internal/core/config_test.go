@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"server/config"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,16 +14,18 @@ import (
 // --- NewRunner ----------------------------------------------------------------
 
 func TestNewRunner_WithValidStore_ReturnsNonNil(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	store := newTestStore(t)
-	r := NewRunner(store)
+	cfg := newTestConfig(t)
+	r := NewRunner(store, cfg)
 	require.NotNil(t, r)
 }
 
 func TestNewRunner_StoreIsWired(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	store := newTestStore(t)
-	r := NewRunner(store)
+	cfg := newTestConfig(t)
+	r := NewRunner(store, cfg)
 	// The store is unexported, but we can verify the runner works correctly
 	// by calling a method that depends on the store — if it panics the store
 	// was not wired.
@@ -35,34 +35,37 @@ func TestNewRunner_StoreIsWired(t *testing.T) {
 }
 
 func TestNewRunner_WithNilStore_DoesNotPanic(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
+	cfg := newTestConfig(t)
 	assert.NotPanics(t, func() {
-		_ = NewRunner(nil)
+		_ = NewRunner(nil, cfg)
 	})
 }
 
 func TestNewRunner_TwoInstances_AreIndependent(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	s1 := newTestStore(t)
 	s2 := newTestStore(t)
-	r1 := NewRunner(s1)
-	r2 := NewRunner(s2)
+	cfg := newTestConfig(t)
+	r1 := NewRunner(s1, cfg)
+	r2 := NewRunner(s2, cfg)
 	assert.NotSame(t, r1, r2)
 }
 
 // --- Runner.Run ---------------------------------------------------------------
 
 func TestRun_FirstCall_TTLDisabled_SpawnsProcessingLoop(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	// Disable TTL so only one goroutine is spawned.
-	orig := config.SharedConfig.ConfigServer.FlagTTL
-	config.SharedConfig.ConfigServer.FlagTTL = 0
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.FlagTTL = orig })
+	cfg := newTestConfig(t)
+	orig := cfg.GetFlagTTL()
+	cfg.SetFlagTTL(0)
+	t.Cleanup(func() { cfg.SetFlagTTL(orig) })
 
 	// Use a very large submit interval so the loop doesn't fire during the test.
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
 	r := newTestRunner(t)
 
@@ -74,18 +77,19 @@ func TestRun_FirstCall_TTLDisabled_SpawnsProcessingLoop(t *testing.T) {
 }
 
 func TestRun_FirstCall_TTLEnabled_DoesNotPanic(t *testing.T) {
-	t.Parallel()
-	orig := config.SharedConfig.ConfigServer.FlagTTL
-	config.SharedConfig.ConfigServer.FlagTTL = 1
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.FlagTTL = orig })
+	// t.Parallel()
+	cfg := newTestConfig(t)
+	orig := cfg.GetFlagTTL()
+	cfg.SetFlagTTL(1)
+	t.Cleanup(func() { cfg.SetFlagTTL(orig) })
 
-	origTick := config.SharedConfig.ConfigServer.TickTime
-	config.SharedConfig.ConfigServer.TickTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.TickTime = origTick })
+	origTick := cfg.GetTickTime()
+	cfg.SetTickTime(9999)
+	t.Cleanup(func() { cfg.SetTickTime(origTick) })
 
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
 	r := newTestRunner(t)
 	assert.NotPanics(t, func() { r.Run() })
@@ -94,14 +98,15 @@ func TestRun_FirstCall_TTLEnabled_DoesNotPanic(t *testing.T) {
 }
 
 func TestRun_SetsShutdownCancel(t *testing.T) {
-	t.Parallel()
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	// t.Parallel()
+	cfg := newTestConfig(t)
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
-	origTTL := config.SharedConfig.ConfigServer.FlagTTL
-	config.SharedConfig.ConfigServer.FlagTTL = 0
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.FlagTTL = origTTL })
+	origTTL := cfg.GetFlagTTL()
+	cfg.SetFlagTTL(0)
+	t.Cleanup(func() { cfg.SetFlagTTL(origTTL) })
 
 	r := newTestRunner(t)
 	require.Nil(t, r.shutdownCancel, "shutdownCancel should be nil before Run")
@@ -113,14 +118,15 @@ func TestRun_SetsShutdownCancel(t *testing.T) {
 }
 
 func TestRun_Reentrant_CancelsPreviousContext(t *testing.T) {
-	t.Parallel()
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	// t.Parallel()
+	cfg := newTestConfig(t)
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
-	origTTL := config.SharedConfig.ConfigServer.FlagTTL
-	config.SharedConfig.ConfigServer.FlagTTL = 0
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.FlagTTL = origTTL })
+	origTTL := cfg.GetFlagTTL()
+	cfg.SetFlagTTL(0)
+	t.Cleanup(func() { cfg.SetFlagTTL(origTTL) })
 
 	r := newTestRunner(t)
 
@@ -142,14 +148,15 @@ func TestRun_Reentrant_CancelsPreviousContext(t *testing.T) {
 }
 
 func TestRun_Reentrant_DoesNotPanic(t *testing.T) {
-	t.Parallel()
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	// t.Parallel()
+	cfg := newTestConfig(t)
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
-	origTTL := config.SharedConfig.ConfigServer.FlagTTL
-	config.SharedConfig.ConfigServer.FlagTTL = 0
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.FlagTTL = origTTL })
+	origTTL := cfg.GetFlagTTL()
+	cfg.SetFlagTTL(0)
+	t.Cleanup(func() { cfg.SetFlagTTL(origTTL) })
 
 	r := newTestRunner(t)
 
@@ -182,14 +189,14 @@ server:
   submit_flag_checker_time: 9999
   flag_ttl: 0
 
-client:
+shared:
   regex_flag: "[A-Z0-9]{32}="
 
 configured: false
 `
 
 func TestLoadConfigAndRun_ValidFile_ReturnsNil(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	path := writeConfigFile(t, minimalValidConfig)
 	r := newTestRunner(t)
 
@@ -199,35 +206,36 @@ func TestLoadConfigAndRun_ValidFile_ReturnsNil(t *testing.T) {
 }
 
 func TestLoadConfigAndRun_ValidFile_SetsConfigured(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	path := writeConfigFile(t, minimalValidConfig)
 	r := newTestRunner(t)
 
 	// Ensure Configured starts false.
-	config.SharedConfig.Configured = false
+	cfg := newTestConfig(t)
+	cfg.SetConfigured(false)
 
 	err := r.LoadConfig(path)
 	require.NoError(t, err)
-	assert.True(t, config.SharedConfig.Configured)
+	assert.True(t, cfg.GetConfigured())
 	resetShutdownCancel(t, r)
 }
 
 func TestLoadConfigAndRun_ValidFile_PopulatesSharedConfig(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	path := writeConfigFile(t, minimalValidConfig)
 	r := newTestRunner(t)
 
 	err := r.LoadConfig(path)
 	require.NoError(t, err)
 
-	assert.Equal(t, "http://checker.local/flags", config.SharedConfig.ConfigServer.URLFlagChecker)
-	assert.Equal(t, "tok123", config.SharedConfig.ConfigServer.TeamToken)
-	assert.Equal(t, uint(100), config.SharedConfig.ConfigServer.MaxFlagBatchSize)
+	assert.Equal(t, "http://checker.local/flags", r.config.GetURLFlagChecker())
+	assert.Equal(t, "tok123", r.config.GetTeamToken())
+	assert.Equal(t, uint(100), r.config.GetMaxFlagBatchSize())
 	resetShutdownCancel(t, r)
 }
 
 func TestLoadConfigAndRun_NonExistentPath_ReturnsError(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	r := newTestRunner(t)
 
 	err := r.LoadConfig("/nonexistent/path/config.yml")
@@ -236,19 +244,20 @@ func TestLoadConfigAndRun_NonExistentPath_ReturnsError(t *testing.T) {
 }
 
 func TestLoadConfigAndRun_NonExistentPath_DoesNotModifyConfig(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	r := newTestRunner(t)
 
-	config.SharedConfig.ConfigServer.TeamToken = "original-token"
+	cfg := newTestConfig(t)
+	cfg.SetTeamToken("original-token")
 
 	_ = r.LoadConfig("/nonexistent/path/config.yml")
 
-	assert.Equal(t, "original-token", config.SharedConfig.ConfigServer.TeamToken)
+	assert.Equal(t, "original-token", cfg.GetTeamToken())
 	resetShutdownCancel(t, r)
 }
 
 func TestLoadConfig_EmptyPath_ReturnsError(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	r := newTestRunner(t)
 
 	err := r.LoadConfig("")
@@ -257,7 +266,7 @@ func TestLoadConfig_EmptyPath_ReturnsError(t *testing.T) {
 }
 
 func TestLoadConfig_MalformedYAML_ReturnsError(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	path := writeConfigFile(t, ":::not valid yaml:::{{{")
 	r := newTestRunner(t)
 
@@ -267,7 +276,7 @@ func TestLoadConfig_MalformedYAML_ReturnsError(t *testing.T) {
 }
 
 func TestLoadConfig_EmptyFile_DoesNotPanic(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	path := writeConfigFile(t, "")
 	r := newTestRunner(t)
 
@@ -278,20 +287,21 @@ func TestLoadConfig_EmptyFile_DoesNotPanic(t *testing.T) {
 }
 
 func TestLoadConfig_AlreadyConfiguredTrue_RemainsTrue(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	path := writeConfigFile(t, minimalValidConfig)
 	r := newTestRunner(t)
 
-	config.SharedConfig.Configured = true
+	cfg := newTestConfig(t)
+	cfg.SetConfigured(true)
 
 	err := r.LoadConfig(path)
 	require.NoError(t, err)
-	assert.True(t, config.SharedConfig.Configured)
+	assert.True(t, cfg.GetConfigured())
 	resetShutdownCancel(t, r)
 }
 
 func TestLoadConfig_ValidFile_StartsRunner(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	path := writeConfigFile(t, minimalValidConfig)
 	r := newTestRunner(t)
 
@@ -305,7 +315,7 @@ func TestLoadConfig_ValidFile_StartsRunner(t *testing.T) {
 }
 
 func TestLoadConfig_CalledTwice_SecondCallOverridesFirst(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	r := newTestRunner(t)
 
 	cfg1 := writeConfigFile(t, `
@@ -327,21 +337,22 @@ configured: false
 	require.NoError(t, r.LoadConfig(cfg1))
 	require.NoError(t, r.LoadConfig(cfg2))
 
-	assert.Equal(t, "second", config.SharedConfig.ConfigServer.TeamToken)
+	assert.Equal(t, "second", r.config.GetTeamToken())
 	resetShutdownCancel(t, r)
 }
 
 // --- Integration: Run goroutines terminate on cancel -------------------------
 
 func TestRun_GoroutinesTerminateAfterCancel(t *testing.T) {
-	t.Parallel()
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	// t.Parallel()
+	cfg := newTestConfig(t)
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
-	origTTL := config.SharedConfig.ConfigServer.FlagTTL
-	config.SharedConfig.ConfigServer.FlagTTL = 0
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.FlagTTL = origTTL })
+	origTTL := cfg.GetFlagTTL()
+	cfg.SetFlagTTL(0)
+	t.Cleanup(func() { cfg.SetFlagTTL(origTTL) })
 
 	r := newTestRunner(t)
 	r.Run()
@@ -357,19 +368,21 @@ func TestRun_GoroutinesTerminateAfterCancel(t *testing.T) {
 }
 
 func TestRun_WithNilStore_SpawnsLoopWithoutPanic(t *testing.T) {
-	t.Parallel()
-	origInterval := config.SharedConfig.ConfigServer.SubmitFlagCheckerTime
-	config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = 9999
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.SubmitFlagCheckerTime = origInterval })
+	// t.Parallel()
+	cfg := newTestConfig(t)
+	origInterval := cfg.GetSubmitFlagCheckerTime()
+	cfg.SetSubmitFlagCheckerTime(9999)
+	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
-	origTTL := config.SharedConfig.ConfigServer.FlagTTL
-	config.SharedConfig.ConfigServer.FlagTTL = 0
-	t.Cleanup(func() { config.SharedConfig.ConfigServer.FlagTTL = origTTL })
+	origTTL := cfg.GetFlagTTL()
+	cfg.SetFlagTTL(0)
+	t.Cleanup(func() { cfg.SetFlagTTL(origTTL) })
 
 	// A Runner with a nil store is an edge case documented in the analysis.
 	// Run() itself must not panic; the goroutine will fail when it first
 	// tries to query the store, but that is contained inside the goroutine.
-	r := NewRunner(nil)
+	cfg2 := newTestConfig(t)
+	r := NewRunner(nil, cfg2)
 	assert.NotPanics(t, func() { r.Run() })
 
 	// Allow the goroutine to start and hit the store, then cancel.
@@ -383,9 +396,10 @@ func TestRun_WithNilStore_SpawnsLoopWithoutPanic(t *testing.T) {
 // --- Verify database.Store is a valid dependency ------------------------------
 
 func TestNewRunner_StoreQueriesAreAccessible(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	store := newTestStore(t)
-	r := NewRunner(store)
+	cfg := newTestConfig(t)
+	r := NewRunner(store, cfg)
 	require.NotNil(t, r)
 
 	// Insert a flag via the store and confirm the runner's underlying store
@@ -402,13 +416,14 @@ func TestNewRunner_StoreQueriesAreAccessible(t *testing.T) {
 // Ensure LoadConfigAndRun does not leave the config in a configured=true state
 // when the YAML file is missing.
 func TestLoadConfigAndRun_MissingFile_ConfiguredStaysFalse(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 	r := newTestRunner(t)
 
-	config.SharedConfig.Configured = false
+	cfg := newTestConfig(t)
+	cfg.SetConfigured(false)
 
 	_ = r.LoadConfig("/does/not/exist.yml")
 
-	assert.False(t, config.SharedConfig.Configured)
+	assert.False(t, cfg.GetConfigured())
 	resetShutdownCancel(t, r)
 }

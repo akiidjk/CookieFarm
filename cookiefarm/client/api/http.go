@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -61,7 +62,7 @@ func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, co
 
 	if authed {
 		if c.token == "" {
-			return nil, nil, fmt.Errorf("missing auth token")
+			return nil, nil, errors.New("missing auth token")
 		}
 		req.Header.Set("Cookie", "token="+c.token)
 	}

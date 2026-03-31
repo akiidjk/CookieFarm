@@ -15,9 +15,9 @@ import (
 
 // StartFlagProcessingLoop starts the flag processing loop.
 func (r *Runner) StartFlagProcessingLoop(ctx context.Context) {
-	interval := time.Duration(config.SharedConfig.ConfigServer.SubmitFlagCheckerTime) * time.Second
+	interval := time.Duration(r.config.GetSubmitFlagCheckerTime()) * time.Second
 	if interval <= 0 {
-		logger.Log.Warn().Msgf("Invalid SubmitFlagCheckerTime %d, defaulting to 60 seconds", config.SharedConfig.ConfigServer.SubmitFlagCheckerTime)
+		logger.Log.Warn().Msgf("Invalid SubmitFlagCheckerTime %d, defaulting to 60 seconds", r.config.GetSubmitFlagCheckerTime())
 		interval = 60 * time.Second
 	}
 	ticker := time.NewTicker(interval)
@@ -27,7 +27,7 @@ func (r *Runner) StartFlagProcessingLoop(ctx context.Context) {
 
 	var err error
 	if config.Submit == nil {
-		config.Submit, err = protocols.LoadProtocol(config.SharedConfig.ConfigServer.Protocol) // Change from config
+		config.Submit, err = protocols.LoadProtocol(r.config.GetProtocol()) // Change from config
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("Failed to load protocol")
 			return
@@ -42,7 +42,7 @@ func (r *Runner) StartFlagProcessingLoop(ctx context.Context) {
 			logger.Log.Info().Msg("Flag processing loop terminated")
 			return
 		case <-ticker.C:
-			flags, err := r.store.Queries.GetUnsubmittedFlagCodes(ctx, int64(config.SharedConfig.ConfigServer.MaxFlagBatchSize)) // Cast not good, but we know the value is within int64 range
+			flags, err := r.store.Queries.GetUnsubmittedFlagCodes(ctx, int64(r.config.GetMaxFlagBatchSize())) // Cast not good, but we know the value is within int64 range
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("Failed to get unsubmitted flags")
 				continue
@@ -54,8 +54,8 @@ func (r *Runner) StartFlagProcessingLoop(ctx context.Context) {
 
 			logger.Log.Info().Int("count", len(flags)).Msg("Submitting flags to checker")
 			responses, err := config.Submit(
-				config.SharedConfig.ConfigServer.URLFlagChecker,
-				config.SharedConfig.ConfigServer.TeamToken,
+				r.config.GetURLFlagChecker(),
+				r.config.GetTeamToken(),
 				flags,
 			)
 			if err != nil {
@@ -68,7 +68,7 @@ func (r *Runner) StartFlagProcessingLoop(ctx context.Context) {
 }
 
 func (r *Runner) UpdateFlags(flags []protocols.ResponseProtocol) {
-	statusCounts := map[string]int{
+	statusCounts := map[int64]int{
 		models.StatusAccepted: 0,
 		models.StatusDenied:   0,
 		models.StatusError:    0,

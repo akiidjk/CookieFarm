@@ -2,6 +2,7 @@ package main
 
 import (
 	"logger"
+	"sharedconfig"
 
 	"client/cmd"
 	"client/config"
@@ -13,7 +14,7 @@ var (
 	useTUI    bool
 )
 
-const VERSION = "v1.2.0"
+var VERSION = sharedconfig.GetVersion()
 
 func startTui() {
 	err := tui.StartTUI(logger.GetBanner("client"))

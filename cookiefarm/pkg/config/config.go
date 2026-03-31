@@ -1,7 +1,9 @@
 package sharedconfig
 
 import (
+	"fmt"
 	"models"
+	"runtime/debug"
 	"sync"
 )
 
@@ -30,4 +32,13 @@ func GetInstance() *Shared {
 
 func (cfg *Shared) Set(new Shared) {
 	*cfg = new
+}
+
+func GetVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		fmt.Println("Build info not available")
+		return ""
+	}
+	return info.Main.Version
 }

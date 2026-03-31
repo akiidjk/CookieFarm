@@ -2,11 +2,18 @@
 package config
 
 import (
-	"models"
 	"protocols"
+	"sharedconfig"
 )
 
-var SharedConfig models.ConfigShared // Initialize the config struct
+type Config struct {
+	flagTTL uint64
+}
+
+var (
+	SharedConfig sharedconfig.Shared // Initialize the config struct
+	Config       Config
+)
 
 var (
 	Debug         bool                                                                 // Global debug flag

@@ -66,7 +66,7 @@ func sampleFlag(flagCode string) Flag {
 		SubmitTime:   uint64(time.Now().Unix()),
 		ResponseTime: uint64(time.Now().Unix()),
 		Msg:          "ok",
-		Status:       "ACCEPTED",
+		Status:       1,
 		TeamID:       1,
 		Username:     "tester",
 		ExploitName:  "exploit_test",
@@ -126,7 +126,7 @@ func assertFlagsEqual(t *testing.T, want, got Flag) {
 		t.Errorf("Msg: want %q, got %q", want.Msg, got.Msg)
 	}
 	if want.Status != got.Status {
-		t.Errorf("Status: want %q, got %q", want.Status, got.Status)
+		t.Errorf("Status: want %d, got %d", want.Status, got.Status)
 	}
 	if want.TeamID != got.TeamID {
 		t.Errorf("TeamID: want %d, got %d", want.TeamID, got.TeamID)

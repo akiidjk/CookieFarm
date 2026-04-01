@@ -13,11 +13,12 @@ import (
 
 type Runner struct {
 	store          *database.Store
+	config         *config.ConfigManager
 	shutdownCancel context.CancelFunc
 }
 
-func NewRunner(s *database.Store) *Runner {
-	return &Runner{store: s}
+func NewRunner(s *database.Store, c *config.ConfigManager) *Runner {
+	return &Runner{store: s, config: c}
 }
 
 func (r *Runner) Run() {
@@ -29,14 +30,14 @@ func (r *Runner) Run() {
 
 	go r.StartFlagProcessingLoop(ctx)
 
-	if config.SharedConfig.ConfigServer.FlagTTL != 0 {
-		logger.Log.Warn().Msgf("Flag TTL is set to %d seconds, starting validation loop", config.SharedConfig.ConfigServer.FlagTTL)
-		go r.ValidateFlagTTL(ctx, config.SharedConfig.ConfigServer.FlagTTL, config.SharedConfig.ConfigServer.TickTime)
+	if r.config.GetFlagTTL() != 0 {
+		logger.Log.Warn().Msgf("Flag TTL is set to %d seconds, starting validation loop", r.config.GetFlagTTL())
+		go r.ValidateFlagTTL(ctx, r.config.GetFlagTTL(), uint64(r.config.GetTickTime()))
 	}
 }
 
 // LoadConfigAndRun loads the configuration from the given path.
-func (*Runner) LoadConfig(path string) error {
+func (r *Runner) LoadConfig(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		logger.Log.Error().Err(err).Msg("Configuration file does not exist")
 		return err
@@ -48,15 +49,16 @@ func (*Runner) LoadConfig(path string) error {
 		return err
 	}
 
-	err = yaml.Unmarshal(data, &config.SharedConfig)
+	tmp := r.config.GetFullConfig()
+
+	err = yaml.Unmarshal(data, &tmp)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to parse configuration file")
+		logger.Log.Error().Err(err).Msg("Failed to parse configuration file into tmp")
 		return err
 	}
 
-	if !config.SharedConfig.Configured {
-		config.SharedConfig.Configured = true
-	}
+	r.config.SetFullConfig(tmp)
+	r.config.SetConfigured(true)
 
 	return nil
 }

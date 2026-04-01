@@ -16,10 +16,12 @@ use (
 	./pkg/system
 	./server
 	./server/api
-	./server/core
-	./server/database
-	./server/ui
-	./server/websockets
+	./server/internal/config
+	./server/internal/controllers
+	./server/internal/core
+	./server/internal/database
+	./server/internal/ui
+	./server/internal/websockets
 )
 
 replace (

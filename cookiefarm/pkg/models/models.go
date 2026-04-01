@@ -7,6 +7,7 @@ const (
 	StatusAccepted           // Status for accepted flags
 	StatusDenied             // Status for denied flags
 	StatusError              // Status for error flags
+	StatusNotValid
 )
 
 type Service struct {

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"logger"
-	"models"
 	"time"
 
+	"server/config"
 	"server/database"
 )
 
@@ -60,7 +60,7 @@ func FlagHandler(event Event, client *Client) error {
 }
 
 func ConfigHandler(event Event, client *Client) error {
-	var configData models.ConfigShared
+	var configData config.Config
 	if err := json.Unmarshal(event.Payload, &configData); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}

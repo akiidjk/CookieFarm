@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS flags (
     submit_time INTEGER,  -- Unix timestamp
     response_time INTEGER, -- Unix timestamp
     msg VARCHAR(255) NOT NULL DEFAULT '',
-    status VARCHAR(255) NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
     team_id INTEGER NOT NULL,
     username VARCHAR(255) NOT NULL DEFAULT '',
     exploit_name VARCHAR(255) NOT NULL DEFAULT ''

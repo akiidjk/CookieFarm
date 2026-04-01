@@ -67,13 +67,13 @@ func TestWithTx_MultipleOpsInFn_AllCommitted(t *testing.T) {
 func TestWithTx_FnUpdatesFlag_UpdateCommitted(t *testing.T) {
 	store := newTestStore(t)
 	flag := sampleFlag("FLAG{tx_update_001}")
-	flag.Status = "UNSUBMITTED"
+	flag.Status = 0
 	insertFlag(t, store.Queries, flag)
 
 	err := store.WithTx(context.Background(), func(q *Queries) error {
 		return q.UpdateFlagStatusByCode(context.Background(), UpdateFlagStatusByCodeParams{
 			FlagCode:     flag.FlagCode,
-			Status:       "ACCEPTED",
+			Status:       1,
 			Msg:          "committed update",
 			ResponseTime: 12345,
 		})
@@ -81,8 +81,8 @@ func TestWithTx_FnUpdatesFlag_UpdateCommitted(t *testing.T) {
 	assertNoError(t, err, "WithTx update commit")
 
 	got := mustGetFlag(t, store.Queries, flag.FlagCode)
-	if got.Status != "ACCEPTED" {
-		t.Errorf("expected Status=ACCEPTED after committed tx, got %q", got.Status)
+	if got.Status != 1 {
+		t.Errorf("expected Status=ACCEPTED after committed tx, got %d", got.Status)
 	}
 	if got.Msg != "committed update" {
 		t.Errorf("expected Msg=%q after committed tx, got %q", "committed update", got.Msg)

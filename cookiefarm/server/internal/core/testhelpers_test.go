@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"server/config"
 	"server/database"
 
 	_ "modernc.org/sqlite"
@@ -47,10 +48,15 @@ func newTestStore(t *testing.T) *database.Store {
 	return database.NewStore(newTestDB(t))
 }
 
+func newTestConfig(t *testing.T) *config.ConfigManager {
+	t.Helper()
+	return config.GetInstance()
+}
+
 // newTestRunner creates a Runner backed by a fresh in-memory store.
 func newTestRunner(t *testing.T) *Runner {
 	t.Helper()
-	return NewRunner(newTestStore(t))
+	return NewRunner(newTestStore(t), newTestConfig(t))
 }
 
 // --- Flag fixtures ------------------------------------------------------------
@@ -65,7 +71,7 @@ func sampleFlag(code string) database.Flag {
 		SubmitTime:   uint64(time.Now().Unix()),
 		ResponseTime: uint64(time.Now().Unix()),
 		Msg:          "ok",
-		Status:       "UNSUBMITTED",
+		Status:       0,
 		TeamID:       1,
 		Username:     "tester",
 		ExploitName:  "exploit_test",
@@ -107,7 +113,7 @@ type TestSubmitFunc func(string, string, []string) ([]protocols.ResponseProtocol
 // fakeSubmit returns a TestSubmitFunc that echoes every flag back with a fixed
 // status. If mu and calls are non-nil, each invocation appends a copy of the
 // flag slice to calls in a thread-safe manner.
-func fakeSubmit(status string, mu *sync.Mutex, calls *[][]string) TestSubmitFunc {
+func fakeSubmit(status int64, mu *sync.Mutex, calls *[][]string) TestSubmitFunc {
 	return func(_ string, _ string, flags []string) ([]protocols.ResponseProtocol, error) {
 		if calls != nil && mu != nil {
 			cp := make([]string, len(flags))
@@ -152,10 +158,10 @@ func waitFor(t *testing.T, timeout, poll time.Duration, msg string, cond func() 
 
 // waitForFlagStatus polls the store until the flag with the given code has the
 // expected status, or fails the test after timeout.
-func waitForFlagStatus(t *testing.T, store *database.Store, code, wantStatus string, timeout time.Duration) {
+func waitForFlagStatus(t *testing.T, store *database.Store, code string, wantStatus int64, timeout time.Duration) {
 	t.Helper()
 	waitFor(t, timeout, 21*time.Millisecond,
-		fmt.Sprintf("flag %q never reached status %q", code, wantStatus),
+		fmt.Sprintf("flag %q never reached status %d", code, wantStatus),
 		func() bool {
 			f, err := store.Queries.GetFlagByCode(context.Background(), code)
 			return err == nil && f.Status == wantStatus
@@ -164,7 +170,7 @@ func waitForFlagStatus(t *testing.T, store *database.Store, code, wantStatus str
 }
 
 // countFlagsWithStatus counts flags in the store with the given status value.
-func countFlagsWithStatus(t *testing.T, store *database.Store, status string) int {
+func countFlagsWithStatus(t *testing.T, store *database.Store, status int64) int {
 	t.Helper()
 	flags, err := store.Queries.GetAllFlags(context.Background())
 	if err != nil {

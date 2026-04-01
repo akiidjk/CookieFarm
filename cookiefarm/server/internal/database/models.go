@@ -11,7 +11,7 @@ type Flag struct {
 	SubmitTime   uint64 `json:"submit_time"`
 	ResponseTime uint64 `json:"response_time"`
 	Msg          string `json:"msg"`
-	Status       string `json:"status"`
+	Status       int64  `json:"status"`
 	TeamID       int64  `json:"team_id"`
 	Username     string `json:"username"`
 	ExploitName  string `json:"exploit_name"`

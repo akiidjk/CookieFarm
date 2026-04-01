@@ -54,7 +54,7 @@ func TestAddFlag_ZeroNumericFields_Inserted(t *testing.T) {
 		SubmitTime:   0,
 		ResponseTime: 0,
 		Msg:          "",
-		Status:       "UNSUBMITTED",
+		Status:       0,
 		TeamID:       0,
 		Username:     "",
 		ExploitName:  "",
@@ -378,18 +378,18 @@ func TestGetUnsubmittedFlags_ReturnsOnlyUnsubmitted(t *testing.T) {
 	q := newTestQueries(t)
 
 	unsubmitted := sampleFlag("FLAG{unsub_001}")
-	unsubmitted.Status = "UNSUBMITTED"
+	unsubmitted.Status = 0
 
 	accepted := sampleFlag("FLAG{unsub_accepted}")
-	accepted.Status = "ACCEPTED"
+	accepted.Status = 1
 
 	insertFlags(t, q, []Flag{unsubmitted, accepted})
 
 	got, err := q.GetUnsubmittedFlags(context.Background(), 10)
 	assertNoError(t, err, "GetUnsubmittedFlags")
 	assertFlagSliceLen(t, 1, got, "GetUnsubmittedFlags result")
-	if got[0].Status != "UNSUBMITTED" {
-		t.Errorf("expected Status=UNSUBMITTED, got %q", got[0].Status)
+	if got[0].Status != 0 {
+		t.Errorf("expected Status=UNSUBMITTED, got %d", got[0].Status)
 	}
 }
 
@@ -405,7 +405,7 @@ func TestGetUnsubmittedFlags_RespectsLimit(t *testing.T) {
 	q := newTestQueries(t)
 	for i := range 5 {
 		f := sampleFlag("FLAG{unsub_lim_" + string(rune('A'+i)) + "}")
-		f.Status = "UNSUBMITTED"
+		f.Status = 0
 		insertFlag(t, q, f)
 	}
 
@@ -419,11 +419,11 @@ func TestGetUnsubmittedFlags_OrderedBySubmitTimeAsc(t *testing.T) {
 	now := uint64(time.Now().Unix())
 
 	older := sampleFlag("FLAG{unsub_older}")
-	older.Status = "UNSUBMITTED"
+	older.Status = 0
 	older.SubmitTime = now - 200
 
 	newer := sampleFlag("FLAG{unsub_newer}")
-	newer.Status = "UNSUBMITTED"
+	newer.Status = 0
 	newer.SubmitTime = now
 
 	insertFlags(t, q, []Flag{newer, older})
@@ -445,10 +445,10 @@ func TestGetUnsubmittedFlagCodes_ReturnsOnlyUnsubmittedCodes(t *testing.T) {
 	q := newTestQueries(t)
 
 	unsubmitted := sampleFlag("FLAG{unsubcode_001}")
-	unsubmitted.Status = "UNSUBMITTED"
+	unsubmitted.Status = 0
 
 	accepted := sampleFlag("FLAG{unsubcode_acc}")
-	accepted.Status = "ACCEPTED"
+	accepted.Status = 1
 
 	insertFlags(t, q, []Flag{unsubmitted, accepted})
 
@@ -465,21 +465,21 @@ func TestGetUnsubmittedFlagCodes_ReturnsOnlyUnsubmittedCodes(t *testing.T) {
 func TestUpdateFlagStatusByCode_ExistingFlag_UpdatesFields(t *testing.T) {
 	q := newTestQueries(t)
 	flag := sampleFlag("FLAG{update_001}")
-	flag.Status = "UNSUBMITTED"
+	flag.Status = 0
 	insertFlag(t, q, flag)
 
 	newResponseTime := uint64(time.Now().Unix())
 	err := q.UpdateFlagStatusByCode(context.Background(), UpdateFlagStatusByCodeParams{
 		FlagCode:     flag.FlagCode,
-		Status:       "ACCEPTED",
+		Status:       1,
 		Msg:          "well done",
 		ResponseTime: newResponseTime,
 	})
 	assertNoError(t, err, "UpdateFlagStatusByCode")
 
 	got := mustGetFlag(t, q, flag.FlagCode)
-	if got.Status != "ACCEPTED" {
-		t.Errorf("Status: want ACCEPTED, got %q", got.Status)
+	if got.Status != 1 {
+		t.Errorf("Status: want ACCEPTED, got %d", got.Status)
 	}
 	if got.Msg != "well done" {
 		t.Errorf("Msg: want %q, got %q", "well done", got.Msg)
@@ -495,7 +495,7 @@ func TestUpdateFlagStatusByCode_NonExistentFlag_NoError(t *testing.T) {
 	// UPDATE on a non-existent PK is valid SQL and should not return an error.
 	err := q.UpdateFlagStatusByCode(context.Background(), UpdateFlagStatusByCodeParams{
 		FlagCode:     "FLAG{ghost}",
-		Status:       "ACCEPTED",
+		Status:       1,
 		Msg:          "ok",
 		ResponseTime: 0,
 	})
@@ -509,7 +509,7 @@ func TestUpdateFlagStatusByCode_ZeroResponseTime_Stored(t *testing.T) {
 
 	err := q.UpdateFlagStatusByCode(context.Background(), UpdateFlagStatusByCodeParams{
 		FlagCode:     flag.FlagCode,
-		Status:       "DENIED",
+		Status:       2,
 		Msg:          "nope",
 		ResponseTime: 0,
 	})
@@ -528,7 +528,7 @@ func TestUpdateFlagStatusByCode_ImmutableFieldsUnchanged(t *testing.T) {
 
 	_ = q.UpdateFlagStatusByCode(context.Background(), UpdateFlagStatusByCodeParams{
 		FlagCode:     flag.FlagCode,
-		Status:       "ERROR",
+		Status:       3,
 		Msg:          "error msg",
 		ResponseTime: 999,
 	})
@@ -662,13 +662,10 @@ func TestCountFlags_AfterInserts_ReturnsCorrectCount(t *testing.T) {
 
 // buildFilteredParams builds a GetFilteredFlagsParams with sane defaults for
 // the nullable / interface fields so callers only override what they need.
-func buildFilteredParams(teamID uint16, status, search, searchField string, limit, offset int64) GetFilteredFlagsParams {
+func buildFilteredParams(teamID uint16, status int64, search, searchField string, limit, offset int64) GetFilteredFlagsParams {
 	return GetFilteredFlagsParams{
-		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
-		Status: sql.NullString{
-			String: status,
-			Valid:  status != "",
-		},
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
+		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
 		Search:      nullOrValue(search),
 		SearchField: nullOrValue(searchField),
 		SearchLike:  sql.NullString{String: "%" + search + "%", Valid: search != ""},
@@ -695,7 +692,7 @@ func TestGetFilteredFlags_ByTeam_ReturnsOnlyThatTeam(t *testing.T) {
 	f2.TeamID = 20
 	insertFlags(t, q, []Flag{f1, f2})
 
-	params := buildFilteredParams(10, "", "", "", 10, 0)
+	params := buildFilteredParams(10, 0, "", "", 10, 0)
 	got, err := q.GetFilteredFlags(context.Background(), params)
 	assertNoError(t, err, "GetFilteredFlags by team")
 	assertFlagSliceLen(t, 1, got, "GetFilteredFlags by team result")
@@ -708,17 +705,17 @@ func TestGetFilteredFlags_ByStatus_ReturnsOnlyMatchingStatus(t *testing.T) {
 	q := newTestQueries(t)
 
 	accepted := sampleFlag("FLAG{filt_acc}")
-	accepted.Status = "ACCEPTED"
+	accepted.Status = 1
 	denied := sampleFlag("FLAG{filt_den}")
-	denied.Status = "DENIED"
+	denied.Status = 2
 	insertFlags(t, q, []Flag{accepted, denied})
 
-	params := buildFilteredParams(0, "ACCEPTED", "", "", 10, 0)
+	params := buildFilteredParams(0, 1, "", "", 10, 0)
 	got, err := q.GetFilteredFlags(context.Background(), params)
 	assertNoError(t, err, "GetFilteredFlags by status")
 	for _, f := range got {
-		if f.Status != "ACCEPTED" {
-			t.Errorf("expected Status=ACCEPTED, got %q", f.Status)
+		if f.Status != 1 {
+			t.Errorf("expected Status=ACCEPTED, got %d", f.Status)
 		}
 	}
 }
@@ -730,7 +727,7 @@ func TestGetFilteredFlags_SearchByFlagCode_ReturnsMatching(t *testing.T) {
 	other := sampleFlag("FLAG{search_other_abc}")
 	insertFlags(t, q, []Flag{target, other})
 
-	params := buildFilteredParams(0, "", "FLAG{search_target_xyz}", "flag_code", 10, 0)
+	params := buildFilteredParams(0, 0, "FLAG{search_target_xyz}", "flag_code", 10, 0)
 	got, err := q.GetFilteredFlags(context.Background(), params)
 	assertNoError(t, err, "GetFilteredFlags search by flag_code")
 	assertFlagSliceLen(t, 1, got, "GetFilteredFlags search by flag_code result")
@@ -748,7 +745,7 @@ func TestGetFilteredFlags_SearchByServiceName_ReturnsMatching(t *testing.T) {
 	f2.ServiceName = "normalservice"
 	insertFlags(t, q, []Flag{f1, f2})
 
-	params := buildFilteredParams(0, "", "special", "service_name", 10, 0)
+	params := buildFilteredParams(0, 0, "special", "service_name", 10, 0)
 	got, err := q.GetFilteredFlags(context.Background(), params)
 	assertNoError(t, err, "GetFilteredFlags search by service_name")
 	assertFlagSliceLen(t, 1, got, "GetFilteredFlags search by service_name result")
@@ -763,7 +760,7 @@ func TestGetFilteredFlags_SearchAll_MatchesAcrossColumns(t *testing.T) {
 	f2.ExploitName = "normal_exploit"
 	insertFlags(t, q, []Flag{f1, f2})
 
-	params := buildFilteredParams(0, "", "magic", "exploit_name", 10, 0)
+	params := buildFilteredParams(0, 0, "magic", "exploit_name", 10, 0)
 	got, err := q.GetFilteredFlags(context.Background(), params)
 	assertNoError(t, err, "GetFilteredFlags search all")
 	assertFlagSliceLen(t, 1, got, "GetFilteredFlags search all result")
@@ -777,12 +774,12 @@ func TestGetFilteredFlags_Pagination_LimitOffset(t *testing.T) {
 	}
 
 	page1, err := q.GetFilteredFlags(context.Background(),
-		buildFilteredParams(0, "", "", "", 2, 0))
+		buildFilteredParams(0, 0, "", "", 2, 0))
 	assertNoError(t, err, "GetFilteredFlags pagination page1")
 	assertFlagSliceLen(t, 2, page1, "GetFilteredFlags page1")
 
 	page3, err := q.GetFilteredFlags(context.Background(),
-		buildFilteredParams(0, "", "", "", 2, 4))
+		buildFilteredParams(0, 0, "", "", 2, 4))
 	assertNoError(t, err, "GetFilteredFlags pagination page3")
 	assertFlagSliceLen(t, 1, page3, "GetFilteredFlags page3 (last partial)")
 }
@@ -790,7 +787,7 @@ func TestGetFilteredFlags_Pagination_LimitOffset(t *testing.T) {
 func TestGetFilteredFlags_EmptyDB_ReturnsEmpty(t *testing.T) {
 	q := newTestQueries(t)
 
-	params := buildFilteredParams(0, "", "", "", 10, 0)
+	params := buildFilteredParams(0, 0, "", "", 10, 0)
 	got, err := q.GetFilteredFlags(context.Background(), params)
 	assertNoError(t, err, "GetFilteredFlags empty DB")
 	assertFlagSliceLen(t, 0, got, "GetFilteredFlags empty DB result")
@@ -800,13 +797,10 @@ func TestGetFilteredFlags_EmptyDB_ReturnsEmpty(t *testing.T) {
 
 // buildCountFilteredParams mirrors buildFilteredParams for the count variant.
 // buildCountFilteredParams builds a CountFilteredFlagsParams with sane defaults.
-func buildCountFilteredParams(teamID uint16, status, search, searchField string) CountFilteredFlagsParams {
+func buildCountFilteredParams(teamID uint16, status int64, search, searchField string) CountFilteredFlagsParams {
 	return CountFilteredFlagsParams{
-		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
-		Status: sql.NullString{
-			String: status,
-			Valid:  status != "",
-		},
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
+		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
 		Search:      nullOrValue(search),
 		SearchField: nullOrValue(searchField),
 		SearchLike:  sql.NullString{String: "%" + search + "%", Valid: search != ""},
@@ -817,7 +811,7 @@ func TestCountFilteredFlags_EmptyDB_ReturnsZero(t *testing.T) {
 	q := newTestQueries(t)
 
 	count, err := q.CountFilteredFlags(context.Background(),
-		buildCountFilteredParams(0, "", "", ""))
+		buildCountFilteredParams(0, 0, "", ""))
 	assertNoError(t, err, "CountFilteredFlags empty DB")
 	assertInt64Equal(t, 0, count, "CountFilteredFlags empty DB")
 }
@@ -831,7 +825,7 @@ func TestCountFilteredFlags_NoFilters_CountsAllRows(t *testing.T) {
 	})
 
 	count, err := q.CountFilteredFlags(context.Background(),
-		buildCountFilteredParams(0, "", "", ""))
+		buildCountFilteredParams(0, 0, "", ""))
 	assertNoError(t, err, "CountFilteredFlags no filters")
 	assertInt64Equal(t, 3, count, "CountFilteredFlags no filters — should count all rows")
 }
@@ -841,15 +835,15 @@ func TestCountFilteredFlags_ByStatus_CountsOnlyMatching(t *testing.T) {
 
 	for i := range 3 {
 		f := sampleFlag("FLAG{cffs_acc_" + string(rune('A'+i)) + "}")
-		f.Status = "ACCEPTED"
+		f.Status = 1
 		insertFlag(t, q, f)
 	}
 	denied := sampleFlag("FLAG{cffs_den}")
-	denied.Status = "DENIED"
+	denied.Status = 2
 	insertFlag(t, q, denied)
 
 	count, err := q.CountFilteredFlags(context.Background(),
-		buildCountFilteredParams(0, "ACCEPTED", "", ""))
+		buildCountFilteredParams(0, 1, "", ""))
 	assertNoError(t, err, "CountFilteredFlags by status=ACCEPTED")
 	assertInt64Equal(t, 3, count, "CountFilteredFlags by status=ACCEPTED — should count 3")
 }
@@ -858,15 +852,15 @@ func TestCountFilteredFlags_ByStatus_ExcludesNonMatching(t *testing.T) {
 	q := newTestQueries(t)
 
 	accepted := sampleFlag("FLAG{cffs_excl_acc}")
-	accepted.Status = "ACCEPTED"
+	accepted.Status = 1
 	insertFlag(t, q, accepted)
 
 	denied := sampleFlag("FLAG{cffs_excl_den}")
-	denied.Status = "DENIED"
+	denied.Status = 2
 	insertFlag(t, q, denied)
 
 	count, err := q.CountFilteredFlags(context.Background(),
-		buildCountFilteredParams(0, "DENIED", "", ""))
+		buildCountFilteredParams(0, 2, "", ""))
 	assertNoError(t, err, "CountFilteredFlags by status=DENIED")
 	assertInt64Equal(t, 1, count, "CountFilteredFlags by status=DENIED — should count 1")
 }
@@ -884,7 +878,7 @@ func TestCountFilteredFlags_ByTeam_CountsOnlyThatTeam(t *testing.T) {
 	insertFlag(t, q, other)
 
 	count, err := q.CountFilteredFlags(context.Background(),
-		buildCountFilteredParams(10, "", "", ""))
+		buildCountFilteredParams(10, 0, "", ""))
 	assertNoError(t, err, "CountFilteredFlags by team=10")
 	assertInt64Equal(t, 4, count, "CountFilteredFlags by team=10 — should count 4")
 }
@@ -898,7 +892,7 @@ func TestCountFilteredFlags_SearchByFlagCode_CountsMatching(t *testing.T) {
 	insertFlags(t, q, []Flag{match1, match2, nomatch})
 
 	count, err := q.CountFilteredFlags(context.Background(),
-		buildCountFilteredParams(0, "", "search_xyz", "flag_code"))
+		buildCountFilteredParams(0, 0, "search_xyz", "flag_code"))
 	assertNoError(t, err, "CountFilteredFlags search by flag_code")
 	assertInt64Equal(t, 2, count, "CountFilteredFlags search by flag_code — should count 2")
 }

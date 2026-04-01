@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -65,14 +66,14 @@ func StartWithContext(ctx context.Context, command string) (*Process, error) {
 
 func (p *Process) Wait() error {
 	if p.cmd == nil {
-		return fmt.Errorf("invalid process")
+		return errors.New("invalid process")
 	}
 	return p.cmd.Wait()
 }
 
 func (p *Process) Kill() error {
 	if p.cmd == nil || p.cmd.Process == nil {
-		return fmt.Errorf("process not started")
+		return errors.New("process not started")
 	}
 	return killProcess(p.cmd)
 }

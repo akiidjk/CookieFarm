@@ -17,10 +17,10 @@ type InfraMetaData struct {
 }
 
 type Config struct {
-	host     string `json:"host"`     // Host address of the server
-	username string `json:"username"` // Username of the client
-	port     uint16 `json:"port"`     // Port of the server
-	https    bool   `json:"protocol"` // Protocol used to connect to the server (e.g., http, https)
+	Host     string `json:"host" yaml:"host"`         // Host address of the server
+	Username string `json:"username" yaml:"username"` // Username of the client
+	Port     uint16 `json:"port" yaml:"port"`         // Port of the server
+	HTTPS    bool   `json:"protocol" yaml:"protocol"` // Protocol used to connect to the server (e.g., http, https)
 
 	services map[string]uint16
 }

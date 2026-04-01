@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"logger"
+	"sharedconfig"
 
 	"github.com/spf13/cobra"
 )
@@ -10,7 +11,7 @@ var rootCmd = &cobra.Command{
 	Use:     "ckc",
 	Short:   "CLI client for interacting with the CookieFarm exploit framework",
 	Long:    `CookieFarm is an automated exploitation framework developed by the ByteTheCookies team for the CyberChallenge competition. This CLI client connects to the CookieFarm server to deploy and manage exploits against target teams. To launch the terminal-based user interface (TUI), simply run the command "ckc" without any arguments.`, //nolint:revive
-	Version: "",
+	Version: sharedconfig.GetVersion(),
 }
 
 func buildCmd(useBanner *bool) *cobra.Command {

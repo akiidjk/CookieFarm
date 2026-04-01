@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/fang"
 )
 
@@ -14,7 +15,9 @@ func ParseArgs(version string, theme fang.ColorScheme, useBanner *bool) {
 		context.TODO(),
 		rootCmd,
 		fang.WithVersion(version),
-		fang.WithTheme(theme),
+		fang.WithColorSchemeFunc(func(ld lipgloss.LightDarkFunc) fang.ColorScheme {
+			return theme
+		}),
 	)
 	if err != nil {
 		os.Exit(1)

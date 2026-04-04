@@ -30,7 +30,6 @@ var (
 
 func getClient() *Client {
 	once.Do(func() {
-		
 		cm := config.GetInstance()
 		baseURL := fmt.Sprintf("http://%s:%d", cm.GetHost(), cm.GetPort())
 		
@@ -45,8 +44,9 @@ func getClient() *Client {
 	return instance
 }
 
-
 func (c *Client) setToken(token string) {
+	cm := config.GetInstance()
+	cm.SetToken(token)
 	c.token = token
 }
 

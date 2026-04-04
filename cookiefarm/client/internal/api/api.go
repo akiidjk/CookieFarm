@@ -29,6 +29,8 @@ func checkStatus(code int, body []byte) error {
 func GetConfig() (sharedconfig.Shared, error) {
 	client := getClient()
 	
+	logger.Log.Debug().Str("token", client.token).Msg("TOKEN")
+
 	resp, body, err := client.get("/api/v1/config", NOT_AUTHED)
 	if err != nil {
 		return sharedconfig.Shared{}, err

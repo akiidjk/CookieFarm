@@ -118,6 +118,7 @@ func login(cmd *cobra.Command, args []string) {
 		logger.Log.Error().Err(err).Msg("Login failed")
 		return
 	}
+
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 }
 

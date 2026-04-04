@@ -62,7 +62,7 @@ server-build-prod:
 # Run the server in development mode
 [group('build')]
 [working-directory('cookiefarm')]
-server-run: server-build server-build-plugins minify
+server-run: server-build server-build-plugins
     @{{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} -c -D
 
 # Clean server binaries and logs
@@ -205,10 +205,10 @@ tailwindcss-watch:
     ./tools/tailwindcss -c ./server/tailwind.config.js -i ./server/assets/css/global.css -o ./server/public/css/output.css --watch
 
 # Run the minify on the js files in the assets/js directory and output to public/js
-[group('tools')]
-[working-directory('cookiefarm')]
-minify:
-    @uglifyjs ./server/assets/js/*.js -o ./server/public/js/output.min.js -c -m
+# [group('tools')]
+# [working-directory('cookiefarm')]
+# minify:
+#    @uglifyjs ./server/assets/js/*.js -o ./server/public/js/output.min.js -c -m
 
 # Lint the codebase using golangci-lint and apply fixes where possible
 [group('tools')]

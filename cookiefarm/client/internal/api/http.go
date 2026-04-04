@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,7 +12,7 @@ import (
 )
 
 const (
-	AUTHED     = true
+	AUTHED = true
 	NOT_AUTHED = false
 )
 
@@ -62,11 +61,11 @@ func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, co
 
 	if authed {
 		if c.token == "" {
-			return nil, nil, errors.New("missing auth token")
+			return nil, nil, fmt.Errorf("missing auth token")
 		}
 		req.Header.Set("Cookie", "token="+c.token)
 	}
-
+	
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}

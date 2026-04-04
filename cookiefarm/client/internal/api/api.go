@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
+	"net/url"
+
 	"logger"
 	"models"
-	"net/url"
 	"server/database"
 	"sharedconfig"
 

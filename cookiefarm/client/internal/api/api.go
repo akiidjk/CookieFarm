@@ -27,6 +27,8 @@ func checkStatus(code int, body []byte) error {
 }
 
 func GetConfig() (sharedconfig.Shared, error) {
+	client := getClient()
+	
 	resp, body, err := client.get("/api/v1/config", NOT_AUTHED)
 	if err != nil {
 		return sharedconfig.Shared{}, err
@@ -50,6 +52,7 @@ func Login(username string, password string) error {
 	data.Set("username", username)
 	data.Set("password", password)
 
+	client := getClient()	
 	resp, body, err := client.postForm("/api/v1/auth/login", data, NOT_AUTHED)
 	if err != nil {
 		return err
@@ -77,6 +80,7 @@ func SubmitBatchDirect(flags []database.Flag) error {
 		return err
 	}
 
+	client := getClient()
 	resp, body, err := client.postJSON("/api/v1/submit-flags-standalone", payload, AUTHED)
 	if err != nil {
 		return err
@@ -93,6 +97,7 @@ func SubmitFlag(flag database.Flag) error {
 		return err
 	}
 
+	client := getClient()
 	resp, body, err := client.postJSON("/api/v1/submit-flag", payload, AUTHED)
 	if err != nil {
 		return err

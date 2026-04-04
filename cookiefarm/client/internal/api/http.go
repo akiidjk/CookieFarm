@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"client/config"
@@ -22,25 +23,28 @@ type Client struct {
 	http    *http.Client
 }
 
-var client Client
+var (
+	instance *Client
+	once sync.Once
+)
 
-func newClient() (*Client, error) {
-	cm := config.GetInstance()
+func getClient() *Client {
+	once.Do(func() {
+		
+		cm := config.GetInstance()
+		baseURL := fmt.Sprintf("http://%s:%d", cm.GetHost(), cm.GetPort())
+		
+		instance = &Client{
+			baseURL: baseURL,
+			http: &http.Client{
+				Timeout: 10 * time.Second,
+			},
+		}
+	})
 
-	baseURL := fmt.Sprintf("http://%s:%d", cm.GetHost(), cm.GetPort())
-
-	_, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-
-	return &Client{
-		baseURL: baseURL,
-		http: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-	}, nil
+	return instance
 }
+
 
 func (c *Client) setToken(token string) {
 	c.token = token

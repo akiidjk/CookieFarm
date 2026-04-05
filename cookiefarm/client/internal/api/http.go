@@ -19,7 +19,6 @@ const (
 
 type Client struct {
 	baseURL string
-	token   string
 	http    *http.Client
 }
 
@@ -47,7 +46,6 @@ func getClient() *Client {
 func (c *Client) setToken(token string) {
 	cm := config.GetInstance()
 	cm.SetToken(token)
-	c.token = token
 }
 
 func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, contentType string) (*http.Response, []byte, error) {
@@ -63,11 +61,13 @@ func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, co
 		return nil, nil, fmt.Errorf("create request: %w", err)
 	}
 
+	cfg := config.GetInstance()
+	
 	if authed {
-		if c.token == "" {
+		if cfg.GetHost() == "" {
 			return nil, nil, fmt.Errorf("missing auth token")
 		}
-		req.Header.Set("Cookie", "token="+c.token)
+		req.Header.Set("Cookie", "token=" + cfg.GetToken())
 	}
 	
 	if contentType != "" {

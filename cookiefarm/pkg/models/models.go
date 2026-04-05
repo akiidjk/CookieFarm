@@ -10,11 +10,6 @@ const (
 	StatusNotValid
 )
 
-type Service struct {
-	Name string `json:"name" yaml:"name"` // Name identifier of the service
-	Port uint16 `json:"port" yaml:"port"` // Port where the service is exposed
-}
-
 // SubmitFlagsRequest the struct for the requests from the client to server
 type SubmitFlagsRequest struct {
 	Flags []database.Flag `json:"flags"` // Flags to submit

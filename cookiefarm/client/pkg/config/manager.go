@@ -2,10 +2,12 @@ package config
 
 import (
 	"fmt"
-	"logger"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"logger"
+	"sharedconfig"
 
 	"gopkg.in/yaml.v3"
 )
@@ -25,95 +27,187 @@ username: "cookieguest"
 func GetInstance() *ConfigManager {
 	once.Do(func() {
 		instance = &ConfigManager{}
+
+		instance.state.Store(&RuntimeConfig{
+			Local: LocalConfig{},
+			Shared: sharedconfig.Shared{
+				Services: make(map[string]uint16),
+			},
+			Token: "",
+		})
 	})
 	return instance
 }
 
-func (cm *ConfigManager) GetHost() string {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.cfg.Host
+func (cm *ConfigManager) update(fn func(*RuntimeConfig)) {
+	old := cm.state.Load().(*RuntimeConfig)
+
+	newState := *old
+	newState.Shared.Services = copyMap(old.Shared.Services)
+	fn(&newState)
+
+	cm.state.Store(&newState)
 }
 
-func (cm *ConfigManager) SetHost(host string) {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	cm.cfg.Host = host
+func copyMap(src map[string]uint16) map[string]uint16 {
+	dst := make(map[string]uint16, len(src))
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
+}
+
+func (cm *ConfigManager) Get() *RuntimeConfig {
+	return cm.state.Load().(*RuntimeConfig)
+}
+
+func (cm *ConfigManager) GetHost() string {
+	return cm.Get().Local.Host
 }
 
 func (cm *ConfigManager) GetPort() uint16 {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.cfg.Port
-}
-
-func (cm *ConfigManager) SetPort(port uint16) {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	cm.cfg.Port = port
+	return cm.Get().Local.Port
 }
 
 func (cm *ConfigManager) GetHTTPS() bool {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.cfg.HTTPS
-}
-
-func (cm *ConfigManager) SetHTTPS(https bool) {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	cm.cfg.HTTPS = https
-}
-
-func (cm *ConfigManager) GetToken() string {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.token
-}
-
-func (cm *ConfigManager) SetToken(token string) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-	cm.token = token
+	return cm.Get().Local.HTTPS
 }
 
 func (cm *ConfigManager) GetUsername() string {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	return cm.cfg.Username
+	return cm.Get().Local.Username
+}
+
+func (cm *ConfigManager) GetToken() string {
+	return cm.Get().Token
+}
+
+func (cm *ConfigManager) MapServiceToPort(service string) uint16 {
+	return cm.Get().Shared.Services[service]
+}
+
+func (cm *ConfigManager) MapPortToService(port uint16) string {
+	for k, v := range cm.Get().Shared.Services {
+		if v == port {
+			return k
+		}
+	}
+	return ""
+}
+
+func (cm *ConfigManager) SetToken(token string) {
+	cm.update(func(s *RuntimeConfig) {
+		s.Token = token
+	})
+}
+
+func (cm *ConfigManager) SetLocalConfig(cfg LocalConfig) {
+	cm.update(func(s *RuntimeConfig) {
+		s.Local = cfg
+	})
+}
+
+func (cm *ConfigManager) SetSharedConfig(sc sharedconfig.Shared) {
+	cm.update(func(s *RuntimeConfig) {
+		sc.Services = copyMap(sc.Services)
+		s.Shared = sc
+	})
+}
+
+func (cm *ConfigManager) SetHost(host string) {
+	cm.update(func(s *RuntimeConfig) {
+		s.Local.Host = host
+	})
+}
+
+func (cm *ConfigManager) SetPort(port uint16) {
+	cm.update(func(s *RuntimeConfig) {
+		s.Local.Port = port
+	})
+}
+
+func (cm *ConfigManager) SetHTTPS(https bool) {
+	cm.update(func(s *RuntimeConfig) {
+		s.Local.HTTPS = https
+	})
 }
 
 func (cm *ConfigManager) SetUsername(username string) {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-	cm.cfg.Username = username
+	cm.update(func(s *RuntimeConfig) {
+		s.Local.Username = username
+	})
 }
 
-func (cm *ConfigManager) GetConfig() Config {
-	return cm.cfg
+func (cm *ConfigManager) Read() error {
+	token, err := cm.GetSession()
+	if err != nil {
+		return err
+	}
+
+	cm.SetToken(token)
+
+	err = read(&cm.Get().Local, "client.yml")
+	if err != nil {
+		return err
+	}
+	
+	return read(&cm.Get().Shared, "shared.yml")
+}
+
+func (cm *ConfigManager) Write() error {
+	err := write(&cm.Get().Local, "client.yml")
+	if err != nil {
+		return err
+	}
+
+	return write(&cm.Get().Shared, "shared.yml")
+}
+
+func (cm *ConfigManager) WriteLocal() error {
+	return write(&cm.Get().Local, "client.yml")
+}
+
+func (cm *ConfigManager) WriteShared() error {
+	return write(&cm.Get().Shared, "shared.yml")
+}
+
+func (cm *ConfigManager) Reset() error {
+	if err := os.MkdirAll(DefaultPath, 0o755); err != nil {
+		return err
+	}
+
+	configPath := filepath.Join(DefaultPath, "config.yml")
+
+	var tmp LocalConfig
+	if err := yaml.Unmarshal([]byte(configTemplate), &tmp); err != nil {
+		return err
+	}
+
+	cm.SetLocalConfig(tmp)
+
+	file, err := os.Create(configPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return yaml.NewEncoder(file).Encode(tmp)
 }
 
 func (cm *ConfigManager) GetSession() (string, error) {
-	cm.mu.RLock()
-	sessionPath := filepath.Join(DefaultPath, "session")
-	cm.mu.RUnlock()
+	data, err := os.ReadFile(filepath.Join(DefaultPath, "session"))
 
-	data, err := os.ReadFile(sessionPath)
 	if err != nil {
 		return "", err
 	}
-
+	
 	return string(data), nil
 }
 
 func (cm *ConfigManager) Logout() (string, error) {
-	cm.mu.RLock()
 	sessionPath := filepath.Join(DefaultPath, "session")
-	cm.mu.RUnlock()
 
-	err := os.Remove(sessionPath)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error removing session file")
+	if err := os.Remove(sessionPath); err != nil {
+		logger.Log.Error().Err(err).Msg("Error removing session")
 		return "", err
 	}
 
@@ -121,137 +215,19 @@ func (cm *ConfigManager) Logout() (string, error) {
 }
 
 func (cm *ConfigManager) ShowLocalConfigContent() (string, error) {
-	cm.mu.RLock()
-	configPath := filepath.Join(DefaultPath, "config.yml")
-	cm.mu.RUnlock()
+	content, err := os.ReadFile(filepath.Join(DefaultPath, "config.yml"))
 
-	content, err := os.ReadFile(configPath)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error reading configuration file")
-		return "", fmt.Errorf("error reading configuration file: %w", err)
+		return "", fmt.Errorf("error reading config: %w", err)
 	}
-
+	
 	return string(content), nil
 }
 
-func (cm *ConfigManager) MapPortToService(port uint16) string {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
+func write[T any](cfg *T, filename string) error {
+	configFilePath := filepath.Join(DefaultPath, filename)
 
-	for service, serviceport := range cm.cfg.services {
-		if serviceport == port {
-			return service
-		}
-	}
-
-	return ""
-}
-
-func (cm *ConfigManager) MapServiceToPort(serviceName string) uint16 {
-	cm.mu.RLock()
-	defer cm.mu.RUnlock()
-
-	port, ok := cm.cfg.services[serviceName]
-	if !ok {
-		return 0
-	}
-
-	return port
-}
-
-func (cm *ConfigManager) Read() error {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	if _, err := os.Stat(DefaultPath); os.IsNotExist(err) {
-		logger.Log.Warn().Msgf("Config directory does not exist at %s, creating it", DefaultPath)
-		err = os.MkdirAll(DefaultPath, 0o755)
-		if err != nil {
-			return fmt.Errorf("error creating config directory: %w", err)
-		}
-
-		if _, err := os.Create(filepath.Join(DefaultPath, "config.yml")); err != nil {
-			return fmt.Errorf("error creating default config file: %w", err)
-		}
-	}
-
-	configFileContent, err := os.ReadFile(filepath.Join(DefaultPath, "config.yml"))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("config file does not exist at %s", DefaultPath)
-		}
-		return fmt.Errorf("error reading config file: %w", err)
-	}
-
-	var tmp Config
-	err = yaml.Unmarshal(configFileContent, &tmp)
-	if err != nil {
-		return fmt.Errorf("error unmarshalling config: %w", err)
-	}
-
-	cm.mu.Unlock()
-	cm.SetHTTPS(tmp.HTTPS)
-	cm.SetHost(tmp.Host)
-	cm.SetUsername(tmp.Username)
-	cm.SetPort(tmp.Port)
-	cm.mu.Lock()
-
-	return nil
-}
-
-func (cm *ConfigManager) Reset() error {
-	err := cm.Read()
-	if err != nil {
-		logger.Log.Warn().Err(err).Msg("Could not load existing config, proceeding with empty exploits")
-	}
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	err = os.MkdirAll(DefaultPath, 0o755)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error creating config directory")
-		return err
-	}
-
-	configPath := filepath.Join(DefaultPath, "config.yml")
-
-	file, err := os.Create(configPath)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error opening configuration file")
-		return err
-	}
-	defer file.Close()
-
-	var tmp Config
-	err = yaml.Unmarshal([]byte(configTemplate), &tmp)
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error unmarshalling default configuration")
-		return err
-	}
-
-	cm.mu.Unlock()
-	cm.SetHTTPS(tmp.HTTPS)
-	cm.SetHost(tmp.Host)
-	cm.SetUsername(tmp.Username)
-	cm.SetPort(tmp.Port)
-	cm.mu.Lock()
-
-	err = yaml.NewEncoder(file).Encode(cm.GetConfig())
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Error encoding configuration to YAML")
-		return err
-	}
-
-	return nil
-}
-
-func (cm *ConfigManager) Write() error {
-	cm.mu.RLock()
-	config := cm.GetConfig()
-	cm.mu.RUnlock()
-
-	configFilePath := filepath.Join(DefaultPath, "config.yml")
-	configFileContent, err := yaml.Marshal(config)
+	configFileContent, err := yaml.Marshal(*cfg)
 	if err != nil {
 		return fmt.Errorf("error marshalling config: %w", err)
 	}
@@ -264,6 +240,18 @@ func (cm *ConfigManager) Write() error {
 	return nil
 }
 
-func (cm *ConfigManager) WriteTemplate() error {
+func read[T any](cfg *T, filename string) error {
+	configFilePath := filepath.Join(DefaultPath, filename)
+
+	configFileContent, err := os.ReadFile(configFilePath)
+	if err != nil {
+		return fmt.Errorf("error reading config file: %w", err)
+	}
+
+	err = yaml.Unmarshal(configFileContent, cfg)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling config: %w", err)
+	}
+
 	return nil
 }

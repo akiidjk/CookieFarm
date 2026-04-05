@@ -6,6 +6,7 @@ import (
 
 	"logger"
 	"models"
+	"server/config"
 	"server/database"
 	"sharedconfig"
 
@@ -28,10 +29,11 @@ func checkStatus(code int, body []byte) error {
 
 func GetConfig() (sharedconfig.Shared, error) {
 	client := getClient()
+	cfg := config.GetInstance()
 	
-	logger.Log.Debug().Str("token", client.token).Msg("TOKEN")
+	logger.Log.Debug().Str("token", cfg.GetToken()).Msg("TOKEN")
 
-	resp, body, err := client.get("/api/v1/config", NOT_AUTHED)
+	resp, body, err := client.get("/api/v1/config", AUTHED)
 	if err != nil {
 		return sharedconfig.Shared{}, err
 	}
@@ -41,12 +43,12 @@ func GetConfig() (sharedconfig.Shared, error) {
 		return sharedconfig.Shared{}, err
 	}
 
-	var cfg sharedconfig.Shared
-	if err := doJSON(body, &cfg); err != nil {
+	var shcfg sharedconfig.Shared
+	if err := doJSON(body, &shcfg); err != nil {
 		return sharedconfig.Shared{}, err
 	}
 
-	return cfg, nil
+	return shcfg, nil
 }
 
 func Login(username string, password string) error {

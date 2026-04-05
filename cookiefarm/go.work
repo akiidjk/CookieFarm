@@ -4,6 +4,7 @@ use (
 	./client
 	./client/internal/api
 	./client/internal/exploit
+	./client/internal/submitter
 	./client/internal/template
 	./client/internal/tui
 	./client/internal/websockets

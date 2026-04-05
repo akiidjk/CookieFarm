@@ -103,12 +103,6 @@ func update(cmd *cobra.Command, args []string) {
 	cm.SetPort(port)
 	cm.SetUsername(username)
 	cm.SetHTTPS(https)
-
-	err := cm.Write()
-	if err != nil {
-		logger.Log.Error().Err(err).Msg("Update configuration failed")
-		return
-	}
 }
 
 func login(cmd *cobra.Command, args []string) {
@@ -120,6 +114,9 @@ func login(cmd *cobra.Command, args []string) {
 	}
 
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
+
+	cm := config.GetInstance()
+	cm.Write()
 }
 
 func logout(cmd *cobra.Command, args []string) {
@@ -157,5 +154,12 @@ func LoginHandler(password string) (string, error) {
 		return "", err
 	}
 
+	shcfg, err := api.GetConfig()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error receiving shared configs")
+		return "", err
+	}
+
+	cm.SetSharedConfig(shcfg)
 	return sessionPath, nil
 }

@@ -92,7 +92,7 @@ func HandleLogin(c *fiber.Ctx) error {
 			"error": "Invalid request format",
 		})
 	}
-	
+
 	if req.Password == "" {
 		logger.Log.Warn().Msg("Missing password in login")
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

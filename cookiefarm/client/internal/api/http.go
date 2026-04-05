@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	AUTHED = true
+	AUTHED     = true
 	NOT_AUTHED = false
 )
 
@@ -24,14 +25,14 @@ type Client struct {
 
 var (
 	instance *Client
-	once sync.Once
+	once     sync.Once
 )
 
 func getClient() *Client {
 	once.Do(func() {
 		cm := config.GetInstance()
 		baseURL := fmt.Sprintf("http://%s:%d", cm.GetHost(), cm.GetPort())
-		
+
 		instance = &Client{
 			baseURL: baseURL,
 			http: &http.Client{
@@ -62,14 +63,14 @@ func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, co
 	}
 
 	cfg := config.GetInstance()
-	
+
 	if authed {
 		if cfg.GetHost() == "" {
-			return nil, nil, fmt.Errorf("missing auth token")
+			return nil, nil, errors.New("missing auth token")
 		}
-		req.Header.Set("Cookie", "token=" + cfg.GetToken())
+		req.Header.Set("Cookie", "token="+cfg.GetToken())
 	}
-	
+
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}

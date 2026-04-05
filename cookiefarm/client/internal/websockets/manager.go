@@ -5,10 +5,10 @@ import (
 	"errors"
 	"logger"
 	"net/http"
+	"sharedconfig"
 	"strconv"
 	"time"
 
-	"sharedconfig"
 	"client/config"
 
 	"github.com/gorilla/websocket"

@@ -2,10 +2,9 @@ package api
 
 import (
 	"fmt"
-	"net/url"
-
 	"logger"
 	"models"
+	"net/url"
 	"server/config"
 	"server/database"
 	"sharedconfig"
@@ -30,7 +29,7 @@ func checkStatus(code int, body []byte) error {
 func GetConfig() (sharedconfig.Shared, error) {
 	client := getClient()
 	cfg := config.GetInstance()
-	
+
 	logger.Log.Debug().Str("token", cfg.GetToken()).Msg("TOKEN")
 
 	resp, body, err := client.get("/api/v1/config", AUTHED)
@@ -56,7 +55,7 @@ func Login(username string, password string) error {
 	data.Set("username", username)
 	data.Set("password", password)
 
-	client := getClient()	
+	client := getClient()
 	resp, body, err := client.postForm("/api/v1/auth/login", data, NOT_AUTHED)
 	if err != nil {
 		return err

@@ -1,10 +1,9 @@
 package config
 
 import (
+	"sharedconfig"
 	"sync/atomic"
 	"system"
-
-	"sharedconfig"
 )
 
 var DefaultPath, _ = system.ExpandTilde("~/.config/cookiefarm")

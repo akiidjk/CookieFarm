@@ -2,12 +2,12 @@ package config
 
 import (
 	"fmt"
+	"logger"
+	"maps"
 	"os"
 	"path/filepath"
-	"sync"
-
-	"logger"
 	"sharedconfig"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -51,9 +51,7 @@ func (cm *ConfigManager) update(fn func(*RuntimeConfig)) {
 
 func copyMap(src map[string]uint16) map[string]uint16 {
 	dst := make(map[string]uint16, len(src))
-	for k, v := range src {
-		dst[k] = v
-	}
+	maps.Copy(dst, src)
 	return dst
 }
 
@@ -141,11 +139,11 @@ func (cm *ConfigManager) Read() error {
 	if err := read(&cm.Get().Local, "client.yml"); err != nil {
 		return err
 	}
-	
+
 	if err := read(&cm.Get().Shared, "shared.yml"); err != nil {
 		return err
 	}
-	
+
 	token, err := cm.GetSession()
 	if err != nil {
 		return err
@@ -183,11 +181,10 @@ func (cm *ConfigManager) Reset() error {
 
 func (cm *ConfigManager) GetSession() (string, error) {
 	data, err := os.ReadFile(filepath.Join(DefaultPath, "session"))
-
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(data), nil
 }
 
@@ -204,11 +201,10 @@ func (cm *ConfigManager) Logout() (string, error) {
 
 func (cm *ConfigManager) ShowLocalConfigContent() (string, error) {
 	content, err := os.ReadFile(filepath.Join(DefaultPath, "config.yml"))
-
 	if err != nil {
 		return "", fmt.Errorf("error reading config: %w", err)
 	}
-	
+
 	return string(content), nil
 }
 

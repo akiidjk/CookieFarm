@@ -31,14 +31,14 @@ func verifyAndHandlePath(path string) error {
 	_, err := os.Stat(path)
 	if err != nil && os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Default exploit path not exists... Creating it")
-		
+
 		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			return fmt.Errorf("error creating exploit path: %v", err)
 		}
 	} else {
 		return fmt.Errorf("error checking path: %v", err)
 	}
-	
+
 	return nil
 }
 

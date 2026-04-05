@@ -230,7 +230,7 @@ func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
 	ex := exploit.GetInstance()
 
 	processes := make([]ExploitProcess, 0, len(ex.List()))
-	
+
 	for pid, name := range ex.List() {
 		proc, err := os.FindProcess(pid)
 		if err != nil || proc == nil || proc.Signal(syscall.Signal(0)) != nil {
@@ -243,7 +243,7 @@ func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
 			PID:  pid,
 		})
 
-		id++;
+		id++
 	}
 
 	return processes, nil

@@ -138,28 +138,30 @@ func (cm *ConfigManager) SetUsername(username string) {
 }
 
 func (cm *ConfigManager) Read() error {
+	if err := read(&cm.Get().Local, "client.yml"); err != nil {
+		return err
+	}
+	
+	if err := read(&cm.Get().Shared, "shared.yml"); err != nil {
+		return err
+	}
+	
 	token, err := cm.GetSession()
 	if err != nil {
 		return err
 	}
 
 	cm.SetToken(token)
-
-	err = read(&cm.Get().Local, "client.yml")
-	if err != nil {
-		return err
-	}
-	
-	return read(&cm.Get().Shared, "shared.yml")
+	return nil
 }
 
 func (cm *ConfigManager) Write() error {
-	err := write(&cm.Get().Local, "client.yml")
+	err := cm.WriteLocal()
 	if err != nil {
 		return err
 	}
 
-	return write(&cm.Get().Shared, "shared.yml")
+	return cm.WriteShared()
 }
 
 func (cm *ConfigManager) WriteLocal() error {
@@ -175,22 +177,8 @@ func (cm *ConfigManager) Reset() error {
 		return err
 	}
 
-	configPath := filepath.Join(DefaultPath, "config.yml")
-
-	var tmp LocalConfig
-	if err := yaml.Unmarshal([]byte(configTemplate), &tmp); err != nil {
-		return err
-	}
-
-	cm.SetLocalConfig(tmp)
-
-	file, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	return yaml.NewEncoder(file).Encode(tmp)
+	configPath := filepath.Join(DefaultPath, "client.yml")
+	return os.WriteFile(configPath, []byte(configTemplate), 0o644)
 }
 
 func (cm *ConfigManager) GetSession() (string, error) {

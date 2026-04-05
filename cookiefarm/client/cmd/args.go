@@ -103,6 +103,8 @@ func update(cmd *cobra.Command, args []string) {
 	cm.SetPort(port)
 	cm.SetUsername(username)
 	cm.SetHTTPS(https)
+
+	cm.WriteLocal()
 }
 
 func login(cmd *cobra.Command, args []string) {
@@ -116,7 +118,7 @@ func login(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Str("path", sessionPath).Msg("Session token stored.")
 
 	cm := config.GetInstance()
-	cm.Write()
+	cm.WriteShared()
 }
 
 func logout(cmd *cobra.Command, args []string) {

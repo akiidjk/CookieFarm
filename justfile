@@ -187,7 +187,7 @@ test:
 
 # Start all the components for run mock tests mode for testing
 [group('test')]
-setup-tests num_containers="3" production_mode="false":
+setup-tests num_containers="10" production_mode="false":
     cd ./demo/scripts && ./setup.sh {{ num_containers }} {{ production_mode }}
 
 # === SHARED TOOLS ===

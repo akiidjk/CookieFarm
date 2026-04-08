@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	AUTHED     = true
-	NOT_AUTHED = false
+	AUTHED    = true
+	NOTAUTHED = false
 )
 
 type Client struct {
@@ -44,7 +44,7 @@ func getClient() *Client {
 	return instance
 }
 
-func (c *Client) setToken(token string) {
+func (*Client) setToken(token string) {
 	cm := config.GetInstance()
 	cm.SetToken(token)
 }

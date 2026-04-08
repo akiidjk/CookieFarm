@@ -1,7 +1,6 @@
 package sharedconfig
 
 import (
-	"fmt"
 	"runtime/debug"
 )
 
@@ -16,14 +15,13 @@ type Shared struct {
 	Configured    bool              `json:"configured" yaml:"configured"`           // True if configuration has been loaded and validated
 }
 
-func (cfg *Shared) Set(new Shared) {
-	*cfg = new
+func (cfg *Shared) Set(newcfg Shared) {
+	*cfg = newcfg
 }
 
 func GetVersion() string {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		fmt.Println("Build info not available")
 		return ""
 	}
 	return info.Main.Version

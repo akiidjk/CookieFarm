@@ -155,7 +155,7 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 
 func executeExploit(
 	exploitPath, serviceName string,
-	tickTime, threadCount string, submitValue bool, isTest bool,
+	tickTime, threadCount string, _ bool, isTest bool, // _ is submitValue
 ) (string, error) {
 	tickTimeInt := 120  // default
 	threadCountInt := 5 // default

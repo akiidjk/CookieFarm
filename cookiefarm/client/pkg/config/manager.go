@@ -170,7 +170,7 @@ func (cm *ConfigManager) WriteShared() error {
 	return write(&cm.Get().Shared, "shared.yml")
 }
 
-func (cm *ConfigManager) Reset() error {
+func (*ConfigManager) Reset() error {
 	if err := os.MkdirAll(DefaultPath, 0o755); err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (cm *ConfigManager) Reset() error {
 	return os.WriteFile(configPath, []byte(configTemplate), 0o644)
 }
 
-func (cm *ConfigManager) GetSession() (string, error) {
+func (*ConfigManager) GetSession() (string, error) {
 	data, err := os.ReadFile(filepath.Join(DefaultPath, "session"))
 	if err != nil {
 		return "", err
@@ -188,7 +188,7 @@ func (cm *ConfigManager) GetSession() (string, error) {
 	return string(data), nil
 }
 
-func (cm *ConfigManager) Logout() (string, error) {
+func (*ConfigManager) Logout() (string, error) {
 	sessionPath := filepath.Join(DefaultPath, "session")
 
 	if err := os.Remove(sessionPath); err != nil {
@@ -199,7 +199,7 @@ func (cm *ConfigManager) Logout() (string, error) {
 	return "Logout successfully", nil
 }
 
-func (cm *ConfigManager) ShowLocalConfigContent() (string, error) {
+func (*ConfigManager) ShowLocalConfigContent() (string, error) {
 	content, err := os.ReadFile(filepath.Join(DefaultPath, "config.yml"))
 	if err != nil {
 		return "", fmt.Errorf("error reading config: %w", err)

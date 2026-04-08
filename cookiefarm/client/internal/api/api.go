@@ -36,6 +36,7 @@ func GetConfig() (sharedconfig.Shared, error) {
 	if err != nil {
 		return sharedconfig.Shared{}, err
 	}
+	defer resp.Body.Close()
 
 	if err := checkStatus(resp.StatusCode, body); err != nil {
 		logger.Log.Error().Msg(err.Error())
@@ -56,10 +57,11 @@ func Login(username string, password string) error {
 	data.Set("password", password)
 
 	client := getClient()
-	resp, body, err := client.postForm("/api/v1/auth/login", data, NOT_AUTHED)
+	resp, body, err := client.postForm("/api/v1/auth/login", data, NOTAUTHED)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if err := checkStatus(resp.StatusCode, body); err != nil {
 		return err
@@ -88,6 +90,7 @@ func SubmitBatchDirect(flags []database.Flag) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	return checkStatus(resp.StatusCode, body)
 }
@@ -105,6 +108,7 @@ func SubmitFlag(flag database.Flag) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	return checkStatus(resp.StatusCode, body)
 }

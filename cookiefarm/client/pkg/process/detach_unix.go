@@ -2,13 +2,8 @@
 
 package process
 
-import (
-	"os/exec"
-	"syscall"
-)
-
-func setupDetach(cmd *exec.Cmd) {
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true,
-	}
-}
+// func setupDetach(cmd *exec.Cmd) {
+// 	cmd.SysProcAttr = &syscall.SysProcAttr{
+// 		Setsid: true,
+// 	}
+// }

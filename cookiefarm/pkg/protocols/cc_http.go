@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"models"
 	"net/http"
-	"strings"
-
 	"protocols"
+	"strings"
 )
 
 func Submit(url string, teamToken string, flags []string) ([]protocols.ResponseProtocol, error) {
@@ -39,15 +39,32 @@ func Submit(url string, teamToken string, flags []string) ([]protocols.ResponseP
 		return nil, fmt.Errorf("error during response reading: %w", err)
 	}
 
-	var responses []protocols.ResponseProtocol
+	var responses []struct {
+		Status string `json:"status"` // Status of the response (e.g., "0", "1", "2" ,"3") see enum in pkg/models/models.go
+		Flag   string `json:"flag"`   // Flag string received from the flag checker service
+		Msg    string `json:"msg"`
+	}
 	// logger.Debug("Raw body %s", string(body))
 	if err := json.Unmarshal(body, &responses); err != nil {
 		return nil, fmt.Errorf("error during response parsing: %w", err)
 	}
 
+	var responsesParsed []protocols.ResponseProtocol = make([]protocols.ResponseProtocol, len(responses))
 	for i := range responses {
-		responses[i].Msg = strings.Split(responses[i].Msg, "]")[1]
+		responsesParsed[i].Flag = responses[i].Flag
+		responsesParsed[i].Msg = strings.Split(responses[i].Msg, "]")[1]
+
+		switch responses[i].Status {
+		case "ACCEPTED":
+			responsesParsed[i].Status = models.StatusAccepted
+		case "DENIED":
+			responsesParsed[i].Status = models.StatusDenied
+		case "Error":
+			responsesParsed[i].Status = models.StatusError
+		default:
+			responsesParsed[i].Status = models.StatusNotValid
+		}
 	}
 
-	return responses, nil
+	return responsesParsed, nil
 }

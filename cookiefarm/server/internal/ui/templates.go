@@ -2,6 +2,7 @@ package ui
 
 import (
 	"logger"
+	"models"
 	"path/filepath"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 )
 
 func InitTemplateEngine(debug bool) *html.Engine {
-	path, err := filepath.Abs("internal/server/ui/views")
+	path, err := filepath.Abs("server/internal/ui/views")
 	logger.Log.Debug().Str("path", path).Msg("Resolved absolute template path")
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Unable to resolve absolute template path")
@@ -25,7 +26,22 @@ func InitTemplateEngine(debug bool) *html.Engine {
 		"format_timestamp": func(timestamp uint64) string {
 			return time.Unix(int64(timestamp), 0).Format("15:04:05.12340")
 		},
+		"map_status": func(status int64) string {
+			switch status {
+			case models.StatusAccepted:
+				return "ACCEPTED"
+			case models.StatusDenied:
+				return "DENIED"
+			case models.StatusUnsubmitted:
+				return "UNSUBMITTED"
+			case models.StatusError:
+				return "ERROR"
+			default:
+				return "NOT VALID"
+			}
+		},
 	}
+
 	engine.AddFuncMap(engineFuncMap)
 
 	return engine

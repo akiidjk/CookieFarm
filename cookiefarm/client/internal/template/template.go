@@ -28,41 +28,34 @@ def exploit(ip, port, name_service, flag_ids: list):
 `
 
 func verifyAndHandlePath(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	_, err := os.Stat(path)
+	if err != nil && os.IsNotExist(err) {
 		logger.Log.Warn().Msg("Default exploit path not exists... Creating it")
-		err := os.MkdirAll(config.DefaultPath, os.ModePerm)
-		if err != nil {
+
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			return fmt.Errorf("error creating exploit path: %v", err)
 		}
+	} else {
+		return fmt.Errorf("error checking path: %v", err)
 	}
 
 	return nil
 }
 
 func Create(name string) (string, error) {
-	if err := verifyAndHandlePath(config.DefaultPath); err != nil {
+	exploitPath := filepath.Join(config.DefaultPath, "exploits")
+	if err := verifyAndHandlePath(exploitPath); err != nil {
 		return "", err
 	}
 
 	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
 
-	namePathNormalized, err := system.NormalizeNamePathExploit(name)
+	name, err := system.NormalizeNamePathExploit(name)
 	if err != nil {
 		return "", fmt.Errorf("error normalizing exploit name: %v", err)
 	}
 
-	var path string
-
-	if system.IsPath(namePathNormalized) {
-		path = namePathNormalized
-	} else {
-		exploitsDir := filepath.Join(path, "exploits")
-		if err := verifyAndHandlePath(exploitsDir); err != nil {
-			return "", err
-		}
-		path = filepath.Join(exploitsDir, namePathNormalized)
-	}
-
+	path := filepath.Join(exploitPath, name)
 	exploitFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_SYNC, 0o777)
 	if err != nil {
 		return "", fmt.Errorf("error creating exploit file: %v", err)

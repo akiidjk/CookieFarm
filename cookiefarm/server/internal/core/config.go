@@ -53,7 +53,7 @@ func (r *Runner) LoadConfig(path string) error {
 
 	err = yaml.Unmarshal(data, &tmp)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to parse configuration file into tmp")
+		logger.Log.Fatal().Err(err).Msg("Failed to parse configuration file into tmp")
 		return err
 	}
 

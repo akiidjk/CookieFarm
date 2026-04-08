@@ -7,44 +7,46 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"client/config"
 )
 
 const (
-	AUTHED     = true
-	NOT_AUTHED = false
+	AUTHED    = true
+	NOTAUTHED = false
 )
 
 type Client struct {
 	baseURL string
-	token   string
 	http    *http.Client
 }
 
-var client Client
+var (
+	instance *Client
+	once     sync.Once
+)
 
-func newClient() (*Client, error) {
-	cm := config.GetInstance()
+func getClient() *Client {
+	once.Do(func() {
+		cm := config.GetInstance()
+		baseURL := fmt.Sprintf("http://%s:%d", cm.GetHost(), cm.GetPort())
 
-	baseURL := fmt.Sprintf("http://%s:%d", cm.GetHost(), cm.GetPort())
+		instance = &Client{
+			baseURL: baseURL,
+			http: &http.Client{
+				Timeout: 10 * time.Second,
+			},
+		}
+	})
 
-	_, err := url.Parse(baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("invalid base URL: %w", err)
-	}
-
-	return &Client{
-		baseURL: baseURL,
-		http: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-	}, nil
+	return instance
 }
 
-func (c *Client) setToken(token string) {
-	c.token = token
+func (*Client) setToken(token string) {
+	cm := config.GetInstance()
+	cm.SetToken(token)
 }
 
 func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, contentType string) (*http.Response, []byte, error) {
@@ -60,11 +62,13 @@ func (c *Client) doRequest(method, endpoint string, body []byte, authed bool, co
 		return nil, nil, fmt.Errorf("create request: %w", err)
 	}
 
+	cfg := config.GetInstance()
+
 	if authed {
-		if c.token == "" {
+		if cfg.GetHost() == "" {
 			return nil, nil, errors.New("missing auth token")
 		}
-		req.Header.Set("Cookie", "token="+c.token)
+		req.Header.Set("Cookie", "token="+cfg.GetToken())
 	}
 
 	if contentType != "" {

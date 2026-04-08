@@ -171,14 +171,14 @@ func WSHandleMessage(message []byte) error {
 
 // ConfigHandler processes the configuration update received from the WebSocket server
 func ConfigHandler(payload json.RawMessage) error {
-	sharedConfig := sharedconfig.GetInstance()
 	var configReceived sharedconfig.Shared
 
 	if err := json.Unmarshal(payload, &configReceived); err != nil {
 		return err
 	}
 
-	sharedConfig.Set(configReceived)
+	cm := config.GetInstance()
+	cm.Get().Shared.Set(configReceived)
 
 	if OnNewConfig != nil {
 		go OnNewConfig()

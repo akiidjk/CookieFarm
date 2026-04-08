@@ -2,8 +2,9 @@ go 1.26.0
 
 use (
 	./client
-	./client/api
+	./client/internal/api
 	./client/internal/exploit
+	./client/internal/submitter
 	./client/internal/template
 	./client/internal/tui
 	./client/internal/websockets

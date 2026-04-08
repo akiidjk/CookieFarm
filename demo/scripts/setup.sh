@@ -30,6 +30,8 @@ trap cleanup SIGINT
 
 cd ..
 
+source $VENV_ACTIVATE
+
 # === REQUIREMENTS ===
 echo "📦 Installing Python dependencies..."
 pip install --upgrade pip > /dev/null

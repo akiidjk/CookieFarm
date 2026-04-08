@@ -155,7 +155,7 @@ func (*CommandRunner) ExecuteConfigUpdate(host, port, username string, useHTTPS 
 
 func executeExploit(
 	exploitPath, serviceName string,
-	tickTime, threadCount string, submitValue bool, isTest bool,
+	tickTime, threadCount string, _ bool, isTest bool, // _ is submitValue
 ) (string, error) {
 	tickTimeInt := 120  // default
 	threadCountInt := 5 // default
@@ -230,21 +230,20 @@ func (*CommandRunner) GetRunningExploits() ([]ExploitProcess, error) {
 	ex := exploit.GetInstance()
 
 	processes := make([]ExploitProcess, 0, len(ex.List()))
-	filtered := make([]exploit.Exploit, 0, len(ex.List()))
 
-	for _, exploitS := range ex.List() {
-		proc, err := os.FindProcess(exploitS.PID)
+	for pid, name := range ex.List() {
+		proc, err := os.FindProcess(pid)
 		if err != nil || proc == nil || proc.Signal(syscall.Signal(0)) != nil {
-			logger.Log.Warn().Str("exploit", exploitS.Name).Msg("Exploit removed due to invalid or inactive process")
+			logger.Log.Warn().Str("exploit", name).Msg("Exploit removed due to invalid or inactive process")
 			continue
 		}
 		processes = append(processes, ExploitProcess{
 			ID:   id,
-			Name: filepath.Base(exploitS.Name),
-			PID:  exploitS.PID,
+			Name: filepath.Base(name),
+			PID:  pid,
 		})
+
 		id++
-		filtered = append(filtered, exploitS)
 	}
 
 	return processes, nil

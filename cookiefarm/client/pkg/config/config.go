@@ -1,32 +1,35 @@
 package config
 
 import (
-	"sync"
+	"sharedconfig"
+	"sync/atomic"
 	"system"
 )
 
 var DefaultPath, _ = system.ExpandTilde("~/.config/cookiefarm")
 
 type InfraMetaData struct {
-	FlagRegex     string `json:"regex_flag" yaml:"regex_flag"`           // Regex used to identify flags in output
-	FormatIPTeams string `json:"format_ip_teams" yaml:"format_ip_teams"` // Format string for generating team IPs
-	MyTeamID      int    `json:"my_team_id" yaml:"my_team_id"`           // ID of the current team
-	URLFlagIds    string `json:"url_flag_ids" yaml:"url_flag_ids"`       // URLFlagIds is the where the flagsId server is running
-	NOPTeam       int    `json:"nop_team" yaml:"nop_team"`               // The id of the nop team in the ctf
-	RangeIPTeams  uint8  `json:"range_ip_teams" yaml:"range_ip_teams"`   // Number of teams / IP range
+	FlagRegex     string `json:"regex_flag" yaml:"regex_flag"`
+	FormatIPTeams string `json:"format_ip_teams" yaml:"format_ip_teams"`
+	MyTeamID      int    `json:"my_team_id" yaml:"my_team_id"`
+	URLFlagIds    string `json:"url_flag_ids" yaml:"url_flag_ids"`
+	NOPTeam       int    `json:"nop_team" yaml:"nop_team"`
+	RangeIPTeams  uint8  `json:"range_ip_teams" yaml:"range_ip_teams"`
 }
 
-type Config struct {
-	Host     string `json:"host" yaml:"host"`         // Host address of the server
-	Username string `json:"username" yaml:"username"` // Username of the client
-	Port     uint16 `json:"port" yaml:"port"`         // Port of the server
-	HTTPS    bool   `json:"protocol" yaml:"protocol"` // Protocol used to connect to the server (e.g., http, https)
+type LocalConfig struct {
+	Host     string `json:"host" yaml:"host"`
+	Username string `json:"username" yaml:"username"`
+	Port     uint16 `json:"port" yaml:"port"`
+	HTTPS    bool   `json:"https" yaml:"https"`
+}
 
-	services map[string]uint16
+type RuntimeConfig struct {
+	Local  LocalConfig
+	Shared sharedconfig.Shared
+	Token  string
 }
 
 type ConfigManager struct {
-	mu    sync.RWMutex
-	cfg   Config
-	token string
+	state atomic.Value // *RuntimeConfig
 }

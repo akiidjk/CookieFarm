@@ -62,7 +62,7 @@ server-build-prod:
 # Run the server in development mode
 [group('build')]
 [working-directory('cookiefarm')]
-server-run: server-build server-build-plugins minify
+server-run: server-build server-build-plugins
     @{{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} -c -D
 
 # Clean server binaries and logs
@@ -113,7 +113,7 @@ server-watch:
 client-build:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @go build  -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATH_SEP }}{{ CLIENT_MAIN_FILE }}
+    @go build  -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Client build complete!{{ RESET }}"
 
 # Build client for Windows
@@ -122,7 +122,7 @@ client-build:
 client-build-windows:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Windows...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=windows GOARCH=amd64 go build -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATH_SEP }}{{ CLIENT_MAIN_FILE }}
+    @GOOS=windows GOARCH=amd64 go build -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Windows build complete!{{ RESET }}"
 
 # Build client for Linux
@@ -131,7 +131,7 @@ client-build-windows:
 client-build-linux:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Linux...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=linux GOARCH=amd64 go build -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATH_SEP }}}{{ CLIENT_MAIN_FILE }}
+    @GOOS=linux GOARCH=amd64 go build -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Linux build complete!{{ RESET }}"
 
 # Build client for production (Linux)
@@ -140,7 +140,7 @@ client-build-linux:
 client-build-linux-prod:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Linux production...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=linux GOARCH=amd64 go build  -ldflags="-X main.Version={{ VERSION }}" -race -trimpath -gcflags="-m" -ldflags="-s -w" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATH_SEP }}{{ CLIENT_MAIN_FILE }}
+    @GOOS=linux GOARCH=amd64 go build  -ldflags="-X main.Version={{ VERSION }}" -race -trimpath -gcflags="-m" -ldflags="-s -w" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Linux production build complete!{{ RESET }}"
 
 # Build client for production (Windows)
@@ -149,7 +149,7 @@ client-build-linux-prod:
 client-build-windows-prod:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Windows production...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=windows GOARCH=amd64 go build -trimpath -gcflags="-m" -ldflags="-s -w -X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATH_SEP }}{{ CLIENT_MAIN_FILE }}
+    @GOOS=windows GOARCH=amd64 go build -trimpath -gcflags="-m" -ldflags="-s -w -X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Windows production build complete!{{ RESET }}"
 
 # Build client for production (all platforms)
@@ -187,7 +187,7 @@ test:
 
 # Start all the components for run mock tests mode for testing
 [group('test')]
-setup-tests num_containers="3" production_mode="false":
+setup-tests num_containers="10" production_mode="false":
     cd ./demo/scripts && ./setup.sh {{ num_containers }} {{ production_mode }}
 
 # === SHARED TOOLS ===
@@ -205,10 +205,10 @@ tailwindcss-watch:
     ./tools/tailwindcss -c ./server/tailwind.config.js -i ./server/assets/css/global.css -o ./server/public/css/output.css --watch
 
 # Run the minify on the js files in the assets/js directory and output to public/js
-[group('tools')]
-[working-directory('cookiefarm')]
-minify:
-    @uglifyjs ./server/assets/js/*.js -o ./server/public/js/output.min.js -c -m
+# [group('tools')]
+# [working-directory('cookiefarm')]
+# minify:
+#    @uglifyjs ./server/assets/js/*.js -o ./server/public/js/output.min.js -c -m
 
 # Lint the codebase using golangci-lint and apply fixes where possible
 [group('tools')]

@@ -1,4 +1,3 @@
-// Package config for configuration management
 package config
 
 import (

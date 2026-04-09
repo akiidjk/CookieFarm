@@ -39,7 +39,6 @@ graph TD
     PY -- "HTTP REST API\\n(submit-flags-standalone)" --> SRV
     SRV -- "Submits flags" --> EXT_CHK["External Flag Checker\\n(CTF Infrastructure)"]
 ```
-```
 
 ## 2. Server Internal Package Dependencies
 
@@ -118,15 +117,20 @@ graph TD
 graph TD
     CLI_MAIN["client/main.go"]
     CLI_CMD["client/cmd"]
-    CLI_API["client/api"]
-    CLI_WS["client/websockets"]
-    CLI_EXPLOIT["client/exploit"]
-    CLI_CONFIG["client/config"]
-    CLI_TUI["client/tui"]
+    CLI_API["client/internal/api"]
+    CLI_WS["client/internal/websockets"]
+    CLI_EXPLOIT["client/internal/exploit"]
+    CLI_SUBMITTER["client/internal/submitter"]
+    CLI_TEMPLATE["client/internal/template"]
+    CLI_TUI["client/internal/tui"]
+    CLI_CONFIG["client/pkg/config"]
+    CLI_PROCESS["client/pkg/process"]
 
     PKG_LOGGER["pkg/logger"]
     PKG_MODELS["pkg/models"]
     PKG_SYSTEM["pkg/system"]
+    SRV_DB["server/database"]
+    SHAREDCFG["sharedconfig"]
 
     CLI_MAIN --> CLI_CMD
     CLI_MAIN --> CLI_CONFIG
@@ -136,29 +140,55 @@ graph TD
     CLI_CMD --> CLI_EXPLOIT
     CLI_CMD --> CLI_CONFIG
     CLI_CMD --> CLI_API
+    CLI_CMD --> CLI_SUBMITTER
+    CLI_CMD --> CLI_TEMPLATE
+    CLI_CMD --> CLI_WS
 
     CLI_TUI --> CLI_CONFIG
+    CLI_TUI --> CLI_CMD
+    CLI_TUI --> CLI_EXPLOIT
+    CLI_TUI --> CLI_TEMPLATE
     CLI_TUI --> PKG_LOGGER
 
     CLI_API --> CLI_CONFIG
     CLI_API --> PKG_LOGGER
     CLI_API --> PKG_MODELS
+    CLI_API --> SRV_DB
+    CLI_API --> SHAREDCFG
 
     CLI_WS --> CLI_CONFIG
     CLI_WS --> PKG_LOGGER
-    CLI_WS --> PKG_MODELS
+    CLI_WS --> SRV_DB
+    CLI_WS --> SHAREDCFG
 
     CLI_EXPLOIT --> CLI_CONFIG
-    CLI_EXPLOIT --> CLI_WS
+    CLI_EXPLOIT --> CLI_PROCESS
     CLI_EXPLOIT --> PKG_LOGGER
-    CLI_EXPLOIT --> PKG_SYSTEM
+    CLI_EXPLOIT --> SRV_DB
+
+    CLI_SUBMITTER --> CLI_API
+    CLI_SUBMITTER --> PKG_LOGGER
+    CLI_SUBMITTER --> SRV_DB
+
+    CLI_TEMPLATE --> CLI_CONFIG
+    CLI_TEMPLATE --> PKG_LOGGER
+    CLI_TEMPLATE --> PKG_SYSTEM
+
+    CLI_CONFIG --> SHAREDCFG
+    CLI_CONFIG --> PKG_LOGGER
 ```
 
-- `client/main.go` checks for TUI mode and delegates to either `client/tui` or `client/cmd`.
-- `client/exploit` is the core: it calls `client/websockets` to stream captured flags to the server, and uses `client/config` and `pkg/system` for process management.
-- `client/api` provides HTTP calls (`GetConfig`, `Login`, `SubmitBatchDirect`) and imports `pkg/models` for shared data types. [17](https://www.notion.so/Dependency-Graph-31d5d8cb6b3a8055b91fc1683691ef96?pvs=21)
-- `client/websockets` connects to the server WebSocket endpoint, handles the circuit breaker, and dispatches `ConfigEvent` messages by updating `client/config`.
-- `client/tui` depends only on `client/config` and `pkg/logger` plus the Charmbracelet UI libraries.
+The client is structured as a **monorepo-style multi-module Go project** with a clear separation between public packages (`pkg/`) and internal packages (`internal/`):
+
+- `client/main.go` initialises the `ConfigManager` singleton, parses CLI arguments (via `Cobra` + `fang`), and delegates to either `client/internal/tui` or the CLI command tree.
+- `client/pkg/config` is the foundational singleton shared by almost every package. It uses `sync/atomic` for lock-free reads and persists state to two YAML files (`client.yml`, `shared.yml`) and a plain `session` token file under `~/.config/cookiefarm/`.
+- `client/pkg/process` is a leaf package with no internal dependencies. It provides cross-platform subprocess management (`StartWithContext`, `StartDetached`) with Unix process-group kill semantics (`SIGKILL` to `pgid`).
+- `client/internal/exploit` is the execution core: it owns the `Exploits` singleton (thread-safe PID registry), calls `pkg/process` to launch Python scripts, pipes their output through a `Parser` (JSON → `database.Flag`), and exposes the flag stream as a Go channel (`<-chan database.Flag`).
+- `client/internal/websockets` consumes the flag channel and streams flags to the server over a persistent WebSocket connection. It implements a **three-state circuit breaker** (Closed / HalfOpen / Open) and a `ConnectionMonitor` that tracks latency, message counts, and performs health-checks every 30 s. It also handles incoming `{type:"config"}` server pushes and updates `pkg/config` in-place.
+- `client/internal/submitter` is the HTTP fallback path. It drains the flag channel in batches of 50 and calls `client/internal/api.SubmitBatchDirect`. It is activated when `exploit run/test --submit` is set or when the `exploit submit` command is used.
+- `client/internal/api` is a thin HTTP singleton client (10 s timeout) covering `Login`, `GetConfig`, `SubmitBatchDirect`, and `SubmitFlag`. It uses `bytedance/sonic` for JSON and reads the JWT token from `pkg/config`.
+- `client/internal/template` creates/removes Python exploit files in `~/.config/cookiefarm/exploits/` using an embedded `@exploit_manager`-decorated template.
+- `client/internal/tui` implements the Bubble Tea TUI. It depends on `client/cmd` (to reuse the `LoginHandler`), `client/internal/exploit` and `client/internal/template` (for direct action execution), and `client/pkg/config` (for live config reads). The `CommandRunner` bridges TUI events to package calls; `CommandHandler` dispatches form submissions.
 
 ---
 

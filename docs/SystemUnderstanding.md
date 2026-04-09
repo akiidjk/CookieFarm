@@ -43,9 +43,13 @@ The system covers two major runtime boundaries:
 
 **Client-side (Go + Python):**
 
-- Provides a CLI (`ckc`) and TUI interface for managing exploits.
-- Launches Python exploit scripts as subprocesses, captures their stdout as structured JSON flag data, and forwards them to the server via WebSocket.
-- Supports exploit lifecycle management: create, run, test, list, stop, remove.
+- Provides a CLI (`ckc`) and a full TUI (Bubble Tea) interface for managing exploits interactively.
+- Manages local configuration (`~/.config/cookiefarm/`) via an atomic `ConfigManager`, persisting connection settings (`client.yml`) and shared CTF metadata (`shared.yml`). JWT session tokens are stored separately in a `session` file.
+- Launches Python exploit scripts as subprocesses using a cross-platform `process` package; captures stdout/stderr line-by-line and routes structured JSON to a `Parser` that produces `database.Flag` records.
+- Forwards captured flags to the server in real-time via a resilient WebSocket client backed by a **three-state circuit breaker** (Closed → Open after 2 failures, Open → HalfOpen after 30 s) and a **connection monitor** (latency measurement, health-check every 30 s).
+- Supports a direct HTTP batch submission fallback (`submitter`) when the `--submit` flag is passed (buffers 50 flags per batch to `/api/v1/submit-flags-standalone`).
+- Supports exploit lifecycle management: `create`, `run`, `test`, `list`, `stop`, `remove`, and `submit`.
+- Generates Python exploit template files scaffolded with the `@exploit_manager` decorator from the `cookiefarm` Python library.
 
 **Out of scope:**
 
@@ -79,16 +83,21 @@ CookieFarm is a **distributed, event-driven, hybrid Go + Python** framework. The
 | Component | Description |
 | --- | --- |
 | **`cmd/server` — Server Entrypoint** | Main entrypoint for the Go server binary (`cks`). Initializes the database, loads configuration, starts the Fiber HTTP server and background loops. |
-| **`cmd/client` — Client Entrypoint** | Main entrypoint for the Go client binary (`ckc`). Bootstraps the CLI (Cobra) and TUI (Bubble Tea) interfaces. |
+| **`cmd/client` — Client Entrypoint** | Main entrypoint for the Go client binary (`ckc`). Reads the `ConfigManager`, parses CLI args via `Cobra` + `fang` theming, and delegates to TUI mode or the CLI command tree. |
 | **`internal/server/server` — HTTP Server** | Built on Fiber v2. Registers all routes (view, public API, private API protected by JWT, WebSocket). Handles CORS, rate limiting, static file serving, and compression.  |
 | **`internal/server/core` — Flag Processing Engine** | Contains `StartFlagProcessingLoop` (periodic batch submission to flag checker) and `ValidateFlagTTL` (expired flag cleanup). Both run as independent goroutines with cancellable contexts. |
 | **`internal/server/database` — Database Layer** | SQLite-backed persistence using a connection pool of size 20 with WAL mode. Provides CRUD operations for flags. Includes a `FlagCollector` singleton with an in-memory buffer (100 flags) and periodic flush (10s). |
 | **`internal/server/websockets` — WebSocket Manager** | Manages connected clients, routes events (`flag`, `config`) to handlers. The `FlagHandler` routes incoming flags to the `FlagCollector`.  |
 | **`internal/server/controllers` — Stats Controller** | Provides flag collector statistics: total received, flushed, buffer size, efficiency ratio.  |
 | **`pkg/protocols` — Protocol Plugin System** | Dynamically loads `.so` plugins at runtime via Go's `plugin` package. Each plugin exposes a `Submit(host, token, flags)` function. The built-in `cc_http` protocol submits flags via HTTP PUT with `X-Team-Token`.  |
-| **`internal/client/exploit` — Exploit Executor** | Launches Python exploit scripts as subprocesses. Reads stdout line-by-line, parsing structured JSON into `ClientData` flag objects. Manages exploit lifecycle (run, stop, restart on config change).  |
-| **`internal/client/websockets` — Client WebSocket Submitter** | Maintains a WebSocket connection to the server and forwards parsed flags in real-time. Supports reconnection on failure.  |
-| **`internal/client/api` — REST API Client** | HTTP client for server interactions: login (JWT cookie retrieval), config fetch, direct flag/batch submission.  |
+| **`client/pkg/config` — Config Manager** | Singleton `ConfigManager` backed by `sync/atomic` for lock-free reads. Persists `LocalConfig` (host, port, username, HTTPS) to `~/.config/cookiefarm/client.yml` and `SharedConfig` (services map, regex, team IP range) to `shared.yml`. Manages the JWT session token stored at `~/.config/cookiefarm/session`. |
+| **`client/pkg/process` — Process Manager** | Cross-platform subprocess launcher. `StartWithContext` creates a context-cancellable process with piped stdout/stderr. `StartDetached` spawns background processes. On Unix, processes are placed in their own process group (`Setpgid=true`) and killed by sending `SIGKILL` to the entire group. |
+| **`client/internal/api` — REST API Client** | HTTP client singleton (10 s timeout) for server interactions: `Login` (POST form → JWT cookie stored in `ConfigManager`), `GetConfig` (GET shared config), `SubmitBatchDirect` (POST batch to `/api/v1/submit-flags-standalone`), `SubmitFlag` (POST single to `/api/v1/submit-flag`). Uses `bytedance/sonic` for fast JSON marshalling. |
+| **`client/internal/exploit` — Exploit Executor** | Manages exploit subprocess lifecycle via the `Exploits` singleton (thread-safe `map[pid]name` + `map[pid]*ExecutionResult`). `Start` launches a Python exploit with `process.StartWithContext`, creates a `Parser` (deserialises JSON lines into `ParsedFlagOutput` / `StatusBatchOutput`), and returns an `ExecutionResult` with `Flags <-chan database.Flag` and `Output <-chan string` channels. Stdout and Stderr are each processed by a dedicated goroutine. |
+| **`client/internal/submitter` — HTTP Batch Submitter** | Direct HTTP fallback for flag submission. `SubmitFlags` drains the `Flags` channel and calls `api.SubmitBatchDirect` in batches of 50. `SubmitFlag` submits a single `database.Flag` immediately. Used when `exploit run/test --submit` is set, or by the `exploit submit` CLI command. |
+| **`client/internal/template` — Exploit Template Manager** | Creates and removes Python exploit files in `~/.config/cookiefarm/exploits/`. The embedded template scaffolds an `@exploit_manager`-decorated function matching the `cookiefarm` Python library interface (`ip`, `port`, `name_service`, `flag_ids`). |
+| **`client/internal/tui` — Terminal UI** | Bubble Tea TUI with three navigable menus (main, config, exploit). `CommandRunner` bridges menu actions to internal packages. `CommandHandler` dispatches form submissions and handles navigation. Forms are dynamically generated per command (`CreateForm`) with validation (`ValidateForm`). An `exploitTable` (`charmbracelet/bubbles/table`) displays running exploit PIDs. Styling (`styles.go`) uses a cookie-gold primary colour (`#CDA157`). |
+| **`client/internal/websockets` — WebSocket Client** | Maintains a WebSocket connection to `/ws/`. Implements a three-state **Circuit Breaker** (`Closed → Open` after 2 consecutive failures, `Open → HalfOpen` after 30 s). A singleton `ConnectionMonitor` tracks connection stats, latency (ping/pong round-trip), messages sent/received, and runs health-checks every 30 s. `ConfigHandler` processes server-pushed `{type:"config"}` events and updates `ConfigManager` in-place. |
 | **`internal/server/ui` — Template Engine** | Server-side rendering using Go HTML templates (Fiber template engine). Serves dashboard and login views. |
 | **`frontend/` — Next.js Frontend (WIP)** | A new React/Next.js-based frontend under development, currently disabled in `docker-compose.yml`.  |
 | **`pkg/models` — Shared Data Models** | Defines all shared structs: `ClientData`, `ConfigShared`, `ConfigServer`, `ConfigClient`, `Service`, `SubmitFlagsRequest`.  |
@@ -106,11 +115,14 @@ graph TD
 
     subgraph "CookieFarm Client\\n(ckc binary - Go)"
         CLI["CLI / TUI Interface\\n(Cobra + Bubble Tea)"]
-        EE["Exploit Executor\\n(internal/client/exploit)"]
+        EE["Exploit Executor\\n(internal/exploit)"]
         PY["Python Exploit Script\\n(.py - user provided)"]
-        PARSER["stdout Parser\\n(ParseLine - JSON)"]
-        WS_CLI["WebSocket Submitter\\n(internal/client/websockets)"]
-        HTTP_CLI["HTTP API Client\\n(internal/client/api)"]
+        PARSER["stdout Parser\\n(Parser.Parse - JSON)"]
+        WS_CLI["WebSocket Client\\n(internal/websockets)"]
+        SUBMITTER["HTTP Batch Submitter\\n(internal/submitter)"]
+        HTTP_CLI["REST API Client\\n(internal/api)"]
+        CFGMGR["Config Manager\\n(pkg/config)"]
+        PROC["Process Manager\\n(pkg/process)"]
     end
 
     subgraph "CookieFarm Server\\n(cks binary - Go + Docker)"
@@ -126,12 +138,16 @@ graph TD
     end
 
     CLI --> EE
-    EE --> PY
+    EE --> PROC
+    PROC --> PY
     PY --> PARSER
     PARSER --> WS_CLI
-    PARSER --> HTTP_CLI
-    WS_CLI -->|"WebSocket /ws"| WS_SRV
+    PARSER --> SUBMITTER
+    WS_CLI -->|"WebSocket /ws/"| WS_SRV
+    SUBMITTER --> HTTP_CLI
     HTTP_CLI -->|"POST /api/v1/submit-flags-standalone"| FIBER
+    WS_CLI -.->|"config update"| CFGMGR
+    HTTP_CLI -.->|"login / config fetch"| FIBER
     WS_SRV --> FC_COLL
     FC_COLL --> DB
     FIBER --> AUTH
@@ -141,7 +157,7 @@ graph TD
     PROTO -->|"HTTP PUT + X-Team-Token"| FC
     TTL --> DB
     FIBER --> UI
-    EE -->|"exec subprocess"| TEAMS
+    PROC -->|"exec subprocess"| TEAMS
 ```
 
 ---
@@ -155,10 +171,10 @@ Flags flow in one direction: from Python exploit stdout → Go client parser →
 
 | Entity Name | Description |
 | --- | --- |
-| **`ClientData`** | Core flag entity. Contains `flag_code`, `service_name`, `port_service`, `team_id`, `status`, `username`, `exploit_name`, `submit_time`, `response_time`, `msg`. This is the primary record persisted in SQLite and exchanged between client and server.  |
-| **`ConfigShared`** | Aggregated configuration struct shared between server and client contexts. Contains `ConfigServer`, `ConfigClient`, and a `Configured` boolean flag.  |
+| **`database.Flag`** | Core flag entity (formerly `ClientData`). Contains `flag_code`, `service_name`, `port_service`, `team_id`, `status`, `username`, `exploit_name`, `submit_time`, `response_time`, `msg`. This is the primary record persisted in SQLite and exchanged between client and server via WebSocket (`EventWSFlag`) or HTTP (`SubmitFlagsRequest`). |
+| **`sharedconfig.Shared`** | Shared configuration struct pushed from server to client via WebSocket `{type:"config"}` events. Contains a `services` map (`name → port`), `regex_flag`, `format_ip_teams`, `range_ip_teams`, `my_team_id`, `nop_team`, and `url_flag_ids`. Stored by the client in `~/.config/cookiefarm/shared.yml`. |
 | **`ConfigServer`** | Server-side configuration: `url_flag_checker`, `team_token`, `protocol`, `tick_time`, `submit_flag_checker_time`, `max_flag_batch_size`, `flag_ttl`, `start_time`, `end_time`.  |
-| **`ConfigClient`** | Client-side configuration: `services` list, `regex_flag`, `format_ip_teams`, `range_ip_teams`, `my_team_id`, `nop_team`, `url_flag_ids`.  |
+| **`config.LocalConfig`** | Client-local connection settings: `host`, `port`, `username`, `https`. Persisted to `~/.config/cookiefarm/client.yml` and never sent to the server. |
 | **`Service`** | Represents a single exploitable CTF service, with a `name` and `port`.  |
 | **`ResponseProtocol`** | Response from the flag checker per flag: `status` (`ACCEPTED`/`DENIED`/`RESUBMIT`/`ERROR`), `flag`, `msg`.  |
 | **`ParsedFlagOutput`** | JSON structure emitted by Python exploit scripts to stdout. Contains `status`, `flag_code`, `name_service`, `message`, `team_id`, `port_service`.  |
@@ -182,8 +198,8 @@ sequenceDiagram
     participant FC as "External Flag Checker"
 
     PY->>PARSER: "JSON line to stdout"
-    PARSER->>PARSER: "ParseLine() -> ClientData"
-    PARSER->>WS: "ClientData via flagsChan"
+    PARSER->>PARSER: "Parse() -> database.Flag"
+    PARSER->>WS: "database.Flag via flagsChan"
     WS->>SRV: "WebSocket event {type: flag}"
     SRV->>COLL: "AddFlag(ClientData)"
     COLL->>COLL: "Buffer (max 100 flags)"

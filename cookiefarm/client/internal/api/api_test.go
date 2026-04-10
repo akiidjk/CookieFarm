@@ -288,11 +288,7 @@ func TestGetCookie(t *testing.T) {
 }
 
 func TestDoRequest(t *testing.T) {
-	t.Parallel()
-
 	t.Run("should_return_error_when_authed_and_host_is_empty", func(t *testing.T) {
-		t.Parallel()
-
 		resetClientSingletonForTest("", 0, "tok")
 		c := &Client{
 			baseURL: "http://127.0.0.1:1",
@@ -309,8 +305,6 @@ func TestDoRequest(t *testing.T) {
 	})
 
 	t.Run("should_send_auth_cookie_and_content_type_when_authed", func(t *testing.T) {
-		t.Parallel()
-
 		var gotCookie string
 		var gotCT string
 		var gotMethod string
@@ -356,8 +350,6 @@ func TestDoRequest(t *testing.T) {
 	})
 
 	t.Run("should_not_send_auth_cookie_when_not_authed", func(t *testing.T) {
-		t.Parallel()
-
 		var gotCookie string
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			gotCookie = r.Header.Get("Cookie")
@@ -380,8 +372,6 @@ func TestDoRequest(t *testing.T) {
 	})
 
 	t.Run("should_return_network_error_when_server_unreachable", func(t *testing.T) {
-		t.Parallel()
-
 		// Reserve and close a port to maximize unreachable determinism.
 		ln, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
@@ -409,11 +399,7 @@ func TestDoRequest(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
-	t.Parallel()
-
 	t.Run("should_store_token_when_login_successful_and_cookie_present", func(t *testing.T) {
-		t.Parallel()
-
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/api/v1/auth/login" {
 				t.Fatalf("unexpected path: %s", r.URL.Path)
@@ -445,8 +431,6 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("should_return_error_when_login_status_is_non_200", func(t *testing.T) {
-		t.Parallel()
-
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte(`unauthorized`))
@@ -466,8 +450,6 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("should_return_error_when_cookie_missing_even_if_status_200", func(t *testing.T) {
-		t.Parallel()
-
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`ok`))
@@ -488,11 +470,7 @@ func TestLogin(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	t.Parallel()
-
 	t.Run("should_return_shared_config_when_status_200_and_json_valid", func(t *testing.T) {
-		t.Parallel()
-
 		const payload = `{
 			"services":{"http":80,"https":443},
 			"regex_flag":"FLAG\\{.*\\}",
@@ -532,8 +510,6 @@ func TestGetConfig(t *testing.T) {
 	})
 
 	t.Run("should_return_error_when_status_non_200", func(t *testing.T) {
-		t.Parallel()
-
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte(`forbidden`))
@@ -553,8 +529,6 @@ func TestGetConfig(t *testing.T) {
 	})
 
 	t.Run("should_return_error_when_json_is_invalid", func(t *testing.T) {
-		t.Parallel()
-
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"services":`))
@@ -575,11 +549,7 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestSubmitBatchDirect(t *testing.T) {
-	t.Parallel()
-
 	t.Run("should_return_nil_when_empty_batch_and_status_200", func(t *testing.T) {
-		t.Parallel()
-
 		var gotContentType string
 		var gotCookie string
 		var gotBody string
@@ -617,8 +587,6 @@ func TestSubmitBatchDirect(t *testing.T) {
 	})
 
 	t.Run("should_return_error_when_server_returns_500_for_non_empty_batch", func(t *testing.T) {
-		t.Parallel()
-
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(`boom`))
@@ -639,8 +607,6 @@ func TestSubmitBatchDirect(t *testing.T) {
 }
 
 func TestSubmitFlag(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name       string
 		statusCode int
@@ -654,8 +620,6 @@ func TestSubmitFlag(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			var seenPath string
 			var seenBody string
 

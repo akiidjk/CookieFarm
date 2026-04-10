@@ -48,6 +48,10 @@ func Create(name string) (string, error) {
 		return "", err
 	}
 
+	if name == "" {
+		return "", fmt.Errorf("exploit name cannot be empty")
+	}
+
 	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
 
 	name, err := system.NormalizeNamePathExploit(name)

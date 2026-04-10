@@ -174,7 +174,7 @@ client-install: client-build
     @sudo cp {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} /usr/local/bin/{{ CLIENT_BINARY_NAME }}
     @sudo cp /usr/local/bin/{{ CLIENT_BINARY_NAME }} ~/.venv/bin/{{ CLIENT_BINARY_NAME }}
 
-# Test client binaries
+# Test
 [group('test')]
 [working-directory('cookiefarm')]
 test:

@@ -12,6 +12,8 @@ services:
       CONFIG_FILE: ${CONFIG_FILE}
       PORT: ${PORT}
       DEBUG: ${DEBUG}
+    env_file:
+      - .env
     volumes:
       - sqlite_bp:/app/database
     networks:

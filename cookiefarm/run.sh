@@ -2,6 +2,8 @@
 
 PORT="${PORT:-8080}"
 DEBUG="${DEBUG:-false}"
+PASSWORD="${PASSWORD:-changeme}"
+
 
 if ! echo "$PORT" | grep -qE '^[0-9]+$'; then
     echo "Error: PORT must be a numeric value."
@@ -15,8 +17,8 @@ fi
 
 CMD="/app/bin/cks"
 
-ARGS="-P \"$PASSWORD\""
-ARGS="$ARGS -p \"$PORT\""
+ARGS="-P ${PASSWORD}"
+ARGS="$ARGS -p ${PORT}"
 
 if [ -n "$CONFIG_FILE" ]; then
     ARGS="$ARGS -c"

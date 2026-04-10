@@ -201,7 +201,6 @@ func TestSubmitFlagsShouldHandleConcurrentProducersWhenChannelEventuallyClosed(t
 	var wg sync.WaitGroup
 	wg.Add(producers)
 	for p := range producers {
-		p := p
 		go func() {
 			defer wg.Done()
 			start := p * perProducer

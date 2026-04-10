@@ -298,10 +298,8 @@ func TestCircuitBreaker_IsAllowed_TableDriven(t *testing.T) {
 	}{
 		{
 			// TF-08: C5a — Closed always permits connections.
-			name: "Closed_AlwaysPermits",
-			setup: func() *CircuitBreaker {
-				return newCB()
-			},
+			name:        "Closed_AlwaysPermits",
+			setup:       newCB, // default is Closed with zero failures
 			wantAllowed: true,
 			wantState:   StateClosed,
 			desc:        "StateClosed must always return true and remain Closed",

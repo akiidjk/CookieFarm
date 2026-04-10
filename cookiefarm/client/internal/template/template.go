@@ -1,6 +1,7 @@
 package template
 
 import (
+	"errors"
 	"fmt"
 	"logger"
 	"os"
@@ -49,7 +50,7 @@ func Create(name string) (string, error) {
 	}
 
 	if name == "" {
-		return "", fmt.Errorf("exploit name cannot be empty")
+		return "", errors.New("exploit name cannot be empty")
 	}
 
 	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")

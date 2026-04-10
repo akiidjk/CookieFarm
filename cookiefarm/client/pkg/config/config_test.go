@@ -178,6 +178,7 @@ func overrideDefaultPath(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestSetGetHost(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		host string
@@ -209,6 +210,7 @@ func TestSetGetHost(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestSetGetPort(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		port uint16
@@ -239,6 +241,7 @@ func TestSetGetPort(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestSetGetHTTPS(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		value bool
@@ -275,59 +278,44 @@ func TestSetHTTPS_Toggle(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// D — Username  (categories D1, D2)
+// D & E — Username and Token string fields
 // ---------------------------------------------------------------------------
 
-func TestSetGetUsername(t *testing.T) {
-	cases := []struct {
-		name     string
-		username string
-	}{
-		// D1: non-empty
-		{name: "D1_admin", username: "admin"},
-		{name: "D1_cookieguest", username: "cookieguest"},
-		// D2: boundary
-		{name: "D2_empty", username: ""},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			cm := newTestManager()
-			cm.SetUsername(tc.username)
-			if got := cm.GetUsername(); got != tc.username {
-				t.Errorf("GetUsername() = %q; want %q", got, tc.username)
-			}
-		})
-	}
+func testStringField(t *testing.T, field string, set func(*ConfigManager, string), get func(*ConfigManager) string, cases map[string]string) {
+	t.Helper()
+	t.Run(field, func(t *testing.T) {
+		for name, val := range cases {
+			tcName, tcVal := name, val
+			t.Run(tcName, func(t *testing.T) {
+				t.Parallel()
+				cm := newTestManager()
+				set(cm, tcVal)
+				if got := get(cm); got != tcVal {
+					t.Errorf("got %q; want %q", got, tcVal)
+				}
+			})
+		}
+	})
 }
 
-// ---------------------------------------------------------------------------
-// E — Token  (categories E1, E2)
-// ---------------------------------------------------------------------------
-
-func TestSetGetToken(t *testing.T) {
-	cases := []struct {
-		name  string
-		token string
-	}{
-		// E1: non-empty round-trip
-		{name: "E1_jwt_like", token: "eyJhbGciOiJIUzI1NiJ9.payload.sig"},
-		{name: "E1_simple", token: "secret-token-42"},
-		// E2: boundary
-		{name: "E2_empty", token: ""},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			cm := newTestManager()
-			cm.SetToken(tc.token)
-			if got := cm.GetToken(); got != tc.token {
-				t.Errorf("GetToken() = %q; want %q", got, tc.token)
-			}
+func TestSetGetStringFields(t *testing.T) {
+	testStringField(t, "Username",
+		func(m *ConfigManager, s string) { m.SetUsername(s) },
+		func(m *ConfigManager) string { return m.GetUsername() },
+		map[string]string{
+			"D1_admin":       "admin",
+			"D1_cookieguest": "cookieguest",
+			"D2_empty":       "",
 		})
-	}
+
+	testStringField(t, "Token",
+		func(m *ConfigManager, s string) { m.SetToken(s) },
+		func(m *ConfigManager) string { return m.GetToken() },
+		map[string]string{
+			"E1_jwt_like": "eyJhbGciOiJIUzI1NiJ9.payload.sig",
+			"E1_simple":   "secret-token-42",
+			"E2_empty":    "",
+		})
 }
 
 // TestSetToken_Overwrite covers the E1 → E2 transition: replacing a non-empty
@@ -342,48 +330,10 @@ func TestSetToken_Overwrite(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// F — MapServiceToPort  (categories F1, F2)
+// F & G — MapServiceToPort and MapPortToService
 // ---------------------------------------------------------------------------
 
-func TestMapServiceToPort(t *testing.T) {
-	cm := newTestManager()
-	cm.SetSharedConfig(sharedconfig.Shared{
-		Services: map[string]uint16{
-			"http":  80,
-			"https": 443,
-			"ssh":   22,
-		},
-	})
-
-	cases := []struct {
-		name     string
-		service  string
-		wantPort uint16
-	}{
-		// F1: key present
-		{name: "F1_http", service: "http", wantPort: 80},
-		{name: "F1_https", service: "https", wantPort: 443},
-		{name: "F1_ssh", service: "ssh", wantPort: 22},
-		// F2: key absent → Go zero-value for uint16
-		{name: "F2_unknown_service", service: "telnet", wantPort: 0},
-		{name: "F2_empty_key", service: "", wantPort: 0},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := cm.MapServiceToPort(tc.service)
-			if got != tc.wantPort {
-				t.Errorf("MapServiceToPort(%q) = %d; want %d", tc.service, got, tc.wantPort)
-			}
-		})
-	}
-}
-
-// ---------------------------------------------------------------------------
-// G — MapPortToService  (categories G1, G2, G3)
-// ---------------------------------------------------------------------------
-
-func TestMapPortToService(t *testing.T) {
+func TestServicePortMapping(t *testing.T) {
 	cm := newTestManager()
 	cm.SetSharedConfig(sharedconfig.Shared{
 		Services: map[string]uint16{
@@ -395,22 +345,24 @@ func TestMapPortToService(t *testing.T) {
 
 	cases := []struct {
 		name        string
+		service     string
 		port        uint16
+		wantPort    uint16
 		wantService string
 	}{
-		// G1: port found
-		{name: "G1_port_80", port: 80, wantService: "http"},
-		{name: "G1_port_443", port: 443, wantService: "https"},
-		{name: "G1_port_22", port: 22, wantService: "ssh"},
-		// G2: port absent
-		{name: "G2_unknown_port", port: 9999, wantService: ""},
-		{name: "G2_zero_port", port: 0, wantService: ""},
+		{"http", "http", 80, 80, "http"},
+		{"https", "https", 443, 443, "https"},
+		{"ssh", "ssh", 22, 22, "ssh"},
+		{"unknown_service", "telnet", 9999, 0, ""},
+		{"empty", "", 0, 0, ""},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := cm.MapPortToService(tc.port)
-			if got != tc.wantService {
+			if got := cm.MapServiceToPort(tc.service); got != tc.wantPort {
+				t.Errorf("MapServiceToPort(%q) = %d; want %d", tc.service, got, tc.wantPort)
+			}
+			if got := cm.MapPortToService(tc.port); got != tc.wantService {
 				t.Errorf("MapPortToService(%d) = %q; want %q", tc.port, got, tc.wantService)
 			}
 		})

@@ -273,7 +273,7 @@ func TestGetCookie(t *testing.T) {
 		t.Parallel()
 		resp := &http.Response{
 			Header: http.Header{
-				"Set-Cookie": []string{"session=xyz; Path=/"},
+				"Set-Cookie": []string{"session=session-id; Path=/"},
 			},
 		}
 
@@ -287,7 +287,7 @@ func TestGetCookie(t *testing.T) {
 	})
 }
 
-func TestDoRequest(t *testing.T) {
+func TestDoRequest_AuthedEmptyHost(t *testing.T) {
 	t.Run("should_return_error_when_authed_and_host_is_empty", func(t *testing.T) {
 		resetClientSingletonForTest("", 0, "tok")
 		c := &Client{
@@ -295,7 +295,10 @@ func TestDoRequest(t *testing.T) {
 			http:    &http.Client{},
 		}
 
-		_, _, err := c.doRequest(http.MethodGet, "/x", nil, AUTHED, "")
+		resp, _, err := c.doRequest(http.MethodGet, "/x", nil, AUTHED, "")
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
 		if err == nil {
 			t.Fatalf("expected error, got nil")
 		}
@@ -303,7 +306,9 @@ func TestDoRequest(t *testing.T) {
 			t.Fatalf("expected missing auth token, got %v", err)
 		}
 	})
+}
 
+func TestDoRequest_AuthedSendCookie(t *testing.T) {
 	t.Run("should_send_auth_cookie_and_content_type_when_authed", func(t *testing.T) {
 		var gotCookie string
 		var gotCT string
@@ -316,8 +321,7 @@ func TestDoRequest(t *testing.T) {
 			gotCT = r.Header.Get("Content-Type")
 			gotMethod = r.Method
 			gotPath = r.URL.Path
-			b := make([]byte, r.ContentLength)
-			_, _ = r.Body.Read(b)
+			b, _ := io.ReadAll(r.Body)
 			gotBody = string(b)
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`ok`))
@@ -328,7 +332,10 @@ func TestDoRequest(t *testing.T) {
 		resetClientSingletonForTest(host, port, "mytoken")
 
 		c := getClient()
-		_, body, err := c.doRequest(http.MethodPost, "/abc", []byte(`{"a":1}`), AUTHED, "application/json")
+		resp, body, err := c.doRequest(http.MethodPost, "/abc", []byte(`{"a":1}`), AUTHED, "application/json")
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -348,7 +355,9 @@ func TestDoRequest(t *testing.T) {
 			t.Fatalf("unexpected request body: %q", gotBody)
 		}
 	})
+}
 
+func TestDoRequest_NotAuthedNoCookie(t *testing.T) {
 	t.Run("should_not_send_auth_cookie_when_not_authed", func(t *testing.T) {
 		var gotCookie string
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -362,7 +371,10 @@ func TestDoRequest(t *testing.T) {
 		resetClientSingletonForTest(host, port, "present-but-not-used")
 
 		c := getClient()
-		_, _, err := c.doRequest(http.MethodGet, "/noauth", nil, NOTAUTHED, "")
+		resp, _, err := c.doRequest(http.MethodGet, "/noauth", nil, NOTAUTHED, "")
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -370,7 +382,9 @@ func TestDoRequest(t *testing.T) {
 			t.Fatalf("expected no cookie in NOTAUTHED request, got %q", gotCookie)
 		}
 	})
+}
 
+func TestDoRequest_NetworkError(t *testing.T) {
 	t.Run("should_return_network_error_when_server_unreachable", func(t *testing.T) {
 		// Reserve and close a port to maximize unreachable determinism.
 		ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -388,7 +402,10 @@ func TestDoRequest(t *testing.T) {
 		resetClientSingletonForTest(host, uint16(p), "tok")
 
 		c := getClient()
-		_, _, err = c.doRequest(http.MethodGet, "/x", nil, NOTAUTHED, "")
+		resp, _, err := c.doRequest(http.MethodGet, "/x", nil, NOTAUTHED, "")
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
 		if err == nil {
 			t.Fatalf("expected network error, got nil")
 		}
@@ -430,43 +447,36 @@ func TestLogin(t *testing.T) {
 		}
 	})
 
-	t.Run("should_return_error_when_login_status_is_non_200", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusUnauthorized)
-			_, _ = w.Write([]byte(`unauthorized`))
-		}))
-		defer srv.Close()
+	loginCases := []struct {
+		name       string
+		status     int
+		body       string
+		errMessage string
+	}{
+		{"should_return_error_when_login_status_is_non_200", http.StatusUnauthorized, `unauthorized`, "status 401"},
+		{"should_return_error_when_cookie_missing_even_if_status_200", http.StatusOK, `ok`, "token not found"},
+	}
 
-		host, port := parseHostPort(t, srv.URL)
-		resetClientSingletonForTest(host, port, "")
+	for _, tc := range loginCases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.status)
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			defer srv.Close()
 
-		err := Login("u", "p")
-		if err == nil {
-			t.Fatalf("expected error, got nil")
-		}
-		if !strings.Contains(err.Error(), "status 401") {
-			t.Fatalf("expected status 401 in error, got %v", err)
-		}
-	})
+			host, port := parseHostPort(t, srv.URL)
+			resetClientSingletonForTest(host, port, "")
 
-	t.Run("should_return_error_when_cookie_missing_even_if_status_200", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`ok`))
-		}))
-		defer srv.Close()
-
-		host, port := parseHostPort(t, srv.URL)
-		resetClientSingletonForTest(host, port, "")
-
-		err := Login("u", "p")
-		if err == nil {
-			t.Fatalf("expected error, got nil")
-		}
-		if !strings.Contains(err.Error(), "token not found") {
-			t.Fatalf("expected token not found error, got %v", err)
-		}
-	})
+			err := Login("u", "p")
+			if err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+			if !strings.Contains(err.Error(), tc.errMessage) {
+				t.Fatalf("expected %q in error, got %v", tc.errMessage, err)
+			}
+		})
+	}
 }
 
 func TestGetConfig(t *testing.T) {
@@ -509,43 +519,36 @@ func TestGetConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("should_return_error_when_status_non_200", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(`forbidden`))
-		}))
-		defer srv.Close()
+	configCases := []struct {
+		name       string
+		status     int
+		body       string
+		errMessage string
+	}{
+		{"should_return_error_when_status_non_200", http.StatusForbidden, `forbidden`, "status 403"},
+		{"should_return_error_when_json_is_invalid", http.StatusOK, `{"services":`, "json decode error"},
+	}
 
-		host, port := parseHostPort(t, srv.URL)
-		resetClientSingletonForTest(host, port, "tok")
+	for _, tc := range configCases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.status)
+				_, _ = w.Write([]byte(tc.body))
+			}))
+			defer srv.Close()
 
-		_, err := GetConfig()
-		if err == nil {
-			t.Fatalf("expected error, got nil")
-		}
-		if !strings.Contains(err.Error(), "status 403") {
-			t.Fatalf("expected status 403 in error, got %v", err)
-		}
-	})
+			host, port := parseHostPort(t, srv.URL)
+			resetClientSingletonForTest(host, port, "tok")
 
-	t.Run("should_return_error_when_json_is_invalid", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"services":`))
-		}))
-		defer srv.Close()
-
-		host, port := parseHostPort(t, srv.URL)
-		resetClientSingletonForTest(host, port, "tok")
-
-		_, err := GetConfig()
-		if err == nil {
-			t.Fatalf("expected decode error, got nil")
-		}
-		if !strings.Contains(err.Error(), "json decode error") {
-			t.Fatalf("expected json decode error, got %v", err)
-		}
-	})
+			_, err := GetConfig()
+			if err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+			if !strings.Contains(err.Error(), tc.errMessage) {
+				t.Fatalf("expected %q in error, got %v", tc.errMessage, err)
+			}
+		})
+	}
 }
 
 func TestSubmitBatchDirect(t *testing.T) {

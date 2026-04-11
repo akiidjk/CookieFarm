@@ -22,11 +22,11 @@ tailwindcss-build:
 tailwindcss-watch:
     ./tools/tailwindcss -c ./server/tailwind.config.js -i ./server/assets/css/global.css -o ./server/public/css/output.css --watch
 
-# Run the minify on the js files in the assets/js directory and output to public/js
-# [group('tools')]
-# [working-directory('cookiefarm')]
-# minify:
-#    @uglifyjs ./server/assets/js/*.js -o ./server/public/js/output.min.js -c -m
+# Run the minify on the js files in the assets/js directory and output to public/js `bun/npm -g install uglify-js`
+[group('tools')]
+[working-directory('cookiefarm')]
+minify:
+    @uglifyjs ./server/assets/js/*.js -o ./server/public/js/output.min.js -c -m
 
 # Lint the codebase using golangci-lint and apply fixes where possible
 [group('tools')]
@@ -68,3 +68,21 @@ snapshot-goroutine:
     @echo -e "{{ CYAN }}[*] Taking Goroutine snapshot...{{ RESET }}"
     go tool pprof -http=:6063 http://localhost:6060/debug/pprof/goroutine?debug=1
     @echo -e "{{ GREEN }}[+] Goroutine snapshot complete!{{ RESET }}"
+
+[group('dev')]
+[working-directory('cookiefarm')]
+cookiefarm-release:
+    @echo Creating branch for release...
+    @./.github/release.sh release v{{ VERSION }} || { echo -e "{{ RED }}[!] .github/release.sh failed. Aborting release.{{ RESET }}"; exit 1; }
+    @goreleaser healthcheck || { echo -e "{{ RED }}[!] goreleaser healthcheck failed. Aborting release.{{ RESET }}"; exit 1; }
+    @goreleaser release || { echo -e "{{ RED }}[!] goreleaser failed. Aborting release.{{ RESET }}"; exit 1; }
+    @echo Release branch created and binaries built! Please review the release and publish it on GitHub.
+
+[group('dev')]
+exploiter-release:
+    @echo Not implemented yet, but will build and upload the Python package to PyPI and Test PyPI
+
+[group('dev')]
+release:
+    @just cookiefarm-release
+    @just exploiter-release

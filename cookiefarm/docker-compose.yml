@@ -16,6 +16,7 @@ services:
       - .env
     volumes:
       - sqlite_bp:/app/database
+      - ./config.yml:/app/config.yml
     networks:
       - cookiefarm-network
 

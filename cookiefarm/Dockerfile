@@ -8,7 +8,9 @@ COPY ./ /app/
 
 # server builds
 RUN GOOS="linux" GOARCH="amd64" \
-  go build -trimpath -ldflags="-s -w -X main.Version=1.2.1" -o ./bin/cks ./server/main.go
+  go build -trimpath \
+  -ldflags="-s -w -X main.Version=1.2.1" \
+  -o ./bin/cks ./server/main.go
 
 # plugins build
 RUN for file in $(find ./pkg/protocols -name '*.go' ! -name 'protocols.go'); do \

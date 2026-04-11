@@ -25,9 +25,7 @@ FROM alpine:3.23.3 AS prod
 
 WORKDIR /app
 
-RUN apk add --no-cache libc6-compat
-
-RUN addgroup -S vincenzino \
+RUN apk add --no-cache libc6-compat; addgroup -S vincenzino \
     && adduser -S vincenzino -G vincenzino
 
 COPY --from=build /app/bin/cks /app/bin/cks

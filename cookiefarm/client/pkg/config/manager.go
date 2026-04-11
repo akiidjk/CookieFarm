@@ -17,6 +17,8 @@ var (
 	once     sync.Once
 )
 
+const clientNameConfig = "client.yml"
+
 const configTemplate = `
 host: "localhost"
 port: 8080
@@ -136,7 +138,7 @@ func (cm *ConfigManager) SetUsername(username string) {
 }
 
 func (cm *ConfigManager) Read() error {
-	if err := read(&cm.Get().Local, "client.yml"); err != nil {
+	if err := read(&cm.Get().Local, clientNameConfig); err != nil {
 		return err
 	}
 
@@ -163,7 +165,7 @@ func (cm *ConfigManager) Write() error {
 }
 
 func (cm *ConfigManager) WriteLocal() error {
-	return write(&cm.Get().Local, "client.yml")
+	return write(&cm.Get().Local, clientNameConfig)
 }
 
 func (cm *ConfigManager) WriteShared() error {
@@ -175,7 +177,7 @@ func (*ConfigManager) Reset() error {
 		return err
 	}
 
-	configPath := filepath.Join(DefaultPath, "client.yml")
+	configPath := filepath.Join(DefaultPath, clientNameConfig)
 	return os.WriteFile(configPath, []byte(configTemplate), 0o644)
 }
 

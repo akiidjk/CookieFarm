@@ -17,7 +17,10 @@ RUN for file in $(find ./pkg/protocols -name '*.go' ! -name 'protocols.go'); do 
  if grep -q '^package main' "$file"; then \
   filename=$(basename $file); \
   pluginname=${filename%.go}; \
-  GOOS="linux" GOARCH="amd64" go build -trimpath -ldflags="-s -w -X main.Version=1.2.1" -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
+  GOOS="linux" GOARCH="amd64" \
+    go build -trimpath \
+        -ldflags="-s -w -X main.Version=1.2.1" \
+        -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
  else \
   echo "Skipping $file: not a main package"; \
  fi; \

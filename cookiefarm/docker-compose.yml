@@ -1,9 +1,6 @@
 services:
   server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: prod
+    image: ghcr.io/bytethecookies/cookiefarm:latest
     restart: unless-stopped
     ports:
       - ${PORT}:${PORT}

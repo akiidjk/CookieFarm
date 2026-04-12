@@ -86,3 +86,11 @@ exploiter-release:
 release:
     @just cookiefarm-release
     @just exploiter-release
+
+[group('dev')]
+[working-directory('cookiefarm')]
+ghcr-push:
+    @echo Building and pushing Docker image to GitHub Container Registry...
+    @docker build -t ghcr.io/bytethecookies/cookiefarm:latest .
+    @docker push ghcr.io/bytethecookies/cookiefarm:latest
+    @echo Docker image pushed to GitHub Container Registry!

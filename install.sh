@@ -530,18 +530,18 @@ GUM_BIN="$(ensure_gum)" || {
     exit 1
 }
 
-build="${1:-}"
-if [ -z "$build" ] || { [ "$build" != "true" ] && [ "$build" != "false" ]; }; then
-    printf "%b%bUsage:%b %s <true|false>\n" "$BOLD" "$C_FLAG" "$RESET" "$0"
-    printf "%b  true%b   — clone repo and build containers from source\n" \
+mode="${1:-}"
+if [ -z "$mode" ] || { [ "$mode" != "build" ] && [ "$mode" != "remote" ]; }; then
+    printf "%b%bUsage:%b %s <build|remote>\n" "$BOLD" "$C_FLAG" "$RESET" "$0"
+    printf "%b  build%b   — clone repo and build containers from source\n" \
         "$C_FLAG" "$RESET"
-    printf "%b  false%b  — download docker-compose.yml only and start\n\n" \
+    printf "%b  remote%b  — download docker-compose.yml only and start\n\n" \
         "$C_FLAG" "$RESET"
     exit 1
 fi
 
 # ── Build mode: clone + docker build ─────────────────────────────────────────
-if [ "$build" = "true" ]; then
+if [ "$mode" = "build" ]; then
     require_cmd git "Install git to clone the repository"
     require_cmd docker "Install Docker to run containers"
 

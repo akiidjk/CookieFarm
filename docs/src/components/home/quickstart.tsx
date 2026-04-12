@@ -61,7 +61,7 @@ export function Quickstart() {
 
           {/* Command box */}
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-amber-500/20 to-emerald-500/20 rounded-xl blur opacity-50 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute -inset-1 bg-linear-to-r from-amber-500/20 to-emerald-500/20 rounded-xl blur opacity-50 group-hover:opacity-100 transition-opacity" />
             <div className="relative bg-card border border-border rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 bg-secondary/50 border-b border-border">
                 <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export function Quickstart() {
           {/* Additional steps */}
           <div className="mt-8 grid gap-4">
             <div className="flex items-start gap-4 p-4 rounded-lg bg-card/50 border border-border">
-              <div className="flex-shrink-0 size-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold text-sm">
+              <div className="shrink-0 size-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold text-sm">
                 1
               </div>
               <div>
@@ -106,7 +106,7 @@ export function Quickstart() {
             </div>
 
             <div className="flex items-start gap-4 p-4 rounded-lg bg-card/50 border border-border">
-              <div className="flex-shrink-0 size-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm">
+              <div className="shrink-0 size-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm">
                 2
               </div>
               <div>
@@ -118,7 +118,7 @@ export function Quickstart() {
             </div>
 
             <div className="flex items-start gap-4 p-4 rounded-lg bg-card/50 border border-border">
-              <div className="flex-shrink-0 size-8 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-500 font-bold text-sm">
+              <div className="shrink-0 size-8 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-500 font-bold text-sm">
                 3
               </div>
               <div>

@@ -8,7 +8,7 @@ import { SiGithub } from '@icons-pack/react-simple-icons';
 
 const navigation = [
   { name: 'Documentation', href: '/docs' },
-  { name: 'Installation', href: '/docs/installation' },
+  { name: 'Installation ', href: '/docs/installation' },
   { name: 'Exploits', href: '/docs/exploits' },
 ];
 

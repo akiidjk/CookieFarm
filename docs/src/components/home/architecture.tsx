@@ -59,7 +59,7 @@ export function Architecture() {
           {steps.map((step, index) => (
             <div key={step.title} className="flex items-center">
               <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-amber-500/20 to-emerald-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute -inset-2 bg-linear-to-r from-amber-500/20 to-emerald-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex flex-col items-center p-6 bg-background border border-border rounded-xl w-64 hover:border-amber-500/50 transition-colors">
                   <div className={`inline-flex p-4 rounded-xl ${step.bgColor} mb-4`}>
                     <step.icon className={`size-8 ${step.color}`} />

@@ -105,7 +105,7 @@ export function Features() {
               </p>
 
               {/* Hover glow effect */}
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
+              <div className="absolute inset-0 rounded-xl bg-linear-to-br from-amber-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity -z-10" />
             </div>
           ))}
         </div>

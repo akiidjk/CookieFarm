@@ -138,7 +138,7 @@ export function Hero() {
 
           {/* Right Content - Code Preview */}
           <div className="relative">
-            <div className="absolute -inset-4 bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-sky-500/20 rounded-2xl blur-xl opacity-50" />
+            <div className="absolute -inset-4 bg-linear-to-r from-amber-500/20 via-emerald-500/20 to-sky-500/20 rounded-2xl blur-xl opacity-50" />
             <div className="relative bg-card border border-border rounded-xl overflow-hidden shadow-2xl">
               {/* Terminal Header */}
               <div className="flex items-center gap-2 px-4 py-3 bg-secondary/50 border-b border-border">

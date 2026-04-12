@@ -1,6 +1,6 @@
 import type { BaseLayoutProps, LinkItemType } from 'fumadocs-ui/layouts/shared';
 import { appName, gitConfig } from './shared';
-import { Cookie } from 'lucide-react';
+import { Book, BookIcon, Cookie, DownloadIcon, Syringe, SyringeIcon } from 'lucide-react';
 
 export function baseOptions(): BaseLayoutProps {
   return {
@@ -16,20 +16,7 @@ export function baseOptions(): BaseLayoutProps {
       ),
       url: '/',
     },
-    links: [
-      {
-        text: 'Documentation',
-        url: '/docs',
-      },
-      {
-        text: 'Installation',
-        url: `/docs/installation`,
-      },
-      {
-        text: 'Exploits',
-        url: `/docs/exploits`,
-      },
-    ] as LinkItemType[],
+
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }

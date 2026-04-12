@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Zap, Cookie } from 'lucide-react';
 import { SiGithub } from '@icons-pack/react-simple-icons';
 import { Button } from '@/components/ui/button';
+import { CodeTypewriter } from '../typewriter';
 
 const codeLines = [
   '#!/usr/bin/env python3',
@@ -18,63 +19,6 @@ const codeLines = [
   '    r = requests.get(f"{base_url}/get-flag")',
   '    print(r.text)',
 ];
-
-function TypewriterCode() {
-  const [displayedLines, setDisplayedLines] = useState<string[]>([]);
-  const [currentLine, setCurrentLine] = useState(0);
-  const [currentChar, setCurrentChar] = useState(0);
-
-  useEffect(() => {
-    if (currentLine >= codeLines.length) {
-      // Reset after a delay
-      const timeout = setTimeout(() => {
-        setDisplayedLines([]);
-        setCurrentLine(0);
-        setCurrentChar(0);
-      }, 3000);
-      return () => clearTimeout(timeout);
-    }
-
-    const line = codeLines[currentLine];
-
-    if (currentChar <= line.length) {
-      const timeout = setTimeout(() => {
-        setDisplayedLines(prev => {
-          const newLines = [...prev];
-          newLines[currentLine] = line.slice(0, currentChar);
-          return newLines;
-        });
-        setCurrentChar(prev => prev + 1);
-      }, 30);
-      return () => clearTimeout(timeout);
-    } else {
-      setCurrentLine(prev => prev + 1);
-      setCurrentChar(0);
-    }
-  }, [currentLine, currentChar]);
-
-  return (
-    <div className="font-mono text-sm leading-relaxed">
-      {displayedLines.map((line, i) => (
-        <div key={i} className="flex">
-          <span className="text-muted-foreground w-8 select-none">{i + 1}</span>
-          <span className={
-            line.includes('class') ? 'text-amber-400' :
-              line.includes('def') ? 'text-emerald-400' :
-                line.includes('from') || line.includes('import') ? 'text-sky-400' :
-                  line.includes('return') ? 'text-rose-400' :
-                    'text-foreground'
-          }>
-            {line}
-            {i === currentLine - 1 || (i === displayedLines.length - 1 && currentLine < codeLines.length) ? (
-              <span className="inline-block w-2 h-4 bg-amber-500 animate-pulse ml-0.5" />
-            ) : null}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function Hero() {
   return (
@@ -152,7 +96,7 @@ export function Hero() {
 
               {/* Code Content */}
               <div className="p-6 min-h-[280px] bg-background/50">
-                <TypewriterCode />
+                <CodeTypewriter code={codeLines.join("\n")} />
               </div>
 
               {/* Terminal Footer */}

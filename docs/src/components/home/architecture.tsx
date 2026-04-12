@@ -46,7 +46,7 @@ export function Architecture() {
             Architecture
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-balance">
-            Hybrid <span className="text-emerald-500">Go</span> + <span className="text-amber-500">Python</span> Power
+            Hybrid <span className="text-blue-500">Go</span> + <span className="text-amber-500">Python</span> Power
           </h2>
           <p className="text-lg text-muted-foreground">
             The best of both worlds: Go&apos;s performance for the core engine,

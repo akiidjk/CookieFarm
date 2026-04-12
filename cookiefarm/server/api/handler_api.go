@@ -6,6 +6,7 @@ import (
 	"models"
 	"os"
 	"path/filepath"
+	"sharedconfig"
 	"strconv"
 	"strings"
 
@@ -24,8 +25,8 @@ const flagCheckerHostNotConfigureWarnMessage = "Flagchecker host not configured"
 // ---------- GET ----------------
 
 // HandleGetConfig returns the current configuration of the server.
-func (*Handler) HandleGetConfig(c *fiber.Ctx) error {
-	return c.JSON(config.SharedConfig)
+func (h *Handler) HandleGetConfig(c *fiber.Ctx) error {
+	return c.JSON(h.config.GetShared())
 }
 
 // HandleGetAllFlags retrieves and returns all the stored flags.
@@ -65,17 +66,9 @@ func (h *Handler) HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	}
 
 	// Build filter options from query parameters
-	optsStatus := strings.TrimSpace(c.Query("status", ""))
+	optsStatus := int64(c.QueryInt("status", 5))
 	optsService := strings.TrimSpace(c.Query("service", ""))
 	teamStr := strings.TrimSpace(c.Query("team", ""))
-
-	// Build sql.NullString values for optional string fields
-	var statusNull sql.NullString
-	if optsStatus != "" {
-		statusNull = sql.NullString{String: optsStatus, Valid: true}
-	} else {
-		statusNull = sql.NullString{Valid: false}
-	}
 
 	var serviceNull sql.NullString
 	if optsService != "" {
@@ -95,10 +88,10 @@ func (h *Handler) HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	}
 
 	opts := database.GetFilteredFlagsParams{
-		Status:      statusNull,                                              // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0}, // Filter by team ID (0 means not provided)
-		Search:      c.Query("search", ""),                                   // Value of the search query
-		SearchField: c.Query("search_field", "flag_code"),                    // Field to apply the search query to (default: flag_code)
+		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
+		Search:      c.Query("search", ""),                                    // Value of the search query
+		SearchField: c.Query("search_field", "flag_code"),                     // Field to apply the search query to (default: flag_code)
 		Limit:       sql.NullInt64{Int64: int64(limit), Valid: true},
 		Offset:      sql.NullInt64{Int64: int64(offset), Valid: true},
 	}
@@ -110,11 +103,11 @@ func (h *Handler) HandleGetPaginatedFlags(c *fiber.Ctx) error {
 	}
 
 	optsCount := database.CountFilteredFlagsParams{
-		Status:      statusNull,                                              // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		ServiceName: serviceNull,                                             // Filter by service name
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0}, // Filter by team ID (0 means not provided)
-		Search:      c.Query("search", ""),                                   // Value of the search query
-		SearchField: c.Query("search_field", "flag_code"),                    // Field to apply the search query to (default: flag_code)
+		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
+		ServiceName: serviceNull,                                              // Filter by service name
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
+		Search:      c.Query("search", ""),                                    // Value of the search query
+		SearchField: c.Query("search_field", "flag_code"),                     // Field to apply the search query to (default: flag_code)
 	}
 
 	// Get filtered count for accurate pagination
@@ -197,7 +190,7 @@ func (h *Handler) HandlePostFlag(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
-	if config.SharedConfig.ConfigServer.URLFlagChecker == "" {
+	if h.config.GetURLFlagChecker() == "" {
 		logger.Log.Warn().Msg(flagCheckerHostNotConfigureWarnMessage)
 		return c.Status(fiber.StatusServiceUnavailable).JSON(ResponseError{
 			Error: flagCheckerHostNotConfigureWarnMessage,
@@ -205,7 +198,7 @@ func (h *Handler) HandlePostFlag(c *fiber.Ctx) error {
 	}
 
 	flags := []string{payload.Flag.FlagCode}
-	response, err := config.Submit(config.SharedConfig.ConfigServer.URLFlagChecker, config.SharedConfig.ConfigServer.TeamToken, flags)
+	response, err := config.Submit(h.config.GetURLFlagChecker(), h.config.GetTeamToken(), flags)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Flagchecker submission failed")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
@@ -234,7 +227,7 @@ func (h *Handler) HandlePostFlagsStandalone(c *fiber.Ctx) error {
 		}
 	}
 
-	if config.SharedConfig.ConfigServer.URLFlagChecker == "" {
+	if h.config.GetURLFlagChecker() == "" {
 		logger.Log.Warn().Msg(flagCheckerHostNotConfigureWarnMessage)
 		return c.Status(fiber.StatusServiceUnavailable).JSON(ResponseError{
 			Error: flagCheckerHostNotConfigureWarnMessage,
@@ -250,7 +243,7 @@ func (h *Handler) HandlePostFlagsStandalone(c *fiber.Ctx) error {
 		}
 	}
 
-	response, err := config.Submit(config.SharedConfig.ConfigServer.URLFlagChecker, config.SharedConfig.ConfigServer.TeamToken, flags)
+	response, err := config.Submit(h.config.GetURLFlagChecker(), h.config.GetTeamToken(), flags)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Flagchecker submission failed")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
@@ -267,7 +260,7 @@ func (h *Handler) HandlePostFlagsStandalone(c *fiber.Ctx) error {
 // HandlePostConfig updates the server configuration and restarts the flag processing loop.
 func (h *Handler) HandlePostConfig(c *fiber.Ctx) error {
 	var payload struct {
-		Config models.ConfigShared `json:"config"`
+		Config sharedconfig.Shared `json:"config"`
 	}
 	if err := c.BodyParser(&payload); err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to parse config payload")
@@ -277,11 +270,11 @@ func (h *Handler) HandlePostConfig(c *fiber.Ctx) error {
 		})
 	}
 
-	config.SharedConfig = payload.Config
+	h.config.SetShared(payload.Config)
 
 	h.runner.Run()
 
-	cfgJSON, err := json.Marshal(config.SharedConfig)
+	cfgJSON, err := json.Marshal(h.config.GetShared())
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to marshal config")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{

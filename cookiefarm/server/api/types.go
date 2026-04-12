@@ -13,7 +13,7 @@ type ResponseFlags struct {
 // SigninRequest from the client to the server
 type SigninRequest struct {
 	Username string `json:"username,omitzero"` // Username for authentication
-	Password string `json:"password"`          //nolint:gosec
+	Password string `json:"password"`
 }
 
 // Pagination structure for manage data in the view

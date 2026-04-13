@@ -3,8 +3,8 @@
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/relase-1.2.1-red?style=flat-square" alt="Version">
-  <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/ByteTheCookies/CookieFarm?filename=go.mod&style=flat-square">
+  <img src="https://img.shields.io/badge/relase-1.2.2-red?style=flat-square" alt="Version">
+  <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/ByteTheCookies/CookieFarm?filename=cookiefarm/go.work&style=flat-square">
   <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/ByteTheCookies/CookieFarm?color=7289DA&style=flat-square">
   <img alt="GitHub License" src="https://img.shields.io/github/license/ByteTheCookies/CookieFarm?color=orange&style=flat-square">
 </p>
@@ -57,7 +57,6 @@ Make sure you have the following installed:
       PASSWORD=SuperSecret  # Set a strong password for authentication
       CONFIG_FILE=true  # Set if the server takes the config from config.yml in the filesystem; otherwise, do not set the variable
       PORT=8080            # Define the port the server will listen on
-      BACKEND_URL=http://server:8080 # URL for the backend service (Is used by the frontend to connect to the server)
     ```
 
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
@@ -82,7 +81,7 @@ Make sure you have the following installed:
 
 2. Log in and configure the client:
    ```bash
-   ckc config login -P SuperSecret -h 192.168.1.10 -p 8000 -u your_username
+   ckc config login -P SuperSecret -H 192.168.1.10 -p 8000 -u your_username
    ```
 
 3. Install the Python helper module and create a new exploit template:

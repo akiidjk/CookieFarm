@@ -103,7 +103,7 @@ The CookieFarm client has two interface modes:
 5. **Run the exploit**:
    ```bash
    # In CLI mode (with no environment variable setted):
-   ckc exploit run -e my_exploit.py -p 1234 -t 120 -T 40
+   ckc exploit run -e my_exploit.py -n CookieService -t 120 -T 40
    ```
 
 ---
@@ -209,10 +209,10 @@ Parameters:
 *Example:*
 ```bash
 # In CLI mode (with no environment variable setted):
-ckc exploit create -n ./my_exploit
+ckc exploit create -n my_exploit
 
 # In TUI mode:
-# Navigate to: Exploits → Create Exploit → Enter name as `./my_exploit`
+# Navigate to: Exploits → Create Exploit → Enter name as `my_exploit`
 ```
 In this case, the exploit will be created in the current directory.
 

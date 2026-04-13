@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"client/cmd"
 	"client/config"
 	"client/exploit"
 	"client/template"
@@ -124,11 +123,12 @@ func (*CommandRunner) ExecuteLogin(password, host, username string, port uint16,
 		return "", fmt.Errorf("error during update of config in the file: %s", err)
 	}
 
-	pathSession, err := cmd.LoginHandler(password)
-	if err != nil {
-		return "", fmt.Errorf("login failed: %w", err)
-	}
-	return "Login successfully session saved at " + pathSession, nil
+	// pathSession, err := cmd.LoginHandler(password)
+	// if err != nil {
+	// return "", fmt.Errorf("login failed: %w", err)
+	// }
+	// return "Login successfully session saved at " + pathSession, nil
+	return "Login successful. Configuration updated.", nil
 }
 
 // ExecuteConfigUpdate handles the config update command

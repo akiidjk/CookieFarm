@@ -36,8 +36,6 @@ func verifyAndHandlePath(path string) error {
 		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			return fmt.Errorf("error creating exploit path: %v", err)
 		}
-	} else {
-		return fmt.Errorf("error checking path: %v", err)
 	}
 
 	return nil
@@ -52,8 +50,6 @@ func Create(name string) (string, error) {
 	if name == "" {
 		return "", errors.New("exploit name cannot be empty")
 	}
-
-	logger.Log.Debug().Str("Exploit name", name).Msg("Creating exploit template")
 
 	name, err := system.NormalizeNamePathExploit(name)
 	if err != nil {

@@ -21,7 +21,7 @@ func buildCmd(useBanner *bool) *cobra.Command {
 	rootCmd.AddCommand(buildExploitCmd())
 
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
-	rootCmd.PersistentFlags().BoolVarP(useBanner, "no-banner", "B", false, "Remove banner on startup")
+	rootCmd.PersistentFlags().BoolVarP(useBanner, "banner", "B", true, "Show banner on startup")
 
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if debug {

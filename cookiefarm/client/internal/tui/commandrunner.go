@@ -90,7 +90,7 @@ func (*CommandRunner) ExecuteConfigCommand(subcommand string) (string, error) {
 	cm := config.GetInstance()
 	switch subcommand {
 	case "show":
-		return cm.ShowLocalConfigContent()
+		return cm.ShowContent("client.yml")
 	case "reset":
 		return "", cm.Reset()
 	case "logout":

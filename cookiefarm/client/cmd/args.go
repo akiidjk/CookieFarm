@@ -133,12 +133,20 @@ func logout(cmd *cobra.Command, args []string) {
 
 func show(cmd *cobra.Command, args []string) {
 	cm := config.GetInstance()
-	content, err := cm.ShowLocalConfigContent()
+	local, err := cm.ShowContent("client.yml")
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Show configuration failed")
 		return
 	}
-	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + content + "```")
+
+	shared, err := cm.ShowContent("shared.yml")
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Show configuration failed")
+		return
+	}
+
+	logger.Log.Info().Msg("Current configuration: \n```yaml\n" + local + "```")
+	logger.Log.Info().Msg("Shared configuration: \n```yaml\n" + shared + "```")
 }
 
 func LoginHandler(password string) (string, error) {

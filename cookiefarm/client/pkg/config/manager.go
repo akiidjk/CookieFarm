@@ -201,8 +201,8 @@ func (*ConfigManager) Logout() (string, error) {
 	return "Logout successfully", nil
 }
 
-func (*ConfigManager) ShowLocalConfigContent() (string, error) {
-	content, err := os.ReadFile(filepath.Join(DefaultPath, "config.yml"))
+func (*ConfigManager) ShowContent(filename string) (string, error) {
+	content, err := os.ReadFile(filepath.Join(DefaultPath, filename))
 	if err != nil {
 		return "", fmt.Errorf("error reading config: %w", err)
 	}

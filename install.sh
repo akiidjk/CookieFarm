@@ -530,15 +530,7 @@ GUM_BIN="$(ensure_gum)" || {
     exit 1
 }
 
-mode="${1:-}"
-if [ -z "$mode" ] || { [ "$mode" != "build" ] && [ "$mode" != "remote" ]; }; then
-    printf "%b%bUsage:%b %s <build|remote>\n" "$BOLD" "$C_FLAG" "$RESET" "$0"
-    printf "%b  build%b   — clone repo and build containers from source\n" \
-        "$C_FLAG" "$RESET"
-    printf "%b  remote%b  — download docker-compose.yml only and start\n\n" \
-        "$C_FLAG" "$RESET"
-    exit 1
-fi
+mode=$("$GUM_BIN" choose --limit 1 remote build --header Mode)
 
 # ── Build mode: clone + docker build ─────────────────────────────────────────
 if [ "$mode" = "build" ]; then

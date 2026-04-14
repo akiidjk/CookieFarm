@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"logger"
+	"os"
 	"sharedconfig"
 
 	"github.com/spf13/cobra"
@@ -14,8 +15,12 @@ var rootCmd = &cobra.Command{
 	Version: sharedconfig.GetVersion(),
 }
 
-func buildCmd(useBanner *bool) *cobra.Command {
+func buildCmd(useBanner *bool, useTUI *bool) *cobra.Command {
 	var debug bool
+
+	if len(os.Args) != 1 {
+		*useTUI = false
+	}
 
 	rootCmd.AddCommand(buildConfigCmd())
 	rootCmd.AddCommand(buildExploitCmd())

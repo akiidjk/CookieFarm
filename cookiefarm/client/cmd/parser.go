@@ -13,7 +13,7 @@ import (
 
 var (
 	useBanner bool = true
-	useTUI    bool
+	useTUI    bool = true
 )
 
 func startTui() {
@@ -27,7 +27,7 @@ func startTui() {
 }
 
 func ParseArgs(version string, theme fang.ColorScheme) {
-	buildCmd(&useBanner)
+	buildCmd(&useBanner, &useTUI)
 
 	if useTUI {
 		startTui()

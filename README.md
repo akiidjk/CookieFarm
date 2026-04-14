@@ -49,7 +49,21 @@ Make sure you have the following installed:
 
 ### 🖥️ Starting the Server
 
-1. Create an `.env` file in the server directory to configure the environment settings:
+#### Automatic Setup
+
+```
+curl -sSL cookiefarm.bytethecookies.org/install.sh | bash
+```
+
+#### Manual Setup
+
+1. Clone the repository and navigate to the server directory:
+```bash
+   git clone https://github.com/ByteTheCookies/CookieFarm.git
+   cd CookieFarm
+```
+
+2. Create an `.env` file in the server directory to configure the environment settings:
 
     ```bash
       # Server configuration
@@ -61,13 +75,40 @@ Make sure you have the following installed:
 
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
 
-2. Start the server with Docker Compose:
-   ```bash
+3. Create the config.yml file in the server directory to configure the services and teams:
+
+```yaml
+configured: true
+
+server:
+  url_flag_checker: "<ip_flagchecker>:<port_flagchecker>"
+  team_token: "<your_team_token>"
+  submit_flag_checker_time: 120
+  max_flag_batch_size: 1000
+  protocol: "cc_http"
+  tick_time: 120
+  start_time: <start_time>
+  end_time: <end_time>
+  flag_ttl: 5 # in ticks (if the ttl is 0, the flag will never expire)
+
+shared:
+  services:
+    CookieService: 8081
+  format_ip_teams: "10.10.{}.1"
+  regex_flag: "[A-Z0-9]{31}="
+  range_ip_teams: 29
+  my_team_id: 1
+  nop_team: 0
+  url_flag_ids: "<address_of_flagIds>"
+```
+  
+4. Start the server with Docker Compose:
+
+```bash
    docker compose up --build
-   ```
+```
 
 📘 For more configuration details, refer to the [server documentation](./docs/server/README.md).
-
 ---
 
 ### 💻 Using the Client & Running Exploits

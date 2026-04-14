@@ -62,7 +62,7 @@ shared:
   range_ip_teams: 29
   my_team_id: 1
   nop_team: 0
-  url_flag_ids: "<address_of_flagIds"   # Specific for CyberChallengAD
+  url_flag_ids: "<address_of_flagIds>"
 ```
 
 

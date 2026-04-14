@@ -117,7 +117,7 @@ gum_bin() {
     mkdir -p "$bindir"
 
     printf "%b  →%b Downloading gum %b%s%b...\n" \
-        "$C_DIM" "$RESET" "${BOLD}${C_TITLE}" "$version" "$RESET"
+        "$C_DIM" "$RESET" "${BOLD}${C_TITLE}" "$version" "$RESET" >&2
     curl -fL --progress-bar "$url" -o "$tarball"
     tar -xzf "$tarball" -C "$tmpdir"
 

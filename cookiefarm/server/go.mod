@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/charmbracelet/fang v0.4.4
-	github.com/gofiber/fiber/v2 v2.52.11
+	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/spf13/cobra v1.9.1
 	go.uber.org/automaxprocs v1.6.0
 	modernc.org/sqlite v1.46.1

@@ -2,7 +2,7 @@ module server/controllers
 
 go 1.26.0
 
-require github.com/gofiber/fiber/v2 v2.52.11
+require github.com/gofiber/fiber/v2 v2.52.12
 
 require (
 	github.com/andybalholm/brotli v1.2.0 // indirect

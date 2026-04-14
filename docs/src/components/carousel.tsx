@@ -7,24 +7,24 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const carouselSlides = [
   {
-    image: "/carousel/dashboard.jpg",
+    image: "/carousel/dashboard.png",
     title: "Live Dashboard",
     description: "Monitor your exploits in real-time with a clean, responsive interface",
   },
   {
-    image: "/carousel/terminal.jpg",
-    title: "Simple CLI",
+    image: "/carousel/server.png",
+    title: "Team Collaboration",
+    description: "Deploy fast, scale with your team during competitions",
+  },
+  {
+    image: "/carousel/tui.png",
+    title: "Simple CLI/TUI",
     description: "Run exploits with a single command — no config files needed",
   },
   {
-    image: "/carousel/flags.jpg",
+    image: "/carousel/flags.png",
     title: "Flag Submission",
     description: "Automatic deduplication and submission to the scoreboard every tick",
-  },
-  {
-    image: "/carousel/team.jpg",
-    title: "Team Collaboration",
-    description: "Deploy fast, scale with your team during competitions",
   },
 ];
 
@@ -59,12 +59,12 @@ export function Carousel() {
 
   return (
     <div
-      className="group relative w-full overflow-hidden rounded-lg border border-[var(--surface-border)] bg-[var(--surface)]"
+      className="group relative w-full overflow-hidden rounded-lg border border-(--surface-border) bg-(--surface)"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Slides Container */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden">
+      <div className="relative aspect-video w-full overflow-hidden">
         {carouselSlides.map((slide, index) => (
           <div
             key={slide.title}
@@ -83,7 +83,7 @@ export function Carousel() {
               priority={index === 0}
             />
             {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-(--surface) via-transparent to-transparent" />
 
             {/* Content overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-6">
@@ -105,14 +105,14 @@ export function Carousel() {
         {/* Navigation Arrows */}
         <button
           onClick={prevSlide}
-          className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)]/90 text-foreground opacity-0 backdrop-blur-sm transition-all duration-300 hover:border-[var(--green)]/50 hover:text-[var(--green)] group-hover:opacity-100"
+          className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-(--surface-border) bg-(--surface)/90 text-foreground opacity-0 backdrop-blur-sm transition-all duration-300 hover:border-(--green)/50 hover:text-(--green) group-hover:opacity-100"
           aria-label="Previous slide"
         >
           <ChevronLeft size={20} />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)]/90 text-foreground opacity-0 backdrop-blur-sm transition-all duration-300 hover:border-[var(--green)]/50 hover:text-[var(--green)] group-hover:opacity-100"
+          className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full border border-(--surface-border) bg-(--surface)/90 text-foreground opacity-0 backdrop-blur-sm transition-all duration-300 hover:border-(--green)/50 hover:text-(--green) group-hover:opacity-100"
           aria-label="Next slide"
         >
           <ChevronRight size={20} />
@@ -126,8 +126,8 @@ export function Carousel() {
             key={index}
             onClick={() => goToSlide(index)}
             className={`h-2 rounded-full transition-all duration-300 ${index === currentSlide
-              ? "w-6 bg-[var(--green)]"
-              : "w-2 bg-[var(--surface-border)] hover:bg-muted-foreground"
+              ? "w-6 bg-(--green)"
+              : "w-2 bg-(--surface-border) hover:bg-muted-foreground"
               }`}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -135,9 +135,9 @@ export function Carousel() {
       </div>
 
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--surface-border)]">
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-(--surface-border)">
         <div
-          className="h-full bg-[var(--green)] transition-all duration-300 ease-linear"
+          className="h-full bg-(--green) transition-all duration-300 ease-linear"
           style={{
             width: `${((currentSlide + 1) / carouselSlides.length) * 100}%`,
           }}

@@ -16,6 +16,7 @@ server:
 shared:
   services:
     CCForms-2: 3001
+    CCForms-1: 3000
   range_ip_teams: 7
   format_ip_teams: "10.60.{}.1"
   my_team_id: 2

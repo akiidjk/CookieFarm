@@ -44,7 +44,7 @@ The YAML config file as be like that:
 configured: true
 
 server:
-  host_flagchecker: "<ip_flagchecker>:<port_flagchecker>"
+  url_flag_checker: "<ip_flagchecker>:<port_flagchecker>"
   team_token: "<your_team_token>"
   submit_flag_checker_time: 120
   max_flag_batch_size: 1000
@@ -54,16 +54,15 @@ server:
   end_time: <end_time>
   flag_ttl: 5 # in ticks (if the ttl is 0, the flag will never expire)
 
-client:
+shared:
   services:
-    - name: "CookieService"
-      port: 8081
+    CookieService: 8081
   format_ip_teams: "10.10.{}.1"
   regex_flag: "[A-Z0-9]{31}="
   range_ip_teams: 29
   my_team_id: 1
   nop_team: 0
-  url_flag_ids: "<address_of_flagIds"   # Specific for CyberChallengAD
+  url_flag_ids: "<address_of_flagIds>"
 ```
 
 
@@ -81,7 +80,7 @@ http://<your_server_ip>:<port>
 ```
 
 > [!IMPORTANT]
-> The actual web interface written in htmx and JavaScript is not updated so some features may not work as expected. The server is still functional, but the UI may not reflect all the latest changes. The new UI is being developed and will be available soon in the v2.0.0.
+> The actual web interface written in htmx and JavaScript is not updated so some features may not work as expected.
 
 Through the UI you can:
 
@@ -99,9 +98,9 @@ Create a `.env` file with the following content:
 
 ```
 DEBUG=true
-CONFIG_PATH=./config.yml
+CONFIG_FILE=true
 PASSWORD=SuperSecret
-PORT=9090
+PORT=8080
 ```
 
 ### Running with Docker
@@ -114,8 +113,8 @@ This configuration runs the server:
 
 - In debug mode.
 - With password `SuperSecret`.
-- On port `9090`.
-- Using the configuration file `./config.yml`.
+- On port `8080`.
+- Using the configuration file `config.yml`.
 
 ---
 

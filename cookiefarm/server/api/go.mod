@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/bytedance/sonic v1.15.0
-	github.com/gofiber/fiber/v2 v2.52.11
+	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/gofiber/jwt/v3 v3.3.10
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	golang.org/x/crypto v0.48.0

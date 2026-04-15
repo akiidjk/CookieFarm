@@ -80,6 +80,9 @@ linters:
         shadow:
           strict: true
 
+    dupl:
+      threshold: 100
+
     lll:
       line-length: 200
 

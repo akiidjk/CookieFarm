@@ -17,10 +17,11 @@ import (
 type Handler struct {
 	store  *database.Store
 	runner *core.Runner
+	config *config.ConfigManager
 }
 
-func NewHandler(s *database.Store, r *core.Runner) *Handler {
-	return &Handler{store: s, runner: r}
+func NewHandler(s *database.Store, r *core.Runner, c *config.ConfigManager) *Handler {
+	return &Handler{store: s, runner: r, config: c}
 }
 
 // RegisterRoutes configures all routes and middlewares of the Fiber app,

@@ -2,21 +2,27 @@ go 1.26.0
 
 use (
 	./client
-	./client/api
-	./client/config
-	./client/exploit
-	./client/tui
-	./client/websockets
+	./client/internal/api
+	./client/internal/exploit
+	./client/internal/submitter
+	./client/internal/template
+	./client/internal/tui
+	./client/internal/websockets
+	./client/pkg/config
+	./client/pkg/process
+	./pkg/config
 	./pkg/logger
 	./pkg/models
 	./pkg/protocols
 	./pkg/system
 	./server
 	./server/api
-	./server/core
-	./server/database
-	./server/ui
-	./server/websockets
+	./server/internal/config
+	./server/internal/controllers
+	./server/internal/core
+	./server/internal/database
+	./server/internal/ui
+	./server/internal/websockets
 )
 
 replace (

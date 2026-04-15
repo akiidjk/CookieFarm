@@ -30,7 +30,7 @@ LIMIT ?;
 -- name: GetUnsubmittedFlags :many
 SELECT *
 FROM flags
-WHERE status = 'UNSUBMITTED'
+WHERE status = 0
 ORDER BY submit_time ASC
 LIMIT ?;
 
@@ -49,7 +49,7 @@ LIMIT ?;
 
 -- name: GetUnsubmittedFlagCodes :many
 SELECT flag_code FROM flags
-WHERE status = 'UNSUBMITTED'
+WHERE status = 0
 LIMIT ?;
 
 -- name: GetFilteredFlags :many
@@ -82,7 +82,7 @@ LIMIT sqlc.narg('limit') OFFSET sqlc.narg('offset');
 SELECT COUNT(*) FROM flags
 WHERE
     (team_id = sqlc.narg('team_id') OR sqlc.narg('team_id') IS NULL)
-    AND (status = sqlc.narg('status') OR sqlc.narg('status') IS NULL)
+    AND (status = sqlc.narg('status') OR sqlc.narg('status') is NULL)
     AND (service_name = sqlc.narg('service_name') OR sqlc.narg('service_name') IS NULL)
     AND (
         sqlc.narg('search') IS NULL

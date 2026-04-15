@@ -3,8 +3,8 @@
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/relase-1.2.1-red?style=flat-square" alt="Version">
-  <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/ByteTheCookies/CookieFarm?filename=go.mod&style=flat-square">
+  <img src="https://img.shields.io/badge/relase-1.2.2-red?style=flat-square" alt="Version">
+  <img alt="GitHub go.mod Go version" src="https://img.shields.io/github/go-mod/go-version/ByteTheCookies/CookieFarm?filename=cookiefarm/go.work&style=flat-square">
   <img alt="GitHub code size in bytes" src="https://img.shields.io/github/languages/code-size/ByteTheCookies/CookieFarm?color=7289DA&style=flat-square">
   <img alt="GitHub License" src="https://img.shields.io/github/license/ByteTheCookies/CookieFarm?color=orange&style=flat-square">
 </p>
@@ -49,7 +49,21 @@ Make sure you have the following installed:
 
 ### 🖥️ Starting the Server
 
-1. Create an `.env` file in the server directory to configure the environment settings:
+#### Automatic Setup
+
+```
+curl -sSL cookiefarm.bytethecookies.org/install.sh | bash
+```
+
+#### Manual Setup
+
+1. Clone the repository and navigate to the server directory:
+```bash
+   git clone https://github.com/ByteTheCookies/CookieFarm.git
+   cd CookieFarm
+```
+
+2. Create an `.env` file in the server directory to configure the environment settings:
 
     ```bash
       # Server configuration
@@ -57,18 +71,44 @@ Make sure you have the following installed:
       PASSWORD=SuperSecret  # Set a strong password for authentication
       CONFIG_FILE=true  # Set if the server takes the config from config.yml in the filesystem; otherwise, do not set the variable
       PORT=8080            # Define the port the server will listen on
-      BACKEND_URL=http://server:8080 # URL for the backend service (Is used by the frontend to connect to the server)
     ```
 
   > ⚠️ For production environments, set `DEBUG=false` and use a strong, unique password
 
-2. Start the server with Docker Compose:
-   ```bash
+3. Create the config.yml file in the server directory to configure the services and teams:
+
+```yaml
+configured: true
+
+server:
+  url_flag_checker: "<ip_flagchecker>:<port_flagchecker>"
+  team_token: "<your_team_token>"
+  submit_flag_checker_time: 120
+  max_flag_batch_size: 1000
+  protocol: "cc_http"
+  tick_time: 120
+  start_time: <start_time>
+  end_time: <end_time>
+  flag_ttl: 5 # in ticks (if the ttl is 0, the flag will never expire)
+
+shared:
+  services:
+    CookieService: 8081
+  format_ip_teams: "10.10.{}.1"
+  regex_flag: "[A-Z0-9]{31}="
+  range_ip_teams: 29
+  my_team_id: 1
+  nop_team: 0
+  url_flag_ids: "<address_of_flagIds>"
+```
+  
+4. Start the server with Docker Compose:
+
+```bash
    docker compose up --build
-   ```
+```
 
 📘 For more configuration details, refer to the [server documentation](./docs/server/README.md).
-
 ---
 
 ### 💻 Using the Client & Running Exploits
@@ -82,7 +122,7 @@ Make sure you have the following installed:
 
 2. Log in and configure the client:
    ```bash
-   ckc config login -P SuperSecret -h 192.168.1.10 -p 8000 -u your_username
+   ckc config login -P SuperSecret -H 192.168.1.10 -p 8000 -u your_username
    ```
 
 3. Install the Python helper module and create a new exploit template:

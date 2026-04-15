@@ -1,6 +1,6 @@
 #!/usr/bin/env just --justfile
 
-import '../env.just'
+import? '../env.just'
 
 # === COMMON TARGETS ===
 

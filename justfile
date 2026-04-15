@@ -3,6 +3,7 @@
 import 'env.just'
 import 'cookiefarm/cookiefarm.just'
 import 'exploiter/exploiter.just'
+import 'docs/docs.just'
 
 # Display help information
 help:

@@ -1,0 +1,204 @@
+---
+title: Client Authentication
+description: How to authenticate the `ckc` CLI with a CookieFarm server (interactive login, tokens, config and troubleshooting).
+---
+
+import { Callout } from 'some-ui'  {/* placeholder for MDX components if used by the site */}
+
+# Authentication (ckc)
+
+This page describes common authentication workflows for the `ckc` command-line client: interactive login, token-based authentication, environment variables, and where credentials are stored locally. It also includes troubleshooting tips and examples.
+
+Notes
+- The exact flags and config file location can vary by `ckc` release. Use `ckc --help` for the version you have installed.
+- Where we mention "server" it means your CookieFarm server instance (for example `https://cookiefarm.example`).
+
+---
+
+## Overview
+
+`ckc` supports the following common ways to authenticate to a CookieFarm server:
+
+- Interactive username/password login (recommended for interactive use).
+- Personal access tokens or API keys (recommended for CI, automation, and long-lived sessions).
+- Environment variable overrides (useful for ephemeral CI jobs).
+- Local configuration (a per-user config file that stores server URL and references to credentials).
+
+You should prefer token-based authentication for non-interactive use and rotate or revoke tokens regularly.
+
+---
+
+## Typical interactive login
+
+Most users will authenticate once per machine using an interactive command which prompts for credentials and stores a session token locally.
+
+Example (interactive flow):
+
+```/dev/null/interactive_example.sh#L1-8
+# Typical interactive login (example)
+# The exact command and flags for your version of `ckc` may differ — run `ckc login --help`.
+ckc login --server https://cookiefarm.example
+# The CLI will prompt for username and password (and possibly 2FA if enabled).
+```
+
+After successful login, `ckc` will store a session token (or reference to credentials) locally so subsequent `ckc` commands do not require re-authentication.
+
+---
+
+## Token-based authentication (recommended for automation)
+
+For CI or scripts you should use a token (personal access token / API key) rather than username/password. Tokens are usually created in the server dashboard or via the server API.
+
+Example (provide token on the CLI):
+
+```/dev/null/token_example.sh#L1-6
+# Example: pass a token to login (non-interactive)
+ckc login --server https://cookiefarm.example --token "eyJhbGciOi..."
+# Or, set the token in environment for a single command:
+export CKC_TOKEN="eyJhbGciOi..."
+ckc exploit run --target foo
+```
+
+Example (use env var for automation):
+
+```/dev/null/ci_example.yml#L1-10
+# CI job example: set CKC_TOKEN as a secret in your CI system
+steps:
+  - name: Run exploit
+    run: |
+      export CKC_SERVER=https://cookiefarm.example
+      export CKC_TOKEN=${{ secrets.CKC_TOKEN }}
+      ckc exploit run --target foo
+```
+
+Always store personal access tokens in your CI system's secret storage and do not commit them to source control.
+
+---
+
+## Configuration file and locations
+
+`ckc` typically stores configuration (server URLs, profiles, and credential references) in a per-user config file. The exact location depends on the platform and the `ckc` implementation; common locations include:
+
+- `$XDG_CONFIG_HOME/ckc/config.yml`
+- `~/.config/ckc/config.yml`
+- `~/.ckc/config.yml`
+
+If your `ckc` supports named profiles, you can manage multiple server endpoints:
+
+```/dev/null/config_example.yml#L1-12
+# Example structure (illustrative only)
+profiles:
+  default:
+    server: https://cookiefarm.example
+    token: ${CKC_TOKEN} # may reference env var instead of embedding secrets
+  staging:
+    server: https://staging.cookiefarm.example
+```
+
+Do not store plaintext secrets in files unless you understand the local security implications. Prefer referencing environment variables or an OS keyring if your `ckc` supports it.
+
+---
+
+## Environment variables
+
+Common environment variables `ckc` may read (implementation-dependent):
+
+- `CKC_SERVER` — base URL of the CookieFarm server.
+- `CKC_TOKEN` — personal access token to use for authentication.
+- `CKC_PROFILE` — profile name from the config file.
+
+You can combine these; env vars usually override values in the config file for the current process.
+
+---
+
+## Using multiple accounts / profiles
+
+If you work with multiple servers (e.g. production and staging), use named profiles (if supported) or separate config files. Typical flows:
+
+- `ckc login --profile staging --server https://staging...`
+- `CKC_PROFILE=staging ckc exploit list`
+
+Check `ckc --help` for how to manage profiles in your installed version.
+
+---
+
+## Token lifecycle and rotation
+
+- Prefer short-lived tokens when supported by the server.
+- Revoke tokens from the server dashboard if they are compromised.
+- Rotate tokens used in automation on a regular schedule.
+- Use distinct tokens for distinct purposes (CI vs personal use) so you can revoke selectively.
+
+---
+
+## Troubleshooting
+
+- "Invalid credentials" or "Unauthorized (401)"
+  - Verify the server URL is correct (`CKC_SERVER`) and reachable.
+  - Ensure the token or username/password is correct and not expired.
+  - Check server logs for more detail on why a request was rejected.
+
+- "TLS / certificate" errors
+  - If using a self-signed certificate, add the CA to your system trust store or configure `ckc` to trust it if the CLI provides that option.
+  - Avoid disabling TLS verification in production.
+
+- "Permission denied" when running automated jobs
+  - Confirm the token has the necessary scopes/permissions to perform the action.
+  - Ensure rate limits or server-side ACLs are not blocking the request.
+
+- "Config file not found"
+  - Check the documentation or `ckc --help` for the actual config path used by your client build.
+  - You can often set `CKC_CONFIG` or `XDG_CONFIG_HOME` to control the location.
+
+- "Two-factor required"
+  - If your server enforces 2FA, interactive `ckc login` may prompt for a second factor. For automation, create a token that bypasses interactive 2FA where appropriate.
+
+---
+
+## Security best practices
+
+- Use tokens (not passwords) for automated systems.
+- Store tokens in secret managers (CI secrets, OS keyrings).
+- Limit token scopes and lifetime.
+- Use separate tokens per integration to allow fine-grained revocation.
+- Avoid committing any credential to source control.
+
+---
+
+## Example workflows
+
+Interactive developer setup:
+
+```/dev/null/setup_dev.sh#L1-12
+# Developer workflow (interactive)
+ckc login --server https://cookiefarm.example
+# Follow prompts for username/password (and 2FA if enabled)
+# Verify:
+ckc whoami
+```
+
+Automation in CI (recommended):
+
+```/dev/null/ci_workflow.sh#L1-12
+# CI workflow (non-interactive)
+# Set secret in CI: CKC_TOKEN
+export CKC_SERVER=https://cookiefarm.example
+export CKC_TOKEN="${CKC_TOKEN}"
+# Run a command
+ckc exploit run --target some-challenge --concurrency 5
+```
+
+---
+
+## Where to get help
+
+- Check `ckc --help` for client-specific flags and exact config locations.
+- Consult the server-side docs (dashboard or API) for token creation and scopes.
+- If something is unclear or broken in your installed `ckc`, file an issue or open a support request with your project maintainers including:
+  - `ckc --version`
+  - The exact command you ran
+  - Any error output (redact tokens/credentials)
+
+---
+
+If you'd like, I can draft example CLI help text, a sample `~/.ckc/config.yml` template, or a short troubleshooting script — tell me which one and I will create it.

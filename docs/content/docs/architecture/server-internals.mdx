@@ -1,0 +1,327 @@
+---
+title: Server Internals
+description: Deep dive into the CookieFarm server internals — Go architecture, concurrency model, execution sandboxing, resource management, and observability.
+---
+
+# Server Internals
+
+This page explains the key implementation patterns and operational considerations for the CookieFarm server. It focuses on the server's concurrency model, long-running task execution, resource management, data consistency, and observability. The intent is to document practices and examples that help contributors reason about the production server and add new features safely.
+
+> Note: the server is implemented in Go and relies on idiomatic Go concurrency patterns (goroutines, channels, contexts). The concepts below are intentionally implementation-agnostic where possible, and include concrete Go patterns where useful.
+
+Contents
+
+- Overview
+- Concurrency model and goroutine lifecycle
+- Task execution and sandboxing
+- Worker pools and scheduling
+- Resource management (timeouts, rate limits, quotas)
+- Persistence, transactions and consistency
+- HTTP API design and graceful shutdown
+- Observability: logging, metrics, tracing
+- Debugging, profiling, and testing
+- Common pitfalls and best practices
+
+---
+
+## Overview
+
+At a high level the server accepts requests from clients and the dashboard, schedules and runs exploit tasks, captures flags, and submits them to configured endpoints. To be robust and scalable it must:
+
+- Isolate each exploit run so failures don't crash the server.
+- Control concurrency to avoid resource exhaustion.
+- Provide consistent persistence and transactional updates.
+- Offer observability (logs, metrics, traces) for debugging and monitoring.
+- Support graceful shutdown and cancellation of in-flight work.
+
+The following sections explain how we achieve these goals using Go idioms and general architectural patterns.
+
+---
+
+## Concurrency model and goroutine lifecycle
+
+Goroutines are cheap but not free. Every goroutine must be owned by a higher-level supervisor that manages cancellation, timeouts and error handling. Use `context.Context` as the primary mechanism to control lifecycles and cancellation propagation.
+
+Typical pattern for launching transient worker goroutines:
+
+```/dev/null/go_examples.go#L1-40
+package examples
+
+import (
+    "context"
+    "log"
+    "time"
+)
+
+// StartWorker demonstrates launching a goroutine that respects context cancellation.
+func StartWorker(parentCtx context.Context) {
+    ctx, cancel := context.WithCancel(parentCtx)
+    defer cancel()
+
+    go func() {
+        defer log.Println("worker exited")
+        for {
+            select {
+            case <-ctx.Done():
+                // cleanup and exit
+                return
+            default:
+                // do work in small units, avoid long blocking calls
+                time.Sleep(100 * time.Millisecond)
+            }
+        }
+    }()
+}
+```
+
+Rules of thumb:
+- Pass `context.Context` down call stacks and to any goroutine that does I/O or long work.
+- Avoid goroutines that can block forever (e.g., unbuffered channel reads without a cancel path).
+- Clean up resources (files, network sockets) in `defer` blocks executed when a goroutine exits.
+
+---
+
+## Task execution and sandboxing
+
+Exploit code runs untrusted/variable workloads. Each run should be sandboxed:
+
+- Run each exploit in its own goroutine or worker slot.
+- Enforce CPU/memory/time limits where possible (OS-level or container-level).
+- Use contexts with deadlines to automatically cancel runaway tasks.
+- Capture stdout/stderr and limit their size to avoid memory bloat.
+
+A minimal task-run pattern:
+
+```/dev/null/go_examples.go#L41-90
+package examples
+
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+type Result struct {
+    Output string
+    Err    error
+}
+
+func RunTask(ctx context.Context, id string) Result {
+    // Set a reasonable deadline per task
+    ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+    defer cancel()
+
+    // Run the task logic, but always check ctx.Done() periodically
+    select {
+    case <-time.After(500 * time.Millisecond): // simulate work
+        return Result{Output: fmt.Sprintf("task %s done", id)}
+    case <-ctx.Done():
+        return Result{Err: ctx.Err()}
+    }
+}
+```
+
+When executing tasks that spawn sub-processes, ensure those processes are killed on context cancellation.
+
+---
+
+## Worker pools and scheduling
+
+A common pattern is a bounded worker pool: a scheduler enqueues work and a set of fixed workers consume it. This prevents unbounded goroutine growth and lets you control concurrency.
+
+Key aspects:
+- Configurable pool size based on CPU, memory and external I/O capacity.
+- Backpressure: when the queue is full, reject new work or apply a priority policy.
+- Timeouts per job and global queue timeouts.
+- Instrumentation: measure queue length, task latencies, worker utilization.
+
+Example skeleton:
+
+```/dev/null/go_examples.go#L91-160
+package examples
+
+import (
+    "context"
+    "sync"
+)
+
+type Job func(context.Context) (interface{}, error)
+
+type Pool struct {
+    jobs    chan Job
+    wg      sync.WaitGroup
+    workers int
+}
+
+func NewPool(workers, queueSize int) *Pool {
+    return &Pool{
+        jobs:    make(chan Job, queueSize),
+        workers: workers,
+    }
+}
+
+func (p *Pool) Start(ctx context.Context) {
+    for i := 0; i < p.workers; i++ {
+        p.wg.Add(1)
+        go func() {
+            defer p.wg.Done()
+            for {
+                select {
+                case <-ctx.Done():
+                    return
+                case job := <-p.jobs:
+                    // execute job with a derived context if necessary
+                    job(ctx)
+                }
+            }
+        }()
+    }
+}
+
+func (p *Pool) Submit(j Job) bool {
+    select {
+    case p.jobs <- j:
+        return true
+    default:
+        // queue full - caller receives immediate feedback
+        return false
+    }
+}
+```
+
+---
+
+## Resource management (timeouts, rate limits, quotas)
+
+To remain reliable under load, protect external systems:
+- Use context deadlines for network calls and DB queries.
+- Apply per-client and global rate limits for API endpoints.
+- Enforce quotas for exploit concurrency per team/project.
+- Use exponential backoff for retrying external requests (with a cap).
+- Use circuit breakers for unstable downstream services to avoid cascading failures.
+
+Leaky-bucket or token-bucket rate limiters are common choices. Store token counts in-memory for single-node rate limiting or in Redis for distributed limits.
+
+---
+
+## Persistence, transactions and consistency
+
+Datastore considerations:
+- Use explicit transactions for multi-step operations that must be atomic (e.g., claim flag -> persist -> submit).
+- Keep DB calls small and time-bounded.
+- Model optimistic concurrency control (version columns) when multiple actors might update the same record.
+- Record immutable audit-events for state transitions to make debugging easier.
+
+Example transactional pseudo-flow:
+1. Begin DB transaction.
+2. Verify preconditions (task still active, quota available).
+3. Insert or update state rows (e.g., exploit run metadata, captured flags).
+4. Commit transaction.
+5. If commit fails, apply compensating actions or surface the error for retry.
+
+Always prefer idempotent operations for external submissions (flag submissions) and log the submission identifiers to avoid duplicate effects.
+
+---
+
+## HTTP API design and graceful shutdown
+
+The HTTP server must:
+- Set sensible server timeouts (ReadTimeout, ReadHeaderTimeout, WriteTimeout, IdleTimeout).
+- Respect request contexts and propagate them to handlers and downstream calls.
+- Perform graceful shutdown: stop accepting new requests, wait for in-flight requests to finish within a deadline, cancel remaining background work and exit.
+
+Minimal graceful shutdown flow:
+
+```/dev/null/go_examples.go#L161-320
+package examples
+
+import (
+    "context"
+    "net/http"
+    "time"
+)
+
+func StartHTTPServer(addr string, handler http.Handler) *http.Server {
+    srv := &http.Server{
+        Addr:         addr,
+        Handler:      handler,
+        ReadTimeout:  10 * time.Second,
+        WriteTimeout: 30 * time.Second,
+        IdleTimeout:  60 * time.Second,
+    }
+    go srv.ListenAndServe()
+    return srv
+}
+
+func ShutdownServer(ctx context.Context, srv *http.Server) error {
+    // ctx should have a deadline for graceful shutdown
+    return srv.Shutdown(ctx)
+}
+```
+
+---
+
+## Observability: logging, metrics, tracing
+
+Observability is a first-class requirement.
+
+- Logging:
+  - Use structured logs (JSON) with key fields: request id, handler, team id, task id.
+  - Include severity levels and avoid logging secrets.
+- Metrics:
+  - Expose counters and histograms: requests, queue length, task durations, errors, worker utilization.
+  - Export via Prometheus or equivalent.
+- Tracing:
+  - Use distributed tracing to connect API calls, scheduler decisions and exploit run lifecycle.
+  - Propagate trace context (W3C Trace-Context or OpenTelemetry) across internals and external calls.
+
+Tag and correlate logs, metrics and traces using a stable request/task identifier to ease debugging.
+
+---
+
+## Debugging, profiling, and testing
+
+- Profiling:
+  - Use `net/http/pprof` during debugging (not enabled in production without access controls).
+  - Capture CPU and heap profiles to identify hot code paths and memory growth.
+- Tests:
+  - Unit-test business logic with deterministic inputs.
+  - Integration tests for DB and external interactions—use testcontainers or similar for ephemeral services.
+  - Add fuzz tests for parsers and input-handling code.
+- Benchmarks:
+  - Use Go benchmarks (`testing.B`) to measure hot paths.
+  - Measure end-to-end throughput of the scheduler and task execution under realistic concurrency.
+
+---
+
+## Common pitfalls and best practices
+
+- Pitfall: goroutine leaks
+  - Best practice: always provide a cancel path; avoid orphan goroutines that block forever on channels without a cancel.
+- Pitfall: blocking external calls without timeouts
+  - Best practice: always set deadlines on network calls and DB queries using contexts.
+- Pitfall: unbounded queues and memory growth
+  - Best practice: bound queues, apply backpressure, reject new tasks when necessary.
+- Pitfall: mixing logging levels and too-verbose production logs
+  - Best practice: structured logs + adjustable level configuration; scrub PII and secrets.
+- Pitfall: overly complex global locks
+  - Best practice: prefer sharded locks or optimistic concurrency when appropriate.
+
+---
+
+## References and further reading
+
+- Go blog posts on concurrency patterns and context usage
+- Official Go documentation on testing and profiling
+- Documentation for observability stacks (OpenTelemetry, Prometheus)
+- Database transaction patterns and idempotency guides
+
+---
+
+If you plan to modify or extend the server, follow these steps:
+1. Add instrumentation for any new worker path (metrics + traces).
+2. Write unit and integration tests for cancellation and error scenarios.
+3. Validate resource usage under a load test.
+4. Document the config knobs (timeouts, pool sizes, quotas) and sensible defaults.
+
+This document is meant as a living guide. Update it whenever you add new long-running components, change the scheduler, or modify how exploits are executed.

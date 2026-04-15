@@ -1,0 +1,44 @@
+{
+  "title": "Contributing",
+  "description": "Guidelines for contributing code, documentation, and fixes to the CookieFarm project.",
+  "path": "contributing",
+  "weight": 70,
+  "edit_url": "https://github.com/your-org/CookieFarm/tree/main/docs/content/docs/contributing",
+  "maintainers": [
+    {
+      "name": "CookieFarm Core Team",
+      "email": "devs@cookiefarm.example"
+    }
+  ],
+  "issues": {
+    "report": "Please open issues on the repository. Use clear titles, reproduction steps, expected vs actual behavior, and platform/environment details.",
+    "security": "If you found a security vulnerability, please disclose it privately to security@cookiefarm.example and do not open a public issue."
+  },
+  "pull_request_guidelines": {
+    "branch_from": "main",
+    "tests_required": true,
+    "description": "Include a short summary, linked issues, and testing steps. Keep PRs focused and small when possible.",
+    "reviewers": "Assign at least one reviewer from the core team; include area-specific reviewers for large changes."
+  },
+  "development": {
+    "languages": [
+      "Go",
+      "TypeScript",
+      "Python"
+    ],
+    "local_setup": "See contributing/dev-setup.mdx for platform-specific dev environment, build and test commands.",
+    "code_style": "Follow the repository's linting and formatting rules. Run linters and unit tests before opening a PR."
+  },
+  "docs": {
+    "format": "MDX",
+    "location": "docs/content/docs",
+    "style": "Write concise pages, include examples, and link to authoritative references. Add frontmatter (title/description) to each page."
+  },
+  "community": {
+    "code_of_conduct": "See contributing/index.mdx for the project's Code of Conduct and community expectations.",
+    "communication": [
+      "Use the issue tracker for bugs and feature requests.",
+      "Use the project's chat or mailing list for real-time discussion (see repo README for links)."
+    ]
+  }
+}

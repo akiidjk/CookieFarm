@@ -1,0 +1,316 @@
+---
+title: Server Deployment
+description: Deployment guide for the CookieFarm server: Docker Compose examples, reverse proxy/TLS, production hardening, backups, and scaling.
+---
+
+# Server Deployment
+
+This page describes recommended ways to deploy the CookieFarm server in production. It covers a pragmatic Docker Compose setup for small teams, notes for reverse-proxying and TLS, guidance for secrets and hardening, and tips for scaling and monitoring.
+
+Important principles:
+- Run the server behind a TLS-terminating reverse proxy (Caddy / nginx / Traefik).
+- Store secrets outside the repository (Docker secrets, environment vault, or a secret manager).
+- Use health checks, structured logging, and metrics so you can monitor uptime and performance.
+- Run database backups and test restores regularly.
+
+Table of contents
+- Quick Docker Compose example
+- Required environment variables
+- Reverse proxy & TLS (Caddy and nginx examples)
+- Secrets & configuration management
+- Database migrations & backups
+- Hardening & security checklist
+- Scaling & high-availability notes
+- Monitoring & logging
+- Troubleshooting tips
+
+---
+
+## Quick Docker Compose example
+
+This minimal `docker-compose.yml` is intended to get a production-like environment running. Adjust images, versions, networks, volumes and environment variables to fit your infrastructure and security policy.
+
+```/dev/null/docker-compose.yml#L1-220
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cookiefarm
+      POSTGRES_USER: cookiefarm
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+
+  server:
+    image: cookiefarm/server:latest
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgres://cookiefarm:${POSTGRES_PASSWORD}@db:5432/cookiefarm?sslmode=disable
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CF_SERVER_BIND=0.0.0.0:8080
+      - CF_SECRET_KEY_FILE=/run/secrets/server_secret
+      - CF_LOG_LEVEL=info
+    ports:
+      - "127.0.0.1:8080:8080" # bind only to localhost if using a reverse proxy on the host
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./uploads:/app/uploads:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  reverse-proxy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - server
+
+volumes:
+  db-data:
+  redis-data:
+  caddy-data:
+  caddy-config:
+```
+
+Notes:
+- Use Docker secrets for sensitive values (see "Secrets & configuration management").
+- Bind the app to localhost when possible and let the reverse proxy handle public ports.
+
+A tiny example of starting the stack:
+
+```/dev/null/commands.sh#L1-40
+# create secrets (example)
+printf "%s" "supersecret_db_password" | docker secret create postgres_password -
+printf "%s" "supersecret_server_key" | docker secret create server_secret -
+
+# start compose
+docker compose up -d
+```
+
+---
+
+## Required environment variables (summary)
+
+CookieFarm server configuration is provided via environment variables or a config file. Below are the typical variables you must set for production. Replace names with your project's actual variables if different.
+
+- `DATABASE_URL` — PostgreSQL connection string (preferably via secrets).
+- `REDIS_URL` — Redis connection string for caching/queues.
+- `CF_SERVER_BIND` — address and port the server binds to (e.g. `0.0.0.0:8080`).
+- `CF_SECRET_KEY_FILE` or `CF_SECRET_KEY` — secret for signing cookies/tokens (use file or secret).
+- `CF_LOG_LEVEL` — logging verbosity (`debug`, `info`, `warn`, `error`).
+- `CF_ADMIN_PASSWORD_FILE` (optional) — admin password via secret file.
+- Any SMTP / external API credentials used by your deployment.
+
+Where possible:
+- Prefer *_FILE style secrets (or Docker secrets) so raw secrets are not visible in `docker inspect`.
+- Do NOT commit `.env` files with production credentials.
+
+---
+
+## Reverse proxy & TLS
+
+You should terminate TLS at a reverse proxy. Two recommended options:
+
+### Caddy (automatic TLS)
+Caddy can obtain and renew Let's Encrypt certificates automatically. Example `Caddyfile`:
+
+```/dev/null/Caddyfile#L1-80
+your.example.domain {
+  reverse_proxy server:8080
+  encode gzip
+  log {
+    output file /var/log/caddy/access.log
+    format single_field common_log
+  }
+}
+```
+
+- Replace `your.example.domain` with your domain.
+- Mount `caddy-data` and `caddy-config` volumes for persistence (see docker-compose).
+- Ensure DNS for `your.example.domain` points to the host.
+
+### nginx (manual or certbot)
+Example `nginx` server block for TLS termination (ensure you have certs from Let's Encrypt / certbot):
+
+```/dev/null/nginx.conf#L1-140
+server {
+    listen 80;
+    server_name your.example.domain;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your.example.domain;
+
+    ssl_certificate /etc/letsencrypt/live/your.example.domain/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your.example.domain/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080; # or container IP / upstream
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_read_timeout 90;
+    }
+}
+```
+
+When using a reverse proxy, ensure:
+- The proxy forwards `X-Forwarded-Proto` and `X-Forwarded-For`.
+- You configure the app to trust the proxy (if required) so it can generate correct URLs and secure cookies.
+
+---
+
+## Secrets & configuration management
+
+Production-grade options:
+- Docker secrets: supported by Docker Swarm and compatible tooling. Secrets are stored in the swarm and exposed as files in `/run/secrets/...`.
+- HashiCorp Vault / AWS Secrets Manager / GCP Secret Manager: central secret storage with rotation.
+- Environment variables from a secrets management system at boot (avoid storing in VCS).
+
+Best practices:
+- Rotate secrets periodically.
+- Limit access to secrets to only the services that need them.
+- Use RBAC on your orchestration platform.
+- Do not log secrets or include them in error messages.
+
+---
+
+## Database migrations & backups
+
+Migrations:
+- Run schema migrations before upgrading to a new server version that introduces DB schema changes.
+- Prefer an explicit migration step (CI/CD job or an admin `docker run` one-off) rather than doing automatic migrations at container start unless you desire that behavior.
+
+Example migration run (one-off container):
+
+```/dev/null/commands.sh#L41-80
+# run migrations via the server image (if the image includes migrations)
+docker compose run --rm server /app/migrate up
+# or use a dedicated image/tool that runs your migrations
+```
+
+Backups:
+- Regularly back up PostgreSQL data (logical pg_dump or physical backup).
+- Keep at least 2-3 backup generations offsite for disaster recovery.
+- Periodically test restores on staging to validate backups.
+
+Example pg_dump (hosted DB):
+
+```/dev/null/commands.sh#L81-120
+PGPASSWORD="your_password" pg_dump -h db-host -U cookiefarm -d cookiefarm -Fc > cookiefarm-$(date +%F).dump
+```
+
+---
+
+## Hardening & security checklist
+
+- TLS everywhere — no service should expose plaintext traffic publicly.
+- Run processes as non-root inside containers where possible.
+- Limit container capabilities and use read-only filesystems for containers that don't need writes.
+- Set resource limits (CPU, memory) to avoid noisy-neighbor issues.
+- Keep images up to date and apply security patches promptly.
+- Use security scanning for container images (e.g., Trivy).
+- Restrict access to databases with network ACLs and strong passwords.
+- Use Content Security Policy (CSP), secure cookies (HttpOnly, Secure, SameSite), and strong session handling.
+- Rate limit public endpoints and submissions to avoid abuse and accidental overload.
+
+---
+
+## Scaling & high-availability
+
+For higher availability consider:
+- Running multiple server instances behind a load balancer (nginx, HAProxy, or cloud LB).
+- Use a managed PostgreSQL with replicas and automated failover, or implement patroni/replication and a failover strategy.
+- Redis clustering or managed Redis for reliability.
+- Shared storage for uploads (S3-compatible object store is recommended) rather than local volumes if running multiple server replicas.
+
+Kubernetes notes:
+- Use Deployments with rolling updates, Service and Ingress for traffic routing.
+- Add readiness and liveness probes so kubelet only routes traffic to healthy pods.
+- Use StatefulSets for stateful services if required, but prefer managed services for DB/Redis.
+
+---
+
+## Monitoring & logging
+
+- Export metrics (Prometheus) and collect logs (structured JSON to stdout, aggregated with Fluentd/Vector/Logstash).
+- Instrument key metrics: request latency, error rate, queue lengths, CPU/memory, DB connection pool usage.
+- Set up alerting for high error rates, slow response times, failing healthchecks, and saturated resources.
+
+Example recommended health endpoint:
+- `/healthz` for liveness
+- `/ready` for readiness (ready only after DB migrations, DB reachable, and caches warmed if necessary)
+
+---
+
+## Troubleshooting tips
+
+- If the server won't start, check logs from the server container: `docker compose logs -f server`.
+- For DB connectivity issues, verify `DATABASE_URL`, network connectivity between containers, and Postgres logs.
+- If TLS errors occur, check certificate files and proxy configuration, ensure time is correct on the host (NTP), and check that the domain DNS is correct.
+- For missing flags/submissions: verify outgoing network connectivity to the flag submission endpoints and credentials used for submissions.
+
+---
+
+## Example upgrade workflow
+
+1. Run migrations on staging and smoke test.
+2. Create a maintenance window and announce to users if necessary.
+3. Take a backup of the database.
+4. Pull the new Docker image and deploy (rolling restart / replace containers).
+5. Run migrations on production (if not done earlier).
+6. Monitor logs and metrics for regressions, and roll back if needed.
+
+---
+
+## Further reading
+
+- Docker Compose production best practices
+- Postgres backup & restore documentation
+- NGINX / Caddy / Traefik TLS and reverse-proxy configuration
+- Cloud provider docs for load balancing, managed DB, and secret stores
+
+---
+
+If you want, I can produce:
+- A fully populated `docker-compose.yml` tailored to your current `config.yml` or environment variables.
+- A ready-to-deploy `Caddyfile` or `nginx` config for your domain.
+- Kubernetes manifests (Deployment, Service, Ingress) for CookieFarm.
+
+Pick one and I'll generate the files.

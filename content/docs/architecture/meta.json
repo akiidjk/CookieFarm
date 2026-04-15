@@ -1,0 +1,27 @@
+{
+  "title": "Architecture",
+  "description": "System architecture documentation for CookieFarm: diagrams, flag pipeline flow, and server internals (concurrency, Go runtime details).",
+  "weight": 60,
+  "sidebar_label": "Architecture",
+  "pages": [
+    "overview.mdx",
+    "flag-pipeline.mdx",
+    "server-internals.mdx"
+  ],
+  "maintainers": [
+    {
+      "name": "CookieFarm Core Team",
+      "email": "devs@cookiefarm.example"
+    }
+  ],
+  "last_updated": null,
+  "keywords": [
+    "cookiefarm",
+    "architecture",
+    "flag pipeline",
+    "server internals",
+    "concurrency",
+    "ctf"
+  ],
+  "edit_url": "https://github.com/your-org/CookieFarm/tree/main/docs/content/docs/architecture"
+}

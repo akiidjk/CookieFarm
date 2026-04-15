@@ -1,0 +1,30 @@
+{
+  "title": "Client",
+  "description": "Documentation for the CookieFarm client (`ckc` CLI) — installation, authentication, and full CLI reference.",
+  "version": "1.0.0",
+  "weight": 30,
+  "path": "client",
+  "pages": [
+    "overview.mdx",
+    "installation.mdx",
+    "authentication.mdx",
+    "cli-reference.mdx"
+  ],
+  "maintainers": [
+    {
+      "name": "CookieFarm Client Team",
+      "email": "client-team@cookiefarm.example"
+    }
+  ],
+  "edit_url": "https://github.com/your-org/CookieFarm/tree/main/docs/content/docs/client",
+  "keywords": [
+    "cookiefarm",
+    "client",
+    "ckc",
+    "cli",
+    "installation",
+    "authentication",
+    "reference"
+  ],
+  "last_updated": null
+}

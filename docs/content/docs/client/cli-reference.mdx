@@ -1,0 +1,243 @@
+---
+title: ckc CLI — Reference
+description: Full command reference for the `ckc` command-line client
+---
+
+# ckc CLI — Reference
+
+This document is the authoritative reference for the `ckc` CLI shipped with CookieFarm. It lists global options, main subcommands, common flags and examples for typical workflows (configuration, authentication, exploit authoring & execution, and submissions).
+
+Table of contents
+- Global usage
+- Configuration & authentication
+- Exploit commands
+- Flag submission
+- Server & diagnostic commands
+- Examples & best practices
+
+---
+
+## Global usage
+
+General form:
+
+    ckc [GLOBAL FLAGS] <command> [command flags] [arguments...]
+
+Common global flags
+- `-c, --config <path>` — path to the client configuration file (default: `~/.ckc/config.yml`).
+- `-s, --server <url>` — override server base URL for this invocation.
+- `-v, --verbose` — increase logging verbosity (repeat to increase level).
+- `--no-color` — disable colored output (helpful for CI).
+- `--timeout <seconds>` — per-request timeout.
+
+To list top-level commands:
+
+    ckc help
+
+To get command-specific help:
+
+    ckc <command> --help
+
+---
+
+## Configuration & authentication
+
+ckc stores client-side config (server, tokens, preferences) in the config file. Use the following commands to manage it.
+
+`ckc config` — Manage configuration
+
+- `ckc config view` — Print effective configuration.
+- `ckc config set <key> <value>` — Set a config key (e.g. `server`, `default-team`).
+- `ckc config unset <key>` — Remove a config key.
+- `ckc config edit` — Open the config in the editor specified by `$EDITOR`.
+
+`ckc login` — Authenticate to a CookieFarm server
+
+- Usage:
+
+    ckc login --server https://cf.example.com --username alice
+
+- Flags:
+  - `--server <url>` — server base URL (if not set in config).
+  - `--username <name>` — username to log in as.
+  - `--password` — prompt for password (omitted reads from TTY securely).
+  - `--token <token>` — use a pre-generated API token instead of username/password.
+  - `--save` — save credentials/token to config (encrypted if supported).
+
+`ckc logout` — Clear local authentication tokens for a server.
+
+`ckc whoami` — Show current authenticated user and active server.
+
+---
+
+## Exploit commands
+
+The `exploit` command group handles creation, running and management of exploit scripts/runners.
+
+`ckc exploit create <name>` — scaffold a new exploit
+
+- Creates a directory `exploits/<name>/` with a template (runner, metadata).
+- Flags:
+  - `--language <python|go|bash>` — template language.
+  - `--template <template-name>` — use a named template.
+  - `--overwrite` — overwrite if directory exists.
+
+`ckc exploit list` — list known exploits in local workspace or server library
+
+- Flags:
+  - `--local` — show local exploits only.
+  - `--remote` — show exploits uploaded/registered on the server.
+  - `--verbose` — show metadata (author, tags, last-run).
+
+`ckc exploit validate <path>` — validate an exploit's metadata and manifest.
+
+`ckc exploit upload <path>` — upload an exploit bundle to the server (requires auth)
+
+- Flags:
+  - `--name <name>` — override name on server registration.
+  - `--dry-run` — run validation but do not perform the upload.
+
+`ckc exploit run <path|name>` — execute an exploit locally or trigger it on an execution farm
+
+- Execution modes:
+  - Local runner: run the exploit script in the current environment.
+  - Remote execution: ask the server to schedule the exploit on a runner pool.
+- Key flags:
+  - `-t, --threads <n>` — concurrency level (per exploit).
+  - `-T, --timeout <seconds>` — overall timeout for this run.
+  - `-p, --parallel <n>` — run N parallel instances (simulate many agents).
+  - `--env KEY=VALUE` — set environment variables for the exploit (repeatable).
+  - `--params '{"key":"val"}'` — JSON parameters for the exploit template.
+  - `--attach` — attach to logs in real time for remote runs.
+  - `--no-submit` — do not auto-submit found flags (for testing).
+
+`ckc exploit status <run-id>` — check the status and logs of a running exploit.
+
+`ckc exploit logs <run-id>` — stream or fetch historical logs.
+
+`ckc exploit stop <run-id>` — request graceful termination of a running exploit.
+
+---
+
+## Flag submission
+
+`ckc submit <flag>` — submit a captured flag to the server
+
+- Basic usage:
+
+    ckc submit FLAGSTRING
+
+- Flags:
+  - `--team <team-id>` — submit on behalf of a specific team (requires permission).
+  - `--exploit <exploit-name>` — associate submission with an exploit run.
+  - `--force` — bypass local rate-limiting (use with caution).
+  - `--dry-run` — validate submission payload without sending.
+
+`ckc submissions list` — view recent submission history
+
+- Flags:
+  - `--limit <n>` — number of entries to return.
+  - `--status <accepted|rejected|pending>` — filter by result.
+
+---
+
+## Server & diagnostic commands
+
+`ckc server info` — show server capabilities, version, and configured pools.
+
+`ckc health` — run a local diagnostic (connectivity, token validity, dependencies)
+
+`ckc dashboard open` — open the web dashboard in the default browser (if available)
+
+`ckc version` — print client version and build metadata
+
+`ckc support diag --output tar.gz` — collect logs, config and diagnostics for support
+
+---
+
+## Output formats
+
+Several commands support alternate output formats for scripting:
+
+- `--output json` — machine-readable JSON
+- `--output yaml` — YAML
+- `--output table` — human-friendly table (default)
+- `--quiet` — suppress non-essential output (exit code indicates success)
+
+Example:
+
+    ckc exploit list --remote --output json
+
+---
+
+## Authentication & security notes
+
+- Tokens: Prefer using API tokens for automation. Tokens can be generated from the dashboard or via `ckc login --token`.
+- Token storage: Tokens saved to the config are encrypted if the OS keyring is available; otherwise they are stored plain-text. Use `ckc config set keyring.enabled true` where supported.
+- Least privilege: Create scoped tokens for CI or automated runners rather than using full-access user tokens.
+- Rate limiting: Server enforces submission rate limits. Use `ckc submit --dry-run` to check payloads before submitting.
+
+---
+
+## Exit codes
+
+Common exit codes:
+
+- `0` — success
+- `1` — general error (invalid usage, misconfiguration)
+- `2` — authentication error (invalid token)
+- `3` — network error (timeout, DNS failure)
+- `4` — server rejected request (bad payload, permission)
+- `5` — exploit execution failure (non-zero runner exit)
+
+When scripting, prefer checking structured output (`--output json`) alongside exit codes.
+
+---
+
+## Examples & workflows
+
+1) Quick login and run an exploit locally
+
+    ckc login --server https://cf.example.com --username alice
+    ckc exploit create quick-sqli --language python
+    cd exploits/quick-sqli
+    ckc exploit run .
+
+2) Upload an exploit and schedule remote execution
+
+    ckc login --token <REDACTED>
+    ckc exploit upload ./exploits/quick-sqli --name quick-sqli
+    ckc exploit run quick-sqli --parallel 10 --timeout 300 --attach
+
+3) Submit a found flag and view recent submissions
+
+    ckc submit FLAG{abc123} --exploit quick-sqli
+    ckc submissions list --limit 20 --output table
+
+4) CI example: validate an exploit prior to upload (non-interactive)
+
+    export CKC_TOKEN="ci-token"
+    ckc exploit validate ./exploits/my-exploit --output json
+    ckc exploit upload ./exploits/my-exploit --dry-run --output json
+
+---
+
+## Best practices
+
+- Use `ckc config` to pin server and default team values to avoid passing them repeatedly.
+- Keep exploit templates small and idempotent. Use `--no-submit` when testing locally.
+- Prefer `--output json` for automation and integrations.
+- Rotate API tokens regularly and scope them to the minimum necessary permissions.
+- Use `ckc health` before running large campaigns to detect local misconfiguration.
+
+---
+
+## Troubleshooting
+
+- "Authentication failed": verify server URL, time sync, and token validity using `ckc whoami` and `ckc health`.
+- "Upload rejected": run `ckc exploit validate` and check the server API reference in documentation for schema changes.
+- "Submissions rate-limited": consult server admin and verify you're not reusing the same token across many agents.
+
+---
+
+If you need a command not documented above, run `ckc help` or open an issue in the project repository. This reference focuses on the most-used commands and flags; consult server-specific API docs for advanced integrations.

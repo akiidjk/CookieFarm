@@ -1,0 +1,37 @@
+{
+  "title": "Dashboard",
+  "description": "Documentation for the CookieFarm web dashboard: UI walkthrough, live monitoring, and exploit management.",
+  "weight": 50,
+  "icon": "dashboard",
+  "sidebar": {
+    "overview": {
+      "title": "Overview",
+      "path": "overview.mdx",
+      "weight": 0
+    },
+    "monitoring": {
+      "title": "Monitoring",
+      "path": "monitoring.mdx",
+      "weight": 10
+    },
+    "exploit-management": {
+      "title": "Exploit Management",
+      "path": "exploit-management.mdx",
+      "weight": 20
+    }
+  },
+  "maintainers": [
+    {
+      "name": "CookieFarm Dashboard Team",
+      "email": "dashboard@cookiefarm.example"
+    }
+  ],
+  "keywords": [
+    "dashboard",
+    "monitoring",
+    "ui",
+    "exploit-management",
+    "web"
+  ],
+  "last_updated": null
+}

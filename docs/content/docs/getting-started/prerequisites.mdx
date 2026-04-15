@@ -1,0 +1,97 @@
+---
+title: Prerequisites
+description: System requirements and software prerequisites for running CookieFarm (server, client, and development).
+---
+
+# Prerequisites
+
+This page lists the system requirements and recommended tools you should have before installing or developing with CookieFarm. It covers the runtime prerequisites for the server and client, plus optional tools useful for development and troubleshooting.
+
+If you are preparing a development environment (Go, TypeScript, Python), see the Dev Setup guide in the Contributing section for additional language-specific requirements.
+
+## Supported platforms
+
+- Linux (recommended): modern distributions such as Ubuntu 20.04+ or equivalent.
+- macOS: recent releases (macOS 11+).
+- Windows: WSL2 is strongly recommended for server and development workflows.
+
+Note: Exact compatibility depends on tooling (Docker, Python, etc.). Use the platform's package manager or WSL2 on Windows to get a consistent experience.
+
+## Core prerequisites
+
+- Python
+  - Python 3.10 or later is recommended for the `ckc` client and exploit tooling.
+  - A virtual environment is recommended (venv, virtualenv) or `pipx` to install the CLI in isolation.
+
+- pip
+  - Latest `pip` for your Python installation. Upgrade with `python -m pip install --upgrade pip` if needed.
+
+- Docker
+  - Docker Engine (modern stable release). For production or local Compose setups Docker >= 20.10 is typical.
+  - Docker Compose: either the standalone `docker-compose` v1.29+ or the Docker Compose plugin (v2+). See the Server deployment guide for examples.
+
+- git
+  - Required to clone the repository and fetch submodules or templates.
+
+## Optional / Development prerequisites
+
+- Go (for server internals development)
+  - If you plan to build the server from source, install Go (1.18+ recommended; check Dev Setup for exact versions).
+
+- Node.js / npm / pnpm
+  - Needed only for dashboard/frontend development. Use the versions specified in the Dev Setup or the frontend package manager config.
+
+- Make / GNU tooling
+  - Helpful build scripts and Makefiles may require `make`, `jq`, `curl`, etc.
+
+- Editor / IDE
+  - Any modern editor with language support for Go, TypeScript, and Python (VS Code, JetBrains, etc.) is recommended.
+
+## Hardware / resource recommendations
+
+- Small teams / local testing
+  - 2 CPU cores, 4 GB RAM minimum for basic local runs.
+
+- Larger scale or production-like testing
+  - 4+ CPU cores and 8+ GB RAM recommended depending on the number of concurrent exploit runners and services you run.
+
+Actual requirements depend on the number of worker processes, exploits' resource usage, and database choices.
+
+## Network and ports
+
+- CookieFarm services are configurable; ports and host bindings are defined in the configuration (see the Server configuration guide).
+- Ensure outbound network connectivity for exploits that must reach target services and for the server to contact any external flag submission endpoints.
+- When running locally, remember to open the ports used by the server and dashboard in your firewall if you need external access.
+
+## Credentials and secrets
+
+- The server requires configuration for secrets, API keys, and database credentials. Never commit secrets to source control — use environment variables, `.env` files excluded from VCS, or a secret manager.
+- See the Server configuration guide for exact variable names and secure deployment recommendations.
+
+## Verifying your environment
+
+To check the basic tools, run the following commands in your shell (examples only):
+
+  python --version
+  pip --version
+  docker --version
+  docker compose version
+  git --version
+
+(If using Docker Compose as a plugin, `docker compose version` will show the plugin version. If using the standalone binary, use `docker-compose --version`.)
+
+## Common installation tips
+
+- Use a Python virtual environment:
+  - Create one with `python -m venv .venv` and activate it before installing the `ckc` client or other Python dependencies.
+- Prefer `pipx` if you want the `ckc` CLI installed globally but isolated from other Python packages.
+- Keep Docker and Compose up to date to avoid subtle compatibility issues.
+- On Windows, use WSL2 for the best compatibility with Linux-oriented tooling and Docker.
+
+## Where to look next
+
+- Quick Start: follow the Quick Start guide to bring up a minimal server and client.
+- Server configuration: for the full list of environment variables, config file options, and secrets management.
+- Contributing / Dev Setup: if you are preparing a development environment (Go, TypeScript, etc.), follow the Dev Setup instructions.
+
+If you run into a specific problem while preparing your environment, consult the Troubleshooting sections and the FAQ, or open an issue with a clear description of your platform, tool versions, and the problem observed.

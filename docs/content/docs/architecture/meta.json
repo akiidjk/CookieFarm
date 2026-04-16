@@ -4,24 +4,9 @@
   "weight": 60,
   "sidebar_label": "Architecture",
   "pages": [
-    {
-      "path": "overview.mdx",
-      "title": "Overview",
-      "weight": 0,
-      "description": "Full system diagram and high-level interaction between Server, Client, and Dashboard."
-    },
-    {
-      "path": "flag-pipeline.mdx",
-      "title": "Flag Pipeline",
-      "weight": 10,
-      "description": "End-to-end flag lifecycle: capture, submission, validation, and retry/backoff strategies."
-    },
-    {
-      "path": "server-internals.mdx",
-      "title": "Server Internals",
-      "weight": 20,
-      "description": "In-depth look at the server implementation, Go concurrency patterns, worker pools, and persistence."
-    }
+    "overview.mdx",
+    "flag-pipeline.mdx",
+    "server-internals.mdx"
   ],
   "maintainers": [
     {

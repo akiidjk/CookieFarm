@@ -1,34 +1,14 @@
 {
   "title": "Client",
-  "description": "Documentation for the CookieFarm client (`ckc` CLI) — installation, authentication, and full CLI reference.",
+  "description": "Documentation for the CookieFarm client (`ckc` CLI) \u2014 installation, authentication, and full CLI reference.",
   "version": "1.0.0",
   "weight": 30,
   "path": "client",
   "pages": [
-    {
-      "title": "Overview",
-      "file": "overview.mdx",
-      "weight": 0,
-      "description": "High-level overview and philosophy of the `ckc` CLI."
-    },
-    {
-      "title": "Installation",
-      "file": "installation.mdx",
-      "weight": 10,
-      "description": "Installation instructions (pip, virtualenv, package distribution recommendations)."
-    },
-    {
-      "title": "Authentication",
-      "file": "authentication.mdx",
-      "weight": 20,
-      "description": "Configuration, login flows, token storage, and authentication flags."
-    },
-    {
-      "title": "CLI Reference",
-      "file": "cli-reference.mdx",
-      "weight": 30,
-      "description": "Complete command index, subcommands and flags (config, exploit, monitor, etc.)."
-    }
+    "overview.mdx",
+    "installation.mdx",
+    "authentication.mdx",
+    "cli-reference.mdx"
   ],
   "maintainers": [
     {

@@ -44,7 +44,7 @@ Goroutines are cheap but not free. Every goroutine must be owned by a higher-lev
 
 Typical pattern for launching transient worker goroutines:
 
-```/dev/null/go_examples.go#L1-40
+```go title="go_examples.go"
 package examples
 
 import (
@@ -92,7 +92,7 @@ Exploit code runs untrusted/variable workloads. Each run should be sandboxed:
 
 A minimal task-run pattern:
 
-```/dev/null/go_examples.go#L41-90
+```go title="go_examples.go"
 package examples
 
 import (
@@ -137,7 +137,7 @@ Key aspects:
 
 Example skeleton:
 
-```/dev/null/go_examples.go#L91-160
+```go title="go_examples.go"
 package examples
 
 import (
@@ -232,7 +232,7 @@ The HTTP server must:
 
 Minimal graceful shutdown flow:
 
-```/dev/null/go_examples.go#L161-320
+```go title="go_examples.go"
 package examples
 
 import (

@@ -1,6 +1,6 @@
 ---
 title: Server Deployment
-description: Deployment guide for the CookieFarm server: Docker Compose examples, reverse proxy/TLS, production hardening, backups, and scaling.
+description: "Deployment guide for the CookieFarm server: Docker Compose examples, reverse proxy/TLS, production hardening, backups, and scaling."
 ---
 
 # Server Deployment
@@ -30,7 +30,7 @@ Table of contents
 
 This minimal `docker-compose.yml` is intended to get a production-like environment running. Adjust images, versions, networks, volumes and environment variables to fit your infrastructure and security policy.
 
-```/dev/null/docker-compose.yml#L1-220
+```yaml title="docker-compose.yml"
 version: "3.8"
 
 services:
@@ -106,7 +106,7 @@ Notes:
 
 A tiny example of starting the stack:
 
-```/dev/null/commands.sh#L1-40
+```bash title="commands.sh"
 # create secrets (example)
 printf "%s" "supersecret_db_password" | docker secret create postgres_password -
 printf "%s" "supersecret_server_key" | docker secret create server_secret -
@@ -142,7 +142,7 @@ You should terminate TLS at a reverse proxy. Two recommended options:
 ### Caddy (automatic TLS)
 Caddy can obtain and renew Let's Encrypt certificates automatically. Example `Caddyfile`:
 
-```/dev/null/Caddyfile#L1-80
+```bash title="Caddyfile"
 your.example.domain {
   reverse_proxy server:8080
   encode gzip
@@ -160,7 +160,7 @@ your.example.domain {
 ### nginx (manual or certbot)
 Example `nginx` server block for TLS termination (ensure you have certs from Let's Encrypt / certbot):
 
-```/dev/null/nginx.conf#L1-140
+```nginx title="nginx.conf"
 server {
     listen 80;
     server_name your.example.domain;
@@ -219,7 +219,7 @@ Migrations:
 
 Example migration run (one-off container):
 
-```/dev/null/commands.sh#L41-80
+```bash title="commands.sh"
 # run migrations via the server image (if the image includes migrations)
 docker compose run --rm server /app/migrate up
 # or use a dedicated image/tool that runs your migrations
@@ -232,7 +232,7 @@ Backups:
 
 Example pg_dump (hosted DB):
 
-```/dev/null/commands.sh#L81-120
+```bash title="commands.sh"
 PGPASSWORD="your_password" pg_dump -h db-host -U cookiefarm -d cookiefarm -Fc > cookiefarm-$(date +%F).dump
 ```
 

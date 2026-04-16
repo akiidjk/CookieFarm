@@ -21,7 +21,7 @@ Table of contents
 
 General form:
 
-    ckc [GLOBAL FLAGS] <command> [command flags] [arguments...]
+    ckc [GLOBAL FLAGS] `<command>` [command flags] [arguments...]
 
 Common global flags
 - `-c, --config <path>` — path to the client configuration file (default: `~/.ckc/config.yml`).
@@ -36,7 +36,7 @@ To list top-level commands:
 
 To get command-specific help:
 
-    ckc <command> --help
+    ckc `<command>` --help
 
 ---
 
@@ -205,13 +205,13 @@ When scripting, prefer checking structured output (`--output json`) alongside ex
 
 2) Upload an exploit and schedule remote execution
 
-    ckc login --token <REDACTED>
+    ckc login --token `<REDACTED>`
     ckc exploit upload ./exploits/quick-sqli --name quick-sqli
     ckc exploit run quick-sqli --parallel 10 --timeout 300 --attach
 
 3) Submit a found flag and view recent submissions
 
-    ckc submit FLAG{abc123} --exploit quick-sqli
+    ckc submit `FLAG{abc123}` --exploit quick-sqli
     ckc submissions list --limit 20 --output table
 
 4) CI example: validate an exploit prior to upload (non-interactive)

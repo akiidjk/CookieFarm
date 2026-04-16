@@ -24,7 +24,7 @@ Install the following on your machine:
 
 Verify basics:
 
-```/dev/null/commands.sh#L1-6
+```bash title="commands.sh"
 # check versions
 git --version
 go version
@@ -38,7 +38,7 @@ docker compose version
 
 ## Clone the repository
 
-```/dev/null/commands.sh#L1-3
+```bash title="commands.sh"
 git clone https://github.com/your-org/CookieFarm.git
 cd CookieFarm
 ```
@@ -51,7 +51,7 @@ Read the top-level `README.md` for project-specific instructions and any `Makefi
 
 If the project provides `.env.example` or similar, copy it and fill in secrets:
 
-```/dev/null/.env.example#L1-8
+```bash title=".env.example"
 # Example .env (copy to .env and edit)
 # SERVER_BIND_ADDR=127.0.0.1:8080
 # DATABASE_URL=postgres://user:pass@localhost:5432/cookiefarm
@@ -61,7 +61,7 @@ If the project provides `.env.example` or similar, copy it and fill in secrets:
 
 Commands:
 
-```/dev/null/commands.sh#L1-3
+```bash title="commands.sh"
 cp .env.example .env
 # edit .env with your editor
 ```
@@ -74,14 +74,14 @@ If there is no `.env.example`, check repository docs for required environment va
 
 1. Install dependencies:
 
-```/dev/null/commands.sh#L1-3
+```bash title="commands.sh"
 cd server   # or the repo's Go server path (check repository layout)
 go mod download
 ```
 
 2. Build or run:
 
-```/dev/null/commands.sh#L1-4
+```bash title="commands.sh"
 # build everything
 go build ./...
 # run a server main package if present under cmd/
@@ -92,13 +92,13 @@ Note: Many Go projects keep CLI/server entrypoints under `./cmd/<name>`. Inspect
 
 3. Tests:
 
-```/dev/null/commands.sh#L1-2
+```bash title="commands.sh"
 go test ./... -v
 ```
 
 4. Lint & format:
 
-```/dev/null/commands.sh#L1-3
+```bash title="commands.sh"
 # formatting
 gofmt -w .
 # linting (if installed)
@@ -113,26 +113,26 @@ Locate the frontend directory (commonly named `frontend`, `web`, `dashboard`, or
 
 1. Install dependencies:
 
-```/dev/null/commands.sh#L1-4
+```bash title="commands.sh"
 cd frontend      # replace with actual path
 npm install      # or yarn install / pnpm install
 ```
 
 2. Run development server:
 
-```/dev/null/commands.sh#L1-2
+```bash title="commands.sh"
 npm run dev      # or npm start depending on the project
 ```
 
 3. Build for production:
 
-```/dev/null/commands.sh#L1-2
+```bash title="commands.sh"
 npm run build
 ```
 
 4. Tests and lint:
 
-```/dev/null/commands.sh#L1-3
+```bash title="commands.sh"
 npm test
 npm run lint     # runs ESLint/TypeScript checks
 ```
@@ -145,7 +145,7 @@ The Python client often lives in `client/` and is installable as a package.
 
 1. Create a virtual environment and install:
 
-```/dev/null/pyvenv#L1-5
+```bash title="pyvenv"
 cd client
 python -m venv .venv
 # macOS/Linux
@@ -159,13 +159,13 @@ pip install -e .                  # editable install for local dev
 
 2. Run tests:
 
-```/dev/null/commands.sh#L1-2
+```bash title="commands.sh"
 pytest -q
 ```
 
 3. Linting / formatting:
 
-```/dev/null/commands.sh#L1-3
+```bash title="commands.sh"
 ruff check .
 black --check .
 ```
@@ -176,7 +176,7 @@ black --check .
 
 To bring up dependent services (Postgres, Redis, etc.):
 
-```/dev/null/commands.sh#L1-3
+```bash title="commands.sh"
 docker compose up --build
 # or
 docker compose up -d
@@ -191,7 +191,7 @@ When using Docker for the server, ensure environment variables are set (via `.en
 A typical dev flow:
 
 - Start Docker services (database, redis):
-  `/dev/null/commands.sh#L1-2`
+  `docker compose up -d`
 - Run backend (Go) locally so it reloads on change, or run inside a container.
 - Run frontend dev server and connect to the backend API via configured env vars.
 - Activate Python client virtualenv and run `ckc` commands against the local server.

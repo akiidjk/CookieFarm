@@ -3,8 +3,6 @@ title: Client Authentication
 description: How to authenticate the `ckc` CLI with a CookieFarm server (interactive login, tokens, config and troubleshooting).
 ---
 
-import { Callout } from 'some-ui'  {/* placeholder for MDX components if used by the site */}
-
 # Authentication (ckc)
 
 This page describes common authentication workflows for the `ckc` command-line client: interactive login, token-based authentication, environment variables, and where credentials are stored locally. It also includes troubleshooting tips and examples.
@@ -34,7 +32,7 @@ Most users will authenticate once per machine using an interactive command which
 
 Example (interactive flow):
 
-```/dev/null/interactive_example.sh#L1-8
+```bash title="interactive_example.sh"
 # Typical interactive login (example)
 # The exact command and flags for your version of `ckc` may differ — run `ckc login --help`.
 ckc login --server https://cookiefarm.example
@@ -51,7 +49,7 @@ For CI or scripts you should use a token (personal access token / API key) rathe
 
 Example (provide token on the CLI):
 
-```/dev/null/token_example.sh#L1-6
+```bash title="token_example.sh"
 # Example: pass a token to login (non-interactive)
 ckc login --server https://cookiefarm.example --token "eyJhbGciOi..."
 # Or, set the token in environment for a single command:
@@ -61,7 +59,7 @@ ckc exploit run --target foo
 
 Example (use env var for automation):
 
-```/dev/null/ci_example.yml#L1-10
+```yaml title="ci_example.yml"
 # CI job example: set CKC_TOKEN as a secret in your CI system
 steps:
   - name: Run exploit
@@ -85,7 +83,7 @@ Always store personal access tokens in your CI system's secret storage and do no
 
 If your `ckc` supports named profiles, you can manage multiple server endpoints:
 
-```/dev/null/config_example.yml#L1-12
+```yaml title="config_example.yml"
 # Example structure (illustrative only)
 profiles:
   default:
@@ -169,7 +167,7 @@ Check `ckc --help` for how to manage profiles in your installed version.
 
 Interactive developer setup:
 
-```/dev/null/setup_dev.sh#L1-12
+```bash title="setup_dev.sh"
 # Developer workflow (interactive)
 ckc login --server https://cookiefarm.example
 # Follow prompts for username/password (and 2FA if enabled)
@@ -179,7 +177,7 @@ ckc whoami
 
 Automation in CI (recommended):
 
-```/dev/null/ci_workflow.sh#L1-12
+```bash title="ci_workflow.sh"
 # CI workflow (non-interactive)
 # Set secret in CI: CKC_TOKEN
 export CKC_SERVER=https://cookiefarm.example

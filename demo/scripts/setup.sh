@@ -57,5 +57,13 @@ echo "✅ Services started!"
 # === COMPLETION ===
 echo -e "\n🎯 Cookie Farm Server ready to use!"
 
+echo ""
+echo "Report:"
+echo "- Server started at localhost:808"
+echo "- Started $1 container(s) with a service called CookieServer at port 8081"
+echo "- Test command:"
+echo '  `ckc config login -P password`'
+echo '  `ckc exploit run -e exploit -n CookieService`'
+
 read -p "🔻 Press ENTER to close all terminals started by this script..."
 cleanup

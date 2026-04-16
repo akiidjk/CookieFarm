@@ -90,6 +90,8 @@ tailwindcss
 # Logs
 logs
 
+**/.env.just
+
 
 ## server frontend
 
@@ -136,3 +138,4 @@ yarn-error.log*
 next-env.d.ts
 .next
 !frontend/src/app/logs
+!.env.just

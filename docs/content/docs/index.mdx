@@ -1,13 +1,48 @@
 ---
-title: Hello World
-description: Your first document
+title: Welcome to CookieFarm
+description: Attack/Defense CTF framework with a zero-distraction philosophy.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+**CookieFarm** is an *Attack/Defense CTF* framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookies**.
 
-## What is Next?
+Its strength lies in a hybrid **Go + Python** architecture and a **zero-distraction philosophy**:
+
+> 🎯 *Your only task is to write the exploit!*
+
+CookieFarm automates exploit distribution, flag submission, and result monitoring — allowing you to focus entirely on building powerful exploits during an A/D CTF.
+
+## Key Features
+
+- **Automated Flag Pipeline:** Seamlessly collects, validates, and submits flags to the competition infrastructure.
+- **Scalable Execution:** Go-based server engineered for high concurrency and robust task scheduling.
+- **Developer Experience:** Python `ckc` CLI and library tailored for rapid and painless exploit development.
+- **Real-time Monitoring:** Keep track of your exploits' success rates, errors, and overall performance.
+
+## Where to go next?
+
+Explore the documentation to set up your farm and start pwning.
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card 
+    title="Getting Started" 
+    description="Set up CookieFarm, review prerequisites, and learn the core concepts." 
+    href="/docs/getting-started" 
+  />
+  <Card 
+    title="Server Guide" 
+    description="Configure, deploy, and manage the Go-based server." 
+    href="/docs/server/overview" 
+  />
+  <Card 
+    title="Client & CLI" 
+    description="Install and master the ckc CLI to control your farm." 
+    href="/docs/client/overview" 
+  />
+  <Card 
+    title="Writing Exploits" 
+    description="Learn how to author and distribute exploits using our Python library." 
+    href="/docs/exploits/overview" 
+  />
 </Cards>

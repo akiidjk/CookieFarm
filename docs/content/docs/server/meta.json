@@ -57,5 +57,11 @@
     "Enable request rate limiting in production",
     "Monitor health and metrics endpoints"
   ],
-  "generated_at": null
+  "generated_at": null,
+  "pages": [
+    "overview",
+    "configuration",
+    "deployment",
+    "api-reference"
+  ]
 }

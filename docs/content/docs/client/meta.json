@@ -5,10 +5,10 @@
   "weight": 30,
   "path": "client",
   "pages": [
-    "overview.mdx",
-    "installation.mdx",
-    "authentication.mdx",
-    "cli-reference.mdx"
+    "overview",
+    "installation",
+    "authentication",
+    "cli-reference"
   ],
   "maintainers": [
     {

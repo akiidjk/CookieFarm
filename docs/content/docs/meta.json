@@ -1,9 +1,9 @@
 {
   "title": "CookieFarm Documentation",
-  "description": "Comprehensive documentation for CookieFarm — guides, API reference, tutorials, and developer resources.",
+  "description": "Comprehensive documentation for CookieFarm \u2014 guides, API reference, tutorials, and developer resources.",
   "version": "1.0.0",
-  "repo": "https://github.com/your-org/CookieFarm",
-  "edit_url": "https://github.com/your-org/CookieFarm/tree/main/docs/content/docs",
+  "repo": "https://github.com/ByteTheCookies/CookieFarm",
+  "edit_url": "https://github.com/ByteTheCookies/CookieFarm/tree/main/docs/content/docs",
   "license": "MIT",
   "sidebar": {
     "index": {
@@ -155,5 +155,16 @@
       "cli",
       "documentation"
     ]
-  }
+  },
+  "pages": [
+    "index",
+    "getting-started",
+    "server",
+    "client",
+    "exploits",
+    "dashboard",
+    "architecture",
+    "contributing",
+    "faq"
+  ]
 }

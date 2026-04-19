@@ -1,9 +1,7 @@
 ---
-title: Server — Overview
+title: Overview
 description: The CookieFarm server's responsibilities, high-level architecture, components, and operational considerations.
 ---
-
-# Server — Overview
 
 The CookieFarm server is the central authoritative component in the system. It is responsible for coordinating exploit runs, accepting results, validating and submitting flags, exposing APIs for clients and dashboards, storing state, and providing observability and management endpoints.
 
@@ -16,12 +14,9 @@ This page gives a high-level description of the server: its role in the architec
 At a glance, the server performs the following duties:
 
 - Expose authenticated REST APIs for clients (`ckc`) and the web dashboard.
-- Manage exploit run orchestration and scheduling.
 - Receive exploit results and manage the flag submission pipeline.
 - Persist configuration, user accounts, exploit metadata, and run history.
-- Enforce rate limits, quotas, and security policies.
 - Provide metrics, logging, and health endpoints for monitoring and alerting.
-- Integrate with persistent stores and external services (e.g., Redis, Postgres, object storage, SMTP).
 
 ---
 
@@ -29,15 +24,16 @@ At a glance, the server performs the following duties:
 
 CookieFarm's runtime consists of three cooperating roles:
 
-- Server — central coordinator, API provider, and stateful backend (this page).
-- Client (`ckc`) — CLI used by exploit authors/operators to upload, run, and manage exploits.
-- Dashboard — web UI for real-time monitoring, management, and visualizing results.
+- Server (`cks`)   central coordinator, API provider, and stateful backend (this page).
+- Client (`ckc`)   CLI used by exploit authors/operators to upload, run, and manage exploits.
+- Dashboard   web UI for real-time monitoring, management, and visualizing results.
 
-The server accepts requests from `ckc` and the dashboard, validates/authenticates them, and coordinates exploit execution either directly (via worker processes) or by enqueueing tasks for distributed workers. The server is also the gatekeeper for flag submission: it receives captured flags from exploit runs and orchestrates the submission/validation lifecycle.
+The server accepts requests from `ckc` and the dashboard, validates/authenticates them server is also the gatekeeper for flag submission: it receives captured flags from exploit runs and orchestrates the submission/validation lifecycle.
 
 See the architecture pages for diagrams and an end-to-end overview:
-- /docs/architecture/overview.mdx
-- /docs/architecture/flag-pipeline.mdx
+
+- [/docs/architecture/overview.mdx](../architecture/overview.mdx)
+- [/docs/architecture/flag-pipeline.mdx](../architecture/flag-pipeline.mdx)
 
 ---
 
@@ -48,94 +44,58 @@ Below are the server's core components and their responsibilities.
 - API gateway
   - Exposes REST endpoints for authentication, exploit management, run orchestration, and administration.
   - Performs request authentication/authorization and input validation.
-- Scheduler / Orchestrator
-  - Decides when and where exploits should run.
-  - Enqueues work to worker pools or external runners.
-- Worker pool / Runner integration
-  - Either in-process worker threads/processes or integration points for remote runners that execute exploits and report results back.
-  - Handles retries, timeouts, and resource isolation.
 - Submission pipeline
   - Receives flags from exploit runs, formats them, and forwards them to target submission endpoints.
   - Tracks submission status, responses, and error handling / backoff.
 - Persistence layer
-  - Primary database (Postgres recommended) for users, exploits metadata, runs, and audit logs.
-  - Optional caches (Redis) for ephemeral state, rate limiting, and queues.
-  - Optional object storage for large artifacts, logs, or exploit packages.
-- Authentication & Authorization
-  - API tokens, sessions, and role-based access control for users and services.
+  - Primary database (SQLite) for flag storage.
 - Observability stack
   - Structured logs, metrics (Prometheus), and health endpoints.
-- Admin UI / Dashboard integration
-  - Endpoints and websocket/streaming channels for the dashboard to receive live updates on runs and submissions.
 
 ---
 
 ## Typical data flows
 
-1. Operator uploads an exploit via `ckc` (API call to server).
-2. Server stores metadata, validates, and makes the exploit available.
-3. Scheduler schedules a run (manual or automatic) and dispatches a job to a worker.
-4. Worker performs the exploit, captures artifacts and flags, and reports results back to the server.
-5. The server routes captured flags into the submission pipeline, which attempts submission and records outcomes.
-6. Dashboard subscribes to realtime events or queries the server for run status and logs.
+1. Player login and authentication
+   - `ckc` sends credentials to `/api/login`, receives a JWT token for subsequent requests.
+2. Player run the exploit, and ckc send the flag to the server
+   - `ckc` sends a POST to `/api/submit` with the flag and metadata.
+   - Server validates the request, stores the flag, and forwards it to the configured submission endpoint.
+3. Server receives submission response
+   - Server updates the flag status based on the response (accepted, rejected, error) and logs the outcome for observability.
+4. Dashboard queries server for run history and flag statuses
+   - Dashboard sends GET requests to `/api/flags` to display the current state of the farm and recent activity.
 
 ---
 
 ## Configuration
 
-Server configuration is driven by a combination of environment variables and a `config.yml` file (see the server configuration reference for the full list of settings). Important categories:
+Server configuration is driven by a combination of environment variables and a `config.yml` file (see the server configuration reference for the full list of settings). The canonical config used in this project lives at config.yml (example values shown below). Environment variables may override values in the file depending on your deployment.
 
-- Network
-  - Bind address, port, TLS settings (certificates).
-- Database
-  - DSN for Postgres (or other supported DB), pool sizes, migrations settings.
-- Queueing / cache
-  - Redis URL, queue prefix, timeouts.
-- Authentication
-  - JWT signing keys, token expiration, OAuth settings (if enabled).
-- Submission
-  - Default submission endpoint, credentials, per-target rate limits.
-- Security
-  - CORS policy, allowed hosts, admin IP whitelists, secret rotation.
-- Observability
-  - Metrics address, log level, log format, Sentry/remote error collectors.
-- Storage
-  - Object store endpoint, credentials, retention policies for artifacts and logs.
+Important categories and example keys (taken from the supplied config.yml):
 
-See /docs/server/configuration.mdx for a full, reference-style breakdown of configuration options and examples.
+- Server / submission
+  - url_flag_checker: "http://localhost:5001/flags"   endpoint the server forwards captured flags to.
+  - url_flag_ids: "http://localhost:5001/flagIds"   optional endpoint for retrieving flag identifiers.
+  - team_token: "c882674c6270b8293fff7f4fb5c4c249"   token used when talking to the flag-checker/submission service.
+  - protocol: "cc_http"   submission protocol to use for target endpoints.
+  - max_flag_batch_size: 1000   maximum number of flags batched per submission request.
 
----
+- Scheduling & runtime
+  - submit_flag_checker_time: 120   interval (seconds) between submission attempts to the flag checker.
+  - tick_time: 120   main server tick interval (seconds) used for scheduling periodic jobs.
+  - flag_ttl: 0   flag time-to-live expressed in ticks (0 = no TTL).
+  - start_time / end_time: timestamps that bound active competition time (e.g. "2023-10-01T00:00:00Z" to "2023-10-31T23:59:59Z").
 
-## Security considerations
+- Client / shared settings
+  - shared.services: mapping of local development service ports (examples: CookieService: 8081, vulnify: 1337, app-nc: 1338).
+  - range_ip_teams: 9   number of team IP slots used to generate per-team addresses.
+  - format_ip_teams: "10.10.{}.1"   format string used to construct team service IPs.
+  - my_team_id: 1   local/team identifier used in dev/testing.
+  - nop_team: 0   reserved no-op team id.
+  - regex_flag: "[A-Z0-9]{31}="   regular expression used to validate flag format.
 
-The server stores sensitive data (API keys, submission credentials, user credentials) and therefore must be operated with security best practices:
-
-- Secrets management
-  - Avoid embedding secrets in the repository. Use environment variables or a secrets manager (Vault, AWS Secrets Manager).
-  - Rotate keys periodically and support revocation.
-- Network security
-  - Use TLS for all external API traffic.
-  - Limit administrative endpoints to private networks or authenticated users.
-- Authentication & access control
-  - Use strong authentication for operators and clients.
-  - Apply least-privilege RBAC to administrative actions (exploit upload, server shutdown, secret management).
-- Input validation & rate limiting
-  - Validate all incoming payloads to avoid injection attacks.
-  - Implement per-user and per-target rate limits to prevent abuse.
-- Auditing
-  - Record important actions (exploit uploads, run cancellations, submission credentials changes) with timestamps and actor identities.
-
-Refer to /docs/server/deployment.mdx for production hardening and recommended platform-specific guidance.
-
----
-
-## Persistence, backups & migrations
-
-- Use a reliable SQL database (Postgres recommended) for primary state.
-- Run schema migrations as part of your deployment pipeline; ensure migration locks and backups are in place before major upgrades.
-- Back up the database regularly and test restores.
-- For object storage (artifacts/logs), configure lifecycle and retention policies to avoid uncontrolled growth.
-- Keep export/import tooling or scripts available to move data between environments (dev/staging/production).
+See [/docs/server/configuration.mdx](../server/configuration.mdx) for a full, reference-style breakdown of configuration options and examples.s.
 
 ---
 
@@ -144,7 +104,7 @@ Refer to /docs/server/deployment.mdx for production hardening and recommended pl
 The server exposes mechanisms that make operations and debugging straightforward:
 
 - Health endpoints
-  - `/healthz`, `/ready` for quick liveness and readiness checks.
+  - `/`, for quick liveness and readiness checks.
 - Metrics
   - Expose Prometheus-compatible metrics for job counts, queue lengths, submission success/failures, latencies.
 - Logging
@@ -154,29 +114,6 @@ The server exposes mechanisms that make operations and debugging straightforward
 - Diagnostic endpoints
   - Admin-only endpoints for inspecting queues, job states, and worker heartbeats.
 
-When troubleshooting:
-- Use correlation IDs from client requests to trace a run end-to-end.
-- Reproduce failing submissions locally against the configured submission endpoint.
-- Inspect worker logs and server-side error traces for pattern detection.
-
----
-
-## Scaling & high availability
-
-Common strategies for production deployments:
-
-- Horizontal scaling
-  - Run multiple server instances behind a load balancer for API scale. Ensure sticky sessions are not required (prefer stateless services).
-- Shared backing services
-  - Use a single, shared Postgres and Redis cluster that all server instances connect to.
-- Worker scaling
-  - Separate the worker fleet from API servers. Scale workers based on queue depth and CPU/memory needs.
-- Leader election & single-writer concerns
-  - If some operations must be single-writer (e.g., scheduled submissions), implement leader election (e.g., via Redis or database advisory locks).
-- Stateful components
-  - Keep the server stateless as much as possible. For stateful responsibilities, prefer well-known distributed systems (Postgres clusters, managed Redis).
-
-See /docs/server/deployment.mdx for example compose and K8s manifests and recommended HA patterns.
 
 ---
 
@@ -191,10 +128,6 @@ See /docs/server/deployment.mdx for example compose and K8s manifests and recomm
 
 ## Failure modes & common troubleshooting steps
 
-- Database connection failures
-  - Check DSN, network policies, and credentials. Ensure the DB accepts connections from the server's network.
-- Worker starvation / long queues
-  - Inspect queue lengths, worker heartbeats, and resource utilization. Scale workers or increase concurrency limits.
 - Flag submission failures
   - Validate submission credentials, target endpoint reachability, and rate-limit responses (apply exponential backoff).
 - High latency / timeouts

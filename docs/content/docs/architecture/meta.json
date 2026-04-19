@@ -4,9 +4,9 @@
   "weight": 60,
   "sidebar_label": "Architecture",
   "pages": [
-    "overview.mdx",
-    "flag-pipeline.mdx",
-    "server-internals.mdx"
+    "overview",
+    "flag-pipeline",
+    "server-internals"
   ],
   "maintainers": [
     {

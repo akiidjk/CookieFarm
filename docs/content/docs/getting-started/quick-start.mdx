@@ -6,8 +6,10 @@ description: Start a local CookieFarm server, authenticate the `ckc` client, and
 import { Card } from 'fumadocs-ui/components/card';
 
 <Card>
-This quick start gets a minimal local environment running so you can log in with the CLI and execute a simple exploit. It assumes you have Docker (or Docker Compose) and Python/pip available locally.
+This quick start gets a minimal local environment running so you can log in with the CLI and execute a simple exploit. It assumes you have Docker (or Docker Compose) and Python/pip available locally. 
 </Card>
+
+<br/>
 
 # Quick Start
 
@@ -17,17 +19,13 @@ This page walks through three short steps:
 2. Install and authenticate the `ckc` CLI.
 3. Create or run your first exploit and verify results in the dashboard.
 
-Keep the environment isolated (use a development VM or local containers) — exploits may perform network requests.
-
 ---
 
 ## 1) Start the server
 
-From the repository root, copy the example environment file and bring up the services. If the repo includes an `.env.example` and a `docker-compose.yml`, use:
+After the installation (either automatic or manual), you should have a `docker-compose.yml` file in your `cookiefarm` directory (or the root in case of an automatic remote installation). Start the server with:
 
-```mdx title="quick-start.mdx"
-# Copy example env and bring containers up
-cp .env.example .env
+```bash
 docker compose up -d --build
 ```
 
@@ -36,8 +34,9 @@ Notes:
 - Wait a few seconds for services to initialize. Check logs with `docker compose logs -f`.
 
 Verify the HTTP endpoints:
-- Server API (default): http://localhost:8080
-- Dashboard / Web UI (default): http://localhost:3000
+
+- Server API (default): http://localhost:8080/api/v1/
+- Dashboard / Web UI (default): http://localhost:8080
 
 ---
 
@@ -45,7 +44,7 @@ Verify the HTTP endpoints:
 
 Install `ckc` into a virtualenv or with pipx:
 
-```mdx title="quick-start.mdx"
+```bash
 # Example: install with pip
 python -m venv .venv
 . .venv/bin/activate
@@ -53,24 +52,13 @@ pip install --upgrade pip
 pip install cookiefarm
 ```
 
-Authenticate the CLI against your running server. There are usually two authentication flows: interactive login (username/password) or token-based. Example token login:
+Authenticate the CLI against your running server:
 
-```mdx title="quick-start.mdx"
-# Example token-based login (replace <TOKEN> and <SERVER_URL>)
-ckc config set server http://localhost:8080
-ckc auth login --token "<TOKEN>"
-# Or interactive
-ckc auth login
+```bash
+ckc config reset
+ckc config login -P <PASSWORD> -H <SERVER_HOST> -p <SERVER_PORT> -u <USERNAME>
 ```
 
-If the server provides a temporary admin token during first-run, use that token. Otherwise create a user via the dashboard or management API, then log in with credentials.
-
-Confirm authentication:
-
-```mdx title="quick-start.mdx"
-ckc whoami
-# Expected: shows the logged-in user and server information
-```
 
 ---
 
@@ -78,30 +66,26 @@ ckc whoami
 
 CookieFarm supports multiple exploit authoring approaches (Python runners, shell templates, etc.). The easiest is to use a simple built-in example or template bundled with the project.
 
-List available exploit templates / examples:
+List available exploits:
 
-```mdx title="quick-start.mdx"
-ckc exploit list-templates
-# Or list uploaded examples
-ckc exploit list-examples
+```bash
+ckc exploit list
 ```
 
-Create or register a new exploit from a template:
+Probably if is the first time you run it, the list is empty.
 
-```mdx title="quick-start.mdx"
+Create a new exploit from the template:
+
+```bash
 # Create a new exploit skeleton from a template (example name: "sample-exploit")
-ckc exploit create --template python-basic --name sample-exploit
-# This creates a local directory you can edit with your exploit logic.
+ckc exploit create --name sample-exploit 
+# This creates a new file called sample-exploit.py in ~/.config/cookiefarm/exploits/ with a basic template you can edit.
 ```
 
-Run the exploit against a target (replace `<TARGET_URL>` with the target host or an entry in your target list):
+Run the exploit against a target (replace `<SERVICE_NAME>` with the name of the service to attack, as defined in your server config):
 
-```mdx title="quick-start.mdx"
-# Run locally (interactive)
-ckc exploit run sample-exploit --target http://target.example.local
-
-# Or run against a target file/list with concurrency and timeout flags:
-ckc exploit run sample-exploit --targets targets.txt -t 30 -T 5
+```bash
+ckc exploit run -e sample-exploit -t 30 -T 5 -n <SERVICE_NAME>
 ```
 
 Monitor progress:
@@ -118,22 +102,10 @@ Monitor progress:
   - Confirm `.env` values are set (database URL, secret keys).
 
 - Authentication fails:
-  - Confirm server URL in `ckc config get server`.
-  - If using token auth, ensure token is valid and not expired.
+  - Confirm server URL in `ckc config show`.
   - Check server logs for auth-related errors.
 
 - Exploit runtime errors:
-  - Re-run the exploit with verbose logging (if supported): `ckc exploit run ... -v`.
+  - Re-run the exploit with debug logging: `ckc exploit run ... --debug`.
   - Check the server/exploit runner logs and dashboard details.
-
----
-
-## Next steps
-
-- Read the full Getting Started guide for concepts and prerequisites: [Getting Started Index](./index.mdx).
-- Author an exploit using the `exploits/creating.mdx` guide and the `CookieFarmExploiter` helper in `exploits/exploiter-library.mdx`.
-- Explore server configuration and production deployment in `server/configuration.mdx` and `server/deployment.mdx`.
-
----
-
-If anything in this quick start doesn't match the layout of your repo (different ports, different commands), consult your repository's README or the configuration reference pages for exact values.
+  - Try before in test mode with `ckc exploit test ...`

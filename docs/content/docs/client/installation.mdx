@@ -16,15 +16,9 @@ Summary (recommended)
 
 ## Prerequisites
 
-- Python 3.9 or newer (some distributions may work with 3.8, but features and packaging are tested on 3.9+).
+- Python 3.14+ or newer (probably will work also with 3.13 or more old version).
 - `pip` (the Python package installer).
 - Optional but recommended: `python3-venv` / `virtualenv` or `pipx` for isolated installs.
-
-On Debian/Ubuntu systems you may need build dependencies for some Python wheels:
-- `sudo apt-get install build-essential libssl-dev libffi-dev python3-dev`
-
-On macOS you may need Xcode command line tools:
-- `xcode-select --install`
 
 ---
 
@@ -42,7 +36,7 @@ On macOS you may need Xcode command line tools:
 
 3. Verify:
 - `ckc --help`
-- `ckc version` (prints the installed CLI version)
+- `ckc --version` (prints the installed CLI version)
 
 Using a virtual environment keeps the install isolated and avoids permission issues.
 
@@ -101,14 +95,6 @@ If using a virtual environment, activate it first before running these commands.
 
 ---
 
-## Windows notes
-
-- Use the `venv` module to create virtual environments: `python -m venv .venv`
-- Activate with PowerShell: `.\.venv\Scripts\Activate.ps1` (you may need to set an execution policy) or with cmd: `.\.venv\Scripts\activate.bat`.
-- Ensure `python` and `pip` resolve to the same interpreter (use `python -m pip` to be explicit).
-
----
-
 ## Common issues & troubleshooting
 
 - Permission denied / EACCES when installing globally:
@@ -134,7 +120,7 @@ If using a virtual environment, activate it first before running these commands.
 After installation, run:
 
 - `ckc --help` — prints available commands and options.
-- `ckc version` — shows CLI version.
+- `ckc --version` — shows CLI version.
 - To configure and authenticate to a server, see the Authentication guide: `docs/content/docs/client/authentication.mdx`.
 
 ---
@@ -142,7 +128,3 @@ After installation, run:
 ## Notes for packagers and distributions
 
 - The package is designed to be installed from PyPI as `cookiefarm`. If your distribution repackages it, ensure dependencies and entry points are preserved so the `ckc` console script is available.
-
----
-
-If you run into any installer-specific problems not covered here, check the Troubleshooting and FAQ pages, or open an issue in the project repository. Contributions to the documentation and installation instructions are welcome.

@@ -9,107 +9,58 @@ sidebar_position: 1
 The `ckc` CLI is CookieFarm's command-line client used to interact with a CookieFarm server. It provides a compact, scriptable interface for:
 - managing configuration and authentication,
 - creating, running and monitoring exploits,
-- submitting and inspecting flag submissions,
-- interacting with the server's API when building automation and CI workflows.
 
 This page explains the `ckc` philosophy, typical workflows, and where to find more detailed command references and authentication information.
 
-## Philosophy
-
-The `ckc` tool was designed with three guiding principles:
-
-- Minimal, composable commands  
-  Each command does one thing well and can be combined with others in shell scripts or CI pipelines.
-
-- Transparent authentication and configuration  
-  Credentials and server endpoints are stored in a small, human-editable config. The CLI exposes commands to inspect and rotate credentials (see Authentication).
-
-- Safe defaults, explicit overrides  
-  Defaults aim to reduce accidental destructive behavior. Flags such as `--dry-run`, `--yes` and explicit timeout/retry controls let automation be explicit about risk.
 
 ## Typical workflows
 
 Below are common workflows you will perform with `ckc`. See the full `ckc` reference for exact flags and subcommands: `cli-reference.mdx`.
 
 - Install and configure the client
-  1. Install using the recommended method for your platform (see `installation.mdx`).
-  2. Configure the default server: `ckc config set server <url>`
-  3. Authenticate (token or username/password flow): `ckc auth login` — see `authentication.mdx`.
+  1. Install using the recommended method for your platform (see [installation](../client/installation.mdx)).
+  2. Configure the default server: `ckc config reset`
+  3. Authenticate (username/password flow): `ckc login` — see [authentication](../client/auth/authentication.mdx).
 
 - Create and manage exploits
-  1. Bootstrap a new exploit template: `ckc exploit new <name>`
-  2. Develop locally and run against a test server: `ckc exploit run <path> --target <target> --timeout 60s`
-  3. Upload or publish to a server / dashboard: `ckc exploit push <path>`
+  1. Bootstrap a new exploit template: `ckc exploit create <name>`
+  2. Develop locally and test against a nop team: `ckc exploit test -e <path> -n <service_name> -t 10 -T 10`
+  3. finally Run against all the enemy teams: `ckc exploit run -e <path> -n <service_name> -t 10 -T 10`
+
 
 - Run scheduled jobs or one-off runs
-  - Use `ckc run` or the `exploit run` subcommands with flags for parallelism (`-p`), per-target timeout (`-t`) and total run timeout (`-T`).
-  - Use `--concurrency` and `--rate` options when supported to avoid overwhelming target services or the submission pipeline.
+  - Use `ckc exploit run` subcommands with flags `-T` for specify the number of thread to use and `-t` for specify the how much second wait for relaunch the exploit
 
 - Inspect status and logs
-  - `ckc status` to get server health and submission queue state.
-  - `ckc logs <exploit-id>` to stream or tail exploit output when supported by the server.
+  - The normale print are not printed when in run mode, only in test mode is activated a debug mode
 
 ## Configuration
 
-`ckc` stores configuration in a small, user-scoped config directory (see `installation.mdx` for default paths). Typical configuration items:
-- `server.url` — base URL for the CookieFarm server
-- `auth.token` — API token for authenticated requests
-- `defaults.target` — default target list or naming convention
-- `logging.level` — CLI verbosity
+`ckc` stores configuration in a small, user-scoped config directory (see [installation](../client/installation.mdx) for default paths). Typical configuration items:
 
-Use `ckc config get` / `ckc config set` to manage values. The CLI will respect environment variables for ephemeral overrides (see `cli-reference.mdx` for exact variable names).
+```yaml
+host: localhost
+username: cookieguest
+port: 8081
+https: false
+```
 
-Security note: Do not check `auth.token` into version control. When automating in CI, use environment variables or encrypted secret storage supported by your CI provider.
-
-## Authentication
-
-Authentication flows and recommended practices are documented in `authentication.mdx`. Supported methods typically include:
-- API token (recommended for automation)
-- Interactive login with server-issued session tokens
-- OAuth / SSO connectors (if your server is configured for it)
-
-`ckc` exposes commands to:
-- create, rotate and revoke tokens,
-- validate the current token,
-- run commands with a temporary override token via environment variables.
-
-## Scripting & Automation
-
-`ckc` is intended to be script-friendly:
-- Exit codes follow typical Unix conventions (0 success, non-zero failure).
-- Subcommands support JSON output (`--format json`) for machine parsing.
-- Use `--dry-run` to validate command execution without side effects where available.
-
-Common automation patterns:
-- CI job that installs `ckc`, sets `CKC_SERVER` and `CKC_TOKEN`, then runs `ckc exploit run` with `--format json` and posts results to downstream systems.
-- Cron-based orchestrator that calls `ckc` to execute exploits against rotating targets and aggregates results.
+Use `ckc config show` / `ckc config update` to manage values.
 
 ## Debugging and verbosity
 
-- Use `--verbose` or `--debug` to increase logging locally.
-- When reporting issues, capture the output of `ckc --version`, `ckc config list` (redacting secrets), and the failing command with `--debug`.
-- For networking issues, `ckc` has a `--no-ssl-verify` option for debugging but avoid using it in production.
-
-## Where to find more
-
-- Installation: `installation.mdx` — how to install `ckc` across platforms.
-- Authentication: `authentication.mdx` — token flows and SSO integration.
-- Full CLI reference: `cli-reference.mdx` — complete list of commands, flags and examples.
-- Examples and best practices: `../exploits/examples.mdx` — real-world exploit patterns to adapt into `ckc` workflows.
+- Use `--debug` to increase logging locally.
+- When reporting issues, capture the output of `ckc --version`, `ckc config show` (redacting secrets), and the failing command with `--debug`.
 
 ## Quick Start Example
 
 A minimal sequence to authenticate and run an exploit (high-level):
 
 1. Configure server:
-   - `ckc config set server https://cookiefarm.example`
+   - `ckc config update -H 10.81.1.2 -p 8080 -u cookieguest`
 2. Login and save token:
-   - `ckc auth login`
+   - `ckc login -P password -u cookieguest`
 3. Run an exploit:
-   - `ckc exploit run ./my_exploit.py --target team-01 --timeout 30s --format json`
-
-Refer to `quick-start.mdx` in the Getting Started section for a full end-to-end tutorial.
+   - `ckc exploit run -e my_exploit -n service-1 -t 30 -T 10`
 
 ---
-
-If you want, I can add a short cheatsheet of the most-used `ckc` commands to this page (install, auth, exploit run, status). Just tell me which commands you expect to include and whether you want examples for scripting or interactive use.

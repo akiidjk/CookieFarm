@@ -66,10 +66,7 @@ func buildConfigCmd() *cobra.Command {
 	editConfigCmd.Flags().StringVarP(&username, "username", "u", "cookieguest", "Username for authenticating to the server")
 	editConfigCmd.Flags().BoolVarP(&https, "https", "s", false, "Use HTTPS for secure communication with the server")
 
-	loginConfigCmd.Flags().StringVarP(&host, "host", "H", "localhost", "Server host to connect to")
-	loginConfigCmd.Flags().Uint16VarP(&port, "port", "p", 8080, "Server port to connect to")
 	loginConfigCmd.Flags().StringVarP(&username, "username", "u", "cookieguest", "Username for authenticating to the server")
-	loginConfigCmd.Flags().BoolVarP(&https, "https", "s", false, "Use HTTPS for secure communication with the server")
 	loginConfigCmd.Flags().StringVarP(&password, "password", "P", "", "Password for authenticating to the server")
 	loginConfigCmd.MarkFlagRequired("password")
 
@@ -109,7 +106,6 @@ func edit(cmd *cobra.Command, args []string) {
 }
 
 func login(cmd *cobra.Command, args []string) {
-	edit(cmd, args)
 	sessionPath, err := LoginHandler(password)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Login failed")

@@ -33,10 +33,10 @@ var resetConfigCmd = &cobra.Command{
 }
 
 var editConfigCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Update client configuration",
+	Use:   "edit",
+	Short: "Edit client configuration",
 	Long:  `This command allows you to edit the client configuration interactively. It opens the configuration file in your default text editor, enabling you to make changes to settings such as server host, port, and other parameters.`, //nolint:revive
-	Run:   update,
+	Run:   edit,
 }
 
 var loginConfigCmd = &cobra.Command{
@@ -93,10 +93,10 @@ func reset(cmd *cobra.Command, args []string) {
 	logger.Log.Info().Msg("Configuration file reset successfully.")
 }
 
-func update(cmd *cobra.Command, args []string) {
+func edit(cmd *cobra.Command, args []string) {
 	cm := config.GetInstance()
 	if host == "localhost" && port == 8080 && username == "cookieguest" && !https {
-		logger.Log.Warn().Msg("All default args detected. Update skipped. For available options, run `ckc config update --help`")
+		logger.Log.Warn().Msg("All default args detected. Update skipped. For available options, run `ckc config edit --help`")
 		return
 	}
 
@@ -109,7 +109,7 @@ func update(cmd *cobra.Command, args []string) {
 }
 
 func login(cmd *cobra.Command, args []string) {
-	update(cmd, args)
+	edit(cmd, args)
 	sessionPath, err := LoginHandler(password)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Login failed")

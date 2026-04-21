@@ -1,65 +1,46 @@
 ---
 title: Client Authentication
-description: How to authenticate the `ckc` CLI with a CookieFarm server (interactive login, tokens, config and troubleshooting).
+description: Login/logout for `ckc` and local session handling.
 ---
 
-# Authentication (ckc)
+# Client Authentication
 
-This page describes common authentication workflows for the `ckc` command-line client: interactive login, environment variables, and where credentials are stored locally.
+Client auth is cookie-JWT based, with token stored locally in `~/.config/cookiefarm/session`.
 
-Notes
-- The exact flags and config file location can vary by `ckc` release. Use `ckc --help` for the version you have installed.
-- Where we mention "server" it means your CookieFarm server instance (for example `https://cookiefarm.example`).
-
----
-
-## Overview
-
-`ckc` supports the following common ways to authenticate to a CookieFarm server:
-
-- Interactive username/password login (recommended for interactive use).
-
----
-
-## Typical interactive login
-
-Most users will authenticate once per machine using an interactive command which prompts for credentials and stores a session token locally.
-
-Example (interactive flow):
+## Login
 
 ```bash
-# Typical interactive login (example)
-# The exact command and flags for your version of `ckc` may differ — run `ckc login --help or ckc config login --help`.
-ckc login -H https://cookiefarm.example -P password -p 8080
+ckc config login -H <server-host> -p <port> -u <username> -P <password>
 ```
 
-After successful login, `ckc` will store a session token (inside ~/.config/cookiefarm/session) locally so subsequent `ckc` commands do not require re-authentication.
+Example:
 
----
+```bash
+ckc config login -H 127.0.0.1 -p 8080 -u team01 -P SuperSecret
+```
 
-## Configuration file and locations
+What it does:
 
-`ckc` typically stores configuration (server URLs, profiles, and credential references) in a per-user config file. The exact location depends on the platform and the `ckc` implementation; common locations include:
+1. updates local config (`client.yml`)
+2. logs in through `/api/v1/auth/login`
+3. stores session token
+4. fetches shared config and writes `shared.yml`
 
-- `~/.config/cookiefarm/client.yml`
-- `~/.config/cookiefarm/shared.yml` (available only after the login)
+## Logout
 
----
+```bash
+ckc config logout
+```
 
-## Troubleshooting
+Removes local `session` file.
 
-- "Invalid credentials" or "Unauthorized (401)"
-  - Verify the server URL is correct and reachable.
-  - Ensure the password is correct.
-  - Check server logs for more detail on why a request was rejected.
+## Show current config
 
----
+```bash
+ckc config show
+```
 
-## Where to get help
+## Common Errors
 
-- Check `ckc --help` for client-specific flags and exact config locations.
-- Consult the server-side docs (dashboard or API) for token creation and scopes.
-- If something is unclear or broken in your installed `ckc`, file an issue or open a support request with your project maintainers including:
-  - `ckc --version`
-  - The exact command you ran
-  - Any error output (redact tokens/credentials)
+- `Login failed`: wrong password or server unreachable.
+- `shared configuration has changed`: run `ckc config login` again to resync `shared.yml`.

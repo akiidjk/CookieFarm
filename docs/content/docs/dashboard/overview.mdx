@@ -1,215 +1,42 @@
 ---
-title: Overview
-description: "Web UI walkthrough for the CookieFarm web dashboard: layout, main views, and common workflows."
+title: Dashboard Overview
+description: CookieFarm dashboard overview flag table, manual submit, pagination and config modal.
 ---
 
-The CookieFarm Dashboard provides a web-based interface for monitoring, controlling, and managing captured flags. It's designed to give operators a concise, real-time view of the system state while also exposing the tools needed to manage exploits, review results, and investigate failures.
+# Dashboard Overview
 
-This page is a walkthrough of the Dashboard's main areas, common workflows, and useful tips for day-to-day operation.
+The current dashboard is focused on flag operations and runtime configuration.
 
-## Layout and navigation
+Main page: `/dashboard`.
 
-The Dashboard is organized into a few consistent elements that appear across pages:
+## What you get in the UI
 
-- Top navigation bar
-  - Global search (flags, exploits, hosts)
-  - Current user / account menu
-  - Quick actions (upload exploit, start/stop scheduler)
-- Left sidebar
-  - Links to major sections: Overview, Monitoring, Exploits, Settings, Audit Logs
-  - Collapse/expand to maximize workspace
-- Main content area
-  - Contextual panels, charts, tables, and live feeds
-- Status footer (optional)
-  - Last sync time, connection status to server, API latency
+- flag table (code, message, service, status, timing)
+- manual reload
+- manual single flag submit
+- single flag delete
+- auto reload with configurable interval
+- HTMX pagination
+- modal for server/shared configuration
 
-The left sidebar typically contains:
-- Overview (landing page for the dashboard)
-- Monitoring (live flag & submission streams)
-- Exploits (library and management)
-- Scheduler / Jobs (run queue & worker status)
-- Settings (teams, credentials, integrations)
-- Audit / Logs
+## Main workflows
 
-Use the global search to quickly find an exploit by name, or search for a specific flag ID or target hostname.
+## Monitor flags
 
-## Overview page (what you see first)
+Data is loaded from:
+- `/flags/:limit?offset=...`
+- `/pagination/:limit?offset=...`
 
-The Overview page is the default landing page and gives a high-level summary of the cluster:
+## Manual submit
 
-- Key metrics
-  - Total flags captured (today / last 24h / contest)
-  - Submission success rate
-  - Active exploits / disabled exploits
-  - Scheduler queue length and worker count
-- Health indicators
-  - Server connectivity
-  - Database status
-  - Rate-limiter status
-- Recent activity
-  - Recent exploits run
-  - Recent flag captures and submissions (compact feed)
-- Quick actions
-  - Upload exploit
-  - Run exploit now (one-off)
-  - Pause/resume scheduler
+- type flag in input field
+- click `Submit`
+- API call: `POST /api/v1/submit-flag`
 
-This page is your first stop to verify the system is healthy and operating normally after deployment or an outage.
+## Update config
 
-## Monitoring page (live view)
+- open settings modal
+- save configuration
+- API call: `POST /api/v1/config`
 
-The Monitoring page is focused on real-time telemetry:
-
-- Live flag feed
-  - Stream of captured flags with metadata: exploit name, target, timestamp, capture success
-  - Filters: exploit, team, service, time window
-  - Ability to drill into a flag: view capture logs, raw output, whether submission succeeded and server response
-- Submission status & pipeline
-  - Queue visualization showing pending, in-progress, succeeded, and failed submissions
-  - Retries and backoffs visible per flag
-- Worker & exporter status
-  - Per-worker CPU/Memory (if integrated), last heartbeat, last run time
-- Charts and rates
-  - Flags/minute over configurable windows
-  - Submission success rate, average submission latency
-- Alert indicators
-  - Flag spikes, submission backpressure, worker failures
-
-Filtering and short-lived pinned queries let you focus on a particular exploit or team during incident response.
-
-## Exploits page (upload, manage, inspect)
-
-The Exploits section is where you manage exploit artifacts and their lifecycle:
-
-- Exploit list
-  - Name, version, author, last run, status (enabled / disabled), tags
-  - Search and sort by name, last run, or success rate
-- Uploading an exploit
-  - Use the "Upload" or "New Exploit" flow to submit a packaged exploit
-  - Required fields: exploit name, compatible runtime (python/node), entrypoint, optional metadata
-  - Option to mark as private/team-only or public
-- Inspect exploit
-  - View exploit metadata, readme, test results, and execution history
-  - Download package or view source (if repo access permitted)
-- Enable / disable exploit
-  - Toggle whether the scheduler should consider this exploit for runs
-  - Per-environment overrides (e.g., disable on staging vs production)
-- Versioning and rollback
-  - Maintain multiple versions for safe rollback if a newly uploaded exploit causes issues
-
-Common UI actions are available as buttons or context menu entries on each exploit row.
-
-## Scheduler / Jobs (run control)
-
-Scheduler and jobs page shows the scheduled runs and ad-hoc executions:
-
-- Run queue
-  - Pending and scheduled runs with priority and window
-  - Ability to reorder, cancel, or run immediately
-- Job detail
-  - Per-run logs (stdout/stderr captured from exploit runner)
-  - Exit codes and runtime metrics
-  - Artifacts produced (captured files, screenshots, saved HTTP responses)
-- Manual run
-  - Run an exploit one-off against a specific target with override parameters
-  - Choose concurrency and timeout settings
-- Bulk operations
-  - Pause/resume groups of runs by tag or exploit family
-  - Bulk re-run failed jobs
-
-Use this page when you need to troubleshoot a problematic run or adjust scheduling behavior in real time.
-
-## User roles & permissions
-
-Dashboard features may be gated by roles. Typical roles include:
-
-- Admin
-  - Full access to all sections, settings, and audit logs
-- Operator
-  - Run/control jobs, view and manage exploits, but limited settings
-- Viewer
-  - Read-only access to monitoring and overview pages
-- Developer
-  - Upload and manage exploits, view logs, but not change global settings
-
-Role-based controls are found in the Settings → Users page and are enforced by the server.
-
-## Audit logs & history
-
-All important actions (exploit upload, enable/disable, manual run, credential changes) are recorded in the Audit Logs:
-
-- Filter by user, action, resource, or time
-- Useful for post-incident investigation and compliance
-- Exportable as CSV for offline analysis
-
-## Common workflows
-
-- Quickly verify the system after deployment:
-  1. Open Overview and confirm all health checks are green.
-  2. Check the Scheduler worker count and queue length.
-  3. View the live flag feed for any unexpected captures.
-
-- Respond to failed submissions:
-  1. Go to Monitoring → Submissions and locate failed items.
-  2. Inspect the flag detail to view server response (error / rate limit).
-  3. If needed, re-queue the submission or escalate to server team.
-
-- Upload and test a new exploit:
-  1. Exploits → Upload new package (attach metadata and test config).
-  2. Run a one-off job with a single target to validate behavior.
-  3. Review run logs, then enable for scheduled runs if stable.
-
-## Troubleshooting tips
-
-- No flags appearing in the feed
-  - Confirm exploit runs are completing, not failing silently (check run logs).
-  - Verify server connectivity and API keys in Settings → Integrations.
-  - Check that the Scheduler is running and workers have heartbeats.
-
-- Logs truncated/limited
-  - The UI may paginate long logs. Use the download button to fetch the full artifact.
-  - Increase logging verbosity in the exploit or runner for debugging and re-run.
-
-- Slow UI or stale data
-  - Check the connection status in the top-right status indicator.
-  - Refresh or re-open the page; long polling/websocket reconnections may be delayed by network intermediaries.
-
-## Integrations
-
-The Dashboard can integrate with other systems:
-
-- Alerting (Slack, PagerDuty)
-  - Configure alerting rules (e.g., submission failure rate > X) in Settings → Alerts
-- External storage
-  - Save artifacts to an object store or NAS for long-term analysis
-- Metrics / telemetry
-  - Export metrics via Prometheus / Pushgateway integrations for richer dashboarding
-
-Details and configuration examples are in the Server configuration documentation: see `/docs/server/configuration.mdx`.
-
-## Accessibility & performance
-
-- The UI tries to provide keyboard navigation for common actions; look for keyboard hints in menus.
-- When monitoring very large contests, use filters and paged views to keep the UI responsive.
-- For heavy operational use, prefer API-driven automation for bulk changes; the UI is designed for human-in-the-loop operation.
-
-## See also
-
-- Getting started: `/docs/getting-started/index.mdx` — quick orientation and first-run walkthroughs
-- Server configuration: `/docs/server/configuration.mdx` — environment variables and integrations the Dashboard depends on
-- Exploits authoring: `/docs/exploits/creating.mdx` — how to package exploits so the Dashboard can upload and manage them
-- Monitoring deep-dive: `/docs/dashboard/monitoring.mdx` — (detailed view of the monitoring features)
-
-## Contributing to the Dashboard docs
-
-If you'd like to improve this page or add screenshots and walkthrough videos:
-
-- Add step-by-step screenshots for Upload, Run, and Flag Detail workflows
-- Include example alerting rules and recommended thresholds
-- Document common error messages and exact remediation steps
-
-Contributions should follow the repository's documentation guidelines; see `/docs/contributing/index.mdx` for process and dev setup.
-
----
-
-This overview is intended as a practical starting point. For operation-specific details (forensics on a flag capture, low-level server debugging, or cli automation using `ckc`) follow the linked pages above.
+Saving config restarts server loops and broadcasts config event to connected clients over websocket.

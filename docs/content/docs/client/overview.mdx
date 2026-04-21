@@ -1,64 +1,39 @@
 ---
-title: Overview
-description: "Overview of the `ckc` CLI: philosophy, common workflows, and where to find command references and authentication guidance."
-sidebar_position: 1
+title: Client Overview
+description: What `ckc` does and how to use it effectively during an Attack/Defense CTF.
 ---
 
-The `ckc` CLI is CookieFarm's command-line client used to interact with a CookieFarm server. It provides a compact, scriptable interface for:
-- managing configuration and authentication,
-- creating, running and monitoring exploits,
+# Client Overview
 
-This page explains the `ckc` philosophy, typical workflows, and where to find more detailed command references and authentication information.
+`ckc` is the operational client for CookieFarm.
 
+It is used to:
 
-## Typical workflows
+- configure server connection
+- authenticate and store session
+- create/test/run exploits
+- submit flags manually
 
-Below are common workflows you will perform with `ckc`. See the full `ckc` reference for exact flags and subcommands: `cli-reference.mdx`.
+## Recommended Competition Workflow
 
-- Install and configure the client
-  1. Install using the recommended method for your platform (see [installation](../client/installation.mdx)).
-  2. Configure the default server: `ckc config reset`
-  3. Authenticate (username/password flow): `ckc login` — see [authentication](../client/auth/authentication.mdx).
+1. Run `ckc config login` at competition start.
+2. Run `ckc exploit test` on NOP team to validate output.
+3. Run `ckc exploit run` with controlled tick/thread values.
+4. Keep dashboard open to monitor accepted/denied trends.
 
-- Create and manage exploits
-  1. Bootstrap a new exploit template: `ckc exploit create <name>`
-  2. Develop locally and test against a nop team: `ckc exploit test -e <path> -n <service_name> -t 10 -T 10`
-  3. finally Run against all the enemy teams: `ckc exploit run -e <path> -n <service_name> -t 10 -T 10`
+## Local Files
 
+Directory: `~/.config/cookiefarm/`
 
-- Run scheduled jobs or one-off runs
-  - Use `ckc exploit run` subcommands with flags `-T` for specify the number of thread to use and `-t` for specify the how much second wait for relaunch the exploit
+Main files:
+- `client.yml` (host, port, username, https)
+- `shared.yml` (shared config fetched from server)
+- `session` (token)
+- `exploits/` (templates created by `ckc exploit create`)
 
-- Inspect status and logs
-  - The normale print are not printed when in run mode, only in test mode is activated a debug mode
+## Main Commands
 
-## Configuration
+- `ckc config ...`
+- `ckc exploit ...`
 
-`ckc` stores configuration in a small, user-scoped config directory (see [installation](../client/installation.mdx) for default paths). Typical configuration items:
-
-```yaml
-host: localhost
-username: cookieguest
-port: 8081
-https: false
-```
-
-Use `ckc config show` / `ckc config update` to manage values.
-
-## Debugging and verbosity
-
-- Use `--debug` to increase logging locally.
-- When reporting issues, capture the output of `ckc --version`, `ckc config show` (redacting secrets), and the failing command with `--debug`.
-
-## Quick Start Example
-
-A minimal sequence to authenticate and run an exploit (high-level):
-
-1. Configure server:
-   - `ckc config update -H 10.81.1.2 -p 8080 -u cookieguest`
-2. Login and save token:
-   - `ckc login -P password -u cookieguest`
-3. Run an exploit:
-   - `ckc exploit run -e my_exploit -n service-1 -t 30 -T 10`
-
----
+For full details: [CLI Reference](/docs/client/cli-reference).

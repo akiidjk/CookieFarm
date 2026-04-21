@@ -1,144 +1,39 @@
 ---
-title: Overview
-description: The CookieFarm server's responsibilities, high-level architecture, components, and operational considerations.
+title: Server Overview
+description: Role of the `cks` server in CookieFarm and exposed runtime services.
 ---
 
-The CookieFarm server is the central authoritative component in the system. It is responsible for coordinating exploit runs, accepting results, validating and submitting flags, exposing APIs for clients and dashboards, storing state, and providing observability and management endpoints.
+# Server Overview
 
-This page gives a high-level description of the server: its role in the architecture, main components, operational concerns (security, scaling, backups), and pointers to the detailed configuration and deployment guides.
+`cks` is the central coordinator in CookieFarm.
 
----
+Main responsibilities:
 
-## Responsibilities
+- client/dashboard authentication
+- flag ingestion through API/WebSocket
+- SQLite persistence
+- periodic submission to external checker
+- dashboard rendering
 
-At a glance, the server performs the following duties:
+## Main components
 
-- Expose authenticated REST APIs for clients (`ckc`) and the web dashboard.
-- Receive exploit results and manage the flag submission pipeline.
-- Persist configuration, user accounts, exploit metadata, and run history.
-- Provide metrics, logging, and health endpoints for monitoring and alerting.
+- `api/` REST routes + view handlers
+- `internal/core/` submit loop and TTL loop
+- `internal/database/` store + SQLC queries + collector
+- `internal/websockets/` WS manager for ingest/config broadcast
+- `internal/ui/` dashboard templates
 
----
+## Configuration modes
 
-## Where the server fits in the system
+- `CONFIG_FILE=true`: boot from `config.yml`
+- `CONFIG_FILE=false`: configure through dashboard (`/api/v1/config`)
 
-CookieFarm's runtime consists of three cooperating roles:
+## Persistence
 
-- Server (`cks`)   central coordinator, API provider, and stateful backend (this page).
-- Client (`ckc`)   CLI used by exploit authors/operators to upload, run, and manage exploits.
-- Dashboard   web UI for real-time monitoring, management, and visualizing results.
+SQLite DB with `flags` table.
 
-The server accepts requests from `ckc` and the dashboard, validates/authenticates them server is also the gatekeeper for flag submission: it receives captured flags from exploit runs and orchestrates the submission/validation lifecycle.
+`flag_code` is primary key; duplicate inserts are ignored.
 
-See the architecture pages for diagrams and an end-to-end overview:
+## Deployment scope
 
-- [/docs/architecture/overview.mdx](../architecture/overview.mdx)
-- [/docs/architecture/flag-pipeline.mdx](../architecture/flag-pipeline.mdx)
-
----
-
-## High-level architecture & components
-
-Below are the server's core components and their responsibilities.
-
-- API gateway
-  - Exposes REST endpoints for authentication, exploit management, run orchestration, and administration.
-  - Performs request authentication/authorization and input validation.
-- Submission pipeline
-  - Receives flags from exploit runs, formats them, and forwards them to target submission endpoints.
-  - Tracks submission status, responses, and error handling / backoff.
-- Persistence layer
-  - Primary database (SQLite) for flag storage.
-- Observability stack
-  - Structured logs, metrics (Prometheus), and health endpoints.
-
----
-
-## Typical data flows
-
-1. Player login and authentication
-   - `ckc` sends credentials to `/api/login`, receives a JWT token for subsequent requests.
-2. Player run the exploit, and ckc send the flag to the server
-   - `ckc` sends a POST to `/api/submit` with the flag and metadata.
-   - Server validates the request, stores the flag, and forwards it to the configured submission endpoint.
-3. Server receives submission response
-   - Server updates the flag status based on the response (accepted, rejected, error) and logs the outcome for observability.
-4. Dashboard queries server for run history and flag statuses
-   - Dashboard sends GET requests to `/api/flags` to display the current state of the farm and recent activity.
-
----
-
-## Configuration
-
-Server configuration is driven by a combination of environment variables and a `config.yml` file (see the server configuration reference for the full list of settings). The canonical config used in this project lives at config.yml (example values shown below). Environment variables may override values in the file depending on your deployment.
-
-Important categories and example keys (taken from the supplied config.yml):
-
-- Server / submission
-  - url_flag_checker: "http://localhost:5001/flags"   endpoint the server forwards captured flags to.
-  - url_flag_ids: "http://localhost:5001/flagIds"   optional endpoint for retrieving flag identifiers.
-  - team_token: "c882674c6270b8293fff7f4fb5c4c249"   token used when talking to the flag-checker/submission service.
-  - protocol: "cc_http"   submission protocol to use for target endpoints.
-  - max_flag_batch_size: 1000   maximum number of flags batched per submission request.
-
-- Scheduling & runtime
-  - submit_flag_checker_time: 120   interval (seconds) between submission attempts to the flag checker.
-  - tick_time: 120   main server tick interval (seconds) used for scheduling periodic jobs.
-  - flag_ttl: 0   flag time-to-live expressed in ticks (0 = no TTL).
-  - start_time / end_time: timestamps that bound active competition time (e.g. "2023-10-01T00:00:00Z" to "2023-10-31T23:59:59Z").
-
-- Client / shared settings
-  - shared.services: mapping of local development service ports (examples: CookieService: 8081, vulnify: 1337, app-nc: 1338).
-  - range_ip_teams: 9   number of team IP slots used to generate per-team addresses.
-  - format_ip_teams: "10.10.{}.1"   format string used to construct team service IPs.
-  - my_team_id: 1   local/team identifier used in dev/testing.
-  - nop_team: 0   reserved no-op team id.
-  - regex_flag: "[A-Z0-9]{31}="   regular expression used to validate flag format.
-
-See [/docs/server/configuration.mdx](../server/configuration.mdx) for a full, reference-style breakdown of configuration options and examples.s.
-
----
-
-## Observability & troubleshooting
-
-The server exposes mechanisms that make operations and debugging straightforward:
-
-- Health endpoints
-  - `/`, for quick liveness and readiness checks.
-- Metrics
-  - Expose Prometheus-compatible metrics for job counts, queue lengths, submission success/failures, latencies.
-- Logging
-  - Structured logs (JSON) with correlation IDs for runs and submissions.
-- Tracing (optional)
-  - Instrument long-running flows (e.g., submission pipeline) with distributed tracing when integrated with a tracing backend.
-- Diagnostic endpoints
-  - Admin-only endpoints for inspecting queues, job states, and worker heartbeats.
-
-
----
-
-## Upgrades & rolling deployments
-
-- Run migrations in a backward-compatible manner.
-- For schema changes, prefer a two-step migration (add new columns, deploy code that can use either column, then remove old columns later).
-- Use health checks to ensure instances are only removed from LB after readiness is lost and current requests finish.
-- Maintain a deployment rollback plan and always test upgrades in a staging environment.
-
----
-
-## Failure modes & common troubleshooting steps
-
-- Flag submission failures
-  - Validate submission credentials, target endpoint reachability, and rate-limit responses (apply exponential backoff).
-- High latency / timeouts
-  - Monitor latencies, inspect slow queries, and ensure the server has sufficient CPU/memory and DB indices are in place.
-
----
-
-## Next steps
-
-- Read the full configuration reference: /docs/server/configuration.mdx
-- Follow production deployment guidance and example manifests: /docs/server/deployment.mdx
-- Consult the API reference for endpoint details: /docs/server/api-reference.mdx
-
-If you are preparing a production deployment, start with a minimal environment in a staging cluster, enable metrics and logging, and run a limited set of workers to validate the end-to-end pipeline before scaling.
+Usually one server instance per team (unless you maintain a custom HA setup), centralizing submission and flag state.

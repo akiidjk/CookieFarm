@@ -1,138 +1,52 @@
 ---
-title: Monitoring
-description: Live flag results, submission status, metrics, logs and troubleshooting for the dashboard
+title: Dashboard Monitoring
+description: How to read CookieFarm dashboard signals during an A/D competition.
 ---
 
-# Monitoring
+# Dashboard Monitoring
 
-This page explains the Dashboard's monitoring capabilities: the live flag/results view, submission pipeline health, relevant metrics and logs, configuring alerts, and common troubleshooting steps.
+The dashboard is not a full SIEM. It is a fast operational view of flag pipeline health.
 
-See the general Dashboard walkthrough in [overview](/docs/dashboard/overview.mdx) and the Flag Pipeline architecture in [architecture/flag-pipeline.mdx](/docs/architecture/flag-pipeline.mdx) for context.
+## Signals to watch
 
-## What the monitoring view shows
+- continuous growth of `UNSUBMITTED`
+- sudden increase in `DENIED`
+- frequent `response_time = 0`
+- rising duration (`response_time - submit_time`)
 
-The Dashboard monitoring panel is intended to give operators a quick view of the system's health and exploit effectiveness. Key elements include:
+## Quick diagnostics
 
-- Live flag capture feed — recent flags observed by exploit runs.
-- Submission status stream — per-flag submission results (accepted, rejected, timeout, rate-limited).
-- Per-exploit run metrics — run duration, success/failure counts, error types.
-- System health indicators — worker queue lengths, CPU/RAM usage, and service connectivity.
-- Aggregated charts — flags/min, success rate, average runtime over configurable time windows.
+## Too many `UNSUBMITTED`
 
-Use the monitoring view to answer questions like:
-- Are exploits capturing flags consistently?
-- Are submissions failing due to a server-side validation problem?
-- Is a particular exploit causing excessive errors or slowdowns?
+Possible causes:
+- checker unreachable
+- wrong submission protocol
+- batch size too large
 
-## Live feed and filters
+Actions:
+- verify `url_flag_checker`
+- verify `protocol`
+- reduce `max_flag_batch_size`
 
-The live feed supports filtering and search:
+## Too many `DENIED`
 
-- Filter by exploit name (e.g. `exploit=wordpress-sqli`).
-- Filter by team/target metadata if available.
-- Filter by submission result (`accepted`, `rejected`, `error`, `timeout`).
-- Time-window selector (last 5m, 15m, 1h, 24h).
+Possible causes:
+- stale exploit logic
+- wrong flag regex
+- target patched
 
-When investigating an incident, start with a narrow filter (exploit + last 15 minutes) and expand until you see correlated events or systemic issues.
+Actions:
+- rerun `ckc exploit test`
+- compare exploit output with configured regex
 
-## Important metrics and what they mean
+## No new flags
 
-Focus on these metrics first:
+Possible causes:
+- exploit crashed
+- client websocket disconnected
+- target service down
 
-- flags_captured_total — total flags captured by exploits. A sudden drop likely indicates exploit failures or connectivity issues.
-- flags_submitted_total — how many flags were forwarded to the submission service.
-- flags_accepted_total / flags_rejected_total — acceptance ratio; high rejection can mean format/version mismatch or bad flags.
-- submission_errors_total — submission API errors (timeouts, 5xx responses).
-- exploit_run_duration_seconds (histogram) — look for shifts in runtime distribution; slowdowns can indicate target changes or resource contention.
-- exploit_error_rate (per-exploit) — fast way to find broken exploit templates.
-- worker_queue_length — backlog of tasks waiting to run; sustained growth indicates resource exhaustion or blocking.
-
-These metrics are typically visualized as time-series charts. If you use external observability tools (Prometheus/Grafana), these metrics map directly into dashboards.
-
-## Logs and traces
-
-The monitoring UI shows summarized logs and links to detailed logs:
-
-- Per-run logs include stdout/stderr captured from the exploit runner.
-- Server logs contain API request traces, submission attempts, and internal errors.
-
-When investigating:
-1. Match the timestamp of the problematic run in the live feed.
-2. Inspect the exploit run log for exceptions, stack traces, or failed assertions.
-3. Check the server API logs for submission requests and response codes.
-4. Correlate with system metrics (CPU, memory, queue length).
-
-If you prefer CLI access, use the client tooling to stream logs. Example usage: use `ckc` commands (see the CLI reference in [client/cli-reference.mdx](/docs/client/cli-reference.mdx)) to tail logs or retrieve run output.
-
-## Alerting and thresholds
-
-Monitoring is most useful when backed by alerts. Recommended alerting rules:
-
-- queue_length > X for Y minutes — indicates backlog and needs scaling or debugging.
-- submission_errors_total rate spikes — investigate API/credentials/rate limits.
-- flags_captured_total drops to zero for N minutes (where N depends on expected capture frequency) — potential exploit/target issue.
-- flags_rejected_total / flags_submitted_total > threshold — indicates widespread rejections.
-- high exploit_run_duration median/99th percentile — possible resource contention or network slowness.
-
-Integrations:
-- Prometheus / Alertmanager — recommended for metric scraping and alert routing.
-- Grafana — pre-built dashboards for metrics visualization.
-- Pager duty / Slack / Email — route alerts to on-call teams.
-
-## Troubleshooting checklist
-
-1. Reproduce the issue locally:
-   - Run the exploit with verbose logging and a single target to inspect behavior.
-2. Confirm network and credentials:
-   - Ensure the server submission endpoint is reachable and auth tokens are valid.
-3. Check related metrics:
-   - Worker queue length, CPU/memory, request latency.
-4. Inspect logs:
-   - Per-run logs for exploit errors; server logs for submission responses.
-5. Validate exploit code:
-   - Confirm exploit templates match expected target responses (HTML layout, API changes).
-6. Rollback / disable offending exploit:
-   - If an exploit is causing systemic failures, temporarily disable it via the UI (see [dashboard/exploit-management.mdx](/docs/dashboard/exploit-management.mdx)).
-7. Scale resources:
-   - If backlog is due to load, increase worker count or CPU/memory allocation.
-
-## Common issues and remedies
-
-- Submissions timing out
-  - Symptoms: high `submission_errors_total` with timeout codes.
-  - Actions: check submission service availability, increase submission timeout retry logic, or add backoff.
-
-- Sudden drop in captured flags
-  - Symptoms: `flags_captured_total` flatlines.
-  - Actions: verify exploits still run (check run logs), ensure targets haven't been patched, and confirm network connectivity.
-
-- High rejection rate
-  - Symptoms: many `rejected` results.
-  - Actions: confirm flag format/version hasn't changed; check server-side validation rules.
-
-- Exploit causing memory/CPU spikes
-  - Symptoms: resource metrics show spikes correlated with exploit runs.
-  - Actions: profile exploit (look for infinite loops or heavy allocations), add timeouts, or isolate the exploit to a dedicated runner.
-
-## Best practices
-
-- Keep monitoring dashboards minimal and focused for on-call engineers; reserve detailed views for post-mortem analysis.
-- Use sensible alert thresholds to avoid noise — tune based on baseline traffic.
-- Tag metrics and logs with `exploit`, `target`, and `run_id` to speed correlation.
-- Keep exploit logs concise and structured (JSON lines where possible) to enable automated parsing.
-
-## Where to look next
-
-- Dashboard overview: [overview](/docs/dashboard/overview.mdx)
-- Exploit lifecycle and running flags: [exploits/running.mdx](/docs/exploits/running.mdx)
-- Server API & submission details: [server/api-reference.mdx](/docs/server/api-reference.mdx)
-- Flag pipeline architecture: [architecture/flag-pipeline.mdx](/docs/architecture/flag-pipeline.mdx)
-- CLI reference for log/monitoring commands: [client/cli-reference.mdx](/docs/client/cli-reference.mdx)
-
-## Appendix: Quick investigations (cheat sheet)
-
-- To find recent errors: filter live feed by `result:error` and sort by time.
-- To identify slow exploits: sort exploit metrics by `p95` or `p99` run duration.
-- To correlate logs and metrics: copy `run_id` from the feed into log search and system traces.
-
-If you need a dashboard template or Prometheus query examples added here, open a ticket or submit a documentation PR and include your preferred monitoring stack (Prometheus/Grafana, Datadog, etc.).
+Actions:
+- check exploit process (`ckc exploit list`)
+- inspect server/client logs
+- temporary fallback with `-S`

@@ -1,201 +1,94 @@
 ---
 title: Architecture Overview
-description: High-level architecture of CookieFarm — components, data flows, deployment and extension points.
+description: Real CookieFarm architecture components, data flow, and practical A/D decisions.
 ---
 
 # Architecture Overview
 
-This page provides a high-level view of CookieFarm's architecture: the primary components, their responsibilities, how they communicate, and key operational concerns (scaling, security, observability). Use this as a reference when designing, deploying, or extending the system. For implementation-level details see the server, client and dashboard pages:
+CookieFarm is built around 4 core blocks:
 
-- Server internals and concurrency model: /docs/architecture/server-internals.mdx
-- Flag pipeline and lifecycle: /docs/architecture/flag-pipeline.mdx
-- Server role, configuration and deployment: /docs/server/overview.mdx and /docs/server/deployment.mdx
-- Client (ckc) and CLI reference: /docs/client/overview.mdx and /docs/client/cli-reference.mdx
-- Dashboard (UI) overview: /docs/dashboard/overview.mdx
+1. `cks` (Go server)
+2. `ckc` (Go client)
+3. Python `cookiefarm` exploiter runtime
+4. web dashboard (server-rendered templates + HTMX)
 
----
+## A/D Operational Flow
 
-## Goals & constraints
+1. Write a Python exploit with `@exploit_manager`.
+2. Start it with `ckc exploit run` or `ckc exploit test`.
+3. The client launches the exploit process and parses each JSON line from Python runtime output.
+4. Valid flags are forwarded to server:
+   - WebSocket (default)
+   - direct HTTP with `-S`
+5. Server persists flags in SQLite.
+6. Server runner sends batches to the external flag checker via configured protocol.
+7. Dashboard displays accepted/denied/error/unsubmitted state.
 
-CookieFarm is designed for automated exploit orchestration in CTF-style and adversarial testing environments. Key goals that shaped the architecture:
+## Components and Responsibilities
 
-- Reliability: capture, validate and submit flags reliably under varying network and load conditions.
-- Scalability: support many concurrent exploit runs and handle spikes in submission throughput during events.
-- Extensibility: pluggable exploit runners, easily extendable APIs, and multiple client implementations.
-- Observability: strong logging, metrics and alerting to debug and operate during competitions.
-- Security: least privilege for runners, secure storage of credentials and safe handling of untrusted exploit code.
+## `ckc` client
 
----
+- CLI commands (`config`, `exploit`)
+- local session handling (`~/.config/cookiefarm/session`)
+- exploit process execution with stdout/stderr streaming
+- exploit output parsing and flag forwarding
 
-## High-level components
+Key files:
+- `cookiefarm/client/cmd/*`
+- `cookiefarm/client/internal/exploit/*`
+- `cookiefarm/client/internal/websockets/*`
 
-1. Server
-   - Central orchestrator and API provider.
-   - Responsibilities:
-     - Manage user accounts, authentication and authorization.
-     - Store exploit metadata, schedules, and results.
-     - Receive and process flag submissions, validate and forward to the submission pipeline.
-     - Provide API endpoints consumed by clients and the dashboard.
-   - Typical technologies: compiled backend (Go), relational database for persistent state, message queue for background work.
+## Python exploit runtime
 
-2. Client (ckc)
-   - CLI used by exploit authors/operators.
-   - Responsibilities:
-     - Authenticate to the server and upload/manage exploits.
-     - Start, stop or schedule exploit runs.
-     - Stream logs/results to the server or local storage.
-   - Typically a Python package or single-binary CLI with configuration for server endpoints and credentials.
+- runtime argument parser (`-s -t -T -p -n -x`)
+- shared config fetch from server (`/api/v1/config`)
+- concurrent execution over target teams
+- structured JSON events (`success`, `failed`, `stats`, `error`)
 
-3. Exploit Runners (Workers)
-   - Isolated processes (or containers) that execute exploit code.
-   - Responsibilities:
-     - Run exploit logic against target services.
-     - Capture candidate flags and produce structured results (stdout, errors, timing, network info).
-     - Submit candidates to the server for validation and possible submission.
-   - Should run in restricted environments (namespaces, resource limits, seccomp) because exploit code may be untrusted.
+Key files:
+- `exploiter/python/cookiefarm/exploiter_manager.py`
+- `exploiter/python/cookiefarm/exploit_executor.py`
+- `exploiter/python/cookiefarm/logger.py`
 
-4. Dashboard (Web UI)
-   - Web application for humans to monitor system state.
-   - Responsibilities:
-     - Display exploit run status, recent captures, submission history and metrics.
-     - Allow upload/management of exploits and scheduling.
-     - Provide links to logs and debugging tools.
+## `cks` server
 
-5. Flag Pipeline
-   - A composed flow that starts with capture and ends with submission & validation.
-   - Components:
-     - Capture: exploit runner detects candidate flag(s).
-     - Local validation (optional): runner may perform heuristics before sending to server.
-     - Server validation: server checks syntactic validity and deduplication rules.
-     - Submission: server sends validated flags to official submission endpoints (or scoreboard APIs).
-     - Feedback loop: successful/failed submits are recorded and surfaced via the dashboard.
+- REST API (`/api/v1/*`)
+- cookie-based JWT auth
+- HTTP and WebSocket flag ingestion
+- SQLite persistence (`flags`)
+- periodic submit loop to external checker
+- optional TTL cleanup
 
-6. Storage & State
-   - Persistent store (SQL) for users, exploits, schedules, and results.
-   - Append-only logs or object storage for raw run artifacts (logs, captured artifacts).
-   - Short-lived caches for rate-limiting and deduplication windows (Redis or in-memory).
+Key files:
+- `cookiefarm/server/api/*`
+- `cookiefarm/server/internal/core/*`
+- `cookiefarm/server/internal/database/*`
+- `cookiefarm/server/internal/websockets/*`
 
-7. Messaging & Background Jobs
-   - Asynchronous workers/processes for:
-     - Running scheduled exploits.
-     - Retry logic for submissions.
-     - Long-running processing (e.g., archive processing, analytics).
-   - Implemented with a job queue (in-memory for small setups; Redis/RabbitMQ/NSQ for scale).
+## Dashboard
 
----
+- server-side rendered templates
+- HTMX partial updates for flags and pagination
+- manual flag submit/delete
+- server/shared configuration modal
 
-## Data flows
+Key files:
+- `cookiefarm/server/internal/ui/views/*`
+- `cookiefarm/server/assets/js/*`
 
-Below are the most important flows in the system.
+## End-to-End Data Path
 
-Capture → Server → Submission
-- Runner captures candidate flag(s).
-- Runner sends candidate(s) and metadata to Server API (`POST /api/v1/captures`).
-- Server validates format, applies dedupe and rate-limit rules.
-- Server enqueues submission tasks to background workers.
-- Worker submits to external scoreboard API and records outcome.
-- Dashboard and client poll or receive notifications of outcomes.
+```text
+Python exploit -> ckc parser -> flags channel
+                        -> websocket/http -> cks API/WS
+                        -> collector -> sqlite flags
+                        -> runner submit loop -> flagchecker
+                        -> status update in DB -> dashboard
+```
 
-Client → Server (Exploit lifecycle)
-- `ckc exploit create` uploads exploit artifact and metadata to Server.
-- Server schedules or registers the exploit for immediate or scheduled runs.
-- Runner(s) fetch job definitions or receive tasks via the queue.
+## Practical Competition Decisions
 
-Dashboard ↔ Server
-- Dashboard consumes server REST APIs and optionally subscribes to real-time events (WebSocket/Server-Sent Events) for live updates.
-
-Logging & Observability
-- All components emit structured logs and metrics.
-- Logs: persisted to centralized log store (ELK/PL or similar) for retention and search.
-- Metrics: exported via Prometheus, dashboards in Grafana. Key metrics: run success/failure, submissions/sec, queue depth, flag throughput.
-
----
-
-## Communication patterns & protocols
-
-- Primary API: REST over TLS for client ↔ server operations (authentication, upload, control).
-- Real-time updates: WebSocket or Server-Sent Events for dashboard live data.
-- Worker coordination: message queue for tasks and events (push model) or HTTP polling (pull model) depending on deployment constraints.
-- Persistence: SQL (Postgres or MySQL) for authoritative data; Redis for transient state and rate-limiting.
-
-Security practices:
-- All traffic must be TLS encrypted.
-- Short-lived tokens or API keys for worker authentication; rotate regularly.
-- Store secrets (API tokens, scoreboard credentials) encrypted at rest; only decrypt in the worker process when needed.
-- Apply network segmentation: runners should have tightly scoped network policies and container isolation.
-
----
-
-## Deployment model
-
-Small (local / dev)
-- Single server process (API + scheduler), local SQLite or Postgres, a few local workers or single-machine containerized runners.
-- Useful for development and quick testing.
-
-Medium / Production
-- API servers behind a load balancer (replicated stateless processes).
-- Postgres as a managed database (with replicas for read scaling if needed).
-- Redis for caching and job queue (or managed queue service).
-- Horizontal workers (containerized) orchestrated by Kubernetes or Docker Compose with autoscaling.
-- Dashboard served by a web frontend static app and a backing API.
-
-High-availability considerations
-- Run multiple API replicas and use a managed DB with automated failover.
-- Ensure job queue and broker are highly available.
-- Use health checks and graceful shutdown for workers to avoid task duplication.
-
----
-
-## Scalability & performance
-
-- Horizontal scale: API and worker workers are stateless or effectively stateless, enabling straightforward horizontal scaling.
-- Bottlenecks to monitor:
-  - Database write contention (optimize schema and use batch inserts where possible).
-  - Submission throughput to external scoreboard(s) (throttle and backoff strongly).
-  - Queue backlog: provision worker autoscaling to drain spikes.
-- Caching: use caching for frequent reads (exploit metadata, dashboard lists) to reduce DB load.
-
----
-
-## Failure modes & mitigation
-
-- Submission failures (network/timeouts/external rate limits)
-  - Use exponential backoff and retry policies.
-  - Persist failed submissions for manual review and reprocessing.
-- Exploit runner crashes or malicious exploits
-  - Use container sandboxing, CPU/memory limits and user namespaces.
-  - Run untrusted code in disposable environments and collect artifacts for post-mortem.
-- Data loss
-  - Regular DB backups and tested recovery procedures.
-  - Use append-only storage for raw artifacts and logs.
-- High CPU/network during events
-  - Autoscale workers; use prioritized queues for critical tasks.
-
----
-
-## Extensibility & integration points
-
-- Pluggable exploit runners: design a runner protocol (job payload and result schema) so new runners (Python, Go, container wrappers) can be added easily.
-- Submission adapters: abstract the submission target behind adapters so you can support multiple scoreboard APIs or custom validators.
-- Webhooks / Event system: publish significant events (captures, submissions, alerts) so external systems can integrate.
-
----
-
-## Operational observability
-
-- Logs: all services should emit structured logs (JSON) with contextual fields: trace_id, run_id, exploit_id, user_id.
-- Traces: instrument key flows (capture → submission) with distributed tracing (e.g., OpenTelemetry) so you can trace failures end-to-end.
-- Metrics: expose Prometheus metrics for queue sizes, submission latencies, run success rates.
-- Alerts: alert on high failure rates, queue backlogs and extreme latencies.
-
----
-
-## Recommended next steps
-
-- Read the Flag Pipeline for exact validation and deduplication logic: /docs/architecture/flag-pipeline.mdx
-- Review Server Internals for concurrency and implementation details: /docs/architecture/server-internals.mdx
-- Review deployment and production hardening recommendations: /docs/server/deployment.mdx
-
----
-
-This overview is intended to be a stable reference. If you are designing a new component or extending the system, document the design decisions and update the relevant pages so future operators maintain a consistent mental model.
+- Keep WebSocket as default for continuous ingestion.
+- Always run `ckc exploit test` before full run.
+- Keep `tick_time` and `thread_count` conservative; network saturation reduces accepted rate.
+- Track `submit_time` vs `response_time` delta to detect checker slowdown or backlog.

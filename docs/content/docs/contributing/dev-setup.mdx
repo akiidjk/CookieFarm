@@ -1,255 +1,108 @@
 ---
 title: Dev setup
-description: Local development environment setup for CookieFarm (Go + TypeScript + Python)
+description: Local development setup for CookieFarm (Go + Python + Bun).
 ---
 
 # Development setup — CookieFarm
 
-This guide covers a typical local development setup you can use to contribute to CookieFarm. It contains recommended tool versions, quick start commands for each component (server, web/dashboard, Python client), testing and linting tips, and troubleshooting notes.
+This page defines the recommended local development setup for CookieFarm.
 
-Adjust versions and commands to match the repository's `README.md`, `Makefile`, or component-specific README files.
+## Required versions
 
----
+- Go `1.26+`
+- Python `3.14+`
+- Bun (latest stable)
+- Docker + Docker Compose
+- Git
 
-## Prerequisites
+## Verify toolchain
 
-Install the following on your machine:
-
-- Git (latest)
-- Go 1.20+ (or the version pinned by the repo)
-- Node.js 18+ (LTS) and a package manager (npm, yarn, or pnpm)
-- Python 3.10+ (or the version pinned by the repo)
-- Docker & Docker Compose (for running services like databases, Redis, etc.)
-- Recommended: Visual Studio Code with extensions for Go, TypeScript/React, Python, and Docker
-
-Verify basics:
-
-```bash title="commands.sh"
-# check versions
+```bash
 git --version
 go version
-node --version
-python --version
+python3 --version
+bun --version
 docker --version
 docker compose version
 ```
 
----
+## Clone repository
 
-## Clone the repository
-
-```bash title="commands.sh"
-git clone https://github.com/your-org/CookieFarm.git
+```bash
+git clone https://github.com/ByteTheCookies/CookieFarm.git
 cd CookieFarm
 ```
 
-Read the top-level `README.md` for project-specific instructions and any `Makefile` targets that may simplify local setup.
+## Server (Go)
 
----
-
-## Environment files
-
-If the project provides `.env.example` or similar, copy it and fill in secrets:
-
-```bash title=".env.example"
-# Example .env (copy to .env and edit)
-# SERVER_BIND_ADDR=127.0.0.1:8080
-# DATABASE_URL=postgres://user:pass@localhost:5432/cookiefarm
-# REDIS_URL=redis://localhost:6379
-# SECRET_KEY=replace-with-secure-value
-```
-
-Commands:
-
-```bash title="commands.sh"
-cp .env.example .env
-# edit .env with your editor
-```
-
-If there is no `.env.example`, check repository docs for required environment variables.
-
----
-
-## Backend (Go)
-
-1. Install dependencies:
-
-```bash title="commands.sh"
-cd server   # or the repo's Go server path (check repository layout)
+```bash
+cd cookiefarm/server
 go mod download
-```
-
-2. Build or run:
-
-```bash title="commands.sh"
-# build everything
 go build ./...
-# run a server main package if present under cmd/
-go run ./cmd/server
-```
-
-Note: Many Go projects keep CLI/server entrypoints under `./cmd/<name>`. Inspect the `cmd/` directory and use `go run ./cmd/<entry>` to run a specific service.
-
-3. Tests:
-
-```bash title="commands.sh"
 go test ./... -v
 ```
 
-4. Lint & format:
+Run server locally:
 
-```bash title="commands.sh"
-# formatting
-gofmt -w .
-# linting (if installed)
-golangci-lint run ./...
+```bash
+go run .
 ```
 
----
+## Client (Go CLI)
 
-## Frontend / Dashboard (TypeScript)
-
-Locate the frontend directory (commonly named `frontend`, `web`, `dashboard`, or `ui`).
-
-1. Install dependencies:
-
-```bash title="commands.sh"
-cd frontend      # replace with actual path
-npm install      # or yarn install / pnpm install
+```bash
+cd cookiefarm/client
+go mod download
+go build ./...
+go test ./... -v
 ```
 
-2. Run development server:
+## Python exploiter library
 
-```bash title="commands.sh"
-npm run dev      # or npm start depending on the project
-```
-
-3. Build for production:
-
-```bash title="commands.sh"
-npm run build
-```
-
-4. Tests and lint:
-
-```bash title="commands.sh"
-npm test
-npm run lint     # runs ESLint/TypeScript checks
-```
-
----
-
-## Python client (`ckc`)
-
-The Python client often lives in `client/` and is installable as a package.
-
-1. Create a virtual environment and install:
-
-```bash title="pyvenv"
-cd client
-python -m venv .venv
-# macOS/Linux
+```bash
+cd exploiter/python
+python3 -m venv .venv
 source .venv/bin/activate
-# Windows (PowerShell)
-# .venv\\Scripts\\Activate.ps1
-
-pip install -r requirements.txt   # if present
-pip install -e .                  # editable install for local dev
+pip install --upgrade pip
+pip install -e .
 ```
 
-2. Run tests:
+Optional tests:
 
-```bash title="commands.sh"
+```bash
 pytest -q
 ```
 
-3. Linting / formatting:
+## Docs (Bun only)
 
-```bash title="commands.sh"
-ruff check .
-black --check .
+```bash
+cd docs
+bun install
+bun run dev
 ```
 
----
+Type check/build:
 
-## Docker compose (optional / recommended for services)
-
-To bring up dependent services (Postgres, Redis, etc.):
-
-```bash title="commands.sh"
-docker compose up --build
-# or
-docker compose up -d
+```bash
+bun run types:check
+bun run build
 ```
 
-When using Docker for the server, ensure environment variables are set (via `.env` or Compose overrides).
+## Run full stack with Docker
 
----
+```bash
+cd cookiefarm
+docker compose up -d --build
+```
 
-## Running the full system for development
+Quick API check:
 
-A typical dev flow:
+```bash
+curl -i --max-time 5 http://127.0.0.1:8080/api/v1/
+```
 
-- Start Docker services (database, redis):
-  `docker compose up -d`
-- Run backend (Go) locally so it reloads on change, or run inside a container.
-- Run frontend dev server and connect to the backend API via configured env vars.
-- Activate Python client virtualenv and run `ckc` commands against the local server.
+## Notes
 
-If the repo provides a `Makefile` with `make dev`, prefer that.
-
----
-
-## Debugging
-
-- Go: use Delve (`dlv`) and VS Code Go extension to set breakpoints (launch config pointing at `./cmd/server`).
-- Python: use VS Code Python extension and the `pylance` language server; use the `python` debugger.
-- Frontend: browser devtools and source-maps; VS Code debugging for Chrome/Edge.
-
-Add logging environment variables (e.g., `LOG_LEVEL=debug`, `COOKIEFARM_DEBUG=true`) if supported.
-
----
-
-## VS Code recommended extensions
-
-- Go
-- Python
-- ESLint
-- Prettier / Code Formatter for your frontend
-- Docker
-- GitLens
-
-Consider adding a `.vscode/launch.json` and `.vscode/settings.json` for consistent workspace settings.
-
----
-
-## Common issues & troubleshooting
-
-- "module not found" in Go: run `go mod tidy` and ensure `GOMOD` is at repo root.
-- Frontend network issues (CORS / API base URL): verify `VITE_API_URL` / `REACT_APP_API_URL` (or relevant env key).
-- Python dependency conflicts: ensure virtualenv activated and `pip install -e .` was used.
-- Database migrations: check if the repo includes migrations under `migrations/` and run the migration tool used by the project (check docs).
-- Ports already in use: verify server and frontend ports and adjust `.env` before starting.
-
----
-
-## Contributing workflow
-
-- Create a feature branch: `git checkout -b feat/<short-description>`
-- Run tests and linters locally before opening a PR.
-- Keep commits focused and add a clear PR description referencing issues.
-- For docs updates, edit corresponding `*.mdx` files under `docs/` and follow repo style.
-
----
-
-## Further reading
-
-- Check `README.md` at the repository root for project-specific commands and developer conveniences (e.g., `make dev`, `./scripts/*`).
-- Look for per-component `README.md` files inside `server/`, `frontend/`, and `client/` for extra detail.
-
----
-
-If you want, I can:
-- Create a `.vscode/launch.json` template for Go + Python + frontend debugging.
-- Generate simple `Makefile` targets for common dev tasks (start, stop, test, lint, build).
-- Inspect the repository to tailor these commands exactly to this codebase.
+- Use Bun for docs/frontend package management and scripts.
+- Use Bun as the only JavaScript package manager/runtime in this project workflow.
+- Keep local environment aligned with the versions above before opening PRs.

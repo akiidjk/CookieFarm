@@ -1,130 +1,40 @@
 ---
-title: Installation
-description: How to install the `ckc` CLI (Python package `cookiefarm`) on Linux, macOS, and Windows. Includes virtualenv, upgrades, development install, and troubleshooting tips.
+title: Client Installation
+description: Install the `ckc` client from the Python package `cookiefarm`.
 ---
 
-# Installing the ckc CLI
+# Client Installation
 
-This page shows recommended ways to install the `ckc` command-line client for CookieFarm. The CLI is distributed as the Python package `cookiefarm`.
-
-Summary (recommended)
-- For most users: create a Python virtual environment and run `pip install cookiefarm`.
-- For isolated system-wide installs: use `pipx` or a Python virtualenv.
-- For development: clone the repository and install editable (`pip install -e .`) from the client package.
-
----
+`ckc` is distributed through the Python package `cookiefarm`.
 
 ## Prerequisites
 
-- Python 3.14+ or newer (probably will work also with 3.13 or more old version).
-- `pip` (the Python package installer).
-- Optional but recommended: `python3-venv` / `virtualenv` or `pipx` for isolated installs.
+- Python 3.14+
+- `pip`
 
----
+## Recommended Installation (venv)
 
-## Quick install (recommended)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install cookiefarm
+```
 
-1. Create and activate a virtual environment:
-- `python3 -m venv .venv`
-- `source .venv/bin/activate` (macOS / Linux)  
-  or on Windows (PowerShell): `.\.venv\Scripts\Activate.ps1`  
-  or on Windows (cmd): `.\.venv\Scripts\activate.bat`
+Verify:
 
-2. Upgrade pip and install:
-- `pip install --upgrade pip`
-- `pip install cookiefarm`
+```bash
+ckc --version
+ckc --help
+```
 
-3. Verify:
-- `ckc --help`
-- `ckc --version` (prints the installed CLI version)
+## Upgrade
 
-Using a virtual environment keeps the install isolated and avoids permission issues.
+```bash
+pip install --upgrade cookiefarm
+```
 
----
+## Practical Notes
 
-## Using pipx (recommended for single-user command installs)
-
-If you prefer a single global, isolated CLI installation that behaves like a normal user command, use `pipx`:
-
-- Install pipx (if not already installed): `python3 -m pip install --user pipx && python3 -m pipx ensurepath`
-- Install `ckc`: `pipx install cookiefarm`
-- Then run `ckc` directly from your shell.
-
-Note: `pipx` installs each CLI in its own virtual environment and puts a shim on your PATH.
-
----
-
-## System-wide installation / using `--user`
-
-If you are unable or unwilling to use virtual environments, you can install for your user only:
-
-- `pip install --user cookiefarm`
-
-Ensure that your Python user-local bin directory is on your PATH. On many systems this is `~/.local/bin`.
-
-Installing system-wide with `sudo pip install` is not recommended.
-
----
-
-## Install from source (development or latest changes)
-
-To work on the project, or if you need the very latest code from the repository, install from source.
-
-1. Clone the repository (example):
-- `git clone https://github.com/your-org/CookieFarm.git`
-- `cd CookieFarm`
-
-2. Install the Python client package in editable mode (recommended for development):
-- Create and activate a virtualenv (see Quick install).
-- From the repo root, run:
-  - `pip install -e .[dev]`  
-    The `[dev]` extras may install development dependencies such as linters and test tools if they are defined.
-
-3. You can now run `ckc` from your environment and edit code locally.
-
-Note: Adjust the repository URL and branch to match the actual upstream project if needed.
-
----
-
-## Upgrading and uninstalling
-
-- Upgrade: `pip install --upgrade cookiefarm` (or `pipx upgrade cookiefarm` if you used pipx)
-- Uninstall: `pip uninstall cookiefarm`
-
-If using a virtual environment, activate it first before running these commands.
-
----
-
-## Common issues & troubleshooting
-
-- Permission denied / EACCES when installing globally:
-  - Use a virtualenv or `pip install --user cookiefarm` or use `pipx`.
-
-- `pip` builds failing with cryptography or other native wheels:
-  - Install system build deps (Debian/Ubuntu): `sudo apt-get install build-essential libssl-dev libffi-dev python3-dev`
-  - On macOS, ensure Command Line Tools are installed: `xcode-select --install`
-
-- `ckc` command not found after install:
-  - If installed in a virtualenv, ensure the venv is activated.
-  - If installed with `--user`, ensure `~/.local/bin` (or platform equivalent) is on your PATH.
-  - If installed with `pipx`, ensure pipx shims are on your PATH (run `python3 -m pipx ensurepath`).
-
-- Conflicting Python versions:
-  - Use `python3 -m pip` to ensure you use the `pip` matching the intended `python3`.
-  - Verify `which python3` / `which pip` to confirm interpreter paths.
-
----
-
-## Verification and first run
-
-After installation, run:
-
-- `ckc --help` — prints available commands and options.
-- `ckc --version` — shows CLI version.
-- To configure and authenticate to a server, see the Authentication guide: `docs/content/docs/client/authentication.mdx`.
-
----
-
-## Notes for packagers and distributions
-
-- The package is designed to be installed from PyPI as `cookiefarm`. If your distribution repackages it, ensure dependencies and entry points are preserved so the `ckc` console script is available.
+- If `ckc` is not found, make sure your virtual environment is active.
+- In CI, always use a dedicated virtual environment.

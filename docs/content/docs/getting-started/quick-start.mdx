@@ -1,111 +1,44 @@
 ---
 title: Quick Start
-description: Start a local CookieFarm server, authenticate the `ckc` client, and run your first exploit.
+description: Fast 5-step setup for CookieFarm in Attack/Defense competitions.
 ---
-
-import { Card } from 'fumadocs-ui/components/card';
-
-<Card>
-This quick start gets a minimal local environment running so you can log in with the CLI and execute a simple exploit. It assumes you have Docker (or Docker Compose) and Python/pip available locally. 
-</Card>
-
-<br/>
 
 # Quick Start
 
-This page walks through three short steps:
-
-1. Start the server (Docker Compose).
-2. Install and authenticate the `ckc` CLI.
-3. Create or run your first exploit and verify results in the dashboard.
-
----
-
-## 1) Start the server
-
-After the installation (either automatic or manual), you should have a `docker-compose.yml` file in your `cookiefarm` directory (or the root in case of an automatic remote installation). Start the server with:
+## 1. Start server
 
 ```bash
-docker compose up -d --build
+cd cookiefarm
+docker compose up -d
 ```
 
-Notes:
-- If you prefer `docker-compose` (older CLI), replace `docker compose` with `docker-compose`.
-- Wait a few seconds for services to initialize. Check logs with `docker compose logs -f`.
-
-Verify the HTTP endpoints:
-
-- Server API (default): http://localhost:8080/api/v1/
-- Dashboard / Web UI (default): http://localhost:8080
-
----
-
-## 2) Install and authenticate the `ckc` CLI
-
-Install `ckc` into a virtualenv or with pipx:
+## 2. Verify API
 
 ```bash
-# Example: install with pip
-python -m venv .venv
-. .venv/bin/activate
+curl -i --max-time 5 http://127.0.0.1:8080/api/v1/
+```
+
+## 3. Install client
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install --upgrade pip
 pip install cookiefarm
 ```
 
-Authenticate the CLI against your running server:
+## 4. Login client
 
 ```bash
-ckc config reset
-ckc config login -P <PASSWORD> -H <SERVER_HOST> -p <SERVER_PORT> -u <USERNAME>
+ckc config login -H 127.0.0.1 -p 8080 -u team01 -P SuperSecret
 ```
 
-
----
-
-## 3) Run your first exploit
-
-CookieFarm supports multiple exploit authoring approaches (Python runners, shell templates, etc.). The easiest is to use a simple built-in example or template bundled with the project.
-
-List available exploits:
+## 5. Create, test, run exploit
 
 ```bash
-ckc exploit list
+ckc exploit create -n first
+ckc exploit test -e first -n CookieService -t 30 -T 5
+ckc exploit run -e first -n CookieService -t 60 -T 15
 ```
 
-Probably if is the first time you run it, the list is empty.
-
-Create a new exploit from the template:
-
-```bash
-# Create a new exploit skeleton from a template (example name: "sample-exploit")
-ckc exploit create --name sample-exploit 
-# This creates a new file called sample-exploit.py in ~/.config/cookiefarm/exploits/ with a basic template you can edit.
-```
-
-Run the exploit against a target (replace `<SERVICE_NAME>` with the name of the service to attack, as defined in your server config):
-
-```bash
-ckc exploit run -e sample-exploit -t 30 -T 5 -n <SERVICE_NAME>
-```
-
-Monitor progress:
-- CLI output shows run progress and flag captures.
-- Dashboard shows live exploit status, submissions, and flag history.
-
----
-
-## Troubleshooting
-
-- Containers fail to start:
-  - Inspect logs: `docker compose logs -f`
-  - Ensure required ports (8080, 3000) are free.
-  - Confirm `.env` values are set (database URL, secret keys).
-
-- Authentication fails:
-  - Confirm server URL in `ckc config show`.
-  - Check server logs for auth-related errors.
-
-- Exploit runtime errors:
-  - Re-run the exploit with debug logging: `ckc exploit run ... --debug`.
-  - Check the server/exploit runner logs and dashboard details.
-  - Try before in test mode with `ckc exploit test ...`
+Open dashboard: `http://127.0.0.1:8080/dashboard`.

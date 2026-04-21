@@ -1,111 +1,128 @@
 ---
-title: CLI
-description: Full command reference for the `ckc` command-line client
+title: CLI Reference
+description: Practical reference for currently available `ckc` commands.
 ---
 
-This document is the authoritative reference for the `ckc` CLI shipped with CookieFarm. It lists global options, main subcommands, common flags and examples for typical workflows (configuration, authentication, exploit authoring & execution, and submissions).
+# CLI Reference
 
----
+Base syntax:
 
-## Global usage
+```bash
+ckc [global flags] <command> [subcommand] [flags]
+```
 
-General form:
+Global flags:
 
-`ckc [GLOBAL FLAGS] <command> [command flags] [arguments...]`
+- `-D, --debug`
+- `-B, --banner`
 
+## `ckc config`
 
-Common global flags
-- `-c, --config <path>` — path to the client configuration file (default: `~/.ckc/config.yml`).
-- `-s, --server <url>` — override server base URL for this invocation.
-- `-v, --verbose` — increase logging verbosity (repeat to increase level).
-- `--no-color` — disable colored output (helpful for CI).
-- `--timeout <seconds>` — per-request timeout.
+### `ckc config update`
 
-To list top-level commands:
+Updates `client.yml`.
 
-    ckc help
+Flags:
+- `-H, --host`
+- `-p, --port`
+- `-u, --username`
+- `-s, --https`
 
-To get command-specific help:
+### `ckc config login`
 
-    `ckc <command> --help`
+Login and shared config sync.
 
----
+Flags:
+- `-H, --host`
+- `-p, --port`
+- `-u, --username`
+- `-s, --https`
+- `-P, --password` (required)
 
-## Configuration & authentication
+### `ckc config logout`
 
-ckc stores client-side config (server, tokens, preferences) in the config file. Use the following commands to manage it.
+Removes local session.
 
-`ckc config` — Manage configuration
+### `ckc config reset`
 
-- `ckc config show` — Show the current client configuration.
-- `ckc config update` — Update client configuration interactively or via flags (`--host`, `--port`, `--username`, `--https`).
-- `ckc config reset` — Reset the client configuration to its default state.
-- `ckc config login` — Login to the client (prompts for `--password`).
-- `ckc config logout` — Remove client session.
+Resets local config to defaults.
 
----
+### `ckc config show`
 
-## Exploit commands
+Prints `client.yml` and `shared.yml`.
 
-The `exploit` command group handles creation, running and management of exploit scripts/runners.
+## `ckc exploit`
 
-`ckc exploit create` — Generate a new exploit template
-- Flags:
-  - `-n, --name <name>` — Name of the exploit template.
+### `ckc exploit create`
 
-`ckc exploit list` — List all current running exploits
+Creates Python exploit template.
 
-`ckc exploit remove` — Remove an exploit template
-- Flags:
-  - `-n, --name <name>` — Name of the exploit template.
+Flags:
+- `-n, --name` (required)
 
-`ckc exploit test` — Test the exploit on the NOP team
-- Flags:
-  - `-e, --exploit <path>` — Path to the exploit file to execute.
-  - `-n, --name <name>` — Service name to attack.
-  - `-d, --detach` — Run the exploit in the background.
-  - `-t, --tick <seconds>` — Interval in seconds between exploit executions.
-  - `-T, --thread <count>` — Number of concurrent threads to run the exploit with.
+### `ckc exploit remove`
 
-`ckc exploit run` — Attack other teams with an exploit
-- Flags:
-  - `-e, --exploit <path>` — Path to the exploit file to execute.
-  - `-n, --name <name>` — Service name to attack.
-  - `-d, --detach` — Run the exploit in the background.
-  - `-t, --tick <seconds>` — Interval in seconds between exploit executions.
-  - `-T, --thread <count>` — Number of concurrent threads to run the exploit with.
-  - `-S, --submit` — Direct submit to the game server.
+Removes exploit template.
 
-`ckc exploit stop` — Stop the exploit execution
-- Flags:
-  - `-p, --pid <pid>` — Pid to the exploit file to stop.
+Flags:
+- `-n, --name` (required)
 
-`ckc exploit submit` — Send a new flag to the game server
-- Flags:
-  - `-f, --flag <flag>` — Flag to submit.
-  - `-n, --name <name>` — Service name to attack.
-  - `-t, --team <id>` — Team ID.
-  - `-m, --message <msg>` — Message to include with the submission.
+### `ckc exploit test`
 
----
+Runs exploit in test mode (`-x` at Python runtime), typically against NOP team.
 
-## Examples & workflows
+Flags:
+- `-e, --exploit` (required)
+- `-n, --name`
+- `-d, --detach`
+- `-t, --tick` (default `120`)
+- `-T, --thread` (default `5`)
 
-1) Quick login and run an exploit locally
+### `ckc exploit run`
 
-    ckc config login --host cf.example.com --username alice --password secret
-    ckc exploit create --name quick-sqli
-    ckc exploit run --exploit ./exploits/quick-sqli
+Runs exploit in continuous loop.
 
-2) Upload an exploit and schedule remote execution
+Flags:
+- `-e, --exploit` (required)
+- `-n, --name`
+- `-d, --detach`
+- `-t, --tick` (default `120`)
+- `-T, --thread` (default `5`)
+- `-S, --submit` (direct HTTP submit)
 
-    ckc config login
-    ckc exploit run --exploit quick-sqli --thread 10 --tick 300
+### `ckc exploit list`
 
----
+Lists running exploits tracked in runtime.
 
-## Troubleshooting
+### `ckc exploit stop`
 
-- "Authentication failed": verify server URL, time sync, and token validity using `ckc config show`.
-- "Upload rejected": check the server API reference in documentation for schema changes.
-- "Submissions rate-limited": consult server admin and verify you're not reusing the same token across many agents.
+Stops exploit by PID.
+
+Flags:
+- `-p, --pid` (required)
+
+### `ckc exploit submit`
+
+Manual single-flag submit.
+
+Flags:
+- `-f, --flag` (required)
+- `-n, --name`
+- `-t, --team`
+- `-m, --message`
+
+## Quick Examples
+
+```bash
+# Login
+ckc config login -H 127.0.0.1 -p 8080 -u team01 -P SuperSecret
+
+# Create template
+ckc exploit create -n web_sqli
+
+# Test exploit
+ckc exploit test -e web_sqli -n CookieService -t 30 -T 10
+
+# Run exploit continuously
+ckc exploit run -e web_sqli -n CookieService -t 60 -T 20
+```

@@ -1,4 +1,99 @@
 ---
 title: API Reference
-description: REST API reference for the CookieFarm server (endpoints, auth, models, errors, examples)
+description: Main REST endpoints exposed by CookieFarm server.
 ---
+
+# API Reference
+
+Base path: `/api/v1`
+
+Private endpoints use JWT cookie auth (`token`).
+
+## Public endpoints
+
+## `GET /api/v1/`
+
+Health/status endpoint.
+
+## `POST /api/v1/auth/login`
+
+Body:
+
+```json
+{
+  "username": "team01",
+  "password": "SuperSecret"
+}
+```
+
+Response: `200` + `token` cookie.
+
+## `GET /api/v1/auth/verify`
+
+Validates JWT cookie.
+
+## `GET /api/v1/protocols`
+
+Returns available protocol plugins.
+
+## Private endpoints
+
+## `GET /api/v1/config`
+
+Returns current shared config.
+
+## `POST /api/v1/config`
+
+Updates server/shared config and restarts runner loops.
+
+Body:
+
+```json
+{
+  "config": {
+    "configured": true,
+    "services": {"CookieService": 8081},
+    "regex_flag": "[A-Z0-9]{31}=",
+    "format_ip_teams": "10.10.{}.1",
+    "my_team_id": 1,
+    "nop_team": 0,
+    "range_ip_teams": 20,
+    "url_flag_ids": "http://flagids.local"
+  }
+}
+```
+
+## `POST /api/v1/submit-flag`
+
+Inserts one flag and attempts immediate checker submit.
+
+## `POST /api/v1/submit-flags`
+
+Inserts a flag batch.
+
+## `POST /api/v1/submit-flags-standalone`
+
+Inserts batch + immediate checker submit.
+
+## `GET /api/v1/flags`
+
+Returns all flags.
+
+## `GET /api/v1/flags/:limit?offset=...`
+
+Returns paginated/filtered flags.
+
+## `DELETE /api/v1/delete-flag?flag=<flag_code>`
+
+Deletes by flag code.
+
+## Error model
+
+Typical error payload:
+
+```json
+{
+  "error": "Failed to submit flag",
+  "details": "..."
+}
+```

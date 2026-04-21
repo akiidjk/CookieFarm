@@ -1,261 +1,106 @@
 ---
-title: Flag pipeline
-description: Detailed explanation of CookieFarm's flag capture, submission, validation, and storage pipeline.
+title: Flag Pipeline
+description: Real CookieFarm flag pipeline from exploit capture to checker submission and dashboard state.
 ---
 
-# Flag pipeline
+# Flag Pipeline
 
-This document describes the end-to-end flow for flags in CookieFarm: from capture by exploit runners through submission to targets, validation, persistence, and monitoring. It covers components, data shapes, failure modes, rate-limiting, and operational guidance to help you design reliable exploit and submission workflows.
+This page describes the real flag path implemented in CookieFarm code.
 
-Table of contents
-- Overview
-- Components & responsibilities
-- Flag data model
-- Capture → Submit → Validate flow
-- Reliability & retries
-- Rate limiting & backoff
-- Validation, deduplication & anti-cheat
-- Persistence & retention
-- Monitoring & observability
-- Example flows and API snippets
-- Operational checklist
+## 1. Flag production (Python runtime)
 
----
+Python exploits print JSON to stdout. A valid capture event uses `status: "success"` and includes at least:
 
-## Overview
+- `flag_code`
+- `team_id`
+- `port_service`
+- `name_service`
 
-CookieFarm's flag pipeline separates concerns across components to make the system robust, auditable, and scalable:
+Output format is defined in `exploiter/python/cookiefarm/logger.py`.
 
-- Exploit runners (clients) capture flags while interacting with target services.
-- A submitter service (part of the server or the exploit runner depending on deployment) sends captured flags to the central server API.
-- The server validates and deduplicates flags, optionally forwarding them to an external judge or scoreboard.
-- Results (accepted/rejected/pending) are persisted and surfaced via the dashboard and APIs for monitoring.
+## 2. Client parsing (`ckc`)
 
-Key design goals:
-- Resilience in the face of transient network issues and target flakiness.
-- Clear, auditable provenance for each submission.
-- Configurable rate-limiting per-team and per-target to avoid bans.
-- Deterministic deduplication to prevent duplicates / abuse.
+`ckc` reads stdout/stderr, parses JSON, and maps successful events into `database.Flag`.
 
----
+Main rules:
+- `success` -> queued to submit channel
+- `failed`, `error`, `fatal`, `info`, `debug` -> logged, not submitted
+- `stats` -> logged as round summary
 
-## Components & responsibilities
+Files: `cookiefarm/client/internal/exploit/parse.go`, `run.go`.
 
-- Exploit runner (client)
-  - Executes exploit logic, captures candidate flags.
-  - Performs local sanity checks (format/regex) before submission.
-  - Optionally bundles multiple flags into batched submissions.
+## 3. Server ingestion
 
-- Submitter (could be client-side or a server-side worker)
-  - Sends flags to the server API.
-  - Handles retries, exponential backoff, and local queueing if offline.
-  - Attaches metadata (exploit id, target id, team id, timestamp, run id).
+Two modes:
 
-- Server API (flag ingestion endpoint)
-  - Receives submissions and responds with immediate status (queued/accepted/rejected).
-  - Performs validation and deduplication (see below).
-  - Persists raw submission events and derived outcomes.
+1. WebSocket (default): `ckc exploit run`
+2. Direct HTTP: `ckc exploit run -S`
 
-- Validator / Judge (internal or external)
-  - Confirms flag validity (match with expected values or remote judge response).
-  - Forwards final result back to the server to mark accepted/rejected.
+WebSocket event type: `flag`.
 
-- Persistence & reporting
-  - Stores submission logs, outcomes, and metrics.
-  - Exposes data to dashboard & monitoring.
+Server files: `server/internal/websockets/event.go`, `server/api/handler_api.go`.
 
----
+## 4. Buffering and persistence
 
-## Flag data model
+Server uses `FlagCollector`:
 
-A canonical submission payload should include metadata so submissions are auditable:
+- flush on size threshold (`maxBufferSize=100`)
+- periodic flush (`flushInterval=10s`)
+- writes to SQLite `flags` table (`INSERT OR IGNORE`)
 
-Example JSON payload:
-```json
-{
-  "flag": "CTF{example-flag}",
-  "exploit_id": "exploit/redis-memleak",
-  "target_id": "team-42:service-redis:10.0.3.21:6379",
-  "team_id": "team-42",
-  "run_id": "run-2026-04-15T09:12:22Z-abcdef",
-  "captured_at": "2026-04-15T09:12:21.123Z",
-  "source": "client",
-  "metadata": {
-    "attempt": 3,
-    "http_status": 200,
-    "notes": "captured in heap dump"
-  }
-}
-```
+This prevents duplicate inserts for the same flag (`flag_code` is PK).
 
-Required fields:
-- `flag` — the flag string captured.
-- `exploit_id` — which exploit produced it.
-- `target_id` — identifies the target (team/service/host) for rate-limiting and auditing.
-- `captured_at` — timestamp in RFC3339.
-- `run_id` — unique id for the exploit run (useful for grouping).
+## 5. Submission to flag checker
 
-Optional:
-- `source` — `client`, `farm`, or `dashboard`.
-- `metadata` — transport-specific diagnostics to aid debugging.
+Periodic server loop (`StartFlagProcessingLoop`):
 
----
+- fetches `unsubmitted` flags
+- submits batch using configured protocol (`pkg/protocols`)
+- updates DB status (`accepted/denied/error`)
 
-## Capture → Submit → Validate flow
+Relevant config:
+- `server.submit_flag_checker_time`
+- `server.max_flag_batch_size`
+- `server.protocol`
 
-1. Exploit captures a candidate flag and validates basic format locally (regex / checksum).
-2. It posts the payload to the server POST `/api/v1/flags` (or to a local submitter queue if offline).
-3. The server responds with HTTP 202 (queued) or a rejection (400/422) if malformed.
-4. Worker/validator processes queued flags:
-   - If CookieFarm has a built-in validator, it attempts deterministic validation (e.g., comparing against expected tokens, checksum, or running a known validation step).
-   - If validation requires contacting an external judge (CTF scoreboard or third-party), the worker forwards the flag and awaits asynchronous response.
-5. On final outcome:
-   - Server marks submission `accepted`, `rejected`, or `invalid`.
-   - If accepted, server records the award/score and surfaces it on the dashboard.
-   - An audit log entry includes the full submission payload, validation steps, and outcome.
+## 6. Dashboard rendering
 
-Sequence diagram (high level):
-- Exploit → Server API: submit flag
-- Server API → Queue: enqueue for validation
-- Validator → Judge (if needed)
-- Validator → Server: update result
-- Server → Dashboard / API clients: notify update
+Dashboard reads from DB:
 
----
+- paginated flag table
+- mapped state (`UNSUBMITTED/ACCEPTED/DENIED/ERROR`)
+- timing fields (`submit_time`, `response_time`, duration)
 
-## Reliability & retries
+## State meanings for A/D
 
-Common failures:
-- Transient network errors between client and server.
-- Temporary judge outages.
-- Rate-limits or bans from target services.
+- `UNSUBMITTED` (`0`): queued, not processed by checker yet
+- `ACCEPTED` (`1`): valid flag
+- `DENIED` (`2`): rejected flag
+- `ERROR` (`3`): submit/check error
 
-Guidelines:
-- Clients should use an exponential backoff retry policy for HTTP-level network failures (e.g., 500s, timeouts). Example: initial backoff 2s, multiplier 2, max 32s, max attempts 6.
-- For non-retriable server responses (4xx except 429), treat as rejected and surface the error to operator logs.
-- If submit fails and local persistence is available, queue the submission locally and retry asynchronously until success or a configurable TTL (e.g., 24 hours).
-- The server validation pipeline should be idempotent: reprocessing the same submission should not produce duplicate awards. Use insertion guards and deterministic dedup keys (see next section).
+## Practical Failure Modes
 
----
+## Exploit outputs non-JSON lines
 
-## Rate limiting & backoff
+Symptom: no flags get queued.
 
-To protect targets and avoid getting banned:
-- Enforce per-target and per-team rate limits server-side.
-- Allow exploit authors to configure `requests_per_minute` and `burst` for each exploit.
-- When a target returns an HTTP 429 or a known "you are banned" response, the runner should:
-  - Back off aggressively (exponential backoff with jitter).
-  - Respect server-side signals to pause activity for particular target/instance.
+Action:
+- always use helper `log_status` in Python runtime
+- verify shared `regex_flag` config
 
-Server-side quotas:
-- Per-team global quota and per-target quotas should be configurable through `config.yml` or environment variables.
-- Provide a mechanism to temporarily throttle or disable exploits from the dashboard for specific targets.
+## Unstable WebSocket link
 
----
+Symptom: frequent reconnects, throughput drop.
 
-## Validation, deduplication & anti-cheat
+Action:
+- verify auth cookie/session
+- use temporary `-S` fallback during incident response
 
-Deduplication strategy:
-- Compute a deduplication key that includes normalized flag value, target_id, and optionally a validation timestamp floor.
-- Before accepting a flag, check if a prior accepted submission exists for that (flag, target) pair. If it does, mark as duplicate.
+## Checker slow or unavailable
 
-Validation:
-- Built-in validators handle simple deterministic flags (e.g., ephemeral tokens generated by the service).
-- External judge integration is required when validation is performed by a remote scoreboard. In this case:
-  - Forward the flag to the judge endpoint and record the judge's response.
-  - Treat judge "accepted" as final; "rejected" as final; "pending" as an intermediate state.
+Symptom: large `UNSUBMITTED` backlog, `response_time` remains zero.
 
-Anti-cheat:
-- Log submission IPs, run ids, exploit ids, and frequency to detect suspicious patterns.
-- Optionally apply heuristics to mark and quarantine suspicious submissions for manual review.
-
----
-
-## Persistence & retention
-
-- Persist raw submission events to a write-ahead log or database table. Keep immutable raw data for auditing.
-- Store derived outcomes (accepted/rejected/duplicate) in a separate table optimized for queries by team, exploit, and time range.
-- Retention policy:
-  - Keep raw submission logs for at least 90 days (configurable).
-  - Keep summary metrics and accepted flags for scoreboard lifetime.
-  - Provide a configurable archival pipeline to move old logs to long-term storage.
-
-Backup & restore:
-- Ensure DB backups include submission tables and the validation state to avoid double-rewarding flags after a restore.
-
----
-
-## Monitoring & observability
-
-Important metrics to capture:
-- Submission rate (per-minute), broken down by team and exploit.
-- Validation latency (time between ingest and final verdict).
-- Retry counts and failure rates.
-- Duplicate detection rate.
-- External judge latency and error rates.
-
-Alerting:
-- Alert on sudden spikes in rejected submissions (could indicate exploit malfunction).
-- Alert on judge timeouts or high pending counts.
-- Alert when validation queue grows above threshold.
-
-Log content:
-- Include `run_id`, `exploit_id`, `target_id`, `team_id`, `captured_at`, and API response codes.
-- Preserve raw submission payloads in logs (careful with sensitive data — mask secrets if present).
-
----
-
-## Example flows and API snippets
-
-POST /api/v1/flags
-- Request: submission payload (see "Flag data model").
-- Responses:
-  - 202 Accepted — queued for validation
-  - 400 Bad Request — malformed payload
-  - 429 Too Many Requests — backoff required
-  - 401/403 — authentication/authorization errors
-
-Example client-side retry pseudocode:
-```
-attempt = 0
-backoff = 2
-while attempt < max_attempts:
-  status = post_flag(payload)
-  if status == 202:
-    mark_local_success()
-    break
-  if status in [400, 401, 403]:
-    log_and_abort()
-    break
-  # 5xx or network error
-  sleep(random_jitter(backoff))
-  backoff *= 2
-  attempt += 1
-```
-
-Validator result update:
-- Validator posts validation outcome to `/api/v1/flags/{submission_id}/result` with `{"outcome": "accepted"}` or `{"outcome":"rejected","reason":"mismatch"}`.
-
----
-
-## Operational checklist
-
-Before running a large exploit campaign:
-- Review and tune rate limits for the target and global settings.
-- Ensure monitoring dashboards and alerts for submission/validation queues are active.
-- Test sample submissions and the full validation round-trip in a staging environment.
-- Configure local client retry and local persistence policies to avoid data loss during network partitions.
-- Ensure retention and backup policies are set and tested.
-
----
-
-## Notes & best practices
-
-- Prefer server-side authoritative deduplication over client-side deduping to avoid race conditions.
-- Keep submission payloads concise but include the `run_id` and `captured_at` for analysis.
-- Use jitter in backoff to avoid thundering herd problems when many runners retry simultaneously.
-- Make validation idempotent and observable to simplify debugging and forensic analysis.
-
----
-
-If you need sample server API contract definitions (OpenAPI snippets) or example validator integrations (e.g., scoreboard adapters), I can add them in a follow-up.
+Action:
+- reduce exploit threads
+- lower batch size
+- verify checker endpoint and protocol

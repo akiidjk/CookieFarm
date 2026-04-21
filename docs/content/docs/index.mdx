@@ -1,48 +1,28 @@
 ---
-title: Welcome to CookieFarm
-description: Attack/Defense CTF framework with a zero-distraction philosophy.
+title: Overview
+description: Practical CookieFarm documentation for Attack/Defense CTF operations.
 ---
 
-**CookieFarm** is an *Attack/Defense CTF* framework inspired by DestructiveFarm, developed by the Italian team **ByteTheCookies**.
+# CookieFarm
 
-Its strength lies in a hybrid **Go + Python** architecture and a **zero-distraction philosophy**:
+CookieFarm is an A/D framework focused on operations:
 
-> 🎯 *Your only task is to write the exploit!*
+- write Python exploits
+- run them with `ckc`
+- centralize submission and monitoring with `cks`
 
-CookieFarm automates exploit distribution, flag submission, and result monitoring — allowing you to focus entirely on building powerful exploits during an A/D CTF.
+## Main sections
 
-## Key Features
+- [Getting Started](/docs/getting-started/quick-start)
+- [Client](/docs/client/overview)
+- [Exploits](/docs/exploits/overview)
+- [Server](/docs/server/overview)
+- [Dashboard](/docs/dashboard/overview)
+- [Architecture](/docs/architecture/overview)
 
-- **Automated Flag Pipeline:** Seamlessly collects, validates, and submits flags to the competition infrastructure.
-- **Scalable Execution:** Go-based server engineered for high concurrency and robust task scheduling.
-- **Developer Experience:** Python `ckc` CLI and library tailored for rapid and painless exploit development.
-- **Real-time Monitoring:** Keep track of your exploits' success rates, errors, and overall performance.
+## Recommended competition usage
 
-## Where to go next?
-
-Explore the documentation to set up your farm and start pwning.
-
-import { Card, Cards } from 'fumadocs-ui/components/card';
-
-<Cards>
-  <Card 
-    title="Getting Started" 
-    description="Set up CookieFarm, review prerequisites, and learn the core concepts." 
-    href="/docs/getting-started" 
-  />
-  <Card 
-    title="Server Guide" 
-    description="Configure, deploy, and manage the Go-based server." 
-    href="/docs/server/overview" 
-  />
-  <Card 
-    title="Client & CLI" 
-    description="Install and master the ckc CLI to control your farm." 
-    href="/docs/client/overview" 
-  />
-  <Card 
-    title="Writing Exploits" 
-    description="Learn how to author and distribute exploits using our Python library." 
-    href="/docs/exploits/overview" 
-  />
-</Cards>
+1. prepare server/shared config before kickoff
+2. validate each exploit with `ckc exploit test`
+3. switch to `ckc exploit run` with gradual tuning
+4. monitor dashboard and react quickly to deny/error spikes

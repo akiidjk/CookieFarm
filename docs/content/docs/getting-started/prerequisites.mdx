@@ -1,72 +1,30 @@
 ---
 title: Prerequisites
-description: System requirements and software prerequisites for running CookieFarm (server, client, and development).
+description: Minimum requirements to run CookieFarm in an Attack/Defense CTF.
 ---
 
 # Prerequisites
 
-This page lists the system requirements and recommended tools you should have before installing or developing with CookieFarm. It covers the runtime prerequisites for the server and client, plus optional tools useful for development and troubleshooting.
+## Minimum required
 
-If you are preparing a development environment (Go, Python), see the Dev Setup guide in the Contributing section for additional language-specific requirements.
-
-## Supported platforms
-
-- Linux (recommended): modern distributions such as Ubuntu 20.04+ or equivalent.
-- macOS: Works but not tested.
-- Windows: WSL2 is strongly recommended for server and development workflows.
-
-Note: Exact compatibility depends on tooling (Docker, Python, etc.). Use the platform's package manager or WSL2 on Windows to get a consistent experience.
-
-## Core prerequisites
-
-- Python
-  - Python 3.14 or later is recommended for the `ckc` client and exploit tooling.
-  - A virtual environment is recommended (venv, virtualenv) or `pipx` to install the CLI in isolation.
-
+- Docker + Docker Compose
+- Python 3.14+
 - pip
-  - Latest `pip` for your Python installation. Upgrade with `python -m pip install --upgrade pip` if needed.
+- access to competition network (team network + checker)
 
-- Docker
-  - Docker Engine (modern stable release). For production or local Compose setups Docker >= 20.10 is typical.
-  - Docker Compose: either the standalone `docker-compose` v1.29+ or the Docker Compose plugin (v2+). See the Server deployment guide for examples.
+## Recommended
 
-- git
-  - Required to clone the repository and fetch submodules or templates.
+- Linux (or WSL2 on Windows)
+- `curl` for endpoint checks
+- separate terminals for server and exploit logs
 
-## Optional / Development prerequisites
+## Quick validation
 
-- Go (for server internals development)
-  - If you plan to build the server from source, install Go (1.26+ recommended; check Dev Setup for exact versions).
+```bash
+docker --version
+docker compose version
+python3 --version
+pip --version
+```
 
-- Bun
-  - Needed only for dashboard/frontend development. Use the versions specified in the Dev Setup or the frontend package manager config.
-
-- Just, uglifyjs, tailwindcss 
-  - Helpful build scripts and Justfile may require `make`, `jq`, `curl`, etc.
-
-## Network and ports
-
-- CookieFarm services are configurable; ports and host bindings are defined in the configuration (see the Server configuration guide).
-- Ensure outbound network connectivity for exploits that must reach target services and for the server to contact any external flag submission endpoints.
-- When running locally, remember to open the ports used by the server and dashboard in your firewall if you need external access.
-
-## Verifying your environment
-
-To check the basic tools, run the following commands in your shell (examples only):
-
-  python --version
-  pip --version
-  docker --version
-  docker compose version
-  git --version
-  go version
-
-(If using Docker Compose as a plugin, `docker compose version` will show the plugin version. If using the standalone binary, use `docker-compose --version`.)
-
-## Common installation tips
-
-- Use a Python virtual environment:
-  - Create one with `python -m venv .venv` and activate it before installing the `ckc` client or other Python dependencies.
-- Prefer `pipx` if you want the `ckc` CLI installed globally but isolated from other Python packages.
-- Keep Docker and Compose up to date to avoid subtle compatibility issues.
-- On Windows, use WSL2 for the best compatibility with Linux-oriented tooling and Docker.
+If any of these is missing, complete your toolchain setup before continuing.

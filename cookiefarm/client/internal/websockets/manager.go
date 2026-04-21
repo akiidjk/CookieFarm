@@ -121,7 +121,7 @@ func GetConnection() (*websocket.Conn, error) {
 
 	conn, err := tryToConnect(cm, maxAttempts, dialer)
 	if err == nil {
-		logger.Log.Info().Msg("Successfully connected to WebSocket")
+		logger.Log.Debug().Msg("Successfully connected to WebSocket")
 		monitor.SetStatus(StatusConnected)
 		return conn, nil
 	}
@@ -157,7 +157,7 @@ func WSHandleMessage(message []byte) error {
 		return err
 	}
 
-	logger.Log.Debug().Str("type", event.Type).Str("Payload", string(event.Payload)).Msg("Received event")
+	// logger.Log.Debug().Str("type", event.Type).Str("Payload", string(event.Payload)).Msg("Received event")
 
 	switch event.Type {
 	case ConfigEvent:

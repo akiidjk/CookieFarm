@@ -18,7 +18,7 @@ func startReader(conn *gorilla.Conn) {
 
 // Start initializes the submission loop to the cookiefarm server.
 func Start(flagsChan <-chan database.Flag) error {
-	logger.Log.Info().Msg("Starting submission loop to the cookiefarm server with websockets (websockets) ...")
+	logger.Log.Debug().Msg("Starting submission loop to the cookiefarm server with websockets (websockets) ...")
 
 	conn, err := GetConnection()
 	if err != nil {

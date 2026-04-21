@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"logger"
 	"os"
-	"sharedconfig"
 	"strings"
 
 	"client/api"
@@ -14,7 +13,7 @@ import (
 	"client/config"
 )
 
-var VERSION = sharedconfig.GetVersion()
+var Version = "dev"
 
 func configCheck(cm *config.ConfigManager) error {
 	remoteCfg, err := api.GetConfig()
@@ -51,5 +50,5 @@ func main() {
 		}
 	}
 
-	cmd.ParseArgs(VERSION, logger.CookieCLIColorSchema)
+	cmd.ParseArgs(Version, logger.CookieCLIColorSchema)
 }

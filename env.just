@@ -1,7 +1,7 @@
 #!/usr/bin/env just --justfile
 # === COMMON VARIABLES ===
 
-VERSION := "1.2.2"
+VERSION := `git describe --tags --abbrev=0`
 RESET := "\\033[0m"
 
 # === SERVER VARIABLES ===

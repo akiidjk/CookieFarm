@@ -7,7 +7,6 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
-	"sharedconfig"
 	"syscall"
 	"time"
 
@@ -26,8 +25,8 @@ import (
 )
 
 var (
-	enablePprof bool   // Enable pprof for profiling
-	VERSION     string = sharedconfig.GetVersion()
+	enablePprof bool // Enable pprof for profiling
+	Version     string
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -37,12 +36,12 @@ var RootCmd = &cobra.Command{
 	Short:   "Server component of the CookieFarm A/D exploitation framework",
 	Long:    `CookieFarm is an automated attack/defense (A/D) exploitation framework developed by the ByteTheCookies team for the CyberChallenge competition. This is the server-side component responsible for coordinating exploit deployment, managing targets, and interfacing with CLI clients.`, //nolint:revive
 	Run:     Run,
-	Version: VERSION,
+	Version: Version,
 }
 
 func Execute() {
 	theme := logger.CookieCLIColorSchema
-	if err := fang.Execute(context.TODO(), RootCmd, fang.WithVersion(VERSION), fang.WithTheme(theme)); err != nil {
+	if err := fang.Execute(context.TODO(), RootCmd, fang.WithVersion(Version), fang.WithTheme(theme)); err != nil {
 		os.Exit(1)
 	}
 }

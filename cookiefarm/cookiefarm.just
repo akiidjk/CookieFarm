@@ -84,7 +84,7 @@ server-watch:
 client-build:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @go build  -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
+    @go build  -ldflags="-X 'main.Version={{ VERSION }}'" -gcflags="-m" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Client build complete!{{ RESET }}"
 
 # Build client for Windows
@@ -93,7 +93,7 @@ client-build:
 client-build-windows:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Windows...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=windows GOARCH=amd64 go build -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
+    @GOOS=windows GOARCH=amd64 go build -ldflags="-X 'main.Version={{ VERSION }}'" -gcflags="-m" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Windows build complete!{{ RESET }}"
 
 # Build client for Linux
@@ -102,7 +102,7 @@ client-build-windows:
 client-build-linux:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Linux...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=linux GOARCH=amd64 go build -ldflags="-X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}}{{ CLIENT_MAIN_FILE }}
+    @GOOS=linux GOARCH=amd64 go build -ldflags="-X 'main.Version={{ VERSION }}'" -gcflags="-m" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Linux build complete!{{ RESET }}"
 
 # Build client for production (Linux)
@@ -111,7 +111,7 @@ client-build-linux:
 client-build-linux-prod:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Linux production...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=linux GOARCH=amd64 go build  -ldflags="-X main.Version={{ VERSION }}" -race -trimpath -gcflags="-m" -ldflags="-s -w" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
+    @GOOS=linux GOARCH=amd64 go build  -ldflags="-s -w -X 'main.Version={{ VERSION }}'" -race -trimpath -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Linux production build complete!{{ RESET }}"
 
 # Build client for production (Windows)
@@ -120,7 +120,7 @@ client-build-linux-prod:
 client-build-windows-prod:
     @{{ ECHO_CMD }} "{{ CYAN }}[*] Building client for Windows production...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ CLIENT_BIN_DIR }}
-    @GOOS=windows GOARCH=amd64 go build -trimpath -gcflags="-m" -ldflags="-s -w -X main.Version={{ VERSION }}" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
+    @GOOS=windows GOARCH=amd64 go build -trimpath -gcflags="-m" ldflags="-s -w -X 'main.Version={{ VERSION }}'" -o {{ CLIENT_BIN_DIR }}{{ PATHSEP }}{{ CLIENT_BINARY_NAME }} {{ CLIENT_CMD_DIR }}{{ PATHSEP }}{{ CLIENT_MAIN_FILE }}
     @{{ ECHO_CMD }} "{{ GREEN }}[+] Windows production build complete!{{ RESET }}"
 
 # Build client for production (all platforms)

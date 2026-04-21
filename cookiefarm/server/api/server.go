@@ -12,8 +12,9 @@ import (
 	"server/ui"
 
 	"github.com/bytedance/sonic"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/compress"
+	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
 // newConfig returns a configured Fiber config struct.
@@ -29,27 +30,20 @@ func newConfig(debug bool) fiber.Config {
 
 	if debug {
 		cfg.AppName = "CookieFarm Server (Dev)"
-		cfg.DisableStartupMessage = false
 		cfg.CaseSensitive = false
 		cfg.StrictRouting = false
-		cfg.EnablePrintRoutes = true
 	} else {
 		cfg.AppName = "CookieFarm Server"
-		cfg.DisableStartupMessage = false
 		cfg.CaseSensitive = true
 		cfg.StrictRouting = true
-		cfg.EnablePrintRoutes = false
 	}
 
-	cfg.Prefork = false        // Disable prefork mode (multi-process); not needed here.
 	cfg.ServerHeader = "Fiber" // Custom server header.
 
 	return cfg
 }
 
 func PrepareStatic(app *fiber.App) error {
-	// Serve static assets from public folders with compression and caching
-
 	type staticRoute struct {
 		route string
 		dir   string
@@ -57,25 +51,25 @@ func PrepareStatic(app *fiber.App) error {
 
 	routes := []staticRoute{
 		{"/css", "./server/public/css"},
-		{"/js", "./server//public/js"},
+		{"/js", "./server/public/js"},
 		{"/images", "./server/public/images"},
 	}
 
-	var staticCfg fiber.Static
+	var staticCfg static.Config
 	if config.Cache {
-		staticCfg = fiber.Static{
+		staticCfg = static.Config{
 			Compress:      true,
 			CacheDuration: 10 * time.Second,
 			MaxAge:        3600,
 		}
 	} else {
-		staticCfg = fiber.Static{
+		staticCfg = static.Config{
 			Compress: true,
 		}
 	}
 
 	for _, r := range routes {
-		app.Static(r.route, r.dir, staticCfg)
+		app.Get(r.route+"/*", static.New(r.dir, staticCfg))
 	}
 
 	return nil
@@ -102,7 +96,7 @@ func NewApp() (*fiber.App, error) {
 
 	// Log static file requests in debug mode
 	if config.Debug {
-		app.Use(func(c *fiber.Ctx) error {
+		app.Use(func(c fiber.Ctx) error {
 			for _, prefix := range staticPrefixes {
 				if strings.HasPrefix(c.Path(), prefix) {
 					logger.Log.Debug().Str("path", c.Path()).Msg("Serving static asset")

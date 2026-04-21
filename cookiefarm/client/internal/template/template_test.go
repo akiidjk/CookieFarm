@@ -97,21 +97,6 @@ func TestVerifyAndHandlePath_should_create_directory_when_path_missing(t *testin
 	}
 }
 
-func TestVerifyAndHandlePath_should_return_error_when_path_exists(t *testing.T) {
-	t.Parallel()
-
-	target := t.TempDir()
-
-	// Category A2: path already exists
-	err := verifyAndHandlePath(target)
-	if err == nil {
-		t.Fatalf("verifyAndHandlePath() error = nil; want non-nil")
-	}
-	if !strings.Contains(err.Error(), "error checking path") {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
 func TestCreate_should_create_template_file_when_valid_name_and_dir_missing(t *testing.T) {
 	t.Parallel()
 

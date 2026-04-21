@@ -1,9 +1,5 @@
 package sharedconfig
 
-import (
-	"runtime/debug"
-)
-
 type Shared struct {
 	Services      map[string]uint16 `json:"services" yaml:"services"`               // List of services to exploit
 	RegexFlag     string            `json:"regex_flag" yaml:"regex_flag"`           // Regex used to identify flags in output
@@ -17,12 +13,4 @@ type Shared struct {
 
 func (cfg *Shared) Set(newcfg Shared) {
 	*cfg = newcfg
-}
-
-func GetVersion() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return ""
-	}
-	return info.Main.Version
 }

@@ -7,7 +7,7 @@ import (
 	"server/config"
 	"server/database"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 const (
@@ -44,12 +44,12 @@ func MakePagination(current, totalPages int) []int {
 
 // HandleIndexPage renders the main dashboard page.
 // It checks the cookie-based authentication and sets the default pagination limit.
-func HandleIndexPage(c *fiber.Ctx) error {
+func HandleIndexPage(c fiber.Ctx) error {
 	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
 
-	limit := c.QueryInt("limit", config.DefaultLimit)
+	limit := fiber.Query[int](c, "limit", config.DefaultLimit)
 	if limit <= 0 {
 		limit = config.DefaultLimit
 	}
@@ -62,29 +62,29 @@ func HandleIndexPage(c *fiber.Ctx) error {
 }
 
 // HandleLoginPage renders the login page.
-func HandleLoginPage(c *fiber.Ctx) error {
+func HandleLoginPage(c fiber.Ctx) error {
 	return c.Render("pages/login", map[string]any{}, pathMainLayout)
 }
 
 // HandlePartialsPagination renders only the pagination component as a partial view.
 // It computes the current page and the total number of pages based on the flags count.
-func (h *Handler) HandlePartialsPagination(c *fiber.Ctx) error {
+func (h *Handler) HandlePartialsPagination(c fiber.Ctx) error {
 	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
 
-	limit, err := c.ParamsInt("limit", config.DefaultLimit)
+	limit, err := fiber.Params[int](c, "limit", config.DefaultLimit), error(nil)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid 'limit' parameter")
 	}
 	logger.Log.Debug().Int("limit", limit).Msg("Paginated flags request")
 
-	totalFlags, err := h.store.Queries.CountFlags(c.Context())
+	totalFlags, err := h.store.Queries.CountFlags(c.RequestCtx())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error retrieving flag count")
 	}
 
-	offset := c.QueryInt("offset", config.DefaultOffset)
+	offset := fiber.Query[int](c, "offset", config.DefaultOffset)
 
 	totalPages := int(math.Ceil(float64(totalFlags) / float64(limit)))
 	current := offset / limit
@@ -106,20 +106,20 @@ func (h *Handler) HandlePartialsPagination(c *fiber.Ctx) error {
 
 // HandlePartialsFlags renders only the flags rows as a partial view.
 // It fetches a limited and paginated list of flags from the database.
-func (h *Handler) HandlePartialsFlags(c *fiber.Ctx) error {
+func (h *Handler) HandlePartialsFlags(c fiber.Ctx) error {
 	if err := CookieAuthMiddleware(c); err != nil {
 		return err
 	}
 
-	limit, err := c.ParamsInt("limit", config.DefaultLimit)
+	limit, err := fiber.Params[int](c, "limit", config.DefaultLimit), error(nil)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid 'limit' parameter")
 	}
 
-	offset := c.QueryInt("offset", config.DefaultOffset)
+	offset := fiber.Query[int](c, "offset", config.DefaultOffset)
 	logger.Log.Debug().Int("offset", offset).Int("limit", limit).Msg("Paginated flags request")
 
-	flags, err := h.store.Queries.GetPagedFlags(c.Context(), database.GetPagedFlagsParams{
+	flags, err := h.store.Queries.GetPagedFlags(c.RequestCtx(), database.GetPagedFlagsParams{
 		Limit:  int64(limit),
 		Offset: int64(offset),
 	})
@@ -135,3 +135,5 @@ func (h *Handler) HandlePartialsFlags(c *fiber.Ctx) error {
 
 	return c.Render("partials/flags_rows", data)
 }
+
+// fiber:context-methods migrated

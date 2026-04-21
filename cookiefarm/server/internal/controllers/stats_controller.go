@@ -5,7 +5,7 @@ import (
 
 	"server/database"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // StatsController handles the statistics of the flag collector
@@ -16,7 +16,7 @@ func NewStatsController() *StatsController {
 }
 
 // GetFlagStats return the statistics of the flag collector
-func (*StatsController) GetFlagStats(ctx *fiber.Ctx) error {
+func (*StatsController) GetFlagStats(ctx fiber.Ctx) error {
 	collector := database.GetCollector()
 	stats := collector.GetStats()
 	bufferSize := collector.GetBufferSize()
@@ -38,7 +38,7 @@ func (*StatsController) GetFlagStats(ctx *fiber.Ctx) error {
 }
 
 // ForceFlushFlags force a flush of the flags in the collector
-func (*StatsController) ForceFlushFlags(ctx *fiber.Ctx) error {
+func (*StatsController) ForceFlushFlags(ctx fiber.Ctx) error {
 	collector := database.GetCollector()
 
 	statsBefore := collector.GetStats()

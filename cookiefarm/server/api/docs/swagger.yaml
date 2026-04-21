@@ -1,0 +1,546 @@
+basePath: /api/v1
+consumes:
+- application/json
+definitions:
+  api.ResponseError:
+    properties:
+      details:
+        description: Details for the error response
+        type: string
+      error:
+        description: Error message for the error response
+        type: string
+    type: object
+  api.ResponseFlags:
+    properties:
+      flags:
+        items:
+          $ref: '#/definitions/database.Flag'
+        type: array
+      n_flags:
+        type: integer
+    type: object
+  api.ResponseSharedConfig:
+    properties:
+      configured:
+        description: True if configuration has been loaded and validated
+        type: boolean
+      format_ip_teams:
+        description: Format string for generating team IPs
+        type: string
+      my_team_id:
+        description: ID of the current team
+        type: integer
+      nop_team:
+        description: The id of the nop team in the ctf
+        type: integer
+      range_ip_teams:
+        description: Number of teams / IP range
+        type: integer
+      regex_flag:
+        description: Regex used to identify flags in output
+        type: string
+      services:
+        additionalProperties:
+          format: int32
+          type: integer
+        description: List of services to exploit
+        type: object
+      url_flag_ids:
+        description: URLFlagIds is the where the flagsId server is running
+        type: string
+    type: object
+  api.ResponseSuccess:
+    properties:
+      message:
+        description: Message for the success response
+        type: string
+    type: object
+  api.SigninRequest:
+    properties:
+      password:
+        type: string
+      username:
+        description: Username for authentication
+        type: string
+    type: object
+  api.UpdateConfigRequest:
+    properties:
+      config:
+        $ref: '#/definitions/sharedconfig.Shared'
+    type: object
+  database.Flag:
+    properties:
+      exploit_name:
+        type: string
+      flag_code:
+        type: string
+      msg:
+        type: string
+      port_service:
+        type: integer
+      response_time:
+        type: integer
+      service_name:
+        type: string
+      status:
+        type: integer
+      submit_time:
+        type: integer
+      team_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  models.SubmitFlagRequest:
+    properties:
+      flag:
+        allOf:
+        - $ref: '#/definitions/database.Flag'
+        description: Flag to submit
+    type: object
+  models.SubmitFlagsRequest:
+    properties:
+      flags:
+        description: Flags to submit
+        items:
+          $ref: '#/definitions/database.Flag'
+        type: array
+    type: object
+  sharedconfig.Shared:
+    properties:
+      configured:
+        description: True if configuration has been loaded and validated
+        type: boolean
+      format_ip_teams:
+        description: Format string for generating team IPs
+        type: string
+      my_team_id:
+        description: ID of the current team
+        type: integer
+      nop_team:
+        description: The id of the nop team in the ctf
+        type: integer
+      range_ip_teams:
+        description: Number of teams / IP range
+        type: integer
+      regex_flag:
+        description: Regex used to identify flags in output
+        type: string
+      services:
+        additionalProperties:
+          format: int32
+          type: integer
+        description: List of services to exploit
+        type: object
+      url_flag_ids:
+        description: URLFlagIds is the where the flagsId server is running
+        type: string
+    type: object
+info:
+  contact: {}
+  description: CookieFarm REST API for authentication, configuration, flags, and stats.
+  title: CookieFarm Server API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Returns a simple status response to confirm the server is online.
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: API status
+      tags:
+      - system
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and issues a JWT cookie.
+      parameters:
+      - description: Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.SigninRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login
+      tags:
+      - auth
+  /auth/verify:
+    get:
+      description: Verifies if JWT cookie token is valid and not expired.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Verify token
+      tags:
+      - auth
+  /config:
+    get:
+      description: Returns current shared configuration used by clients/exploit runtime.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseSharedConfig'
+      security:
+      - CookieAuth: []
+      summary: Get shared config
+      tags:
+      - config
+    post:
+      consumes:
+      - application/json
+      description: Updates shared configuration and restarts background runner loops.
+      parameters:
+      - description: Shared config payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseSuccess'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: Update shared config
+      tags:
+      - config
+  /delete-flag:
+    delete:
+      description: Deletes one flag by `flag` query parameter (flag code).
+      parameters:
+      - description: Flag code
+        in: query
+        name: flag
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: Delete flag
+      tags:
+      - flags
+  /flags:
+    get:
+      description: Returns all stored flags.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseFlags'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: List flags
+      tags:
+      - flags
+  /flags/{limit}:
+    get:
+      description: Returns paginated flags with optional status/team/search filters.
+      parameters:
+      - description: Page size
+        in: path
+        name: limit
+        required: true
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Status filter
+        in: query
+        name: status
+        type: integer
+      - description: Service filter
+        in: query
+        name: service
+        type: string
+      - description: Team filter
+        in: query
+        name: team
+        type: string
+      - description: Search text
+        in: query
+        name: search
+        type: string
+      - description: Search field
+        in: query
+        name: search_field
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseFlags'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: List flags (paginated)
+      tags:
+      - flags
+  /protocols:
+    get:
+      description: Returns protocol plugins available on server.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                type: string
+              type: array
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: List protocols
+      tags:
+      - protocols
+  /stats:
+    get:
+      description: Returns aggregated server/flags statistics.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: Get stats
+      tags:
+      - stats
+  /submit-flag:
+    post:
+      consumes:
+      - application/json
+      description: Stores one flag and attempts checker submission immediately.
+      parameters:
+      - description: Flag payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SubmitFlagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseSuccess'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: Submit one flag
+      tags:
+      - submit
+  /submit-flags:
+    post:
+      consumes:
+      - application/json
+      description: Stores a batch of flags without immediate external checker submission.
+      parameters:
+      - description: Flags payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SubmitFlagsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseSuccess'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: Submit flag batch (store only)
+      tags:
+      - submit
+  /submit-flags-standalone:
+    post:
+      consumes:
+      - application/json
+      description: Stores a batch and attempts checker submission immediately.
+      parameters:
+      - description: Flags payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SubmitFlagsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ResponseSuccess'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      security:
+      - CookieAuth: []
+      summary: Submit flag batch (standalone)
+      tags:
+      - submit
+  /swagger:
+    get:
+      description: Returns a simple Swagger UI page for browsing the API.
+      responses:
+        "200":
+          description: html
+          schema:
+            type: string
+      summary: Swagger UI
+      tags:
+      - docs
+  /swagger/doc.json:
+    get:
+      description: Returns the generated Swagger/OpenAPI JSON document.
+      responses:
+        "200":
+          description: swagger json
+          schema:
+            type: string
+      summary: Swagger document
+      tags:
+      - docs
+produces:
+- application/json
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Use `Bearer <jwt-token>`.
+    in: header
+    name: Authorization
+    type: apiKey
+  CookieAuth:
+    description: Session JWT cookie returned by `/api/v1/auth/login`.
+    in: cookie
+    name: token
+    type: apiKey
+swagger: "2.0"

@@ -8,8 +8,8 @@ import (
 
 	"server/config"
 
-	"github.com/gofiber/contrib/websocket"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/contrib/v3/websocket"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -66,7 +66,7 @@ func VerifyToken(token string) error {
 }
 
 // CookieAuthMiddleware verifies the JWT token from the cookie
-func CookieAuthMiddleware(c *fiber.Ctx) error {
+func CookieAuthMiddleware(c fiber.Ctx) error {
 	token := c.Cookies("token")
 	if token == "" || VerifyToken(token) != nil {
 		return fiber.ErrUnauthorized
@@ -75,7 +75,7 @@ func CookieAuthMiddleware(c *fiber.Ctx) error {
 }
 
 // WebSocketUpgrade middleware for upgrading the connection to WebSocket
-func WebSocketUpgrade(c *fiber.Ctx) error {
+func WebSocketUpgrade(c fiber.Ctx) error {
 	if websocket.IsWebSocketUpgrade(c) {
 		return c.Next()
 	}

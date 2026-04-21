@@ -44,7 +44,7 @@ func (m *ConnectionMonitor) SetConnection(conn *websocket.Conn) {
 		go m.startMonitoring()
 	}
 
-	logger.Log.Info().Msg("WebSocket connection registered with monitor")
+	logger.Log.Debug().Msg("WebSocket connection registered with monitor")
 }
 
 // RecordDisconnect records a disconnection event

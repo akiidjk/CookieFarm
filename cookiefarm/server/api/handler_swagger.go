@@ -30,7 +30,7 @@ func HandleSwaggerDoc(c fiber.Ctx) error {
 // @Success 200 {string} string "html"
 // @Router /swagger [get]
 func HandleSwaggerUI(c fiber.Ctx) error {
-	specURL := fmt.Sprintf("swagger/doc.json")
+	specURL := "swagger/doc.json"
 
 	html := fmt.Sprintf(`<!doctype html>
 <html>

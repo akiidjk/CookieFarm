@@ -1,0 +1,39 @@
+---
+title: Client Overview
+description: What `ckc` does and how to use it effectively during an Attack/Defense CTF.
+---
+
+# Client Overview
+
+`ckc` is the operational client for CookieFarm.
+
+It is used to:
+
+- configure server connection
+- authenticate and store session
+- create/test/run exploits
+- submit flags manually
+
+## Recommended Competition Workflow
+
+1. Run `ckc config login` at competition start.
+2. Run `ckc exploit test` on NOP team to validate output.
+3. Run `ckc exploit run` with controlled tick/thread values.
+4. Keep dashboard open to monitor accepted/denied trends.
+
+## Local Files
+
+Directory: `~/.config/cookiefarm/`
+
+Main files:
+- `client.yml` (host, port, username, https)
+- `shared.yml` (shared config fetched from server)
+- `session` (token)
+- `exploits/` (templates created by `ckc exploit create`)
+
+## Main Commands
+
+- `ckc config ...`
+- `ckc exploit ...`
+
+For full details: [CLI Reference](/docs/client/cli-reference).

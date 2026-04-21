@@ -1,0 +1,46 @@
+---
+title: Client Authentication
+description: Login/logout for `ckc` and local session handling.
+---
+
+# Client Authentication
+
+Client auth is cookie-JWT based, with token stored locally in `~/.config/cookiefarm/session`.
+
+## Login
+
+```bash
+ckc config login -H <server-host> -p <port> -u <username> -P <password>
+```
+
+Example:
+
+```bash
+ckc config login -H 127.0.0.1 -p 8080 -u team01 -P SuperSecret
+```
+
+What it does:
+
+1. updates local config (`client.yml`)
+2. logs in through `/api/v1/auth/login`
+3. stores session token
+4. fetches shared config and writes `shared.yml`
+
+## Logout
+
+```bash
+ckc config logout
+```
+
+Removes local `session` file.
+
+## Show current config
+
+```bash
+ckc config show
+```
+
+## Common Errors
+
+- `Login failed`: wrong password or server unreachable.
+- `shared configuration has changed`: run `ckc config login` again to resync `shared.yml`.

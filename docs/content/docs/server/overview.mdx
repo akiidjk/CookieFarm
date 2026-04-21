@@ -1,0 +1,39 @@
+---
+title: Server Overview
+description: Role of the `cks` server in CookieFarm and exposed runtime services.
+---
+
+# Server Overview
+
+`cks` is the central coordinator in CookieFarm.
+
+Main responsibilities:
+
+- client/dashboard authentication
+- flag ingestion through API/WebSocket
+- SQLite persistence
+- periodic submission to external checker
+- dashboard rendering
+
+## Main components
+
+- `api/` REST routes + view handlers
+- `internal/core/` submit loop and TTL loop
+- `internal/database/` store + SQLC queries + collector
+- `internal/websockets/` WS manager for ingest/config broadcast
+- `internal/ui/` dashboard templates
+
+## Configuration modes
+
+- `CONFIG_FILE=true`: boot from `config.yml`
+- `CONFIG_FILE=false`: configure through dashboard (`/api/v1/config`)
+
+## Persistence
+
+SQLite DB with `flags` table.
+
+`flag_code` is primary key; duplicate inserts are ignored.
+
+## Deployment scope
+
+Usually one server instance per team (unless you maintain a custom HA setup), centralizing submission and flag state.

@@ -1,0 +1,107 @@
+---
+title: Server Internals
+description: CookieFarm server internals process lifecycle, API, WebSocket, DB and submission loops.
+---
+
+# Server Internals
+
+## Boot Sequence (`cks`)
+
+1. load env/config and logger
+2. initialize SQLite DB + store
+3. initialize runner (`core.Runner`)
+4. create Fiber app + template engine + static assets
+5. register API, view and WebSocket routes
+6. start HTTP server and graceful shutdown handlers
+
+Files: `cookiefarm/server/cmd/root.go`, `server/api/server.go`.
+
+## Authentication Model
+
+- login via `POST /api/v1/auth/login`
+- JWT stored in cookie `token`
+- cookie middleware for view routes and websocket
+
+Protected view endpoints redirect to `/login` when token is invalid.
+
+## Essential Route Map
+
+Public:
+- `GET /api/v1/`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/auth/verify`
+- `GET /api/v1/protocols`
+
+Private (JWT):
+- `GET /api/v1/config`
+- `POST /api/v1/config`
+- `POST /api/v1/submit-flag`
+- `POST /api/v1/submit-flags`
+- `POST /api/v1/submit-flags-standalone`
+- `DELETE /api/v1/delete-flag`
+- `GET /api/v1/flags*`
+
+View:
+- `/dashboard`, `/flags/:limit`, `/pagination/:limit`
+
+WebSocket:
+- `/ws`
+
+## Concurrency Model
+
+## HTTP path
+
+Fiber handles concurrent requests; DB store is shared safely through Go SQL driver primitives.
+
+## WebSocket path
+
+Per WS client:
+- one read loop (`ReadMessages`)
+- one write loop (`WriteMessages`)
+- buffered `Egress` channel
+
+Correct pattern: only writer loop writes to the socket.
+
+## Flag collector path
+
+`FlagCollector` uses mutex + timer + conditional flush.
+
+Flush triggers:
+- buffer full
+- periodic timer
+- collector stop
+
+## Runner internals
+
+`core.Runner` starts two cancellable loops:
+
+1. submit loop (`StartFlagProcessingLoop`)
+2. optional TTL cleanup (`ValidateFlagTTL`)
+
+When config is updated from dashboard (`POST /api/v1/config`), runner restarts with a new context.
+
+## DB Model
+
+Main table: `flags`.
+
+Key fields:
+- `flag_code` PK
+- `status`
+- `submit_time`
+- `response_time`
+- `service_name`, `team_id`, `exploit_name`
+
+Dedup semantics: `INSERT OR IGNORE` by `flag_code`.
+
+## Server-Side UI
+
+Fiber template engine with helper functions (`format_timestamp`, `map_status`, arithmetic helpers).
+
+Pages are SSR; table updates happen through HTMX partial endpoints.
+
+## Operational Notes
+
+- `CONFIG_FILE=true` enables `config.yml` bootstrap.
+- If web config is incomplete (`url_flag_checker` empty), submit API stores flags but cannot forward them to checker.
+- `flag_ttl` is in ticks, not absolute seconds.
+- WS manager enforces connection lifetime/timeouts (important for long runs).

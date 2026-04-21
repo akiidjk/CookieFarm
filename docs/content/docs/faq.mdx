@@ -1,0 +1,59 @@
+---
+title: FAQ
+description: Essential FAQ for operating CookieFarm in Attack/Defense competitions.
+---
+
+# FAQ
+
+## `ckc` says shared config changed
+
+Run login again:
+
+```bash
+ckc config login -H <host> -p <port> -u <user> -P <password>
+```
+
+## Flags remain `UNSUBMITTED`
+
+Check:
+- `url_flag_checker`
+- `protocol`
+- checker reachability
+- backlog and batch size
+
+## Sudden increase in `DENIED`
+
+Typical causes:
+- exploit logic is stale
+- wrong flag regex
+- target got patched
+
+Quick retest:
+
+```bash
+ckc exploit test -e <exploit> -n <service>
+```
+
+## WebSocket unstable during `exploit run`
+
+Use temporary fallback:
+
+```bash
+ckc exploit run -e <exploit> -n <service> -S
+```
+
+## Where are client files stored?
+
+`~/.config/cookiefarm/`
+
+- `client.yml`
+- `shared.yml`
+- `session`
+- `exploits/`
+
+## How to stop a running exploit?
+
+```bash
+ckc exploit list
+ckc exploit stop -p <pid>
+```

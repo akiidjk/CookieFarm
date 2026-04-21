@@ -1,0 +1,108 @@
+---
+title: Dev setup
+description: Local development setup for CookieFarm (Go + Python + Bun).
+---
+
+# Development setup — CookieFarm
+
+This page defines the recommended local development setup for CookieFarm.
+
+## Required versions
+
+- Go `1.26+`
+- Python `3.14+`
+- Bun (latest stable)
+- Docker + Docker Compose
+- Git
+
+## Verify toolchain
+
+```bash
+git --version
+go version
+python3 --version
+bun --version
+docker --version
+docker compose version
+```
+
+## Clone repository
+
+```bash
+git clone https://github.com/ByteTheCookies/CookieFarm.git
+cd CookieFarm
+```
+
+## Server (Go)
+
+```bash
+cd cookiefarm/server
+go mod download
+go build ./...
+go test ./... -v
+```
+
+Run server locally:
+
+```bash
+go run .
+```
+
+## Client (Go CLI)
+
+```bash
+cd cookiefarm/client
+go mod download
+go build ./...
+go test ./... -v
+```
+
+## Python exploiter library
+
+```bash
+cd exploiter/python
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+```
+
+Optional tests:
+
+```bash
+pytest -q
+```
+
+## Docs (Bun only)
+
+```bash
+cd docs
+bun install
+bun run dev
+```
+
+Type check/build:
+
+```bash
+bun run types:check
+bun run build
+```
+
+## Run full stack with Docker
+
+```bash
+cd cookiefarm
+docker compose up -d --build
+```
+
+Quick API check:
+
+```bash
+curl -i --max-time 5 http://127.0.0.1:8080/api/v1/
+```
+
+## Notes
+
+- Use Bun for docs/frontend package management and scripts.
+- Use Bun as the only JavaScript package manager/runtime in this project workflow.
+- Keep local environment aligned with the versions above before opening PRs.

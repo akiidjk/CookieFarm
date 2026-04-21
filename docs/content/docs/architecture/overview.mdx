@@ -1,0 +1,94 @@
+---
+title: Architecture Overview
+description: Real CookieFarm architecture components, data flow, and practical A/D decisions.
+---
+
+# Architecture Overview
+
+CookieFarm is built around 4 core blocks:
+
+1. `cks` (Go server)
+2. `ckc` (Go client)
+3. Python `cookiefarm` exploiter runtime
+4. web dashboard (server-rendered templates + HTMX)
+
+## A/D Operational Flow
+
+1. Write a Python exploit with `@exploit_manager`.
+2. Start it with `ckc exploit run` or `ckc exploit test`.
+3. The client launches the exploit process and parses each JSON line from Python runtime output.
+4. Valid flags are forwarded to server:
+   - WebSocket (default)
+   - direct HTTP with `-S`
+5. Server persists flags in SQLite.
+6. Server runner sends batches to the external flag checker via configured protocol.
+7. Dashboard displays accepted/denied/error/unsubmitted state.
+
+## Components and Responsibilities
+
+## `ckc` client
+
+- CLI commands (`config`, `exploit`)
+- local session handling (`~/.config/cookiefarm/session`)
+- exploit process execution with stdout/stderr streaming
+- exploit output parsing and flag forwarding
+
+Key files:
+- `cookiefarm/client/cmd/*`
+- `cookiefarm/client/internal/exploit/*`
+- `cookiefarm/client/internal/websockets/*`
+
+## Python exploit runtime
+
+- runtime argument parser (`-s -t -T -p -n -x`)
+- shared config fetch from server (`/api/v1/config`)
+- concurrent execution over target teams
+- structured JSON events (`success`, `failed`, `stats`, `error`)
+
+Key files:
+- `exploiter/python/cookiefarm/exploiter_manager.py`
+- `exploiter/python/cookiefarm/exploit_executor.py`
+- `exploiter/python/cookiefarm/logger.py`
+
+## `cks` server
+
+- REST API (`/api/v1/*`)
+- cookie-based JWT auth
+- HTTP and WebSocket flag ingestion
+- SQLite persistence (`flags`)
+- periodic submit loop to external checker
+- optional TTL cleanup
+
+Key files:
+- `cookiefarm/server/api/*`
+- `cookiefarm/server/internal/core/*`
+- `cookiefarm/server/internal/database/*`
+- `cookiefarm/server/internal/websockets/*`
+
+## Dashboard
+
+- server-side rendered templates
+- HTMX partial updates for flags and pagination
+- manual flag submit/delete
+- server/shared configuration modal
+
+Key files:
+- `cookiefarm/server/internal/ui/views/*`
+- `cookiefarm/server/assets/js/*`
+
+## End-to-End Data Path
+
+```text
+Python exploit -> ckc parser -> flags channel
+                        -> websocket/http -> cks API/WS
+                        -> collector -> sqlite flags
+                        -> runner submit loop -> flagchecker
+                        -> status update in DB -> dashboard
+```
+
+## Practical Competition Decisions
+
+- Keep WebSocket as default for continuous ingestion.
+- Always run `ckc exploit test` before full run.
+- Keep `tick_time` and `thread_count` conservative; network saturation reduces accepted rate.
+- Track `submit_time` vs `response_time` delta to detect checker slowdown or backlog.

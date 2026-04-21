@@ -1,0 +1,9 @@
+{
+  "title": "Client",
+  "pages": [
+    "overview",
+    "installation",
+    "authentication",
+    "cli-reference"
+  ]
+}

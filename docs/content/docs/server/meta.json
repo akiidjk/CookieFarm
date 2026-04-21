@@ -1,0 +1,9 @@
+{
+  "title": "Server",
+  "pages": [
+    "overview",
+    "configuration",
+    "deployment",
+    "api-reference"
+  ]
+}

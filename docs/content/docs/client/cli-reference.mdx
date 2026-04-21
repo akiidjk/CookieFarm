@@ -1,0 +1,128 @@
+---
+title: CLI Reference
+description: Practical reference for currently available `ckc` commands.
+---
+
+# CLI Reference
+
+Base syntax:
+
+```bash
+ckc [global flags] <command> [subcommand] [flags]
+```
+
+Global flags:
+
+- `-D, --debug`
+- `-B, --banner`
+
+## `ckc config`
+
+### `ckc config update`
+
+Updates `client.yml`.
+
+Flags:
+- `-H, --host`
+- `-p, --port`
+- `-u, --username`
+- `-s, --https`
+
+### `ckc config login`
+
+Login and shared config sync.
+
+Flags:
+- `-H, --host`
+- `-p, --port`
+- `-u, --username`
+- `-s, --https`
+- `-P, --password` (required)
+
+### `ckc config logout`
+
+Removes local session.
+
+### `ckc config reset`
+
+Resets local config to defaults.
+
+### `ckc config show`
+
+Prints `client.yml` and `shared.yml`.
+
+## `ckc exploit`
+
+### `ckc exploit create`
+
+Creates Python exploit template.
+
+Flags:
+- `-n, --name` (required)
+
+### `ckc exploit remove`
+
+Removes exploit template.
+
+Flags:
+- `-n, --name` (required)
+
+### `ckc exploit test`
+
+Runs exploit in test mode (`-x` at Python runtime), typically against NOP team.
+
+Flags:
+- `-e, --exploit` (required)
+- `-n, --name`
+- `-d, --detach`
+- `-t, --tick` (default `120`)
+- `-T, --thread` (default `5`)
+
+### `ckc exploit run`
+
+Runs exploit in continuous loop.
+
+Flags:
+- `-e, --exploit` (required)
+- `-n, --name`
+- `-d, --detach`
+- `-t, --tick` (default `120`)
+- `-T, --thread` (default `5`)
+- `-S, --submit` (direct HTTP submit)
+
+### `ckc exploit list`
+
+Lists running exploits tracked in runtime.
+
+### `ckc exploit stop`
+
+Stops exploit by PID.
+
+Flags:
+- `-p, --pid` (required)
+
+### `ckc exploit submit`
+
+Manual single-flag submit.
+
+Flags:
+- `-f, --flag` (required)
+- `-n, --name`
+- `-t, --team`
+- `-m, --message`
+
+## Quick Examples
+
+```bash
+# Login
+ckc config login -H 127.0.0.1 -p 8080 -u team01 -P SuperSecret
+
+# Create template
+ckc exploit create -n web_sqli
+
+# Test exploit
+ckc exploit test -e web_sqli -n CookieService -t 30 -T 10
+
+# Run exploit continuously
+ckc exploit run -e web_sqli -n CookieService -t 60 -T 20
+```

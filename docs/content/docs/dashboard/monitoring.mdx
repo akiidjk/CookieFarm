@@ -1,0 +1,52 @@
+---
+title: Dashboard Monitoring
+description: How to read CookieFarm dashboard signals during an A/D competition.
+---
+
+# Dashboard Monitoring
+
+The dashboard is not a full SIEM. It is a fast operational view of flag pipeline health.
+
+## Signals to watch
+
+- continuous growth of `UNSUBMITTED`
+- sudden increase in `DENIED`
+- frequent `response_time = 0`
+- rising duration (`response_time - submit_time`)
+
+## Quick diagnostics
+
+## Too many `UNSUBMITTED`
+
+Possible causes:
+- checker unreachable
+- wrong submission protocol
+- batch size too large
+
+Actions:
+- verify `url_flag_checker`
+- verify `protocol`
+- reduce `max_flag_batch_size`
+
+## Too many `DENIED`
+
+Possible causes:
+- stale exploit logic
+- wrong flag regex
+- target patched
+
+Actions:
+- rerun `ckc exploit test`
+- compare exploit output with configured regex
+
+## No new flags
+
+Possible causes:
+- exploit crashed
+- client websocket disconnected
+- target service down
+
+Actions:
+- check exploit process (`ckc exploit list`)
+- inspect server/client logs
+- temporary fallback with `-S`

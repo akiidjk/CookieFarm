@@ -1,0 +1,106 @@
+---
+title: Flag Pipeline
+description: Real CookieFarm flag pipeline from exploit capture to checker submission and dashboard state.
+---
+
+# Flag Pipeline
+
+This page describes the real flag path implemented in CookieFarm code.
+
+## 1. Flag production (Python runtime)
+
+Python exploits print JSON to stdout. A valid capture event uses `status: "success"` and includes at least:
+
+- `flag_code`
+- `team_id`
+- `port_service`
+- `name_service`
+
+Output format is defined in `exploiter/python/cookiefarm/logger.py`.
+
+## 2. Client parsing (`ckc`)
+
+`ckc` reads stdout/stderr, parses JSON, and maps successful events into `database.Flag`.
+
+Main rules:
+- `success` -> queued to submit channel
+- `failed`, `error`, `fatal`, `info`, `debug` -> logged, not submitted
+- `stats` -> logged as round summary
+
+Files: `cookiefarm/client/internal/exploit/parse.go`, `run.go`.
+
+## 3. Server ingestion
+
+Two modes:
+
+1. WebSocket (default): `ckc exploit run`
+2. Direct HTTP: `ckc exploit run -S`
+
+WebSocket event type: `flag`.
+
+Server files: `server/internal/websockets/event.go`, `server/api/handler_api.go`.
+
+## 4. Buffering and persistence
+
+Server uses `FlagCollector`:
+
+- flush on size threshold (`maxBufferSize=100`)
+- periodic flush (`flushInterval=10s`)
+- writes to SQLite `flags` table (`INSERT OR IGNORE`)
+
+This prevents duplicate inserts for the same flag (`flag_code` is PK).
+
+## 5. Submission to flag checker
+
+Periodic server loop (`StartFlagProcessingLoop`):
+
+- fetches `unsubmitted` flags
+- submits batch using configured protocol (`pkg/protocols`)
+- updates DB status (`accepted/denied/error`)
+
+Relevant config:
+- `server.submit_flag_checker_time`
+- `server.max_flag_batch_size`
+- `server.protocol`
+
+## 6. Dashboard rendering
+
+Dashboard reads from DB:
+
+- paginated flag table
+- mapped state (`UNSUBMITTED/ACCEPTED/DENIED/ERROR`)
+- timing fields (`submit_time`, `response_time`, duration)
+
+## State meanings for A/D
+
+- `UNSUBMITTED` (`0`): queued, not processed by checker yet
+- `ACCEPTED` (`1`): valid flag
+- `DENIED` (`2`): rejected flag
+- `ERROR` (`3`): submit/check error
+
+## Practical Failure Modes
+
+## Exploit outputs non-JSON lines
+
+Symptom: no flags get queued.
+
+Action:
+- always use helper `log_status` in Python runtime
+- verify shared `regex_flag` config
+
+## Unstable WebSocket link
+
+Symptom: frequent reconnects, throughput drop.
+
+Action:
+- verify auth cookie/session
+- use temporary `-S` fallback during incident response
+
+## Checker slow or unavailable
+
+Symptom: large `UNSUBMITTED` backlog, `response_time` remains zero.
+
+Action:
+- reduce exploit threads
+- lower batch size
+- verify checker endpoint and protocol

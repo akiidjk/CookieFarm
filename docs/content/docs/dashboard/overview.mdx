@@ -1,0 +1,42 @@
+---
+title: Dashboard Overview
+description: CookieFarm dashboard overview flag table, manual submit, pagination and config modal.
+---
+
+# Dashboard Overview
+
+The current dashboard is focused on flag operations and runtime configuration.
+
+Main page: `/dashboard`.
+
+## What you get in the UI
+
+- flag table (code, message, service, status, timing)
+- manual reload
+- manual single flag submit
+- single flag delete
+- auto reload with configurable interval
+- HTMX pagination
+- modal for server/shared configuration
+
+## Main workflows
+
+## Monitor flags
+
+Data is loaded from:
+- `/flags/:limit?offset=...`
+- `/pagination/:limit?offset=...`
+
+## Manual submit
+
+- type flag in input field
+- click `Submit`
+- API call: `POST /api/v1/submit-flag`
+
+## Update config
+
+- open settings modal
+- save configuration
+- API call: `POST /api/v1/config`
+
+Saving config restarts server loops and broadcasts config event to connected clients over websocket.

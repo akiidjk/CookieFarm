@@ -1,0 +1,184 @@
+---
+title: Contributing
+description: How to contribute code, documentation, and help maintain CookieFarm.
+---
+
+# Contributing to CookieFarm
+
+Thank you for your interest in contributing to CookieFarm. This page explains the project's contribution workflow, coding standards, testing expectations, and how to get help. Keep contributions focused, small, and well-documented — that makes reviews faster and improves the project's quality.
+
+Table of contents
+- Quickstart
+- Reporting issues & feature requests
+- Working on a change (branches, commits, PRs)
+- Code style and linters
+- Tests and CI
+- Documentation contributions
+- Reviewing and CI checks
+- Security disclosures
+- Code of conduct
+- Getting help & maintainers
+
+---
+
+## Quickstart
+
+If you want to make a small change (docs typo, small bugfix):
+
+1. Fork the repository and clone your fork locally.
+2. Create a branch with a short descriptive name:
+   - use `feature/` for new features
+   - use `fix/` for bug fixes
+   - use `docs/` for documentation-only changes
+3. Make your changes and write or update tests where appropriate.
+4. Open a Pull Request (PR) against the `main` branch with a clear title and description.
+
+For larger features, open an issue first to discuss design and get feedback before implementing.
+
+---
+
+## Reporting issues & feature requests
+
+- Use the repository's issue tracker to report bugs or request features.
+- When opening an issue include:
+  - A descriptive title.
+  - Steps to reproduce (minimal reproducer if possible).
+  - Expected vs actual behavior.
+  - Relevant logs and environment information (OS, versions).
+  - Any related configuration (redact secrets).
+- Tag issues with appropriate labels if you have permissions, otherwise maintainers will triage them.
+
+---
+
+## Working on a change
+
+Branching
+- Branch off `main`. Keep your branch topic-focused.
+- Naming examples:
+  - `feature/ckc-login`
+  - `fix/flag-submission-rate-limit`
+  - `docs/add-exploit-template`
+
+Commits
+- Keep commits small and focused.
+- Use imperative tense in commit messages: "Add X", "Fix Y".
+- Reference issues in commits or the PR description (e.g., "Fixes #123").
+
+Pull Requests
+- Base your PR against `main`.
+- In PR description include:
+  - What the change does and why.
+  - Any migration or backwards-compatibility notes.
+  - Testing instructions and expected results.
+  - If applicable, the related issue number.
+- Link to design discussions or architecture notes if the change affects system behavior.
+
+Merge policy
+- PRs should have at least one approving review from a maintainer or an assigned reviewer.
+- All CI checks must pass before merge.
+- For non-trivial changes, maintainers may request changes or ask for additional tests and documentation.
+
+---
+
+## Code style and linters
+
+CookieFarm uses multiple languages (Go, TypeScript, Python). Please follow idiomatic style for each:
+
+- Go
+  - Use `gofmt` formatting.
+  - Use `go vet` and follow common Go idioms.
+- TypeScript / JavaScript
+  - Use the project's ESLint configuration.
+  - Keep types strict where reasonable.
+- Python
+  - Follow PEP8.
+  - Use `black`/`flake8` as configured by the repository.
+
+Avoid large style changes in unrelated files. If you reformatted a file, explain why in the PR.
+
+---
+
+## Tests and CI
+
+- Add unit tests for new logic. Integration tests are encouraged where appropriate.
+- Ensure existing tests pass locally before opening a PR.
+- The repository runs automated CI checks for linting, formatting, and tests. Address CI failures promptly in your PR.
+- If your change requires additional CI resources or special test setup, add instructions in the PR.
+
+Testing guidelines
+- For Go: use the standard `go test` tooling and table-driven tests.
+- For Python: use the project's test runner (e.g., `pytest`) and mock external network calls where appropriate.
+- For TypeScript: include unit tests for critical logic and CLI behaviors.
+
+---
+
+## Documentation contributions
+
+Docs are first-class in CookieFarm. To add or edit documentation:
+
+- Docs live in `docs/content/docs`.
+- Small typo fixes and clarifications can be submitted as a normal PR.
+- For new guides (tutorials, architecture deep dives), open an issue or a draft PR so maintainers can provide early feedback.
+- Document:
+  - New features (how to use them).
+  - Configuration options and example `config.yml` snippets.
+  - Breaking changes and migration steps.
+
+Link to other docs pages when relevant. Use relative links to other docs pages (for example: `/docs/getting-started/quick-start.mdx`).
+
+---
+
+## Reviewing and CI checks
+
+As a reviewer:
+- Verify the PR description explains the "what" and "why".
+- Confirm unit tests cover new behavior and run locally if needed.
+- Check style, readability, and whether changes are backwards-compatible.
+- For security-sensitive or infra changes, ask a maintainer with the relevant expertise to review.
+
+CI
+- All PRs must pass the repository's CI pipeline before merging. CI typically includes:
+  - Formatting and lint checks
+  - Unit/integration tests
+  - Static analysis and build verification
+
+If CI fails for reasons unrelated to your change (flaky tests, infrastructure), report it in the PR and avoid force-merging until it's resolved.
+
+---
+
+## Security disclosures
+
+- Do not include secrets, keys, or passwords in commits or PRs.
+- If you discover a security vulnerability, follow the project's security disclosure policy:
+  - Prefer private disclosure to maintainers instead of public issue disclosure.
+  - Provide reproduction steps and impact assessment.
+  - Maintain confidentiality until a fix or mitigation is available.
+
+Contact information for security disclosure is listed in the repository README or the `meta` documentation. If in doubt, open a private issue or contact a maintainer directly.
+
+---
+
+## Code of Conduct
+
+All contributors are expected to follow the project's Code of Conduct. Be respectful, constructive, and patient. If you experience or observe unacceptable behavior, report it to the project maintainers.
+
+(Refer to the `contributing/dev-setup.mdx` and the repository's `CONTRIBUTING.md` or `CODE_OF_CONDUCT.md` for the canonical text and reporting instructions.)
+
+---
+
+## Getting help & maintainers
+
+If you need help:
+- Open an issue describing the problem and what you've tried.
+- Ask in the project's communication channels (see repository README).
+
+Maintainers
+- Maintainers are listed in the repository metadata and the `meta.json` doc for the docs site.
+- Maintainers review PRs, triage issues, and make release decisions.
+- If a PR is stuck for more than a few business days, politely request a review or ask for guidance in the issue/PR.
+
+---
+
+Thank you for helping improve CookieFarm. Your contributions make the project better for everyone.
+
+If you want to add developer-specific setup instructions or step-by-step guides, see the developer setup page: `/docs/contributing/dev-setup.mdx`.

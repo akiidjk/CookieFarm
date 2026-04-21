@@ -1,0 +1,44 @@
+---
+title: Quick Start
+description: Fast 5-step setup for CookieFarm in Attack/Defense competitions.
+---
+
+# Quick Start
+
+## 1. Start server
+
+```bash
+cd cookiefarm
+docker compose up -d
+```
+
+## 2. Verify API
+
+```bash
+curl -i --max-time 5 http://127.0.0.1:8080/api/v1/
+```
+
+## 3. Install client
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install cookiefarm
+```
+
+## 4. Login client
+
+```bash
+ckc config login -H 127.0.0.1 -p 8080 -u team01 -P SuperSecret
+```
+
+## 5. Create, test, run exploit
+
+```bash
+ckc exploit create -n first
+ckc exploit test -e first -n CookieService -t 30 -T 5
+ckc exploit run -e first -n CookieService -t 60 -T 15
+```
+
+Open dashboard: `http://127.0.0.1:8080/dashboard`.

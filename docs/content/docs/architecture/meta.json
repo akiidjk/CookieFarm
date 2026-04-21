@@ -1,0 +1,8 @@
+{
+  "title": "Architecture",
+  "pages": [
+    "overview",
+    "flag-pipeline",
+    "server-internals"
+  ]
+}

@@ -10,7 +10,8 @@ description: Essential FAQ for operating CookieFarm in Attack/Defense competitio
 Run login again:
 
 ```bash
-ckc config login -H <host> -p <port> -u <user> -P <password>
+ckc config edit -H <host> -p <port> -u <user>
+ckc login -u <user> -P <password>
 ```
 
 ## Flags remain `UNSUBMITTED`
@@ -54,6 +55,6 @@ ckc exploit run -e <exploit> -n <service> -S
 ## How to stop a running exploit?
 
 ```bash
-ckc exploit list
+ckc exploit listrun
 ckc exploit stop -p <pid>
 ```

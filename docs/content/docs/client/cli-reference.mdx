@@ -18,7 +18,7 @@ Global flags:
 
 ## `ckc config`
 
-### `ckc config update`
+### `ckc config edit`
 
 Updates `client.yml`.
 
@@ -33,11 +33,12 @@ Flags:
 Login and shared config sync.
 
 Flags:
-- `-H, --host`
-- `-p, --port`
 - `-u, --username`
-- `-s, --https`
 - `-P, --password` (required)
+
+Note:
+- `ckc login` is also available as a top-level alias for this command.
+- Configure host/port/https with `ckc config edit` before login.
 
 ### `ckc config logout`
 
@@ -92,7 +93,11 @@ Flags:
 
 ### `ckc exploit list`
 
-Lists running exploits tracked in runtime.
+Lists local exploit templates in `~/.config/cookiefarm/exploits`.
+
+### `ckc exploit listrun`
+
+Lists currently running exploits with PID and name.
 
 ### `ckc exploit stop`
 
@@ -115,7 +120,8 @@ Flags:
 
 ```bash
 # Login
-ckc config login -H 127.0.0.1 -p 8080 -u team01 -P SuperSecret
+ckc config edit -H 127.0.0.1 -p 8080 -u team01
+ckc login -u team01 -P SuperSecret
 
 # Create template
 ckc exploit create -n web_sqli

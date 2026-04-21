@@ -177,7 +177,7 @@ export function Feedback({
             />
             <button
               type="submit"
-              className={cn(buttonVariants({ variant: 'outline' }), 'w-fit px-3')}
+              className={cn(buttonVariants({ variant: 'default' }), 'w-fit px-3')}
               disabled={isPending}
             >
               Submit
@@ -297,7 +297,7 @@ function FeedbackBlockContent({ id, body, onSendAction }: FeedbackBlockProps) {
           <button
             className={cn(
               buttonVariants({
-                variant: 'secondary',
+                variant: 'default',
               }),
               'text-xs',
             )}

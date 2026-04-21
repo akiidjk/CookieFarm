@@ -309,13 +309,9 @@ function CodeShowcase() {
               Write an exploit in under 10 lines.
             </h2>
             <p className="text-pretty leading-relaxed text-muted-foreground">
-              {"CookieFarm's Python SDK handles everything from target iteration to flag submission. Just subclass "}
+              {"CookieFarm's Python SDK handles everything from target iteration to flag submission. Just decorator "}
               <code className="rounded bg-(--surface-raised) px-1.5 py-0.5 font-mono text-sm text-(--green)">
-                ExploitBase
-              </code>
-              {", implement "}
-              <code className="rounded bg-(--surface-raised) px-1.5 py-0.5 font-mono text-sm text-(--green)">
-                attack()
+                exploit_manager
               </code>
               {", and run."}
             </p>

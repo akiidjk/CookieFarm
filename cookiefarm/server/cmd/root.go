@@ -20,7 +20,8 @@ import (
 	"server/api"
 
 	"github.com/charmbracelet/fang"
-	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v3"
+	fiberLogger "github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -156,7 +157,11 @@ func Run(cmd *cobra.Command, args []string) {
 	errCh := make(chan error, 1)
 	go func() {
 		logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")
-		err := app.Listen(addr)
+		err := app.Listen(addr, fiber.ListenConfig{
+			DisableStartupMessage: !config.Debug,
+			EnablePrintRoutes:     config.Debug,
+			EnablePrefork:         false,
+		})
 		if err != nil {
 			errCh <- err
 		}

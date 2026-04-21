@@ -160,3 +160,16 @@ test:
 [group('test')]
 setup-tests num_containers="10" production_mode="false":
     cd ./demo/scripts && ./setup.sh {{ num_containers }} {{ production_mode }}
+
+# Generate OpenAPI spec files from Swagger annotations
+[group('tools')]
+[working-directory('cookiefarm/server/api')]
+swagger-generate:
+    @echo -e "{{ CYAN }}[*] Generating Swagger/OpenAPI docs...{{ RESET }}"
+    @if command -v swag > /dev/null; then \
+      swag init -g swagger.go -o docs --parseDependency --parseInternal --outputTypes json,yaml; \
+    else \
+      echo "swag is not installed. Install it with: go install github.com/swaggo/swag/cmd/swag@latest"; \
+      exit 1; \
+    fi
+    @echo -e "{{ GREEN }}[+] Generated docs/swagger.json and docs/swagger.yaml{{ RESET }}"

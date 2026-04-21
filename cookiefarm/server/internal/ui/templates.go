@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gofiber/template/html/v2"
+	"github.com/gofiber/template/html/v3"
 )
 
 func InitTemplateEngine(debug bool) *html.Engine {

@@ -2,16 +2,19 @@ package api
 
 import (
 	"logger"
+	"strings"
 	"time"
+
+	"github.com/gofiber/fiber/v3/extractors"
 
 	"server/config"
 	"server/core"
 	"server/database"
 	"server/websockets"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	jwtware "github.com/gofiber/jwt/v3"
+	jwtware "github.com/gofiber/contrib/v3/jwt"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 )
 
 type Handler struct {
@@ -34,9 +37,9 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	// Enable CORS with dynamic origins from environment variable.
 	// Useful for allowing access from web dashboards or dev clients.
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     config.GetEnv("ALLOW_ORIGINS", "http://localhost:8080,http://localhost:3000"),
-		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS,PATCH",
-		AllowHeaders:     "Accept,Authorization,Content-Type",
+		AllowOrigins:     strings.Split(config.GetEnv("ALLOW_ORIGINS", "http://localhost:8080,http://localhost:3000"), ","),
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -59,14 +62,19 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	publicAPI.Post("/auth/login", NewLimiter(), HandleLogin)
 	publicAPI.Get("/auth/verify", HandleVerify)
 	publicAPI.Get("/protocols", h.HandleGetProtocols)
+	publicAPI.Get("/swagger/doc.json", HandleSwaggerDoc)
+	publicAPI.Get("/swagger", HandleSwaggerUI)
 
 	// ------------------ PRIVATE API ------------------
 
 	// Protected routes, accessible only with a valid JWT token.
 	// The token can be passed via Authorization header or cookie.
 	privateAPI := app.Group("/api/v1", jwtware.New(jwtware.Config{
-		SigningKey:  config.Secret,
-		TokenLookup: "header:Authorization,cookie:token",
+		SigningKey: jwtware.SigningKey{Key: config.Secret},
+		Extractor: extractors.Chain(
+			extractors.FromAuthHeader("Bearer"),
+			extractors.FromCookie("token"),
+		),
 	}))
 	privateAPI.Get("/stats", h.HandleGetStats)
 	privateAPI.Get("/flags", h.HandleGetAllFlags)
@@ -87,7 +95,13 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 }
 
 // GetStatus is a simple public endpoint used to check if the server is online.
-func GetStatus(c *fiber.Ctx) error {
+//
+// @Summary API status
+// @Description Returns a simple status response to confirm the server is online.
+// @Tags system
+// @Success 200 {object} map[string]string
+// @Router / [get]
+func GetStatus(c fiber.Ctx) error {
 	resp := fiber.Map{
 		"message": "The cookie is up!!",
 		"time":    time.Now().Format(time.RFC3339),

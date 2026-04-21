@@ -5,7 +5,7 @@ import (
 	"logger"
 	"time"
 
-	"github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/contrib/v3/websocket"
 )
 
 const (

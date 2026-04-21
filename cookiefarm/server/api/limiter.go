@@ -6,8 +6,8 @@ import (
 
 	"server/config"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 )
 
 var (
@@ -24,14 +24,14 @@ var (
 // In production, it limits to 5 requests per minute per IP to prevent abuse (e.g., brute-force on login).
 func NewLimiter() fiber.Handler {
 	if config.Debug {
-		return func(c *fiber.Ctx) error {
+		return func(c fiber.Ctx) error {
 			return c.Next()
 		}
 	}
 	return limiter.New(limiter.Config{
 		Max:        MaxRequests,
 		Expiration: time.Duration(Window) * time.Minute,
-		LimitReached: func(c *fiber.Ctx) error {
+		LimitReached: func(c fiber.Ctx) error {
 			if whitelist[c.IP()] {
 				return c.Next()
 			}

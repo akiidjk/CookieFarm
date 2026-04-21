@@ -136,7 +136,7 @@ export function Feedback({
                 target="_blank"
                 className={cn(
                   buttonVariants({
-                    color: 'primary',
+                    variant: 'default',
                   }),
                   'text-xs',
                 )}
@@ -147,7 +147,7 @@ export function Feedback({
               <button
                 className={cn(
                   buttonVariants({
-                    color: 'secondary',
+                    variant: 'secondary',
                   }),
                   'text-xs',
                 )}
@@ -177,7 +177,7 @@ export function Feedback({
             />
             <button
               type="submit"
-              className={cn(buttonVariants({ color: 'outline' }), 'w-fit px-3')}
+              className={cn(buttonVariants({ variant: 'outline' }), 'w-fit px-3')}
               disabled={isPending}
             >
               Submit
@@ -218,7 +218,7 @@ export function FeedbackBlock({ children, ...rest }: FeedbackBlockProps) {
             buttonVariants({ variant: 'secondary', size: 'sm' }),
             'absolute -top-7 inset-e-0 min-w-[94px] backdrop-blur-sm text-fd-muted-foreground gap-1.5 transition-all duration-100 data-[state=open]:bg-fd-accent data-[state=open]:text-fd-accent-foreground',
             !open &&
-              'opacity-0 pointer-events-none group-hover/feedback:pointer-events-auto group-hover/feedback:opacity-100 group-hover/feedback:delay-100 hover:pointer-events-auto hover:opacity-100 hover:delay-100',
+            'opacity-0 pointer-events-none group-hover/feedback:pointer-events-auto group-hover/feedback:opacity-100 group-hover/feedback:delay-100 hover:pointer-events-auto hover:opacity-100 hover:delay-100',
           )}
         >
           {open ? (
@@ -286,7 +286,7 @@ function FeedbackBlockContent({ id, body, onSendAction }: FeedbackBlockProps) {
             target="_blank"
             className={cn(
               buttonVariants({
-                color: 'primary',
+                variant: 'default',
               }),
               'text-xs',
             )}
@@ -297,7 +297,7 @@ function FeedbackBlockContent({ id, body, onSendAction }: FeedbackBlockProps) {
           <button
             className={cn(
               buttonVariants({
-                color: 'secondary',
+                variant: 'secondary',
               }),
               'text-xs',
             )}

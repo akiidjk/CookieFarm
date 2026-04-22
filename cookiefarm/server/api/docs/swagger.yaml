@@ -383,12 +383,13 @@ paths:
       - protocols
   /stats:
     get:
-      description: Returns aggregated server/flags statistics.
+      description: Returns aggregated server/flags statistics (grouped counts by service/status).
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: '{"flags_stats": [{"service":"svc","status":1,"count":10},
+            ...] }'
           schema:
             additionalProperties: true
             type: object

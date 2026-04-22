@@ -60,7 +60,7 @@ export function AppLayout() {
         <Sidebar className="border-r border-kumo-line/60 bg-kumo-base/95">
           <Sidebar.Header className="px-3 py-4">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="CookieFarm Logo" width={24} height={24} className="block" />
+              <img src="/images/logo.png" alt="CookieFarm Logo" width={24} height={24} className="block" />
               {/* ② Show dynamic name here too, not just the top bar */}
               <div className="min-w-0">
                 <div className="truncate font-semibold text-kumo-fg-primary">

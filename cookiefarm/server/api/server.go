@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"server/config"
-	"server/ui"
 
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v3"
@@ -28,10 +27,7 @@ const (
 // newConfig returns a configured Fiber config struct.
 // It adapts settings depending on the debug mode (e.g. logging, strict routing).
 func newConfig(debug bool) fiber.Config {
-	views := ui.InitTemplateEngine(!debug)
-
 	cfg := fiber.Config{
-		Views:       views,
 		JSONEncoder: sonic.Marshal,
 		JSONDecoder: sonic.Unmarshal,
 	}

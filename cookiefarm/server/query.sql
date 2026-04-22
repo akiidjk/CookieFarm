@@ -128,3 +128,16 @@ WHERE flag_code = ?;
 -- name: DeleteFlagByTTL :execrows
 DELETE FROM flags
 WHERE response_time < (CAST(strftime('%s', 'now') AS INTEGER) - ?);
+
+-- name: FlagsStats :many
+SELECT
+    team_id,
+    COUNT(*) AS total_flags,
+    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS accepted_flags,
+    SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS denied_flags,
+    SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS unsubmitted_flags,
+    SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS error_flags,
+    SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS not_valid_flags
+FROM flags
+GROUP BY team_id
+ORDER BY team_id;

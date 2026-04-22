@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"server/config"
-	"server/controllers"
 	"server/database"
 	"server/websockets"
 
@@ -75,19 +74,28 @@ func (h *Handler) HandleGetAllFlags(c fiber.Ctx) error {
 }
 
 // HandleGetStats returns statistics about the server state.
-// Currently returns placeholders for flags and users.
+// Returns aggregated statistics for flags. The response body contains a JSON object
+// with the key "flags_stats" that maps to an array of aggregated rows (grouped
+// statistics returned by the database query). Each element typically contains
+// fields such as service name, status and count depending on the underlying
+// query implementation.
 //
 // @Summary Get stats
-// @Description Returns aggregated server/flags statistics.
+// @Description Returns aggregated server/flags statistics (grouped counts by service/status).
 // @Tags stats
 // @Produce json
 // @Security CookieAuth
-// @Success 200 {object} map[string]any
+// @Success 200 {object} map[string]any "{"flags_stats": [{"service":"svc","status":1,"count":10}, ...] }"
 // @Failure 500 {object} ResponseError
 // @Router /stats [get]
-func (*Handler) HandleGetStats(c fiber.Ctx) error {
-	n := controllers.NewStatsController()
-	return n.GetFlagStats(c)
+func (h *Handler) HandleGetStats(c fiber.Ctx) error {
+	rows, err := h.store.Queries.FlagsStats(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flags stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"flags_stats": rows})
 }
 
 // HandleGetPaginatedFlags returns paginated and filtered flags.

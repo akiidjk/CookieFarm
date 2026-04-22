@@ -37,22 +37,12 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	// Enable CORS with dynamic origins from environment variable.
 	// Useful for allowing access from web dashboards or dev clients.
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     strings.Split(config.GetEnv("ALLOW_ORIGINS", "http://localhost:8080,http://localhost:3000"), ","),
+		AllowOrigins:     strings.Split(config.GetEnv("ALLOW_ORIGINS", "http://localhost:8080,http://localhost:3000,http://localhost:5173"), ","),
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
-
-	// ------------------ VIEW ROUTES ------------------
-
-	// These endpoints render HTML templates (SSR views)
-	View := app.Group("/")
-	View.Get("/", HandleIndexPage)
-	View.Get("/dashboard", HandleIndexPage)
-	View.Get("/login", HandleLoginPage)
-	View.Get("/flags/:limit", h.HandlePartialsFlags)
-	View.Get("/pagination/:limit", h.HandlePartialsPagination)
 
 	// ------------------ PUBLIC API ------------------
 
@@ -60,6 +50,7 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	publicAPI := app.Group("/api/v1")
 	publicAPI.Get("/", GetStatus) // Simple status check
 	publicAPI.Post("/auth/login", NewLimiter(), HandleLogin)
+	publicAPI.Post("/auth/logout", HandleLogout)
 	publicAPI.Get("/auth/verify", HandleVerify)
 	publicAPI.Get("/protocols", h.HandleGetProtocols)
 	publicAPI.Get("/swagger/doc.json", HandleSwaggerDoc)
@@ -92,6 +83,21 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 		websockets.WebSocketUpgrade,
 	)
 	app.Get("/ws", websockets.GlobalManager.ServeWS())
+
+	app.Get("/*", func(c fiber.Ctx) error {
+		path := c.Path()
+		if strings.HasPrefix(path, "/api/") ||
+			strings.HasPrefix(path, "/ws") ||
+			strings.HasPrefix(path, "/assets/") ||
+			strings.HasPrefix(path, "/css/") ||
+			strings.HasPrefix(path, "/js/") ||
+			strings.HasPrefix(path, "/images/") ||
+			path == "/mockServiceWorker.js" {
+			return c.SendStatus(fiber.StatusNotFound)
+		}
+
+		return ServeFrontendIndex(c)
+	})
 }
 
 // GetStatus is a simple public endpoint used to check if the server is online.

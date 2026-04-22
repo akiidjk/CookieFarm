@@ -5,6 +5,8 @@ package api
 import (
 	"fmt"
 	"logger"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -15,6 +17,12 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/fiber/v3/middleware/static"
+)
+
+const (
+	frontendDistDir   = "./server/frontend/dist"
+	frontendAssetsDir = "./server/frontend/dist/assets"
+	frontendIndexPath = "./server/frontend/dist/index.html"
 )
 
 // newConfig returns a configured Fiber config struct.
@@ -53,6 +61,7 @@ func PrepareStatic(app *fiber.App) error {
 		{"/css", "./server/public/css"},
 		{"/js", "./server/public/js"},
 		{"/images", "./server/public/images"},
+		{"/assets", frontendAssetsDir},
 	}
 
 	var staticCfg static.Config
@@ -72,13 +81,28 @@ func PrepareStatic(app *fiber.App) error {
 		app.Get(r.route+"/*", static.New(r.dir, staticCfg))
 	}
 
+	app.Get("/mockServiceWorker.js", func(c fiber.Ctx) error {
+		if _, err := os.Stat(filepath.Clean(filepath.Join(frontendDistDir, "mockServiceWorker.js"))); err != nil {
+			return c.SendStatus(fiber.StatusNotFound)
+		}
+		return c.SendFile(filepath.Clean(filepath.Join(frontendDistDir, "mockServiceWorker.js")))
+	})
+
 	return nil
+}
+
+func ServeFrontendIndex(c fiber.Ctx) error {
+	if _, err := os.Stat(frontendIndexPath); err != nil {
+		return c.Status(fiber.StatusNotFound).SendString("frontend build not found")
+	}
+
+	return c.SendFile(frontendIndexPath)
 }
 
 // NewApp initializes and returns a new Fiber app instance,
 // setting up static file routes, debug middleware, and template engine.
 func NewApp() (*fiber.App, error) {
-	staticPrefixes := []string{"/css", "/js", "/images", "/static"}
+	staticPrefixes := []string{"/css", "/js", "/images", "/assets", "/static"}
 	cfg := newConfig(config.Debug)
 	app := fiber.New(cfg)
 

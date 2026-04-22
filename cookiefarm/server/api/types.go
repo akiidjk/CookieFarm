@@ -1,8 +1,7 @@
 package api
 
 import (
-	"sharedconfig"
-
+	serverconfig "server/config"
 	"server/database"
 )
 
@@ -54,10 +53,10 @@ type ResponseError struct {
 	Details string `json:"details"` // Details for the error response
 }
 
-// UpdateConfigRequest wraps shared configuration payload.
+// UpdateConfigRequest wraps full configuration payload.
 type UpdateConfigRequest struct {
-	Config sharedconfig.Shared `json:"config"`
+	Config serverconfig.FullConfig `json:"config"`
 }
 
-// ResponseSharedConfig represents shared configuration returned by API.
-type ResponseSharedConfig = sharedconfig.Shared
+// ResponseSharedConfig represents the full configuration returned by API.
+type ResponseSharedConfig = serverconfig.FullConfig

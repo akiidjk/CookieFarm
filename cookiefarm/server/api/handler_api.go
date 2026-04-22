@@ -23,17 +23,17 @@ const flagCheckerHostNotConfigureWarnMessage = "Flagchecker host not configured"
 
 // ---------- GET ----------------
 
-// HandleGetConfig returns the current shared configuration of the server.
+// HandleGetConfig returns the current full configuration of the server.
 //
-// @Summary Get shared config
-// @Description Returns current shared configuration used by clients/exploit runtime.
+// @Summary Get full config
+// @Description Returns current server and shared configuration.
 // @Tags config
 // @Produce json
 // @Security CookieAuth
 // @Success 200 {object} ResponseSharedConfig
 // @Router /config [get]
 func (h *Handler) HandleGetConfig(c fiber.Ctx) error {
-	return c.JSON(h.config.GetShared())
+	return c.JSON(h.config.GetFullConfig())
 }
 
 // HandleGetAllFlags retrieves and returns all the stored flags.
@@ -345,15 +345,15 @@ func (h *Handler) HandlePostFlagsStandalone(c fiber.Ctx) error {
 	return c.JSON(ResponseSuccess{Message: "Flag submitted successfully"})
 }
 
-// HandlePostConfig updates the server configuration and restarts the flag processing loop.
+// HandlePostConfig updates the full configuration and restarts the flag processing loop.
 //
-// @Summary Update shared config
-// @Description Updates shared configuration and restarts background runner loops.
+// @Summary Update full config
+// @Description Updates server/shared configuration and restarts background runner loops.
 // @Tags config
 // @Accept json
 // @Produce json
 // @Security CookieAuth
-// @Param request body UpdateConfigRequest true "Shared config payload"
+// @Param request body UpdateConfigRequest true "Full config payload"
 // @Success 200 {object} ResponseSuccess
 // @Failure 422 {object} ResponseError
 // @Failure 500 {object} ResponseError
@@ -368,11 +368,16 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 		})
 	}
 
-	h.config.SetShared(payload.Config)
+	nextConfig := payload.Config
+	nextConfig.Configured = true
+	nextConfig.Shared.Configured = true
+
+	h.config.SetFullConfig(nextConfig)
+	h.config.SetConfigured(true)
 
 	h.runner.Run()
 
-	cfgJSON, err := json.Marshal(h.config.GetShared())
+	cfgJSON, err := json.Marshal(h.config.GetFullConfig())
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to marshal config")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
@@ -386,8 +391,10 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 		Payload: cfgJSON,
 	}
 
-	for client := range websockets.GlobalManager.Clients {
-		client.Egress <- event
+	if websockets.GlobalManager != nil {
+		for client := range websockets.GlobalManager.Clients {
+			client.Egress <- event
+		}
 	}
 
 	return c.JSON(ResponseSuccess{Message: "Configuration updated successfully"})

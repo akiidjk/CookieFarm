@@ -131,6 +131,61 @@ func (q *Queries) DeleteFlagByTTL(ctx context.Context, dollar_1 interface{}) (in
 	return result.RowsAffected()
 }
 
+const flagsStats = `-- name: FlagsStats :many
+SELECT
+    team_id,
+    COUNT(*) AS total_flags,
+    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS accepted_flags,
+    SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS denied_flags,
+    SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS unsubmitted_flags,
+    SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS error_flags,
+    SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS not_valid_flags
+FROM flags
+GROUP BY team_id
+ORDER BY team_id
+`
+
+type FlagsStatsRow struct {
+	TeamID           int64           `json:"team_id"`
+	TotalFlags       int64           `json:"total_flags"`
+	AcceptedFlags    sql.NullFloat64 `json:"accepted_flags"`
+	DeniedFlags      sql.NullFloat64 `json:"denied_flags"`
+	UnsubmittedFlags sql.NullFloat64 `json:"unsubmitted_flags"`
+	ErrorFlags       sql.NullFloat64 `json:"error_flags"`
+	NotValidFlags    sql.NullFloat64 `json:"not_valid_flags"`
+}
+
+func (q *Queries) FlagsStats(ctx context.Context) ([]FlagsStatsRow, error) {
+	rows, err := q.db.QueryContext(ctx, flagsStats)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlagsStatsRow
+	for rows.Next() {
+		var i FlagsStatsRow
+		if err := rows.Scan(
+			&i.TeamID,
+			&i.TotalFlags,
+			&i.AcceptedFlags,
+			&i.DeniedFlags,
+			&i.UnsubmittedFlags,
+			&i.ErrorFlags,
+			&i.NotValidFlags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllFlagCodes = `-- name: GetAllFlagCodes :many
 SELECT flag_code FROM flags
 `

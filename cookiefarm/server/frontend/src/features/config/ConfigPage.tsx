@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Breadcrumbs } from "@cloudflare/kumo/components/breadcrumbs";
 import { useConfig, useProtocols, type Config } from "@/api/config";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
 import { ConfigForm } from "./ConfigForm";
@@ -16,11 +17,11 @@ export function ConfigPage() {
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={
-          <nav className="flex items-center gap-2 px-3 py-2 text-sm text-kumo-fg-secondary">
-            <span>Operations</span>
-            <span>/</span>
-            <span className="text-kumo-fg-primary">Config</span>
-          </nav>
+          <Breadcrumbs className="px-3 py-2 text-sm">
+            <Breadcrumbs.Link href="/">Operations</Breadcrumbs.Link>
+            <Breadcrumbs.Separator />
+            <Breadcrumbs.Current>Config</Breadcrumbs.Current>
+          </Breadcrumbs>
         }
         title="Configuration"
         description="Real server/shared configuration as defined by the Go config manager and `config.yml`."

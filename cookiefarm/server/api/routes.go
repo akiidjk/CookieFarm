@@ -71,6 +71,7 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	privateAPI.Get("/flags", h.HandleGetAllFlags)
 	privateAPI.Get("/flags/:limit", h.HandleGetPaginatedFlags)
 	privateAPI.Get("/config", h.HandleGetConfig)
+	privateAPI.Get("/config/full", h.HandleGetFullConfig)
 	privateAPI.Post("/config", h.HandlePostConfig)
 	privateAPI.Post("/submit-flags", h.HandlePostFlags)
 	privateAPI.Post("/submit-flag", h.HandlePostFlag)

@@ -1,7 +1,10 @@
 import { startTransition, useEffect, useState } from "react";
 import { Banner } from "@cloudflare/kumo/components/banner";
+import { Breadcrumbs } from "@cloudflare/kumo/components/breadcrumbs";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Input } from "@cloudflare/kumo/components/input";
+import { Select } from "@cloudflare/kumo/components/select";
+import { Checkbox } from "@cloudflare/kumo/components/checkbox";
 import { useKumoToastManager } from "@cloudflare/kumo/components/toast";
 import { ArrowSquareOut, WarningCircle } from "@phosphor-icons/react";
 import { Link } from "react-router";
@@ -14,11 +17,11 @@ import { useInterval } from "@/hooks/useInterval";
 import { StatsBar } from "./StatsBar";
 
 const breadcrumbs = (
-  <nav className="flex items-center gap-2 px-3 py-2 text-sm text-kumo-fg-secondary">
-    <span>Operations</span>
-    <span>/</span>
-    <span className="text-kumo-fg-primary">Dashboard</span>
-  </nav>
+  <Breadcrumbs className="px-3 py-2 text-sm">
+    <Breadcrumbs.Link href="/">Operations</Breadcrumbs.Link>
+    <Breadcrumbs.Separator />
+    <Breadcrumbs.Current>Dashboard</Breadcrumbs.Current>
+  </Breadcrumbs>
 );
 
 export function DashboardPage() {
@@ -196,29 +199,29 @@ export function DashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-kumo-fg-secondary">
-              <input
-                type="checkbox"
-                checked={autoRefreshEnabled}
-                onChange={(event) => {
-                  setAutoRefreshEnabled(event.target.checked);
-                }}
-              />
-              Auto refresh
-            </label>
-            <select
-              className="rounded-xl border border-kumo-line bg-kumo-overlay px-3 py-2 text-sm text-kumo-fg-primary"
-              value={refreshMs}
-              disabled={!autoRefreshEnabled}
-              onChange={(event) => {
-                setRefreshMs(Number(event.target.value));
+            <Checkbox
+              label="Auto refresh"
+              checked={autoRefreshEnabled}
+              onCheckedChange={(v) => {
+                setAutoRefreshEnabled(Boolean(v));
               }}
-            >
-              <option value={5000}>5s</option>
-              <option value={10000}>10s</option>
-              <option value={60000}>1m</option>
-              <option value={120000}>2m</option>
-            </select>
+              className="text-sm text-kumo-fg-secondary"
+            />
+            <Select
+              aria-label="Refresh interval"
+              className="rounded-xl border border-kumo-line bg-kumo-overlay px-3 py-2 text-sm text-kumo-fg-primary"
+              value={String(refreshMs)}
+              disabled={!autoRefreshEnabled}
+              onValueChange={(v) => {
+                setRefreshMs(Number(v));
+              }}
+              items={{
+                5000: "5s",
+                10000: "10s",
+                60000: "1m",
+                120000: "2m",
+              }}
+            />
             <Button
               variant="secondary"
               onClick={() => {

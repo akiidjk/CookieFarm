@@ -48,7 +48,7 @@ export const protocolsResponseSchema = z.object({
 export type ProtocolsResponse = z.infer<typeof protocolsResponseSchema>;
 
 export async function fetchConfig(): Promise<Config> {
-  return apiFetch("/config", {}, configSchema);
+  return apiFetch("/config/full", {}, configSchema);
 }
 
 export function readConfig(): Promise<Config> {

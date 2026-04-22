@@ -1,7 +1,9 @@
 import { startTransition, useEffect, useState } from "react";
 import { Banner } from "@cloudflare/kumo/components/banner";
+import { Breadcrumbs } from "@cloudflare/kumo";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Pagination } from "@cloudflare/kumo/components/pagination";
+import { Select } from "@cloudflare/kumo/components/select";
 import { Switch } from "@cloudflare/kumo/components/switch";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useConfig } from "@/api/config";
@@ -90,11 +92,11 @@ export function FlagsPage() {
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={
-          <nav className="flex items-center gap-2 px-3 py-2 text-sm text-kumo-fg-secondary">
-            <span>Operations</span>
-            <span>/</span>
-            <span className="text-kumo-fg-primary">Flags</span>
-          </nav>
+          <Breadcrumbs className="px-3 py-2">
+            <Breadcrumbs.Link href="/">Operations</Breadcrumbs.Link>
+            <Breadcrumbs.Separator />
+            <Breadcrumbs.Current>Flags</Breadcrumbs.Current>
+          </Breadcrumbs>
         }
         title="Flags"
         description="Paginated database rows using the real filtered `/api/v1/flags/:limit` endpoint."
@@ -132,19 +134,20 @@ export function FlagsPage() {
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-kumo-line bg-kumo-base p-4">
         <div className="flex items-center gap-3">
           <span className="text-sm text-kumo-fg-secondary">Rows per page</span>
-          <select
-            className="rounded-xl border border-kumo-line bg-kumo-overlay px-3 py-2 text-sm text-kumo-fg-primary"
-            value={pageSize}
-            onChange={(event) => {
+          <Select
+            aria-label="Rows per page"
+            value={String(pageSize)}
+            onValueChange={(value) => {
               setPage(1);
-              setPageSize(Number(event.target.value));
+              setPageSize(Number(value));
             }}
-          >
-            <option value={20}>20</option>
-            <option value={40}>40</option>
-            <option value={80}>80</option>
-            <option value={100}>100</option>
-          </select>
+            items={{
+              20: "20",
+              40: "40",
+              80: "80",
+              100: "100",
+            }}
+          />
         </div>
 
         <Switch

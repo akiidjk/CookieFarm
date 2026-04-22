@@ -18,7 +18,6 @@ use (
 	./server
 	./server/api
 	./server/internal/config
-	./server/internal/controllers
 	./server/internal/core
 	./server/internal/database
 	./server/internal/ui

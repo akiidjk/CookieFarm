@@ -107,7 +107,7 @@ export function DashboardPage() {
 
       <section className="rounded-2xl border border-kumo-line bg-kumo-base p-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_auto] items-end">
             <Input
               label="Manual Flag"
               placeholder="FLAG{...}"
@@ -241,8 +241,8 @@ export function DashboardPage() {
       <section className="space-y-3">
         <div>
           <h2 className="text-lg font-semibold text-kumo-fg-primary">Latest Flags</h2>
-          <p className="text-sm text-kumo-fg-secondary">
-            The newest 25 rows returned by `/api/v1/flags/:limit`.
+          <p className="text-sm text-kumo-fg-secondary mt-1">
+            The newest 25 rows
           </p>
         </div>
         <FlagTable

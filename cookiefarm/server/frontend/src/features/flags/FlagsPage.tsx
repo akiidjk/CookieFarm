@@ -99,7 +99,7 @@ export function FlagsPage() {
           </Breadcrumbs>
         }
         title="Flags"
-        description="Paginated database rows using the real filtered `/api/v1/flags/:limit` endpoint."
+        description="Handle flag management and filtering"
       >
         <Button
           variant="secondary"

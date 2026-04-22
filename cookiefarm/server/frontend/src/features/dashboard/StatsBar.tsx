@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import * as echarts from "echarts/core";
-import { BarChart, PieChart } from "echarts/charts";
+import { BarChart } from "echarts/charts";
 import {
   AriaComponent,
   TooltipComponent,
@@ -13,7 +13,6 @@ import type { StatsSummary } from "@/api/stats";
 
 echarts.use([
   BarChart,
-  PieChart,
   AriaComponent,
   TooltipComponent,
   GridComponent,
@@ -22,8 +21,14 @@ echarts.use([
 ]);
 
 export function StatsBar(props: { summary: StatsSummary }) {
+  const isDarkMode = true;
 
-  const flagsOption = useMemo(() => {
+  const stats = props.summary?.flags_stats || [];
+
+  const totalFlagsOption = useMemo(() => {
+    const categories = stats.map((s) => `Team ${s.team_id}`);
+    const data = stats.map((s) => s.total_flags);
+
     return {
       tooltip: {
         trigger: "axis" as const,
@@ -32,112 +37,136 @@ export function StatsBar(props: { summary: StatsSummary }) {
       grid: { top: 30, right: 20, bottom: 30, left: 60 },
       xAxis: {
         type: "category" as const,
-        data: ["Received", "Flushed"],
-        axisLabel: { color: "#A1A1AA" },
-        axisLine: { lineStyle: { color: "#3F3F46" } },
+        data: categories,
+        axisLabel: { color: isDarkMode ? "#A1A1AA" : "#52525B" },
+        axisLine: { lineStyle: { color: isDarkMode ? "#3F3F46" : "#E4E4E7" } },
       },
       yAxis: {
         type: "value" as const,
-        axisLabel: { color: "#A1A1AA" },
-        splitLine: { lineStyle: { color: "#3F3F46" } },
+        axisLabel: { color: isDarkMode ? "#A1A1AA" : "#52525B" },
+        splitLine: { lineStyle: { color: isDarkMode ? "#3F3F46" : "#E4E4E7" } },
       },
       series: [
         {
-          data: [
-            {
-              value: props.summary.total_flags_received,
-              itemStyle: { color: ChartPalette.semantic("Neutral", true) },
-            },
-            {
-              value: props.summary.total_flags_flushed,
-              itemStyle: { color: ChartPalette.semantic("NeutralLight", true) },
-            },
-          ],
+          name: "Total Flags",
+          data: data,
           type: "bar" as const,
-          barWidth: "40%",
+          itemStyle: { color: ChartPalette.semantic("Neutral", isDarkMode) },
         },
       ],
     };
-  }, [props.summary]);
+  }, [stats, isDarkMode]);
 
-  const flushesOption = useMemo(() => {
-    const failed = Math.max(0, props.summary.total_flushes - props.summary.successful_flushes);
+  const statusOption = useMemo(() => {
+    const categories = stats.map((s) => `Team ${s.team_id}`);
+
     return {
-      tooltip: { trigger: "item" as const },
+      tooltip: {
+        trigger: "axis" as const,
+        axisPointer: { type: "shadow" as const },
+      },
+      grid: { top: 30, right: 20, bottom: 30, left: 60 },
+      xAxis: {
+        type: "category" as const,
+        data: categories,
+        axisLabel: { color: isDarkMode ? "#A1A1AA" : "#52525B" },
+        axisLine: { lineStyle: { color: isDarkMode ? "#3F3F46" : "#E4E4E7" } },
+      },
+      yAxis: {
+        type: "value" as const,
+        axisLabel: { color: isDarkMode ? "#A1A1AA" : "#52525B" },
+        splitLine: { lineStyle: { color: isDarkMode ? "#3F3F46" : "#E4E4E7" } },
+      },
       series: [
         {
-          type: "pie" as const,
-          radius: ["40%", "70%"],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 4,
-            borderColor: "#18181B",
-            borderWidth: 2,
-          },
-          label: { show: false },
-          data: [
-            {
-              value: props.summary.successful_flushes,
-              name: "Successful",
-              itemStyle: { color: ChartPalette.color(0, true) },
-            },
-            {
-              value: failed,
-              name: "Failed",
-              itemStyle: { color: ChartPalette.semantic("Attention", true) },
-            },
-          ],
+          name: "Accepted",
+          type: "bar" as const,
+          stack: "total",
+          data: stats.map((s) => s.accepted_flags),
+          itemStyle: { color: ChartPalette.color(0, isDarkMode) },
+        },
+        {
+          name: "Denied",
+          type: "bar" as const,
+          stack: "total",
+          data: stats.map((s) => s.denied_flags),
+          itemStyle: { color: ChartPalette.semantic("Attention", isDarkMode) },
+        },
+        {
+          name: "Error",
+          type: "bar" as const,
+          stack: "total",
+          data: stats.map((s) => s.error_flags),
+          itemStyle: { color: ChartPalette.semantic("Warning", isDarkMode) },
+        },
+        {
+          name: "Unsubmitted",
+          type: "bar" as const,
+          stack: "total",
+          data: stats.map((s) => s.unsubmitted_flags),
+          itemStyle: { color: ChartPalette.semantic("NeutralLight", isDarkMode) },
         },
       ],
     };
-  }, [props.summary]);
+  }, [stats, isDarkMode]);
+
+  const totalFlagsCount = stats.reduce((acc, s) => acc + s.total_flags, 0);
+  const totalAcceptedCount = stats.reduce((acc, s) => acc + s.accepted_flags, 0);
+  const totalDeniedCount = stats.reduce((acc, s) => acc + s.denied_flags, 0);
+  const totalErrorCount = stats.reduce((acc, s) => acc + s.error_flags, 0);
+  const totalUnsubmittedCount = stats.reduce((acc, s) => acc + s.unsubmitted_flags, 0);
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded-2xl border border-kumo-line bg-kumo-base p-4 flex flex-col">
-        <h3 className="mb-4 text-sm font-medium text-kumo-fg-primary">Flags Volume</h3>
+        <h3 className="mb-4 text-sm font-medium text-kumo-fg-primary">Total Flags per Team</h3>
         <div className="flex-1">
           <Chart
             echarts={echarts}
-            options={flagsOption}
-            isDarkMode={true}
+            options={totalFlagsOption}
+            isDarkMode={isDarkMode}
             height={250}
           />
         </div>
         <div className="mt-4 flex flex-wrap gap-4">
           <ChartLegend.SmallItem
-            name="Received"
-            color={ChartPalette.semantic("Neutral", true)}
-            value={String(props.summary.total_flags_received)}
-          />
-          <ChartLegend.SmallItem
-            name="Flushed"
-            color={ChartPalette.semantic("NeutralLight", true)}
-            value={String(props.summary.total_flags_flushed)}
+            name="Total Flags"
+            color={ChartPalette.semantic("Neutral", isDarkMode)}
+            value={String(totalFlagsCount)}
           />
         </div>
       </div>
 
       <div className="rounded-2xl border border-kumo-line bg-kumo-base p-4 flex flex-col">
-        <h3 className="mb-4 text-sm font-medium text-kumo-fg-primary">Flush Success Rate</h3>
+        <h3 className="mb-4 text-sm font-medium text-kumo-fg-primary">Flag Status Distribution</h3>
         <div className="flex-1">
           <Chart
             echarts={echarts}
-            options={flushesOption}
-            isDarkMode={true}
+            options={statusOption}
+            isDarkMode={isDarkMode}
             height={250}
           />
         </div>
         <div className="mt-4 flex flex-wrap gap-4">
           <ChartLegend.SmallItem
-            name="Successful"
-            color={ChartPalette.color(0, true)}
-            value={String(props.summary.successful_flushes)}
+            name="Accepted"
+            color={ChartPalette.color(0, isDarkMode)}
+            value={String(totalAcceptedCount)}
           />
           <ChartLegend.SmallItem
-            name="Failed"
-            color={ChartPalette.semantic("Attention", true)}
-            value={String(Math.max(0, props.summary.total_flushes - props.summary.successful_flushes))}
+            name="Denied"
+            color={ChartPalette.semantic("Attention", isDarkMode)}
+            value={String(totalDeniedCount)}
+          />
+          <ChartLegend.SmallItem
+            name="Error"
+            color={ChartPalette.semantic("Warning", isDarkMode)}
+            value={String(totalErrorCount)}
+          />
+          <ChartLegend.SmallItem
+            name="Unsubmitted"
+            color={ChartPalette.semantic("NeutralLight", isDarkMode)}
+            value={String(totalUnsubmittedCount)}
           />
         </div>
       </div>

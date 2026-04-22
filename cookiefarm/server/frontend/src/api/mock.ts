@@ -84,16 +84,26 @@ export async function startMocking(): Promise<void> {
     http.post("/api/v1/config", async () => HttpResponse.json({ message: "ok" })),
     http.get("/api/v1/stats", async () =>
       HttpResponse.json({
-        buffer_size: 12,
-        total_flags_received: 400,
-        total_flags_flushed: 320,
-        total_flushes: 18,
-        successful_flushes: 16,
-        failed_flushes: 2,
-        last_flush_time: new Date().toISOString(),
-        last_successful_flush: new Date().toISOString(),
-        efficiency_ratio: 17.7,
-        status: { is_running: true },
+        flags_stats: [
+          {
+            team_id: 2,
+            total_flags: 315,
+            accepted_flags: { Float64: 151, Valid: true },
+            denied_flags: { Float64: 164, Valid: true },
+            unsubmitted_flags: { Float64: 0, Valid: true },
+            error_flags: { Float64: 0, Valid: true },
+            not_valid_flags: { Float64: 0, Valid: true },
+          },
+          {
+            team_id: 3,
+            total_flags: 268,
+            accepted_flags: { Float64: 135, Valid: true },
+            denied_flags: { Float64: 133, Valid: true },
+            unsubmitted_flags: { Float64: 0, Valid: true },
+            error_flags: { Float64: 0, Valid: true },
+            not_valid_flags: { Float64: 0, Valid: true },
+          },
+        ],
       }),
     ),
     http.get("/api/v1/flags/:limit", async ({ request, params }) => {

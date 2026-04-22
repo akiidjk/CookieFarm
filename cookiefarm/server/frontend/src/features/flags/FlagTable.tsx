@@ -65,15 +65,26 @@ export function FlagTable(props: {
       : 0;
   const visibleRows: Flag[] = shouldVirtualize
     ? virtualRows.flatMap((item) => {
-        const row = props.rows[item.index];
-        return row ? [row] : [];
-      })
+      const row = props.rows[item.index];
+      return row ? [row] : [];
+    })
     : props.rows;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-kumo-line bg-kumo-base">
       <div ref={parentRef} className="max-h-[70vh] overflow-auto">
         <Table layout="fixed">
+          {/* Define column widths here. Adjust the className/style on each <col/> to change sizes. */}
+          <colgroup>
+            <col className="w-80" />
+            <col />
+            <col className="w-40" />
+            <col className="w-30" />
+            <col className="w-40" />
+            <col className="w-40" />
+            <col className="w-24" />
+            <col className="w-24" />
+          </colgroup>
           <Table.Header sticky>
             <Table.Row>
               <Table.Head>Flag</Table.Head>
@@ -98,7 +109,7 @@ export function FlagTable(props: {
                 <Table.Cell>
                   <ClipboardText size="sm" text={flag.flag_code} />
                 </Table.Cell>
-                <Table.Cell>{flag.msg || "-"}</Table.Cell>
+                <Table.Cell > {flag.msg || "-"}</Table.Cell>
                 <Table.Cell>{`${flag.service_name}:${flag.port_service}`}</Table.Cell>
                 <Table.Cell>
                   <FlagStatusBadge status={flag.status} />

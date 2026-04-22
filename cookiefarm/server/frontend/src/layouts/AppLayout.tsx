@@ -17,6 +17,7 @@ import { apiFetch } from "@/api/client";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LiveDot } from "@/components/LiveDot";
 import { useInterval } from "@/hooks/useInterval";
+import { CookieIcon } from "@phosphor-icons/react/dist/ssr";
 
 const apiStatusSchema = z.object({
   message: z.string(),
@@ -55,13 +56,11 @@ export function AppLayout() {
   return (
     <Sidebar.Provider defaultOpen variant="inset" collapsible="icon">
       {/* ① Use Tailwind grid directly — no custom class needed */}
-      <div className="grid min-h-screen w-full grid-cols-[auto_minmax(0,1fr)]">
+      <div className="absolute inset-0 flex overflow-hidden bg-kumo-canvas">
         <Sidebar className="border-r border-kumo-line/60 bg-kumo-base/95">
           <Sidebar.Header className="px-3 py-4">
             <div className="flex items-center gap-3">
-              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-kumo-brand text-white">
-                <Flag size={18} weight="fill" />
-              </div>
+              <img src="/logo.png" alt="CookieFarm Logo" width={24} height={24} className="block" />
               {/* ② Show dynamic name here too, not just the top bar */}
               <div className="min-w-0">
                 <div className="truncate font-semibold text-kumo-fg-primary">
@@ -107,7 +106,7 @@ export function AppLayout() {
         </Sidebar>
 
         {/* ④ Right panel: flex column so header is sticky within this column */}
-        <div className="flex min-w-0 flex-col">
+        <div className="flex flex-1 min-w-0 flex-col overflow-y-auto">
           <header className="sticky top-0 z-30 border-b border-kumo-line/70 bg-kumo-overlay/90 px-4 py-3 backdrop-blur md:px-6">
             <div className="mx-auto flex items-center justify-between gap-4">
               <div className="min-w-0">

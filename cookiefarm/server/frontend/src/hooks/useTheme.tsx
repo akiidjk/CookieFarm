@@ -19,19 +19,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getInitialThemeMode(): ThemeMode {
-  const rootMode = document.documentElement.getAttribute("data-mode");
-  if (rootMode === "light" || rootMode === "dark") {
-    return rootMode;
-  }
-
-  const storedMode = localStorage.getItem(themeStorageKey);
-  if (storedMode === "light" || storedMode === "dark") {
-    return storedMode;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return "dark";
 }
 
 export function ThemeProvider(props: { children: ReactNode }) {
@@ -39,8 +27,8 @@ export function ThemeProvider(props: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", "kumo");
-    document.documentElement.setAttribute("data-mode", mode);
-    localStorage.setItem(themeStorageKey, mode);
+    document.documentElement.setAttribute("data-mode", "dark");
+    localStorage.setItem(themeStorageKey, "dark");
   }, [mode]);
 
   return (

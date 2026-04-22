@@ -80,10 +80,10 @@ export function FlagTable(props: {
             <col />
             <col className="w-40" />
             <col className="w-30" />
-            <col className="w-40" />
-            <col className="w-40" />
-            <col className="w-24" />
-            <col className="w-24" />
+            <col className="w-46" />
+            <col className="w-46" />
+            <col className="w-16" />
+            <col className="w-16" />
           </colgroup>
           <Table.Header sticky>
             <Table.Row>
@@ -116,8 +116,8 @@ export function FlagTable(props: {
                 </Table.Cell>
                 <Table.Cell>{formatTimestamp(flag.submit_time)}</Table.Cell>
                 <Table.Cell>{formatTimestamp(flag.response_time)}</Table.Cell>
-                <Table.Cell>{formatDuration(flag)}</Table.Cell>
-                <Table.Cell>{flag.team_id}</Table.Cell>
+                <Table.Cell align="center">{formatDuration(flag)}</Table.Cell>
+                <Table.Cell align="center">{flag.team_id}</Table.Cell>
               </Table.Row>
             ))}
 

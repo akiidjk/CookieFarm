@@ -23,9 +23,9 @@ export function LoginPage() {
   const location = useLocation();
   const redirectTarget =
     typeof location.state === "object" &&
-    location.state &&
-    "from" in location.state &&
-    typeof location.state.from === "string"
+      location.state &&
+      "from" in location.state &&
+      typeof location.state.from === "string"
       ? location.state.from
       : "/";
 
@@ -62,13 +62,21 @@ export function LoginPage() {
   }, [auth.status, navigate, redirectTarget, state.completed]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
+    <main
+      className="flex min-h-screen items-center justify-center px-4 py-10"
+      style={{
+        backgroundImage: `url('/images/background-login.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <section className="dashboard-surface w-full max-w-md rounded-3xl border border-kumo-line p-6 shadow-sm">
         <div className="space-y-2">
           <p className="text-sm uppercase tracking-[0.2em] text-kumo-fg-secondary">
             CookieFarm
           </p>
-          <h1 className="text-3xl font-semibold text-kumo-fg-primary">Operator Login</h1>
+          <h1 className="text-3xl font-semibold text-kumo-fg-primary">Player Login</h1>
           <p className="text-sm text-kumo-fg-secondary">
             Authenticate with the server password to access the dashboard.
           </p>
@@ -86,7 +94,7 @@ export function LoginPage() {
 
           <Input
             name="username"
-            label="Username"
+            label="Username (optional)"
             placeholder="cookieguest"
             autoComplete="username"
           />
@@ -100,7 +108,7 @@ export function LoginPage() {
             required
           />
 
-          <Button type="submit" className="w-full" loading={pending}>
+          <Button type="submit" variant="primary" className="w-full" loading={pending}>
             Sign in
           </Button>
         </form>

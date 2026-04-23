@@ -52,7 +52,7 @@ Make sure you have the following installed:
 #### Automatic Setup
 
 ```
-curl -sSL cookiefarm.bytethecookies.org/install.sh | bash
+bash -c "$(curl -sSL cookiefarm.bytethecookies.org/install.sh)"
 ```
 
 #### Manual Setup

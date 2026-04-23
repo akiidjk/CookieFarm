@@ -12,19 +12,19 @@ const carouselSlides = [
     description: "Monitor your exploits in real-time with a clean, responsive interface",
   },
   {
-    image: "/carousel/server.png",
-    title: "Team Collaboration",
-    description: "Deploy fast, scale with your team during competitions",
-  },
-  {
-    image: "/carousel/tui.png",
-    title: "Simple CLI/TUI",
-    description: "Run exploits with a single command — no config files needed",
-  },
-  {
     image: "/carousel/flags.png",
     title: "Flag Submission",
     description: "Automatic deduplication and submission to the scoreboard every tick",
+  },
+  {
+    image: "/carousel/charts.png",
+    title: "Charts & Analytics",
+    description: "Visualize your performance with detailed charts and analytics",
+  },
+  {
+    image: "/carousel/config.png",
+    title: "Easy Configuration",
+    description: "Configure your in the dashboard and let CookieFarm handle the rest",
   },
 ];
 

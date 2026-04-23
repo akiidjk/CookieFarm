@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"logger"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -54,8 +53,6 @@ func PrepareStatic(app *fiber.App) error {
 	}
 
 	routes := []staticRoute{
-		{"/css", "./server/public/css"},
-		{"/js", "./server/public/js"},
 		{"/images", "./server/public/images"},
 		{"/assets", frontendAssetsDir},
 	}
@@ -76,13 +73,6 @@ func PrepareStatic(app *fiber.App) error {
 	for _, r := range routes {
 		app.Get(r.route+"/*", static.New(r.dir, staticCfg))
 	}
-
-	app.Get("/mockServiceWorker.js", func(c fiber.Ctx) error {
-		if _, err := os.Stat(filepath.Clean(filepath.Join(frontendDistDir, "mockServiceWorker.js"))); err != nil {
-			return c.SendStatus(fiber.StatusNotFound)
-		}
-		return c.SendFile(filepath.Clean(filepath.Join(frontendDistDir, "mockServiceWorker.js")))
-	})
 
 	return nil
 }

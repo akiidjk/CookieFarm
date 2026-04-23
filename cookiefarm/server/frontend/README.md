@@ -64,16 +64,6 @@ This avoids CORS issues and works cleanly in both modes:
 1. Vite dev server (`localhost:5173`) via proxy
 2. Fiber-served built frontend (same-origin `/api/v1`)
 
-## Optional Mock API
-
-To enable mock handlers in dev:
-
-```/dev/null/mock-env.md#L1-1
-VITE_USE_API_MOCKS=true
-```
-
-Use mocks only for local UI development. Keep it off for real backend integration.
-
 ## Scripts
 
 - `dev` — start Vite dev server

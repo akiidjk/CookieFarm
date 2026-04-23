@@ -3,8 +3,6 @@ import { z, type ZodType } from "zod";
 const cachedRequests = new Map<string, Promise<unknown>>();
 
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "/api/v1").trim();
-export const shouldUseApiMocks =
-  import.meta.env.DEV && import.meta.env.VITE_USE_API_MOCKS === "true";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -141,20 +139,12 @@ export function invalidateCached(prefix: string) {
 }
 
 export function buildWebSocketUrl(path: string): string {
-  if (shouldUseApiMocks) {
-    return `mock://${path.replace(/^\/+/, "")}`;
-  }
-
   const target = new URL(buildAbsoluteUrl(path), window.location.origin);
   const protocol = target.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${target.host}${target.pathname}${target.search}`;
 }
 
 export function buildEventSourceUrl(path: string): string {
-  if (shouldUseApiMocks) {
-    return `mock://${path.replace(/^\/+/, "")}`;
-  }
-
   return buildAbsoluteUrl(path);
 }
 

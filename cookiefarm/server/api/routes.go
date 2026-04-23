@@ -92,8 +92,7 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 			strings.HasPrefix(path, "/assets/") ||
 			strings.HasPrefix(path, "/css/") ||
 			strings.HasPrefix(path, "/js/") ||
-			strings.HasPrefix(path, "/images/") ||
-			path == "/mockServiceWorker.js" {
+			strings.HasPrefix(path, "/images/") {
 			return c.SendStatus(fiber.StatusNotFound)
 		}
 

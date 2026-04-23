@@ -35,7 +35,7 @@ export default defineConfig({
             return "vendor-react";
           }
 
-          if (id.includes("msw") || id.includes("ansi-to-html")) {
+          if (id.includes("ansi-to-html")) {
             return "vendor-ops";
           }
 

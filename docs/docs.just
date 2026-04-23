@@ -12,19 +12,19 @@ sync-deps:
 
 # Build docs for prod
 [group('docs')]
-[working-directory('docs')]
-docs-build-prod: sync-deps
+docs-build-prod:
     @echo -e "{{ CYAN }}[*] Building docs...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ DOCS_BIN_DIR }}
-    @docker build -t {{ DOCS_IMAGE_NAME }} .
+    @docker build -t {{ DOCS_IMAGE_NAME }} -f ./docs/Dockerfile .
     @echo -e "{{ GREEN }}[+] Docs build complete!{{ RESET }}"
 
 # Run docs for prod
 [group('docs')]
 [working-directory('docs')]
-docs-up: sync-deps docs-build-prod
+docs-up: docs-build-prod
     @echo -e "{{ CYAN }}[*] Docker up...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ SERVER_BIN_DIR }}
+    @docker rm -f cookiefarm-docs 2>/dev/null || true
     @docker run -d -p 8882:8882 --name cookiefarm-docs {{ DOCS_IMAGE_NAME }}
     @echo -e "{{ GREEN }}[+] Server build complete!{{ RESET }}"
 

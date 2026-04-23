@@ -83,6 +83,10 @@ func (h *Handler) HandleGetStats(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
+	if rows == nil {
+		return c.JSON(fiber.Map{"flags_stats": []any{}})
+	}
+
 	return c.JSON(fiber.Map{"flags_stats": rows})
 }
 

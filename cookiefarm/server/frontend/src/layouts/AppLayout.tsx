@@ -17,7 +17,7 @@ import { apiFetch } from "@/api/client";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LiveDot } from "@/components/LiveDot";
 import { useInterval } from "@/hooks/useInterval";
-import { CookieIcon } from "@phosphor-icons/react/dist/ssr";
+import { CookieIcon, HouseIcon, HouseSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 
 const apiStatusSchema = z.object({
   message: z.string(),
@@ -26,7 +26,8 @@ const apiStatusSchema = z.object({
 
 
 const navigationItems = [
-  { href: "/", label: "Dashboard", icon: ChartBar },
+  { href: "/", label: "Dashboard", icon: HouseIcon },
+  { href: "/charts", label: "Charts", icon: ChartBar },
   { href: "/flags", label: "Flags", icon: Flag },
   { href: "/config", label: "Config", icon: Gear },
 ] as const;

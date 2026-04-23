@@ -9,7 +9,7 @@ import { useKumoToastManager } from "@cloudflare/kumo/components/toast";
 import { ArrowSquareOut, WarningCircle } from "@phosphor-icons/react";
 import { Link } from "react-router";
 import { useConfig } from "@/api/config";
-import { deleteFlag, fetchFlags, submitFlag, useFlags } from "@/api/flags";
+import { deleteFlag, fetchAllFlags, fetchFlags, submitFlag, useAllFlags, useFlags } from "@/api/flags";
 import { fetchStatsSummary, useStatsSummary, type StatsSummary } from "@/api/stats";
 import { FlagTable } from "@/features/flags/FlagTable";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
@@ -28,8 +28,10 @@ export function DashboardPage() {
   const toast = useKumoToastManager();
   const config = useConfig();
   const seedSummary = useStatsSummary();
+  const seedChartFlags = useAllFlags();
   const seedFlags = useFlags({ limit: 25, offset: 0 });
   const [summary, setSummary] = useState<StatsSummary>(seedSummary);
+  const [chartFlags, setChartFlags] = useState(seedChartFlags.flags);
   const [flags, setFlags] = useState(seedFlags.flags);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [flagCode, setFlagCode] = useState("");
@@ -46,14 +48,20 @@ export function DashboardPage() {
     setFlags(seedFlags.flags);
   }, [seedFlags.flags]);
 
+  useEffect(() => {
+    setChartFlags(seedChartFlags.flags);
+  }, [seedChartFlags.flags]);
+
   async function refreshDashboard(): Promise<void> {
-    const [nextSummary, nextFlags] = await Promise.all([
+    const [nextSummary, nextChartFlags, nextFlags] = await Promise.all([
       fetchStatsSummary(),
+      fetchAllFlags(),
       fetchFlags({ limit: 25, offset: 0 }),
     ]);
 
     startTransition(() => {
       setSummary(nextSummary);
+      setChartFlags(nextChartFlags.flags);
       setFlags(nextFlags.flags);
     });
     setErrorMessage(null);
@@ -103,7 +111,11 @@ export function DashboardPage() {
         />
       ) : null}
 
-      <StatsBar summary={summary} />
+      <StatsBar
+        summary={summary}
+        flags={chartFlags}
+        tickSeconds={config.server.tick_time}
+      />
 
       <section className="rounded-2xl border border-kumo-line bg-kumo-base p-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">

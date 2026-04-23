@@ -80,6 +80,10 @@ export async function fetchFlags(params: FlagsQuery): Promise<FlagsResponse> {
   );
 }
 
+export async function fetchAllFlags(): Promise<FlagsResponse> {
+  return apiFetch("/flags", {}, flagsResponseSchema);
+}
+
 export function readFlags(params: FlagsQuery): Promise<FlagsResponse> {
   const queryKey = `${params.limit}:${buildFlagsQuery(params)}`;
   return cached(`flags:${queryKey}`, () => fetchFlags(params));
@@ -87,6 +91,14 @@ export function readFlags(params: FlagsQuery): Promise<FlagsResponse> {
 
 export function useFlags(params: FlagsQuery) {
   return use(readFlags(params));
+}
+
+export function readAllFlags(): Promise<FlagsResponse> {
+  return cached("flags:all", fetchAllFlags);
+}
+
+export function useAllFlags() {
+  return use(readAllFlags());
 }
 
 export async function submitFlag(flag: Flag): Promise<void> {

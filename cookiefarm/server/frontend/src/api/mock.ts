@@ -106,6 +106,12 @@ export async function startMocking(): Promise<void> {
         ],
       }),
     ),
+    http.get("/api/v1/flags", async () =>
+      HttpResponse.json({
+        flags,
+        n_flags: flags.length,
+      }),
+    ),
     http.get("/api/v1/flags/:limit", async ({ request, params }) => {
       const url = new URL(request.url);
       const offset = Number(url.searchParams.get("offset") ?? "0");

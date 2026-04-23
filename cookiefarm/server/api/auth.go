@@ -169,6 +169,20 @@ func HandleVerify(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
 }
 
+// HandleLogout clears the JWT cookie.
+func HandleLogout(c fiber.Ctx) error {
+	c.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    "",
+		MaxAge:   -1,
+		HTTPOnly: true,
+		SameSite: "Strict",
+		Expires:  time.Unix(0, 0),
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
+}
+
 // CookieAuthMiddleware checks if the user has a valid JWT token in their cookies.
 func CookieAuthMiddleware(c fiber.Ctx) error {
 	token := c.Cookies("token")

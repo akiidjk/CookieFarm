@@ -33,5 +33,4 @@ Need to install:
 
 ## Frontend
 
-- uglify-js (For minifying JavaScript code)
-- tailwindcss (For styling the frontend)
+- bun

@@ -10,7 +10,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json bun.lock* yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* source.config.ts next.config.* ./
+COPY ./docs/package.json ./docs/bun.lock* ./docs/package-lock.json* ./docs/source.config.ts ./docs/next.config.* ./
 RUN \
     if [ -f bun.lock ]; then bun install --frozen-lockfile; \
     elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
@@ -23,7 +23,10 @@ RUN \
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY ./docs .
+COPY ./cookiefarm/server/api/docs/swagger.json /cookiefarm/server/api/docs/swagger.json
+
+RUN apk add --no-cache git
 
 ENV NEXT_TELEMETRY_DISABLED=1
 

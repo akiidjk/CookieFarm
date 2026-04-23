@@ -1,7 +1,9 @@
 export const dynamic = 'force-dynamic'; // never cache at build time
 
+const BRANCH = process.env.BRANCH || 'dev';
+
 const GITHUB_RAW_URL =
-  'https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/main/install.sh';
+  `https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/${BRANCH}/install.sh`;
 
 export async function GET() {
   const res = await fetch(GITHUB_RAW_URL, {

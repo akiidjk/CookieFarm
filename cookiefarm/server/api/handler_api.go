@@ -393,7 +393,7 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 		})
 	}
 
-	h.config.SetShared(payload.Config)
+	h.config.SetFullConfig(payload.Config)
 
 	h.runner.Run()
 

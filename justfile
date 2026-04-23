@@ -75,6 +75,6 @@ release:
 [working-directory('cookiefarm')]
 ghcr-push:
     @echo Building and pushing Docker image to GitHub Container Registry...
-    @docker build -t ghcr.io/bytethecookies/cookiefarm:latest .
+    @docker build -t ghcr.io/bytethecookies/cookiefarm:latest --build-arg VERSION=$(git describe --tags --abbrev=0) .
     @docker push ghcr.io/bytethecookies/cookiefarm:latest
     @echo Docker image pushed to GitHub Container Registry!

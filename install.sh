@@ -253,6 +253,8 @@ PORT=""
 PASSWORD=""
 CONFIG_FILE=""
 DEBUG=""
+VERSION="v$(git ls-remote --tags --refs https://github.com/ByteTheCookies/CookieFarm.git 2>/dev/null | sed -n 's#.*refs/tags/##p' | sed 's/^v//' | sort -V | tail -n1)"
+
 preconfigured="false"
 
 url_flag_checker=""
@@ -460,6 +462,7 @@ PORT=${PORT}
 PASSWORD=${PASSWORD}
 CONFIG_FILE=${CONFIG_FILE}
 DEBUG=${DEBUG}
+VERSION=${VERSION}
 EOF
 
     printf "%b✔%b  .env written → %b%s%b  PORT=%b%s%b  CONFIG_FILE=%b%s%b  DEBUG=%b%s%b\n" \

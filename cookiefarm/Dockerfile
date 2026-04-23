@@ -6,10 +6,12 @@ WORKDIR /app
 
 COPY ./ /app/
 
+ARG VERSION=dev
+
 # server builds
 RUN GOOS="linux" GOARCH="amd64" \
   go build -trimpath \
-  -ldflags="-s -w -X main.Version=1.2.1" \
+  -ldflags="-s -w -X 'main.Version=${VERSION}'" \
   -o ./bin/cks ./server/main.go
 
 # plugins build
@@ -19,7 +21,7 @@ RUN for file in $(find ./pkg/protocols -name '*.go' ! -name 'protocols.go'); do 
   pluginname=${filename%.go}; \
   GOOS="linux" GOARCH="amd64" \
     go build -trimpath \
-        -ldflags="-s -w -X main.Version=1.2.1" \
+        -ldflags="-s -w -X 'main.Version=${VERSION}'" \
         -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
  else \
   echo "Skipping $file: not a main package"; \
@@ -37,7 +39,9 @@ COPY --from=build /app/bin/cks /app/bin/cks
 COPY --from=build /app/server/public /app/server/public
 COPY --from=build /app/config.yml /app/config.yml
 COPY --from=build /app/pkg/protocols /app/pkg/protocols
-COPY --from=build /app/server/internal/ui/views /app/server/internal/ui/views
+COPY --from=build /app/server/frontend/dist /app/server/frontend/dist
+COPY --from=build /app/server/frontend/dist/assets /app/server/frontend/dist/assets
+COPY --from=build /app/server/frontend/dist/index.html /app/server/frontend/dist/index.html
 COPY ./run.sh /app/run.sh
 
 RUN touch /app/cookiefarm.db \

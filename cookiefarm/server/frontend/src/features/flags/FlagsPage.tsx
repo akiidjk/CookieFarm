@@ -11,6 +11,7 @@ import { fetchFlags, useFlags, type FlagStatus, type FlagsQuery } from "@/api/fl
 import { PageHeader } from "@/components/kumo/page-header/page-header";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useInterval } from "@/hooks/useInterval";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { FlagFilters, type FlagFilterState } from "./FlagFilters";
 import { FlagTable } from "./FlagTable";
 
@@ -87,6 +88,12 @@ export function FlagsPage() {
     10_000,
     { enabled: autoRefreshEnabled },
   );
+
+  useRefreshOnFocus(() => {
+    void refreshFlags().catch((error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "Flag refresh failed");
+    });
+  });
 
   return (
     <div className="space-y-6">

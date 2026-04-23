@@ -14,6 +14,7 @@ import { fetchStatsSummary, useStatsSummary, type StatsSummary } from "@/api/sta
 import { FlagTable } from "@/features/flags/FlagTable";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
 import { useInterval } from "@/hooks/useInterval";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { StatsBar } from "./StatsBar";
 
 const breadcrumbs = (
@@ -77,6 +78,12 @@ export function DashboardPage() {
     refreshMs,
     { enabled: autoRefreshEnabled },
   );
+
+  useRefreshOnFocus(() => {
+    void refreshDashboard().catch((error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "Dashboard refresh failed");
+    });
+  }, { immediate: true });
 
   return (
     <div className="space-y-6">

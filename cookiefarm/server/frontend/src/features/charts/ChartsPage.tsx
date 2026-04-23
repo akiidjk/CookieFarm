@@ -18,6 +18,7 @@ import { fetchConfig, useConfig } from "@/api/config";
 import { fetchAllFlags, useAllFlags } from "@/api/flags";
 import { fetchStatsSummary, useStatsSummary } from "@/api/stats";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { buildExploitShare, buildTickSeries, formatTickLabel } from "./chartData";
 
 echarts.use([
@@ -69,6 +70,12 @@ export function ChartsPage() {
     });
     setErrorMessage(null);
   }
+
+  useRefreshOnFocus(() => {
+    void refreshCharts().catch((error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : "Chart refresh failed");
+    });
+  }, { immediate: true });
 
   const tickSeries = useMemo(
     () => buildTickSeries(flags, config.server.tick_time),

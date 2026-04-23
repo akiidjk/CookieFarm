@@ -48,7 +48,7 @@ func FlagHandler(event Event, client *Client) error {
 
 	client.Egress <- outgoingEvent
 
-	logger.Log.Info().
+	logger.Log.Debug().
 		Int("client", client.Number).
 		Str("flag", flag.FlagCode).
 		Int64("team", flag.TeamID).

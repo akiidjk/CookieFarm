@@ -58,7 +58,7 @@ func tryToConnect(cm *config.ConfigManager, maxAttempts int, dialer *websocket.D
 	host := cm.GetHost()
 	port := strconv.Itoa(int(cm.GetPort()))
 	for attempts := range maxAttempts {
-		conn, resp, err := dialer.Dial("ws://"+host+":"+port+"/ws/", http.Header{
+		conn, resp, err := dialer.Dial("ws://"+host+":"+port+"/ws", http.Header{
 			"Cookie": []string{"token=" + cm.GetToken()},
 		})
 

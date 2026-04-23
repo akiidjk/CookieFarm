@@ -150,18 +150,12 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	opts := database.GetFilteredFlagsParams{
-		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
-		Search: sql.NullString{
-			String: c.Query("search"),
-			Valid:  c.Query("search") != "",
-		},
-		SearchField: sql.NullString{
-			String: c.Query("search_field"),
-			Valid:  c.Query("search_field") != "",
-		}, // Field to apply the search query to (default: flag_code)
-		Limit:  sql.NullInt64{Int64: int64(limit), Valid: true},
-		Offset: sql.NullInt64{Int64: int64(offset), Valid: true},
+		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5},                                                                // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},                                                                 // Filter by team ID (0 means not provided)
+		Search:      sql.NullString{String: strings.TrimSpace(c.Query("search", "")), Valid: strings.TrimSpace(c.Query("search", "")) != ""}, // Value of the search query
+		SearchField: sql.NullString{String: strings.TrimSpace(c.Query("search_field", "flag_code")), Valid: true},                            // Field to apply the search query to (default: flag_code)
+		Limit:       sql.NullInt64{Int64: int64(limit), Valid: true},
+		Offset:      sql.NullInt64{Int64: int64(offset), Valid: true},
 	}
 
 	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
@@ -171,11 +165,12 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	optsCount := database.CountFilteredFlagsParams{
-		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		ServiceName: serviceNull,                                              // Filter by service name
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
-		Search:      c.Query("search", ""),                                    // Value of the search query
-		SearchField: c.Query("search_field", "flag_code"),                     // Field to apply the search query to (default: flag_code)
+		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5},                                                                // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
+		ServiceName: serviceNull,                                                                                                             // Filter by service name
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},                                                                 // Filter by team ID (0 means not provided)
+		Search:      sql.NullString{String: strings.TrimSpace(c.Query("search", "")), Valid: strings.TrimSpace(c.Query("search", "")) != ""}, // Value of the search query
+		SearchField: sql.NullString{String: strings.TrimSpace(c.Query("search_field", "flag_code")), Valid: true},                            // Field to apply the search query (default: flag_code)
+
 	}
 
 	// Get filtered count for accurate pagination

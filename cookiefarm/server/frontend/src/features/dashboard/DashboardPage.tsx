@@ -17,6 +17,26 @@ import { useInterval } from "@/hooks/useInterval";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { StatsBar } from "./StatsBar";
 
+const autoRefreshEnabledStorageKey = "cookiefarm-dashboard-auto-refresh-enabled";
+const autoRefreshMsStorageKey = "cookiefarm-dashboard-auto-refresh-ms";
+
+function readStoredAutoRefreshEnabled(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(autoRefreshEnabledStorageKey) === "true";
+}
+
+function readStoredRefreshMs(): number {
+  if (typeof window === "undefined") {
+    return 10_000;
+  }
+
+  const storedValue = Number(window.localStorage.getItem(autoRefreshMsStorageKey));
+  return [5000, 10000, 60000, 120000].includes(storedValue) ? storedValue : 10_000;
+}
+
 const breadcrumbs = (
   <Breadcrumbs className="px-3 py-2 text-sm">
     <Breadcrumbs.Link href="/">Operations</Breadcrumbs.Link>
@@ -36,8 +56,8 @@ export function DashboardPage() {
   const [flags, setFlags] = useState(seedFlags.flags);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [flagCode, setFlagCode] = useState("");
-  const [refreshMs, setRefreshMs] = useState(10_000);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [refreshMs, setRefreshMs] = useState(readStoredRefreshMs);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(readStoredAutoRefreshEnabled);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -52,6 +72,17 @@ export function DashboardPage() {
   useEffect(() => {
     setChartFlags(seedChartFlags.flags);
   }, [seedChartFlags.flags]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      autoRefreshEnabledStorageKey,
+      autoRefreshEnabled ? "true" : "false",
+    );
+  }, [autoRefreshEnabled]);
+
+  useEffect(() => {
+    window.localStorage.setItem(autoRefreshMsStorageKey, String(refreshMs));
+  }, [refreshMs]);
 
   async function refreshDashboard(): Promise<void> {
     const [nextSummary, nextChartFlags, nextFlags] = await Promise.all([

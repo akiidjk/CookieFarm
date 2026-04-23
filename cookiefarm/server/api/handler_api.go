@@ -414,7 +414,7 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 
 	h.runner.Run()
 
-	cfgJSON, err := json.Marshal(h.config.GetFullConfig())
+	cfgJSON, err := json.Marshal(h.config.GetShared())
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to marshal config")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{

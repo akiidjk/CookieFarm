@@ -32,7 +32,7 @@ func configCheck(cm *config.ConfigManager) error {
 	}
 
 	if strings.TrimSpace(string(currentShc)) != strings.TrimSpace(string(remoteConfigStr)) {
-		return errors.New("shared configuration has changed, update the config doing `ckc config login`")
+		return errors.New("shared configuration has changed, update the config doing `ckc login`")
 	}
 
 	return nil

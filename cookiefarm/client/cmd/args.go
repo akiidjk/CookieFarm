@@ -72,11 +72,10 @@ func buildConfigCmd() *cobra.Command {
 
 	configCmd.AddCommand(resetConfigCmd)
 	configCmd.AddCommand(editConfigCmd)
-	configCmd.AddCommand(loginConfigCmd)
-	rootCmd.AddCommand(loginConfigCmd)
-	configCmd.AddCommand(logoutConfigCmd)
-	rootCmd.AddCommand(logoutConfigCmd)
 	configCmd.AddCommand(showConfigCmd)
+
+	rootCmd.AddCommand(loginConfigCmd)
+	rootCmd.AddCommand(logoutConfigCmd)
 
 	return configCmd
 }
@@ -104,6 +103,8 @@ func edit(cmd *cobra.Command, args []string) {
 	cm.SetHTTPS(https)
 
 	cm.WriteLocal()
+
+	logger.Log.Info().Msg("Configuration updated successfully.")
 }
 
 func login(cmd *cobra.Command, args []string) {

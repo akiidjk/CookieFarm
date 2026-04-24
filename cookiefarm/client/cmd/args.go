@@ -103,6 +103,8 @@ func edit(cmd *cobra.Command, args []string) {
 	cm.SetHTTPS(https)
 
 	cm.WriteLocal()
+
+	logger.Log.Info().Msg("Configuration updated successfully.")
 }
 
 func login(cmd *cobra.Command, args []string) {

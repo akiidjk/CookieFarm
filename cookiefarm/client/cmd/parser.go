@@ -13,7 +13,7 @@ import (
 
 var (
 	useBanner bool = true
-	useTUI    bool = true
+	useTUI    bool = false
 )
 
 func startTui() {

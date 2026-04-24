@@ -16,6 +16,26 @@ Global flags:
 - `-D, --debug`
 - `-B, --banner`
 
+## `ckc login`
+
+Login and shared config sync.
+
+Flags:
+- `-u, --username`
+- `-P, --password` (required)
+
+Note:
+- `ckc login` is also available as a top-level alias for this command.
+- Configure host/port/https with `ckc config edit` before login.
+
+![ckc login example](/docs/login.png)
+
+## `ckc logout`
+
+Removes local session.
+
+![ckc logout example](/docs/logout.png)
+
 ## `ckc config`
 
 ### `ckc config edit`
@@ -28,29 +48,19 @@ Flags:
 - `-u, --username`
 - `-s, --https`
 
-### `ckc config login`
-
-Login and shared config sync.
-
-Flags:
-- `-u, --username`
-- `-P, --password` (required)
-
-Note:
-- `ckc login` is also available as a top-level alias for this command.
-- Configure host/port/https with `ckc config edit` before login.
-
-### `ckc config logout`
-
-Removes local session.
+![ckc config edit example](/docs/config_edit.png)
 
 ### `ckc config reset`
 
 Resets local config to defaults.
 
+![ckc config reset example](/docs/config_reset.png)
+
 ### `ckc config show`
 
 Prints `client.yml` and `shared.yml`.
+
+![ckc config show example](/docs/config_show.png)
 
 ## `ckc exploit`
 
@@ -61,12 +71,16 @@ Creates Python exploit template.
 Flags:
 - `-n, --name` (required)
 
+![ckc exploit create example](/docs/exploit_create.png)
+
 ### `ckc exploit remove`
 
 Removes exploit template.
 
 Flags:
 - `-n, --name` (required)
+
+![ckc exploit remove example](/docs/exploit_remove.png)
 
 ### `ckc exploit test`
 
@@ -78,6 +92,8 @@ Flags:
 - `-d, --detach`
 - `-t, --tick` (default `120`)
 - `-T, --thread` (default `5`)
+
+![ckc exploit test example](/docs/exploit_test.png)
 
 ### `ckc exploit run`
 
@@ -91,9 +107,13 @@ Flags:
 - `-T, --thread` (default `5`)
 - `-S, --submit` (direct HTTP submit)
 
+![ckc exploit run example](/docs/exploit_run.png)
+
 ### `ckc exploit list`
 
 Lists local exploit templates in `~/.config/cookiefarm/exploits`.
+
+![ckc exploit list example](/docs/exploit_list.png)
 
 ### `ckc exploit listrun`
 

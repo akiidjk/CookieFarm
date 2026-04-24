@@ -62,7 +62,7 @@ echo "Report:"
 echo "- Server started at localhost:808"
 echo "- Started $1 container(s) with a service called CookieServer at port 8081"
 echo "- Test command:"
-echo '  `ckc config login -P password`'
+echo '  `ckc login -P password`'
 echo '  `ckc exploit run -e exploit -n CookieService`'
 
 read -p "🔻 Press ENTER to close all terminals started by this script..."

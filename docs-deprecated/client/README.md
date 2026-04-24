@@ -83,7 +83,7 @@ The CookieFarm client has two interface modes:
 2. **Log in** to the server:
    ```bash
    # In CLI mode (with no environment variable setted):
-   ckc config login -P SuperSecret -H 192.168.1.10 -p 8000 -u CookieMonster
+   ckc login -P SuperSecret -H 192.168.1.10 -p 8000 -u CookieMonster
 
    # In TUI mode:
    # Navigate to: Configuration → Login → Enter credentials
@@ -135,7 +135,7 @@ The TUI offers these main views:
 Authenticate with the server using a password:
 ```bash
 # In CLI mode (with no environment variable setted):
-ckc config login -P <password> -H <server_ip> -p <port> -u <username>
+ckc login -P <password> -H <server_ip> -p <port> -u <username>
 
 # In TUI mode:
 # Navigate to: Configuration → Login → Enter password
@@ -185,7 +185,7 @@ ckc config reset
 Log out and clear the current session:
 ```bash
 # In CLI mode (with no environment variable setted):
-ckc config logout
+ckc logout
 
 # In TUI mode:
 # Navigate to: Configuration → Logout

@@ -75,6 +75,7 @@ func buildConfigCmd() *cobra.Command {
 	configCmd.AddCommand(loginConfigCmd)
 	rootCmd.AddCommand(loginConfigCmd)
 	configCmd.AddCommand(logoutConfigCmd)
+	rootCmd.AddCommand(logoutConfigCmd)
 	configCmd.AddCommand(showConfigCmd)
 
 	return configCmd

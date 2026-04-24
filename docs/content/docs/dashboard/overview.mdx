@@ -1,42 +1,44 @@
 ---
 title: Dashboard Overview
-description: CookieFarm dashboard overview flag table, manual submit, pagination and config modal.
+description: CookieFarm dashboard overview covering the Dashboard, Flags, Charts, and Config views.
 ---
 
 # Dashboard Overview
 
-The current dashboard is focused on flag operations and runtime configuration.
+The current dashboard is a modern React Single Page Application (SPA) focused on flag operations, monitoring, and runtime configuration.
 
-Main page: `/dashboard`.
+Main entry point: `/` (Dashboard).
 
-## What you get in the UI
+![Dashboard Overview](/docs/dashboard.png)
+![Dashboard Overview](/docs/charts.png)
+![Dashboard Overview](/docs/config.png)
 
-- flag table (code, message, service, status, timing)
-- manual reload
-- manual single flag submit
-- single flag delete
-- auto reload with configurable interval
-- HTMX pagination
-- modal for server/shared configuration
+## Core Views
+
+The UI is split into several dedicated views:
+
+- **Dashboard (`/`)**: Collector overview, stats bar, manual flag submit/delete, and a quick look at the latest 25 flags.
+- **Flags (`/flags`)**: Comprehensive flag table with advanced filtering (by status, service, team, search), pagination, and adjustable rows-per-page.
+- **Charts (`/charts`)**: Visualizations and graphs summarizing flag statuses and submission performance.
+- **Config (`/config`)**: A dedicated page for editing server and shared configuration parameters.
 
 ## Main workflows
 
-## Monitor flags
+### Monitor flags
 
-Data is loaded from:
-- `/flags/:limit?offset=...`
-- `/pagination/:limit?offset=...`
+Data is loaded seamlessly via the API. You can view recent flags directly on the Dashboard, or navigate to the Flags page for historical data and targeted filtering. Both pages support auto-reloading with configurable intervals (e.g., 5s, 10s, 1m, 2m).
 
-## Manual submit
+### Manual submit and delete
 
-- type flag in input field
-- click `Submit`
-- API call: `POST /api/v1/submit-flag`
+From the main Dashboard view:
+- Type a flag in the "Manual Flag" input field.
+- Click `Submit` to queue the flag for processing (API call: `POST /api/v1/submit-flag`).
+- Click `Delete` to remove a specific invalid test flag (API call: `DELETE /api/v1/delete-flag?flag=...`).
 
-## Update config
+### Update config
 
-- open settings modal
-- save configuration
-- API call: `POST /api/v1/config`
+- Navigate to the Config page (`/config`).
+- Modify server parameters or shared client settings.
+- Save the configuration (API call: `POST /api/v1/config`).
 
-Saving config restarts server loops and broadcasts config event to connected clients over websocket.
+Saving the config restarts the backend server loops and broadcasts the config event to connected clients over websockets.

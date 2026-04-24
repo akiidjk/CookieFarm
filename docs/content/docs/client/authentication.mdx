@@ -27,15 +27,21 @@ What it does:
 3. stores session token
 4. fetches shared config and writes `shared.yml`
 
-Notes:
-- `ckc config login` and `ckc login` point to the same login command.
-- Login flags are `username/password`; host/port are configured via `ckc config edit`.
+<Callout type='warn'>
+
+Login flags are `username/password`; host/port are configured via `ckc config edit`.
+
+</Callout>
+
+![Login Flow](/docs/login.png)
 
 ## Logout
 
 ```bash
-ckc config logout
+ckc logout
 ```
+
+![Logout Flow](/docs/logout.png)
 
 Removes local `session` file.
 
@@ -44,6 +50,8 @@ Removes local `session` file.
 ```bash
 ckc config show
 ```
+
+![Config Show](/docs/config_show.png)
 
 ## Common Errors
 

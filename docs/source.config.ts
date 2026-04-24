@@ -5,7 +5,8 @@ import {
   remarkFeedbackBlock,
   type RemarkFeedbackBlockOptions,
 } from 'fumadocs-core/mdx-plugins/remark-feedback-block'
-
+import { remarkDirectiveAdmonition, remarkMdxFiles, remarkSteps } from 'fumadocs-core/mdx-plugins';
+import remarkDirective from 'remark-directive';
 const feedbackOptions: RemarkFeedbackBlockOptions = {
   // other options:
 };
@@ -29,13 +30,12 @@ export const docs = defineDocs({
 export default defineConfig({
   mdxOptions: {
     // MDX options
-    // remarkPlugins: [
-    //   [remarkFeedbackBlock, feedbackOptions],
-    // ],
+    remarkPlugins: [
+      [remarkSteps,remarkMdxFiles, remarkDirective,remarkDirectiveAdmonition],
+    ],
   },
   plugins: [
     lastModified()
-
   ],
 
 });

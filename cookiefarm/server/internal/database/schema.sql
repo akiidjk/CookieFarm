@@ -15,10 +15,10 @@ CREATE INDEX IF NOT EXISTS idx_flags_submit_time
   ON flags(submit_time);
 
 CREATE TABLE IF NOT EXISTS exploits (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL,
     hash VARCHAR(255) NOT NULL,
-    submit_time INTEGER,  -- Unix timestamp
+    submit_time INTEGER NOT NULL,  -- Unix timestamp
     username VARCHAR(255) NOT NULL DEFAULT 'cookie',
     version INTEGER NOT NULL DEFAULT '1'
 );

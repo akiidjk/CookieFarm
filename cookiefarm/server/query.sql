@@ -162,7 +162,22 @@ SELECT *
 FROM exploits
 ORDER BY submit_time DESC;
 
+-- name: CountExploits :one
+SELECT COUNT(*)
+FROM exploits
+LIMIT 1;
+
+-- name: GetExploitsByName :many
+SELECT *
+FROM exploits
+WHERE name = ?
+ORDER BY submit_time DESC;
+
 -- name: CreateExploit :exec
 
 INSERT INTO exploits(name, hash, submit_time, username, version)
 VALUES (?, ?, ?, ?, ?);
+
+-- name: DeleteExploitByID :exec
+DELETE FROM exploits
+WHERE id = ?;

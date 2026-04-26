@@ -2,9 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"errors"
+	"io"
 	"logger"
 	"models"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -470,10 +473,8 @@ func (h *Handler) HandleDeleteFlag(c fiber.Ctx) error {
 	return c.JSON(ResponseSuccess{Message: "Flag deleted successfully"})
 }
 
-// fiber:context-methods migrated
-
 func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
-	_, err := h.store.Queries.GetAllExploits(c.RequestCtx())
+	exploits, err := h.store.Queries.GetAllExploits(c.RequestCtx())
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to fetch exploits")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
@@ -481,11 +482,64 @@ func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(ResponseSuccess{Message: "Exploits fetched successfully"})
+	return c.JSON(fiber.Map{
+		"exploits": exploits,
+		"count": len(exploits),
+	})
 }
 
-func (h *Handler) HandleGetPaginatedExploits(c fiber.Ctx) error {
-	return nil
+type ExploitWithContent struct {
+	database.Exploit
+	Content string `json:"content"`
+}
+
+func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
+	exploitName := c.Params("name")
+	if exploitName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit name",
+		})
+	}
+
+	exploits, err := h.store.Queries.GetExploitsByName(c.RequestCtx(), exploitName)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch exploit by name")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploit",
+		})
+	}
+
+	if len(exploits) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(ResponseError{
+			Error: "Exploit not found",
+		})
+	}
+
+	var exploitsWContent []ExploitWithContent = make([]ExploitWithContent, len(exploits))
+	for i,ex := range exploits {
+		exploitsWContent[i] = ExploitWithContent{
+			Exploit: ex,
+			Content: "",
+		}
+
+		exploit,err := os.OpenFile(path.Join(exploit.ExploitPath,exploits[i].Hash+".py"), os.O_RDONLY, 0644)
+		if err != nil {
+			logger.Log.Error().Err(err).Str("hash", exploits[i].Hash).Msg("Failed to open exploit file")
+			exploitsWContent[i].Content = "Error loading exploit content"
+			continue
+		}
+		content, err := io.ReadAll(exploit)
+		if err != nil {
+			logger.Log.Error().Err(err).Str("hash", exploits[i].Hash).Msg("Failed to read exploit file")
+			exploitsWContent[i].Content = "Error loading exploit content"
+			exploit.Close()
+			continue
+		}
+		exploitsWContent[i].Content = string(content)
+		exploit.Close()
+	}
+
+	return c.JSON(exploitsWContent)
 }
 
 func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
@@ -523,11 +577,14 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 	hash := exploit.GenerateHashFromFile(file)
 	logger.Log.Debug().Str("filename", fileHeader.Filename).Str("hash", hash).Msg("Generated hash for uploaded exploit")
 	ex, err := h.store.Queries.GetExploitByHash(c, hash)
-	if err != nil && !strings.Contains(err.Error(), "no rows in result set") {
-		logger.Log.Error().Err(err).Msg("Failed to check existing exploit")
-		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
-			Error: "Failed to check existing exploit",
-		})
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) && !strings.Contains(err.Error(), "no rows in result set") {
+			logger.Log.Error().Err(err).Msg("Failed to check existing exploit")
+			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+				Error: "Failed to check existing exploit",
+			})
+		}
+		ex = database.Exploit{}
 	}
 
 	if ex.Hash != "" {
@@ -536,12 +593,21 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 		})
 	}
 
-	var version int64 = 1
-	if ex.Name == fileHeader.Filename {
-		version = ex.Version + 1
+
+	exploitsByName, err := h.store.Queries.GetExploitsByName(c, fileHeader.Filename)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) && !strings.Contains(err.Error(), "no rows in result set") {
+		logger.Log.Error().Err(err).Msg("Failed to check existing exploit by name")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to check existing exploit by name",
+		})
 	}
 
-	err = exploit.CreateExploitFile(c,fileHeader,hash)
+	var version int64 = 1
+	if len(exploitsByName) > 0 {
+		version = exploitsByName[0].Version + 1
+	}
+
+	err = exploit.CreateExploitFile(c, fileHeader, hash)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save file"})
 	}
@@ -551,24 +617,40 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 	exploit := database.CreateExploitParams{
 		Name:       fileHeader.Filename,
 		Hash:       hash,
-		Username: username.(string),
-		SubmitTime: sql.NullInt64{Int64: time.Now().Unix(), Valid: true},
-		Version: version,
+		Username:   username.(string),
+		SubmitTime: time.Now().Unix(),
+		Version:    version,
 	}
 
-	err = h.store.Queries.CreateExploit(c,exploit)
+	err = h.store.Queries.CreateExploit(c, exploit)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save exploit metadata"})
 	}
 
 	return c.JSON(fiber.Map{
-		"message":  "uploaded successfully",
+		"message":      "uploaded successfully",
 		"exploit_name": fileHeader.Filename,
-		"hash": hash,
-		"version": version,
+		"hash":         hash,
+		"version":      version,
 	})
 }
 
 func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {
-	return nil
+	exploitID := c.Params("id")
+	if exploitID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit ID",
+		})
+	}
+
+	id, err := strconv.ParseInt(exploitID, 10, 64)
+	err = h.store.Queries.DeleteExploitByID(c.RequestCtx(), id)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to delete exploit")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to delete exploit",
+		})
+	}
+
+	return c.JSON(ResponseSuccess{Message: "Exploit deleted successfully"})
 }

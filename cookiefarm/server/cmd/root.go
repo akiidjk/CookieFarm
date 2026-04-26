@@ -103,7 +103,10 @@ func Run(cmd *cobra.Command, args []string) {
 		ConnMaxLifetime: 5 * time.Minute,
 		ConnMaxIdleTime: 1 * time.Minute,
 	}
-	db, _ := database.NewDB(cfgDB)
+	db, err := database.NewDB(cfgDB)
+	if err != nil {
+		panic("Failed to connect to database: " + err.Error())
+	}
 	store := database.NewStore(db)
 	database.GetCollector().SetStore(store)
 	runner := core.NewRunner(store, cfg)

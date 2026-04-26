@@ -20,6 +20,11 @@ const FlagsPage = lazy(async () => {
   return { default: module.FlagsPage };
 });
 
+const ExploitsPage = lazy(async () => {
+  const module = await import("@/features/exploits/ExploitsPage");
+  return { default: module.ExploitsPage };
+});
+
 const ChartsPage = lazy(async () => {
   const module = await import("@/features/charts/ChartsPage");
   return { default: module.ChartsPage };
@@ -56,6 +61,10 @@ export const router = createBrowserRouter([
       {
         path: "flags",
         element: suspenseElement(<FlagsPage />),
+      },
+      {
+        path: "exploits",
+        element: suspenseElement(<ExploitsPage />),
       },
       {
         path: "charts",

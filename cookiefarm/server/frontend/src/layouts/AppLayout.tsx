@@ -4,6 +4,7 @@ import { Sidebar } from "@cloudflare/kumo/components/sidebar";
 import { Text } from "@cloudflare/kumo/components/text";
 import { z } from "zod";
 import {
+  Bug,
   ChartBar,
   Flag,
   Gear,
@@ -29,6 +30,7 @@ const navigationItems = [
   { href: "/", label: "Dashboard", icon: HouseIcon },
   { href: "/charts", label: "Charts", icon: ChartBar },
   { href: "/flags", label: "Flags", icon: Flag },
+  { href: "/exploits", label: "Exploits", icon: Bug },
   { href: "/config", label: "Config", icon: Gear },
 ] as const;
 

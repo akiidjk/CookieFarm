@@ -112,3 +112,15 @@ func SubmitFlag(flag database.Flag) error {
 
 	return checkStatus(resp.StatusCode, body)
 }
+
+
+func UploadExploit(exploitPath string) error {
+	client := getClient()
+	logger.Log.Debug().Str("exploitPath", exploitPath).Msg("Uploading exploit")
+	resp, body, err := client.uploadFile("/api/v1/exploit/upload", exploitPath, AUTHED)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return checkStatus(resp.StatusCode, body)
+}

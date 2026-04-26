@@ -110,8 +110,8 @@ func (q *Queries) CountFlags(ctx context.Context) (int64, error) {
 
 const createExploit = `-- name: CreateExploit :exec
 
-INSERT INTO exploits(name, hash, submit_time, username)
-VALUES (?, ?, ?, ?)
+INSERT INTO exploits(name, hash, submit_time, username, version)
+VALUES (?, ?, ?, ?, ?)
 `
 
 type CreateExploitParams struct {
@@ -119,6 +119,7 @@ type CreateExploitParams struct {
 	Hash       string        `json:"hash"`
 	SubmitTime sql.NullInt64 `json:"submit_time"`
 	Username   string        `json:"username"`
+	Version    int64         `json:"version"`
 }
 
 func (q *Queries) CreateExploit(ctx context.Context, arg CreateExploitParams) error {
@@ -127,6 +128,7 @@ func (q *Queries) CreateExploit(ctx context.Context, arg CreateExploitParams) er
 		arg.Hash,
 		arg.SubmitTime,
 		arg.Username,
+		arg.Version,
 	)
 	return err
 }
@@ -210,7 +212,7 @@ func (q *Queries) FlagsStats(ctx context.Context) ([]FlagsStatsRow, error) {
 }
 
 const getAllExploits = `-- name: GetAllExploits :many
-SELECT id, name, hash, submit_time, username
+SELECT id, name, hash, submit_time, username, version
 FROM exploits
 ORDER BY submit_time DESC
 `
@@ -230,6 +232,7 @@ func (q *Queries) GetAllExploits(ctx context.Context) ([]Exploit, error) {
 			&i.Hash,
 			&i.SubmitTime,
 			&i.Username,
+			&i.Version,
 		); err != nil {
 			return nil, err
 		}
@@ -313,7 +316,7 @@ func (q *Queries) GetAllFlags(ctx context.Context) ([]Flag, error) {
 
 const getExploitByHash = `-- name: GetExploitByHash :one
 
-SELECT id, name, hash, submit_time, username
+SELECT id, name, hash, submit_time, username, version
 FROM exploits
 WHERE hash = ?
 LIMIT 1
@@ -329,12 +332,13 @@ func (q *Queries) GetExploitByHash(ctx context.Context, hash string) (Exploit, e
 		&i.Hash,
 		&i.SubmitTime,
 		&i.Username,
+		&i.Version,
 	)
 	return i, err
 }
 
 const getExploitsByUsername = `-- name: GetExploitsByUsername :many
-SELECT id, name, hash, submit_time, username
+SELECT id, name, hash, submit_time, username, version
 FROM exploits
 WHERE username = ?
 ORDER BY submit_time DESC
@@ -362,6 +366,7 @@ func (q *Queries) GetExploitsByUsername(ctx context.Context, arg GetExploitsByUs
 			&i.Hash,
 			&i.SubmitTime,
 			&i.Username,
+			&i.Version,
 		); err != nil {
 			return nil, err
 		}

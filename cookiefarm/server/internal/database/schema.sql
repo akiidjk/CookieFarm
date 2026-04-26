@@ -19,5 +19,6 @@ CREATE TABLE IF NOT EXISTS exploits (
     name VARCHAR(255) NOT NULL,
     hash VARCHAR(255) NOT NULL,
     submit_time INTEGER,  -- Unix timestamp
-    username VARCHAR(255) NOT NULL DEFAULT 'cookie'
+    username VARCHAR(255) NOT NULL DEFAULT 'cookie',
+    version INTEGER NOT NULL DEFAULT '1'
 );

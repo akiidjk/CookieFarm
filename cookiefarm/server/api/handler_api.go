@@ -1,10 +1,8 @@
 package api
 
 import (
-	"crypto/md5"
 	"database/sql"
 	"logger"
-	"mime/multipart"
 	"models"
 	"os"
 	"path/filepath"
@@ -14,9 +12,11 @@ import (
 
 	"server/config"
 	"server/database"
+	"server/internal/exploit"
 	"server/websockets"
 
 	json "github.com/bytedance/sonic"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -488,56 +488,85 @@ func (h *Handler) HandleGetPaginatedExploits(c fiber.Ctx) error {
 	return nil
 }
 
-type ExploitUploadRequest struct {
-	Name string                `form:"name"`
-	File *multipart.FileHeader `form:"file"`
-}
-
 func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
-	var req ExploitUploadRequest
-
 	token := c.Cookies("token", "")
-	jwtParsed,err := VerifyToken(c.RequestCtx(), token)
+	if token == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{Error: "Missing token"})
+	}
+	jwtParsed, err := VerifyToken(token)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{
-			Error: "Invalid token",
+		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{Error: "Invalid token"})
+	}
+
+	fileHeader, ferr := c.FormFile("file")
+	if ferr != nil {
+		logger.Log.Warn().Err(ferr).Msg("No file provided in request")
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Missing file upload (field name: 'file')"})
+	}
+
+	logger.Log.Debug().Str("filename", fileHeader.Filename).Int64("size", fileHeader.Size).Msg("Received file upload")
+
+	const maxExploitSize = 10 << 20
+	if fileHeader.Size > maxExploitSize {
+		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: "Uploaded file is too large"})
+	}
+
+	fileHeader.Filename = filepath.Base(fileHeader.Filename)
+	if fileHeader.Filename == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Invalid file name"})
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot open file"})
+	}
+	hash := exploit.GenerateHashFromFile(file)
+	logger.Log.Debug().Str("filename", fileHeader.Filename).Str("hash", hash).Msg("Generated hash for uploaded exploit")
+	ex, err := h.store.Queries.GetExploitByHash(c, hash)
+	if err != nil && !strings.Contains(err.Error(), "no rows in result set") {
+		logger.Log.Error().Err(err).Msg("Failed to check existing exploit")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to check existing exploit",
 		})
 	}
 
-	if err := c.Bind().Form(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	if ex.Hash != "" {
+		return c.Status(fiber.StatusConflict).JSON(ResponseError{
+			Error: "Exploit with the same hash already exists",
+		})
 	}
 
-	var buf []byte
-	file, err := req.File.Open()
+	var version int64 = 1
+	if ex.Name == fileHeader.Filename {
+		version = ex.Version + 1
+	}
+
+	err = exploit.CreateExploitFile(c,fileHeader,hash)
 	if err != nil {
-		return err
-	}
-
-	_, err = file.Read(buf)
-	sum := md5.Sum(buf)
-	hash := string(sum[:])
-
-	if err := c.SaveFile(req.File, "./exploits/name/"+hash); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save file"})
 	}
 
+	username := jwtParsed.Claims.(jwt.MapClaims)["username"]
+
 	exploit := database.CreateExploitParams{
-		Name:       req.Name,
+		Name:       fileHeader.Filename,
 		Hash:       hash,
-		Username: ,
-		SubmitTime: time.Now().Unix(),
+		Username: username.(string),
+		SubmitTime: sql.NullInt64{Int64: time.Now().Unix(), Valid: true},
+		Version: version,
 	}
 
-	h.store.Queries.CreateExploit()
+	err = h.store.Queries.CreateExploit(c,exploit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save exploit metadata"})
+	}
 
 	return c.JSON(fiber.Map{
 		"message":  "uploaded successfully",
-		"filename": req.File.Filename,
-		"name":     req.Name,
+		"exploit_name": fileHeader.Filename,
+		"hash": hash,
+		"version": version,
 	})
-
-	return nil
 }
 
 func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {

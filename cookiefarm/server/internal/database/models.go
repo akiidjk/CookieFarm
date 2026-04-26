@@ -14,6 +14,7 @@ type Exploit struct {
 	Hash       string        `json:"hash"`
 	SubmitTime sql.NullInt64 `json:"submit_time"`
 	Username   string        `json:"username"`
+	Version    int64         `json:"version"`
 }
 
 type Flag struct {

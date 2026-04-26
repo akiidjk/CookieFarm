@@ -82,7 +82,7 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	// exploits endpoints
 	privateAPI.Get("/exploits", h.HandleGetExploits)
 	privateAPI.Get("/exploits/:limit", h.HandleGetPaginatedExploits)
-	privateAPI.Post("/exploits", h.HandlePostExploit)
+	privateAPI.Post("/exploit/upload", h.HandlePostExploit)
 	privateAPI.Delete("/exploits/:id", h.HandleDeleteExploit)
 
 	privateAPI.Get("exploits/file/*", static.New("./server/exploits", static.Config{

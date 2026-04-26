@@ -164,5 +164,5 @@ ORDER BY submit_time DESC;
 
 -- name: CreateExploit :exec
 
-INSERT INTO exploits(name, hash, submit_time, username)
-VALUES (?, ?, ?, ?);
+INSERT INTO exploits(name, hash, submit_time, username, version)
+VALUES (?, ?, ?, ?, ?);

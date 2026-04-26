@@ -4,6 +4,18 @@
 
 package database
 
+import (
+	"database/sql"
+)
+
+type Exploit struct {
+	ID         interface{}   `json:"id"`
+	Name       string        `json:"name"`
+	Hash       string        `json:"hash"`
+	SubmitTime sql.NullInt64 `json:"submit_time"`
+	Username   string        `json:"username"`
+}
+
 type Flag struct {
 	FlagCode     string `json:"flag_code"`
 	ServiceName  string `json:"service_name"`

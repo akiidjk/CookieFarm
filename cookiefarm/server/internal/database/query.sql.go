@@ -108,6 +108,29 @@ func (q *Queries) CountFlags(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const createExploit = `-- name: CreateExploit :exec
+
+INSERT INTO exploits(name, hash, submit_time, username)
+VALUES (?, ?, ?, ?)
+`
+
+type CreateExploitParams struct {
+	Name       string        `json:"name"`
+	Hash       string        `json:"hash"`
+	SubmitTime sql.NullInt64 `json:"submit_time"`
+	Username   string        `json:"username"`
+}
+
+func (q *Queries) CreateExploit(ctx context.Context, arg CreateExploitParams) error {
+	_, err := q.db.ExecContext(ctx, createExploit,
+		arg.Name,
+		arg.Hash,
+		arg.SubmitTime,
+		arg.Username,
+	)
+	return err
+}
+
 const deleteFlagByCode = `-- name: DeleteFlagByCode :exec
 DELETE FROM flags
 WHERE flag_code = ?
@@ -186,6 +209,41 @@ func (q *Queries) FlagsStats(ctx context.Context) ([]FlagsStatsRow, error) {
 	return items, nil
 }
 
+const getAllExploits = `-- name: GetAllExploits :many
+SELECT id, name, hash, submit_time, username
+FROM exploits
+ORDER BY submit_time DESC
+`
+
+func (q *Queries) GetAllExploits(ctx context.Context) ([]Exploit, error) {
+	rows, err := q.db.QueryContext(ctx, getAllExploits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Exploit
+	for rows.Next() {
+		var i Exploit
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Hash,
+			&i.SubmitTime,
+			&i.Username,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllFlagCodes = `-- name: GetAllFlagCodes :many
 SELECT flag_code FROM flags
 `
@@ -239,6 +297,71 @@ func (q *Queries) GetAllFlags(ctx context.Context) ([]Flag, error) {
 			&i.TeamID,
 			&i.Username,
 			&i.ExploitName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getExploitByHash = `-- name: GetExploitByHash :one
+
+SELECT id, name, hash, submit_time, username
+FROM exploits
+WHERE hash = ?
+LIMIT 1
+`
+
+// EXPLOITS QUERIES
+func (q *Queries) GetExploitByHash(ctx context.Context, hash string) (Exploit, error) {
+	row := q.db.QueryRowContext(ctx, getExploitByHash, hash)
+	var i Exploit
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Hash,
+		&i.SubmitTime,
+		&i.Username,
+	)
+	return i, err
+}
+
+const getExploitsByUsername = `-- name: GetExploitsByUsername :many
+SELECT id, name, hash, submit_time, username
+FROM exploits
+WHERE username = ?
+ORDER BY submit_time DESC
+LIMIT ? OFFSET ?
+`
+
+type GetExploitsByUsernameParams struct {
+	Username string `json:"username"`
+	Limit    int64  `json:"limit"`
+	Offset   int64  `json:"offset"`
+}
+
+func (q *Queries) GetExploitsByUsername(ctx context.Context, arg GetExploitsByUsernameParams) ([]Exploit, error) {
+	rows, err := q.db.QueryContext(ctx, getExploitsByUsername, arg.Username, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Exploit
+	for rows.Next() {
+		var i Exploit
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Hash,
+			&i.SubmitTime,
+			&i.Username,
 		); err != nil {
 			return nil, err
 		}

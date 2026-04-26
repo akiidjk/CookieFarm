@@ -15,6 +15,7 @@ import (
 	jwtware "github.com/gofiber/contrib/v3/jwt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
 type Handler struct {
@@ -78,6 +79,18 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	privateAPI.Post("/submit-flags-standalone", h.HandlePostFlagsStandalone)
 	privateAPI.Delete("/delete-flag", h.HandleDeleteFlag)
 
+	// exploits endpoints
+	privateAPI.Get("/exploits", h.HandleGetExploits)
+	privateAPI.Get("/exploits/:limit", h.HandleGetPaginatedExploits)
+	privateAPI.Post("/exploits", h.HandlePostExploit)
+	privateAPI.Delete("/exploits/:id", h.HandleDeleteExploit)
+
+	privateAPI.Get("exploits/file/*", static.New("./server/exploits", static.Config{
+		Compress:      true,
+		CacheDuration: 10 * time.Second,
+		MaxAge:        3600,
+	}))
+
 	websockets.GlobalManager = websockets.NewManager()
 	app.Use("/ws",
 		websockets.CookieAuthMiddleware,
@@ -92,6 +105,7 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 			strings.HasPrefix(path, "/assets/") ||
 			strings.HasPrefix(path, "/css/") ||
 			strings.HasPrefix(path, "/js/") ||
+			strings.HasPrefix(path, "/exploits/") ||
 			strings.HasPrefix(path, "/images/") {
 			return c.SendStatus(fiber.StatusNotFound)
 		}

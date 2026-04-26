@@ -1,13 +1,16 @@
 package api
 
 import (
+	"crypto/md5"
 	"database/sql"
 	"logger"
+	"mime/multipart"
 	"models"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"server/config"
 	"server/database"
@@ -468,3 +471,75 @@ func (h *Handler) HandleDeleteFlag(c fiber.Ctx) error {
 }
 
 // fiber:context-methods migrated
+
+func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
+	_, err := h.store.Queries.GetAllExploits(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch exploits")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploits",
+		})
+	}
+
+	return c.JSON(ResponseSuccess{Message: "Exploits fetched successfully"})
+}
+
+func (h *Handler) HandleGetPaginatedExploits(c fiber.Ctx) error {
+	return nil
+}
+
+type ExploitUploadRequest struct {
+	Name string                `form:"name"`
+	File *multipart.FileHeader `form:"file"`
+}
+
+func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
+	var req ExploitUploadRequest
+
+	token := c.Cookies("token", "")
+	jwtParsed,err := VerifyToken(c.RequestCtx(), token)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{
+			Error: "Invalid token",
+		})
+	}
+
+	if err := c.Bind().Form(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	var buf []byte
+	file, err := req.File.Open()
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Read(buf)
+	sum := md5.Sum(buf)
+	hash := string(sum[:])
+
+	if err := c.SaveFile(req.File, "./exploits/name/"+hash); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save file"})
+	}
+
+	exploit := database.CreateExploitParams{
+		Name:       req.Name,
+		Hash:       hash,
+		Username: ,
+		SubmitTime: time.Now().Unix(),
+	}
+
+	h.store.Queries.CreateExploit()
+
+	return c.JSON(fiber.Map{
+		"message":  "uploaded successfully",
+		"filename": req.File.Filename,
+		"name":     req.Name,
+	})
+
+	return nil
+}
+
+func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {
+	return nil
+}

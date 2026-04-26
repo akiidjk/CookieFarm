@@ -13,3 +13,11 @@ CREATE TABLE IF NOT EXISTS flags (
 
 CREATE INDEX IF NOT EXISTS idx_flags_submit_time
   ON flags(submit_time);
+
+CREATE TABLE IF NOT EXISTS exploits (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    hash VARCHAR(255) NOT NULL,
+    submit_time INTEGER,  -- Unix timestamp
+    username VARCHAR(255) NOT NULL DEFAULT 'cookie'
+);

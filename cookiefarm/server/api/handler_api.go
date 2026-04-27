@@ -2,7 +2,6 @@ package api
 
 import (
 	"database/sql"
-	"errors"
 	"logger"
 	"models"
 	"os"
@@ -557,25 +556,13 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 
 	fileHeader, err = exploit.SanitizeExploit(c, fileHeader)
 	if err != nil {
-		switch {
-		case errors.Is(err, exploit.FileTooLarge):
-			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: err.Error()})
-		case errors.Is(err, exploit.InvalidFileName):
-			return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: err.Error()})
-		default:
-			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
-		}
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
 	}
 
 	username := jwtParsed.Claims.(jwt.MapClaims)["username"].(string)
 	exploitS, err := exploit.CreateExploit(c, h.store, fileHeader, username)
 	if err != nil {
-		switch {
-		case errors.Is(err, exploit.SameHashExists):
-			return c.Status(fiber.StatusConflict).JSON(ResponseError{Error: exploit.SameHashExists.Error()})
-		default:
-			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
-		}
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
 	}
 
 	err = h.store.Queries.CreateExploit(c, exploitS)

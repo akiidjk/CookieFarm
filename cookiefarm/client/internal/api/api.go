@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"logger"
 	"models"
+	"net/http"
 	"net/url"
 	"server/config"
 	"server/database"
@@ -110,5 +111,19 @@ func SubmitFlag(flag database.Flag) error {
 	}
 	defer resp.Body.Close()
 
+	return checkStatus(resp.StatusCode, body)
+}
+
+func UploadExploit(exploitPath string) error {
+	client := getClient()
+	logger.Log.Debug().Str("exploitPath", exploitPath).Msg("Uploading exploit")
+	resp, body, err := client.uploadFile("/api/v1/exploit/upload", exploitPath, AUTHED)
+	if err != nil {
+		if resp.StatusCode == http.StatusConflict {
+			return nil
+		}
+		return err
+	}
+	defer resp.Body.Close()
 	return checkStatus(resp.StatusCode, body)
 }

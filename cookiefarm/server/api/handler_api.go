@@ -11,9 +11,11 @@ import (
 
 	"server/config"
 	"server/database"
+	"server/internal/exploit"
 	"server/websockets"
 
 	json "github.com/bytedance/sonic"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -120,8 +122,8 @@ func (h *Handler) HandleGetStats(c fiber.Ctx) error {
 // @Failure 500 {object} ResponseError
 // @Router /flags/{limit} [get]
 func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
-	limit, err := fiber.Params[int](c, "limit", config.DefaultLimit), error(nil)
-	if err != nil || limit <= 0 {
+	limit := fiber.Params[int](c, "limit", config.DefaultLimit)
+	if limit <= 0 {
 		logger.Log.Warn().Msg("Invalid or missing limit parameter")
 		limit = config.DefaultLimit
 	}
@@ -222,8 +224,8 @@ func (*Handler) HandleGetProtocols(c fiber.Ctx) error {
 	}
 
 	var protocolNames []string
-	for _, path := range searchPaths {
-		if protocols, err := os.ReadDir(path); err == nil {
+	for _, exploitPath := range searchPaths {
+		if protocols, err := os.ReadDir(exploitPath); err == nil {
 			for _, entry := range protocols {
 				if entry.IsDir() {
 					protocolNames = append(protocolNames, strings.Split(entry.Name(), ".")[0])
@@ -467,4 +469,146 @@ func (h *Handler) HandleDeleteFlag(c fiber.Ctx) error {
 	return c.JSON(ResponseSuccess{Message: "Flag deleted successfully"})
 }
 
-// fiber:context-methods migrated
+// @Summary List exploits
+// @Description Returns all stored exploits.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Success 200 {object} map[string]any
+// @Failure 500 {object} ResponseError
+// @Router /exploits [get]
+func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
+	exploits, err := h.store.Queries.GetAllExploits(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch exploits")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploits",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"exploits": exploits,
+		"count":    len(exploits),
+	})
+}
+
+// @Summary Get exploit by name
+// @Description Returns exploit(s) with content by name.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param name path string true "Exploit name"
+// @Success 200 {array} ExploitWithContent
+// @Failure 400 {object} ResponseError
+// @Failure 404 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{name} [get]
+func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
+	exploitName := c.Params("name")
+	if exploitName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit name",
+		})
+	}
+
+	exploits, err := h.store.Queries.GetExploitsByName(c.RequestCtx(), exploitName)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploit",
+		})
+	}
+
+	if len(exploits) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(ResponseError{
+			Error: "Exploit not found",
+		})
+	}
+
+	exploitsWContent := exploit.BuildExploitPayload(exploits)
+	return c.JSON(exploitsWContent)
+}
+
+// @Summary Upload exploit
+// @Description Uploads a new exploit file.
+// @Tags exploits
+// @Accept multipart/form-data
+// @Produce json
+// @Security CookieAuth
+// @Param file formData file true "Exploit file"
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} ResponseError
+// @Failure 401 {object} ResponseError
+// @Failure 413 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit [post]
+func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
+	token := c.Cookies("token", "")
+	jwtParsed, err := VerifyToken(token)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{Error: "Invalid token"})
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("No file provided in request")
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Missing file upload (field name: 'file')"})
+	}
+
+	fileHeader, err = exploit.SanitizeExploit(c, fileHeader)
+	if err != nil {
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
+	}
+
+	username := jwtParsed.Claims.(jwt.MapClaims)["username"].(string)
+	exploitS, err := exploit.CreateExploit(c, h.store, fileHeader, username)
+	if err != nil {
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
+	}
+
+	err = h.store.Queries.CreateExploit(c, exploitS)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save exploit metadata"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message":      "uploaded successfully",
+		"exploit_name": fileHeader.Filename,
+		"hash":         exploitS.Hash,
+		"version":      exploitS.Version,
+	})
+}
+
+// @Summary Delete exploit
+// @Description Deletes an exploit by ID.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param id path int true "Exploit ID"
+// @Success 200 {object} ResponseSuccess
+// @Failure 400 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{id} [delete]
+func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {
+	exploitID := c.Params("id")
+	if exploitID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit ID",
+		})
+	}
+
+	id, err := strconv.ParseInt(exploitID, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Invalid exploit ID",
+		})
+	}
+	err = h.store.Queries.DeleteExploitByID(c.RequestCtx(), id)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to delete exploit")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to delete exploit",
+		})
+	}
+
+	return c.JSON(ResponseSuccess{Message: "Exploit deleted successfully"})
+}

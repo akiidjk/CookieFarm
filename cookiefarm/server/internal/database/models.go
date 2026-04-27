@@ -4,6 +4,15 @@
 
 package database
 
+type Exploit struct {
+	ID         int64  `json:"id"`
+	Name       string `json:"name"`
+	Hash       string `json:"hash"`
+	SubmitTime int64  `json:"submit_time"`
+	Username   string `json:"username"`
+	Version    int64  `json:"version"`
+}
+
 type Flag struct {
 	FlagCode     string `json:"flag_code"`
 	ServiceName  string `json:"service_name"`

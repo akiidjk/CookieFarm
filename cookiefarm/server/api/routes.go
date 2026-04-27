@@ -78,6 +78,12 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	privateAPI.Post("/submit-flags-standalone", h.HandlePostFlagsStandalone)
 	privateAPI.Delete("/delete-flag", h.HandleDeleteFlag)
 
+	// exploits endpoints
+	privateAPI.Get("/exploits", h.HandleGetExploits)
+	privateAPI.Get("/exploit/:name", h.HandleGetExploit)
+	privateAPI.Post("/exploit/upload", h.HandlePostExploit)
+	privateAPI.Delete("/exploit/:id", h.HandleDeleteExploit)
+
 	websockets.GlobalManager = websockets.NewManager()
 	app.Use("/ws",
 		websockets.CookieAuthMiddleware,

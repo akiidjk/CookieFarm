@@ -141,3 +141,43 @@ SELECT
 FROM flags
 GROUP BY team_id
 ORDER BY team_id;
+
+-- EXPLOITS QUERIES
+
+-- name: GetExploitByHash :one
+SELECT *
+FROM exploits
+WHERE hash = ?
+LIMIT 1;
+
+-- name: GetExploitsByUsername :many
+SELECT *
+FROM exploits
+WHERE username = ?
+ORDER BY submit_time DESC
+LIMIT ? OFFSET ?;
+
+-- name: GetAllExploits :many
+SELECT *
+FROM exploits
+ORDER BY submit_time DESC;
+
+-- name: CountExploits :one
+SELECT COUNT(*)
+FROM exploits
+LIMIT 1;
+
+-- name: GetExploitsByName :many
+SELECT *
+FROM exploits
+WHERE name = ?
+ORDER BY submit_time DESC;
+
+-- name: CreateExploit :exec
+
+INSERT INTO exploits(name, hash, submit_time, username, version)
+VALUES (?, ?, ?, ?, ?);
+
+-- name: DeleteExploitByID :exec
+DELETE FROM exploits
+WHERE id = ?;

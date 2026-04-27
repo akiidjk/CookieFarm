@@ -138,3 +138,6 @@ yarn-error.log*
 next-env.d.ts
 .next
 .env.just
+
+# exploits
+cookiefarm/exploits/save/*.py

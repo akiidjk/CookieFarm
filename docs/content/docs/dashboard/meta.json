@@ -3,6 +3,7 @@
   "pages": [
     "overview",
     "monitoring",
-    "exploit-management"
+    "exploit-management",
+    "config-management"
   ]
 }

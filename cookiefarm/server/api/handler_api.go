@@ -558,7 +558,7 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 	fileHeader, err = exploit.SanitizeExploit(c, fileHeader)
 	if err != nil {
 		switch {
-		case errors.Is(err, exploit.FileToLarge):
+		case errors.Is(err, exploit.FileTooLarge):
 			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: err.Error()})
 		case errors.Is(err, exploit.InvalidFileName):
 			return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: err.Error()})

@@ -15,7 +15,6 @@ import (
 	jwtware "github.com/gofiber/contrib/v3/jwt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
-	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
 type Handler struct {
@@ -84,12 +83,6 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	privateAPI.Get("/exploit/:name", h.HandleGetExploit)
 	privateAPI.Post("/exploit/upload", h.HandlePostExploit)
 	privateAPI.Delete("/exploit/:id", h.HandleDeleteExploit)
-
-	privateAPI.Get("exploits/file/*", static.New("./server/exploits", static.Config{
-		Compress:      true,
-		CacheDuration: 10 * time.Second,
-		MaxAge:        3600,
-	}))
 
 	websockets.GlobalManager = websockets.NewManager()
 	app.Use("/ws",

@@ -562,7 +562,7 @@ func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
 	return c.JSON(exploitsWContent)
 }
 
-func sanitazeExploit(c fiber.Ctx, fileHeader *multipart.FileHeader) (*multipart.FileHeader, error) {
+func sanitizeExploit(c fiber.Ctx, fileHeader *multipart.FileHeader) (*multipart.FileHeader, error) {
 	const maxExploitSize = 10 << 20
 	if fileHeader.Size > maxExploitSize {
 		return nil, c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: "Uploaded file is too large"})
@@ -602,7 +602,7 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Missing file upload (field name: 'file')"})
 	}
 
-	fileHeader, err = sanitazeExploit(c, fileHeader)
+	fileHeader, err = sanitizeExploit(c, fileHeader)
 	if err != nil {
 		return err
 	}

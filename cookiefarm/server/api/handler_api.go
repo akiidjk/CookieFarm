@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"logger"
-	"mime/multipart"
 	"models"
 	"os"
 	"path"
@@ -562,20 +561,6 @@ func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
 	return c.JSON(exploitsWContent)
 }
 
-func sanitizeExploit(c fiber.Ctx, fileHeader *multipart.FileHeader) (*multipart.FileHeader, error) {
-	const maxExploitSize = 10 << 20
-	if fileHeader.Size > maxExploitSize {
-		return nil, c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: "Uploaded file is too large"})
-	}
-
-	fileHeader.Filename = filepath.Base(fileHeader.Filename)
-	if fileHeader.Filename == "" {
-		return nil, c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Invalid file name"})
-	}
-
-	return fileHeader, nil
-}
-
 // @Summary Upload exploit
 // @Description Uploads a new exploit file.
 // @Tags exploits
@@ -602,44 +587,35 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Missing file upload (field name: 'file')"})
 	}
 
-	fileHeader, err = sanitizeExploit(c, fileHeader)
+	fileHeader, err = exploit.SanitizeExploit(c, fileHeader)
 	if err != nil {
-		return err
+		switch {
+		case errors.Is(err, exploit.FileToLarge):
+			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: err.Error()})
+		case errors.Is(err, exploit.InvalidFileName):
+			return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: err.Error()})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+		}
 	}
 
 	file, err := fileHeader.Open()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot open file"})
 	}
+
 	hash := exploit.GenerateHashFromFile(file)
-	ex, err := h.store.Queries.GetExploitByHash(c, hash)
+	exists, err := exploit.CheckHashExists(c, h.store, hash)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) && !strings.Contains(err.Error(), "no rows in result set") {
-			logger.Log.Error().Err(err).Msg("Failed to check existing exploit")
-			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
-				Error: "Failed to check existing exploit",
-			})
-		}
-		ex = database.Exploit{}
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: "Failed to check existing exploit"})
+	}
+	if !exists {
+		return c.Status(fiber.StatusConflict).JSON(ResponseError{Error: "An exploit with the same content already exists"})
 	}
 
-	if ex.Hash != "" {
-		return c.Status(fiber.StatusConflict).JSON(ResponseError{
-			Error: "Exploit with the same hash already exists",
-		})
-	}
-
-	exploitsByName, err := h.store.Queries.GetExploitsByName(c, fileHeader.Filename)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) && !strings.Contains(err.Error(), "no rows in result set") {
-		logger.Log.Error().Err(err).Msg("Failed to check existing exploit by name")
-		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
-			Error: "Failed to check existing exploit by name",
-		})
-	}
-
-	var version int64 = 1
-	if len(exploitsByName) > 0 {
-		version = exploitsByName[0].Version + 1
+	version, err := exploit.GetVersion(c, h.store, fileHeader)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: "Failed to determine exploit version: " + err.Error()})
 	}
 
 	err = exploit.CreateExploitFile(c, fileHeader, hash)

@@ -3,15 +3,12 @@ package api
 import (
 	"database/sql"
 	"errors"
-	"io"
 	"logger"
 	"models"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"server/config"
 	"server/database"
@@ -126,8 +123,8 @@ func (h *Handler) HandleGetStats(c fiber.Ctx) error {
 // @Failure 500 {object} ResponseError
 // @Router /flags/{limit} [get]
 func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
-	limit, err := fiber.Params[int](c, "limit", config.DefaultLimit), error(nil)
-	if err != nil || limit <= 0 {
+	limit := fiber.Params[int](c, "limit", config.DefaultLimit)
+	if limit <= 0 {
 		logger.Log.Warn().Msg("Invalid or missing limit parameter")
 		limit = config.DefaultLimit
 	}
@@ -496,11 +493,6 @@ func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
 	})
 }
 
-type ExploitWithContent struct {
-	database.Exploit
-	Content string `json:"content"`
-}
-
 // @Summary Get exploit by name
 // @Description Returns exploit(s) with content by name.
 // @Tags exploits
@@ -522,7 +514,6 @@ func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
 
 	exploits, err := h.store.Queries.GetExploitsByName(c.RequestCtx(), exploitName)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("Failed to fetch exploit by name")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
 			Error: "Failed to fetch exploit",
 		})
@@ -534,30 +525,7 @@ func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
 		})
 	}
 
-	exploitsWContent := make([]ExploitWithContent, len(exploits))
-	for i, ex := range exploits {
-		exploitsWContent[i] = ExploitWithContent{
-			Exploit: ex,
-			Content: "",
-		}
-
-		exploitFile, err := os.OpenFile(path.Join(exploit.ExploitPath, exploits[i].Hash+".py"), os.O_RDONLY, 0o644)
-		if err != nil {
-			logger.Log.Error().Err(err).Str("hash", exploits[i].Hash).Msg("Failed to open exploit file")
-			exploitsWContent[i].Content = "Error loading exploit content"
-			continue
-		}
-		content, err := io.ReadAll(exploitFile)
-		if err != nil {
-			logger.Log.Error().Err(err).Str("hash", exploits[i].Hash).Msg("Failed to read exploit file")
-			exploitsWContent[i].Content = "Error loading exploit content"
-			exploitFile.Close()
-			continue
-		}
-		exploitsWContent[i].Content = string(content)
-		exploitFile.Close()
-	}
-
+	exploitsWContent := exploit.BuildExploitPayload(exploits)
 	return c.JSON(exploitsWContent)
 }
 
@@ -599,36 +567,15 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 		}
 	}
 
-	file, err := fileHeader.Open()
+	username := jwtParsed.Claims.(jwt.MapClaims)["username"].(string)
+	exploitS, err := exploit.CreateExploit(c, h.store, fileHeader, username)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot open file"})
-	}
-
-	hash := exploit.GenerateHashFromFile(file)
-	exists, err := exploit.CheckHashExists(c, h.store, hash)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: "Failed to check existing exploit"})
-	}
-	if !exists {
-		return c.Status(fiber.StatusConflict).JSON(ResponseError{Error: "An exploit with the same content already exists"})
-	}
-
-	version, err := exploit.GetVersion(c, h.store, fileHeader)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: "Failed to determine exploit version: " + err.Error()})
-	}
-
-	err = exploit.CreateExploitFile(c, fileHeader, hash)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save file"})
-	}
-
-	exploitS := database.CreateExploitParams{
-		Name:       fileHeader.Filename,
-		Hash:       hash,
-		Username:   jwtParsed.Claims.(jwt.MapClaims)["username"].(string),
-		SubmitTime: time.Now().Unix(),
-		Version:    version,
+		switch {
+		case errors.Is(err, exploit.SameHashExists):
+			return c.Status(fiber.StatusConflict).JSON(ResponseError{Error: exploit.SameHashExists.Error()})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+		}
 	}
 
 	err = h.store.Queries.CreateExploit(c, exploitS)
@@ -639,8 +586,8 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message":      "uploaded successfully",
 		"exploit_name": fileHeader.Filename,
-		"hash":         hash,
-		"version":      version,
+		"hash":         exploitS.Hash,
+		"version":      exploitS.Version,
 	})
 }
 

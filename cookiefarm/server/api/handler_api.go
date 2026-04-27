@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"logger"
+	"mime/multipart"
 	"models"
 	"os"
 	"path"
@@ -228,8 +229,8 @@ func (*Handler) HandleGetProtocols(c fiber.Ctx) error {
 	}
 
 	var protocolNames []string
-	for _, path := range searchPaths {
-		if protocols, err := os.ReadDir(path); err == nil {
+	for _, exploitPath := range searchPaths {
+		if protocols, err := os.ReadDir(exploitPath); err == nil {
 			for _, entry := range protocols {
 				if entry.IsDir() {
 					protocolNames = append(protocolNames, strings.Split(entry.Name(), ".")[0])
@@ -473,6 +474,14 @@ func (h *Handler) HandleDeleteFlag(c fiber.Ctx) error {
 	return c.JSON(ResponseSuccess{Message: "Flag deleted successfully"})
 }
 
+// @Summary List exploits
+// @Description Returns all stored exploits.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Success 200 {object} map[string]any
+// @Failure 500 {object} ResponseError
+// @Router /exploits [get]
 func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
 	exploits, err := h.store.Queries.GetAllExploits(c.RequestCtx())
 	if err != nil {
@@ -484,7 +493,7 @@ func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"exploits": exploits,
-		"count": len(exploits),
+		"count":    len(exploits),
 	})
 }
 
@@ -493,6 +502,17 @@ type ExploitWithContent struct {
 	Content string `json:"content"`
 }
 
+// @Summary Get exploit by name
+// @Description Returns exploit(s) with content by name.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param name path string true "Exploit name"
+// @Success 200 {array} ExploitWithContent
+// @Failure 400 {object} ResponseError
+// @Failure 404 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{name} [get]
 func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
 	exploitName := c.Params("name")
 	if exploitName == "" {
@@ -515,59 +535,76 @@ func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
 		})
 	}
 
-	var exploitsWContent []ExploitWithContent = make([]ExploitWithContent, len(exploits))
-	for i,ex := range exploits {
+	exploitsWContent := make([]ExploitWithContent, len(exploits))
+	for i, ex := range exploits {
 		exploitsWContent[i] = ExploitWithContent{
 			Exploit: ex,
 			Content: "",
 		}
 
-		exploit,err := os.OpenFile(path.Join(exploit.ExploitPath,exploits[i].Hash+".py"), os.O_RDONLY, 0644)
+		exploitFile, err := os.OpenFile(path.Join(exploit.ExploitPath, exploits[i].Hash+".py"), os.O_RDONLY, 0o644)
 		if err != nil {
 			logger.Log.Error().Err(err).Str("hash", exploits[i].Hash).Msg("Failed to open exploit file")
 			exploitsWContent[i].Content = "Error loading exploit content"
 			continue
 		}
-		content, err := io.ReadAll(exploit)
+		content, err := io.ReadAll(exploitFile)
 		if err != nil {
 			logger.Log.Error().Err(err).Str("hash", exploits[i].Hash).Msg("Failed to read exploit file")
 			exploitsWContent[i].Content = "Error loading exploit content"
-			exploit.Close()
+			exploitFile.Close()
 			continue
 		}
 		exploitsWContent[i].Content = string(content)
-		exploit.Close()
+		exploitFile.Close()
 	}
 
 	return c.JSON(exploitsWContent)
 }
 
+func sanitazeExploit(c fiber.Ctx, fileHeader *multipart.FileHeader) (*multipart.FileHeader, error) {
+	const maxExploitSize = 10 << 20
+	if fileHeader.Size > maxExploitSize {
+		return nil, c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: "Uploaded file is too large"})
+	}
+
+	fileHeader.Filename = filepath.Base(fileHeader.Filename)
+	if fileHeader.Filename == "" {
+		return nil, c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Invalid file name"})
+	}
+
+	return fileHeader, nil
+}
+
+// @Summary Upload exploit
+// @Description Uploads a new exploit file.
+// @Tags exploits
+// @Accept multipart/form-data
+// @Produce json
+// @Security CookieAuth
+// @Param file formData file true "Exploit file"
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} ResponseError
+// @Failure 401 {object} ResponseError
+// @Failure 413 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit [post]
 func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 	token := c.Cookies("token", "")
-	if token == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{Error: "Missing token"})
-	}
 	jwtParsed, err := VerifyToken(token)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{Error: "Invalid token"})
 	}
 
-	fileHeader, ferr := c.FormFile("file")
-	if ferr != nil {
-		logger.Log.Warn().Err(ferr).Msg("No file provided in request")
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("No file provided in request")
 		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Missing file upload (field name: 'file')"})
 	}
 
-	logger.Log.Debug().Str("filename", fileHeader.Filename).Int64("size", fileHeader.Size).Msg("Received file upload")
-
-	const maxExploitSize = 10 << 20
-	if fileHeader.Size > maxExploitSize {
-		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(ResponseError{Error: "Uploaded file is too large"})
-	}
-
-	fileHeader.Filename = filepath.Base(fileHeader.Filename)
-	if fileHeader.Filename == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Invalid file name"})
+	fileHeader, err = sanitazeExploit(c, fileHeader)
+	if err != nil {
+		return err
 	}
 
 	file, err := fileHeader.Open()
@@ -575,7 +612,6 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot open file"})
 	}
 	hash := exploit.GenerateHashFromFile(file)
-	logger.Log.Debug().Str("filename", fileHeader.Filename).Str("hash", hash).Msg("Generated hash for uploaded exploit")
 	ex, err := h.store.Queries.GetExploitByHash(c, hash)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) && !strings.Contains(err.Error(), "no rows in result set") {
@@ -592,7 +628,6 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 			Error: "Exploit with the same hash already exists",
 		})
 	}
-
 
 	exploitsByName, err := h.store.Queries.GetExploitsByName(c, fileHeader.Filename)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) && !strings.Contains(err.Error(), "no rows in result set") {
@@ -612,17 +647,15 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save file"})
 	}
 
-	username := jwtParsed.Claims.(jwt.MapClaims)["username"]
-
-	exploit := database.CreateExploitParams{
+	exploitS := database.CreateExploitParams{
 		Name:       fileHeader.Filename,
 		Hash:       hash,
-		Username:   username.(string),
+		Username:   jwtParsed.Claims.(jwt.MapClaims)["username"].(string),
 		SubmitTime: time.Now().Unix(),
 		Version:    version,
 	}
 
-	err = h.store.Queries.CreateExploit(c, exploit)
+	err = h.store.Queries.CreateExploit(c, exploitS)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save exploit metadata"})
 	}
@@ -635,6 +668,16 @@ func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
 	})
 }
 
+// @Summary Delete exploit
+// @Description Deletes an exploit by ID.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param id path int true "Exploit ID"
+// @Success 200 {object} ResponseSuccess
+// @Failure 400 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{id} [delete]
 func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {
 	exploitID := c.Params("id")
 	if exploitID == "" {
@@ -644,6 +687,11 @@ func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {
 	}
 
 	id, err := strconv.ParseInt(exploitID, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Invalid exploit ID",
+		})
+	}
 	err = h.store.Queries.DeleteExploitByID(c.RequestCtx(), id)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to delete exploit")

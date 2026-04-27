@@ -123,7 +123,6 @@ func (c *Client) uploadFile(endpoint string, filePath string, authed bool) (*htt
 		return nil, nil, fmt.Errorf("failed to close writer: %v", err)
 	}
 
-
 	return c.doRequest(http.MethodPost, endpoint, body.Bytes(), authed, writer.FormDataContentType())
 }
 

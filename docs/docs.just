@@ -3,13 +3,19 @@ import? '../env.just'
 DOCS_IMAGE_NAME := "cookiefarm-docs"
 DOCS_BIN_DIR := "./"
 
-# Build docs for prod
 [group('docs')]
 [working-directory('docs')]
+sync-deps:
+    @echo -e "{{ CYAN }}[*] Syncing dependencies...{{ RESET }}"
+    @bun install
+    @echo -e "{{ GREEN }}[+] Dependencies synced!{{ RESET }}"
+
+# Build docs for prod
+[group('docs')]
 docs-build-prod:
     @echo -e "{{ CYAN }}[*] Building docs...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ DOCS_BIN_DIR }}
-    @docker build -t {{ DOCS_IMAGE_NAME }} .
+    @docker build -t {{ DOCS_IMAGE_NAME }} -f ./docs/Dockerfile .
     @echo -e "{{ GREEN }}[+] Docs build complete!{{ RESET }}"
 
 # Run docs for prod
@@ -18,6 +24,7 @@ docs-build-prod:
 docs-up: docs-build-prod
     @echo -e "{{ CYAN }}[*] Docker up...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ SERVER_BIN_DIR }}
+    @docker rm -f cookiefarm-docs 2>/dev/null || true
     @docker run -d -p 8882:8882 --name cookiefarm-docs {{ DOCS_IMAGE_NAME }}
     @echo -e "{{ GREEN }}[+] Server build complete!{{ RESET }}"
 
@@ -35,20 +42,20 @@ docs-down:
 # These run the bun scripts defined in docs/package.json
 [group('docs')]
 [working-directory('docs')]
-docs-build:
+docs-build: sync-deps
     @echo -e "{{ CYAN }}[*] Running bun run build...{{ RESET }}"
     @bun run build
     @echo -e "{{ GREEN }}[+] bun build finished{{ RESET }}"
 
 [group('docs')]
 [working-directory('docs')]
-docs-dev:
+docs-dev: sync-deps
     @echo -e "{{ CYAN }}[*] Running bun run dev...{{ RESET }}"
     @bun run dev
 
 [group('docs')]
 [working-directory('docs')]
-docs-start:
+docs-start: sync-deps
     @echo -e "{{ CYAN }}[*] Running bun run start...{{ RESET }}"
     @bun run start
 
@@ -66,6 +73,6 @@ docs-postinstall:
 
 [group('docs')]
 [working-directory('docs')]
-docs-lint:
+docs-lint: sync-deps
     @echo -e "{{ CYAN }}[*] Running bun run lint...{{ RESET }}"
     @bun run lint

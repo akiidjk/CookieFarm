@@ -3,6 +3,7 @@
 import 'env.just'
 import 'cookiefarm/cookiefarm.just'
 import 'exploiter/exploiter.just'
+import 'cookiefarm/server/frontend/frontend.just'
 import 'docs/docs.just'
 
 # Display help information
@@ -10,24 +11,6 @@ help:
     @just --list
 
 # === SHARED TOOLS ===
-
-# Build Tailwind CSS for production
-[group('tools')]
-[working-directory('cookiefarm')]
-tailwindcss-build:
-    ./tools/tailwindcss -c ./server/tailwind.config.js -i ./server/assets/css/global.css -o ./server/public/css/output.css --minify
-
-# Watch Tailwind CSS files and rebuild on changes
-[group('tools')]
-[working-directory('cookiefarm')]
-tailwindcss-watch:
-    ./tools/tailwindcss -c ./server/tailwind.config.js -i ./server/assets/css/global.css -o ./server/public/css/output.css --watch
-
-# Run the minify on the js files in the assets/js directory and output to public/js `bun/npm -g install uglify-js`
-[group('tools')]
-[working-directory('cookiefarm')]
-minify:
-    @uglifyjs ./server/assets/js/*.js -o ./server/public/js/output.min.js -c -m
 
 # Lint the codebase using golangci-lint and apply fixes where possible
 [group('tools')]
@@ -92,6 +75,6 @@ release:
 [working-directory('cookiefarm')]
 ghcr-push:
     @echo Building and pushing Docker image to GitHub Container Registry...
-    @docker build -t ghcr.io/bytethecookies/cookiefarm:latest .
+    @docker build -t ghcr.io/bytethecookies/cookiefarm:latest --build-arg VERSION=$(git describe --tags --abbrev=0) .
     @docker push ghcr.io/bytethecookies/cookiefarm:latest
     @echo Docker image pushed to GitHub Container Registry!

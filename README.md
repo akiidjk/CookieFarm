@@ -52,7 +52,7 @@ Make sure you have the following installed:
 #### Automatic Setup
 
 ```
-curl -sSL cookiefarm.bytethecookies.org/install.sh | bash
+bash -c "$(curl -sSL cookiefarm.bytethecookies.org/install.sh)"
 ```
 
 #### Manual Setup
@@ -122,7 +122,7 @@ shared:
 
 2. Log in and configure the client:
    ```bash
-   ckc config login -P SuperSecret -H 192.168.1.10 -p 8000 -u your_username
+   ckc login -P SuperSecret -H 192.168.1.10 -p 8000 -u your_username
    ```
 
 3. Install the Python helper module and create a new exploit template:

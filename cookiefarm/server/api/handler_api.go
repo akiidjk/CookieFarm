@@ -10,11 +10,12 @@ import (
 	"strings"
 
 	"server/config"
-	"server/controllers"
 	"server/database"
+	"server/internal/exploit"
 	"server/websockets"
 
 	json "github.com/bytedance/sonic"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/gofiber/fiber/v3"
 )
@@ -26,14 +27,26 @@ const flagCheckerHostNotConfigureWarnMessage = "Flagchecker host not configured"
 // HandleGetConfig returns the current shared configuration of the server.
 //
 // @Summary Get shared config
-// @Description Returns current shared configuration used by clients/exploit runtime.
-// @Tags config
+// @Description Returns current shared configuration used by clients/exploit runtime.// @Tags config
 // @Produce json
 // @Security CookieAuth
 // @Success 200 {object} ResponseSharedConfig
 // @Router /config [get]
 func (h *Handler) HandleGetConfig(c fiber.Ctx) error {
 	return c.JSON(h.config.GetShared())
+}
+
+// HandleGetConfig returns the current full configuration of the server.
+//
+// @Summary Get full config
+// @Description Returns current server and shared configuration.
+// @Tags config
+// @Produce json
+// @Security CookieAuth
+// @Success 200 {object} ResponseSharedConfig
+// @Router /config [get]
+func (h *Handler) HandleGetFullConfig(c fiber.Ctx) error {
+	return c.JSON(h.config.GetFullConfig())
 }
 
 // HandleGetAllFlags retrieves and returns all the stored flags.
@@ -63,19 +76,32 @@ func (h *Handler) HandleGetAllFlags(c fiber.Ctx) error {
 }
 
 // HandleGetStats returns statistics about the server state.
-// Currently returns placeholders for flags and users.
+// Returns aggregated statistics for flags. The response body contains a JSON object
+// with the key "flags_stats" that maps to an array of aggregated rows (grouped
+// statistics returned by the database query). Each element typically contains
+// fields such as service name, status and count depending on the underlying
+// query implementation.
 //
 // @Summary Get stats
-// @Description Returns aggregated server/flags statistics.
+// @Description Returns aggregated server/flags statistics (grouped counts by service/status).
 // @Tags stats
 // @Produce json
 // @Security CookieAuth
-// @Success 200 {object} map[string]any
+// @Success 200 {object} map[string]any "{"flags_stats": [{"service":"svc","status":1,"count":10}, ...] }"
 // @Failure 500 {object} ResponseError
 // @Router /stats [get]
-func (*Handler) HandleGetStats(c fiber.Ctx) error {
-	n := controllers.NewStatsController()
-	return n.GetFlagStats(c)
+func (h *Handler) HandleGetStats(c fiber.Ctx) error {
+	rows, err := h.store.Queries.FlagsStats(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flags stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	if rows == nil {
+		return c.JSON(fiber.Map{"flags_stats": []any{}})
+	}
+
+	return c.JSON(fiber.Map{"flags_stats": rows})
 }
 
 // HandleGetPaginatedFlags returns paginated and filtered flags.
@@ -96,8 +122,8 @@ func (*Handler) HandleGetStats(c fiber.Ctx) error {
 // @Failure 500 {object} ResponseError
 // @Router /flags/{limit} [get]
 func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
-	limit, err := fiber.Params[int](c, "limit", config.DefaultLimit), error(nil)
-	if err != nil || limit <= 0 {
+	limit := fiber.Params[int](c, "limit", config.DefaultLimit)
+	if limit <= 0 {
 		logger.Log.Warn().Msg("Invalid or missing limit parameter")
 		limit = config.DefaultLimit
 	}
@@ -130,12 +156,18 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	opts := database.GetFilteredFlagsParams{
-		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
-		Search:      c.Query("search", ""),                                    // Value of the search query
-		SearchField: c.Query("search_field", "flag_code"),                     // Field to apply the search query to (default: flag_code)
-		Limit:       sql.NullInt64{Int64: int64(limit), Valid: true},
-		Offset:      sql.NullInt64{Int64: int64(offset), Valid: true},
+		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
+		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
+		Search: sql.NullString{
+			String: strings.TrimSpace(c.Query("search", "")),
+			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
+		}, // Value of the search query
+		SearchField: sql.NullString{
+			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
+			Valid:  true,
+		}, // Field to apply the search query to (default: flag_code)
+		Limit:  sql.NullInt64{Int64: int64(limit), Valid: true},
+		Offset: sql.NullInt64{Int64: int64(offset), Valid: true},
 	}
 
 	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
@@ -148,8 +180,15 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
 		ServiceName: serviceNull,                                              // Filter by service name
 		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
-		Search:      c.Query("search", ""),                                    // Value of the search query
-		SearchField: c.Query("search_field", "flag_code"),                     // Field to apply the search query to (default: flag_code)
+		Search: sql.NullString{
+			String: strings.TrimSpace(c.Query("search", "")),
+			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
+		}, // Value of the search query
+		SearchField: sql.NullString{
+			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
+			Valid:  true,
+		}, // Field to apply the search query (default: flag_code)
+
 	}
 
 	// Get filtered count for accurate pagination
@@ -185,8 +224,8 @@ func (*Handler) HandleGetProtocols(c fiber.Ctx) error {
 	}
 
 	var protocolNames []string
-	for _, path := range searchPaths {
-		if protocols, err := os.ReadDir(path); err == nil {
+	for _, exploitPath := range searchPaths {
+		if protocols, err := os.ReadDir(exploitPath); err == nil {
 			for _, entry := range protocols {
 				if entry.IsDir() {
 					protocolNames = append(protocolNames, strings.Split(entry.Name(), ".")[0])
@@ -345,15 +384,15 @@ func (h *Handler) HandlePostFlagsStandalone(c fiber.Ctx) error {
 	return c.JSON(ResponseSuccess{Message: "Flag submitted successfully"})
 }
 
-// HandlePostConfig updates the server configuration and restarts the flag processing loop.
+// HandlePostConfig updates the full configuration and restarts the flag processing loop.
 //
-// @Summary Update shared config
-// @Description Updates shared configuration and restarts background runner loops.
+// @Summary Update full config
+// @Description Updates server/shared configuration and restarts background runner loops.
 // @Tags config
 // @Accept json
 // @Produce json
 // @Security CookieAuth
-// @Param request body UpdateConfigRequest true "Shared config payload"
+// @Param request body UpdateConfigRequest true "Full config payload"
 // @Success 200 {object} ResponseSuccess
 // @Failure 422 {object} ResponseError
 // @Failure 500 {object} ResponseError
@@ -368,7 +407,12 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 		})
 	}
 
-	h.config.SetShared(payload.Config)
+	nextConfig := payload.Config
+	nextConfig.Configured = true
+	nextConfig.Shared.Configured = true
+
+	h.config.SetFullConfig(nextConfig)
+	h.config.SetConfigured(true)
 
 	h.runner.Run()
 
@@ -386,8 +430,10 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 		Payload: cfgJSON,
 	}
 
-	for client := range websockets.GlobalManager.Clients {
-		client.Egress <- event
+	if websockets.GlobalManager != nil {
+		for client := range websockets.GlobalManager.Clients {
+			client.Egress <- event
+		}
 	}
 
 	return c.JSON(ResponseSuccess{Message: "Configuration updated successfully"})
@@ -423,4 +469,146 @@ func (h *Handler) HandleDeleteFlag(c fiber.Ctx) error {
 	return c.JSON(ResponseSuccess{Message: "Flag deleted successfully"})
 }
 
-// fiber:context-methods migrated
+// @Summary List exploits
+// @Description Returns all stored exploits.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Success 200 {object} map[string]any
+// @Failure 500 {object} ResponseError
+// @Router /exploits [get]
+func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
+	exploits, err := h.store.Queries.GetAllExploits(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch exploits")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploits",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"exploits": exploits,
+		"count":    len(exploits),
+	})
+}
+
+// @Summary Get exploit by name
+// @Description Returns exploit(s) with content by name.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param name path string true "Exploit name"
+// @Success 200 {array} ExploitWithContent
+// @Failure 400 {object} ResponseError
+// @Failure 404 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{name} [get]
+func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
+	exploitName := c.Params("name")
+	if exploitName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit name",
+		})
+	}
+
+	exploits, err := h.store.Queries.GetExploitsByName(c.RequestCtx(), exploitName)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploit",
+		})
+	}
+
+	if len(exploits) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(ResponseError{
+			Error: "Exploit not found",
+		})
+	}
+
+	exploitsWContent := exploit.BuildExploitPayload(exploits)
+	return c.JSON(exploitsWContent)
+}
+
+// @Summary Upload exploit
+// @Description Uploads a new exploit file.
+// @Tags exploits
+// @Accept multipart/form-data
+// @Produce json
+// @Security CookieAuth
+// @Param file formData file true "Exploit file"
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} ResponseError
+// @Failure 401 {object} ResponseError
+// @Failure 413 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit [post]
+func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
+	token := c.Cookies("token", "")
+	jwtParsed, err := VerifyToken(token)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{Error: "Invalid token"})
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("No file provided in request")
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Missing file upload (field name: 'file')"})
+	}
+
+	fileHeader, err = exploit.SanitizeExploit(c, fileHeader)
+	if err != nil {
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
+	}
+
+	username := jwtParsed.Claims.(jwt.MapClaims)["username"].(string)
+	exploitS, err := exploit.CreateExploit(c, h.store, fileHeader, username)
+	if err != nil {
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
+	}
+
+	err = h.store.Queries.CreateExploit(c, exploitS)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save exploit metadata"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message":      "uploaded successfully",
+		"exploit_name": fileHeader.Filename,
+		"hash":         exploitS.Hash,
+		"version":      exploitS.Version,
+	})
+}
+
+// @Summary Delete exploit
+// @Description Deletes an exploit by ID.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param id path int true "Exploit ID"
+// @Success 200 {object} ResponseSuccess
+// @Failure 400 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{id} [delete]
+func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {
+	exploitID := c.Params("id")
+	if exploitID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit ID",
+		})
+	}
+
+	id, err := strconv.ParseInt(exploitID, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Invalid exploit ID",
+		})
+	}
+	err = h.store.Queries.DeleteExploitByID(c.RequestCtx(), id)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to delete exploit")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to delete exploit",
+		})
+	}
+
+	return c.JSON(ResponseSuccess{Message: "Exploit deleted successfully"})
+}

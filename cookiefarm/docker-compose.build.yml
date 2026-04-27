@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: prod
+      args:
+        VERSION: ${VERSION:-dev}
     restart: unless-stopped
     ports:
       - ${PORT}:${PORT}

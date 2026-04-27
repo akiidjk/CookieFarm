@@ -1,0 +1,323 @@
+---
+title: Communication Protocol Guide
+description: Build CookieFarm protocol plugins to submit flags to the Flag Checker service, parse JSON responses, and handle errors reliably.
+---
+
+## File Location and Starter Template
+
+Create your protocol file in:
+
+`pkg/protocols`
+
+Use this starter:
+
+```go title="protocol.go"
+//go:build ignore
+
+package main
+
+import (
+	"protocols"
+)
+
+// Submit sends flags to the Flag Checker service and returns parsed results.
+func Submit(host string, teamToken string, flags []string) ([]models.ResponseProtocol, error) {
+ // Your implementation here
+ return nil, nil
+}
+```
+
+> **Note:** The return type should be `[]models.ResponseProtocol`.
+
+---
+
+## Response Model
+
+The checker response should map to:
+
+```go
+type ResponseProtocol struct {
+ Msg    string `json:"msg"`    // Human-readable message (often includes the flag)
+ Flag   string `json:"flag"`   // Submitted flag
+ Status string `json:"status"` // ACCEPTED | DENIED | RESUBMIT | ERROR
+}
+```
+
+---
+
+## Expected JSON Response
+
+The Flag Checker returns a JSON array, one object per submitted flag:
+
+```json
+[
+  {
+    "msg": "[<flag>] <message>",
+    "flag": "<flag>",
+    "status": "ACCEPTED"
+  }
+]
+```
+
+### `status` values
+
+- `ACCEPTED` — valid flag accepted
+- `DENIED` — invalid/duplicate/not accepted
+- `RESUBMIT` — temporary issue, retry later
+- `ERROR` — internal/generic processing error
+
+---
+
+## Submit Function Contract
+
+```go
+func Submit(host string, token string, flags []string) ([]models.ResponseProtocol, error)
+```
+
+### Parameters
+
+- `host`: Flag Checker address (example: `localhost:5000`)
+- `token`: team authentication token
+- `flags`: list of flags to submit
+
+### Returns
+
+- `[]models.ResponseProtocol`: parsed checker result per flag
+- `error`: request/response/parsing error
+
+---
+
+## Example Implementations
+
+```go tab="cc_http" title="cc_http.go"
+//go:build ignore
+
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"models"
+	"net/http"
+	"strings"
+
+	"protocols"
+)
+
+func Submit(url string, teamToken string, flags []string) ([]protocols.ResponseProtocol, error) {
+	jsonData, err := json.Marshal(flags)
+	if err != nil {
+		return nil, fmt.Errorf("error during marshalling: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("error during request creation: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Team-Token", teamToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error during request submission: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error during response reading: %w", err)
+	}
+
+	var responses []struct {
+		Status string `json:"status"` // Status of the response (e.g., "0", "1", "2" ,"3") see enum in pkg/models/models.go
+		Flag   string `json:"flag"`   // Flag string received from the flag checker service
+		Msg    string `json:"msg"`
+	}
+	// logger.Debug("Raw body %s", string(body))
+	if err := json.Unmarshal(body, &responses); err != nil {
+		return nil, fmt.Errorf("error during response parsing: %w", err)
+	}
+
+	var responsesParsed []protocols.ResponseProtocol = make([]protocols.ResponseProtocol, len(responses))
+	for i := range responses {
+		responsesParsed[i].Flag = responses[i].Flag
+		responsesParsed[i].Msg = strings.Split(responses[i].Msg, "]")[1]
+
+		switch responses[i].Status {
+		case "ACCEPTED":
+			responsesParsed[i].Status = models.StatusAccepted
+		case "DENIED":
+			responsesParsed[i].Status = models.StatusDenied
+		case "Error":
+			responsesParsed[i].Status = models.StatusError
+		default:
+			responsesParsed[i].Status = models.StatusNotValid
+		}
+	}
+
+	return responsesParsed, nil
+}
+```
+
+```go tab="Faust" title="faust.go"
+//go:build ignore
+
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"models"
+	"net"
+	"strings"
+	"time"
+
+	"protocols"
+)
+
+func Submit(url string, teamToken string, flags []string) ([]protocols.ResponseProtocol, error) {
+	_ = teamToken // plaintext TCP protocol does not use team token header
+
+	address := strings.TrimPrefix(url, "tcp://")
+	address = strings.TrimPrefix(address, "tcp:")
+	address = strings.TrimPrefix(address, "//")
+
+	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to submission server: %w", err)
+	}
+	defer conn.Close()
+
+	if err := conn.SetDeadline(time.Now().Add(15 * time.Second)); err != nil {
+		return nil, fmt.Errorf("error setting connection deadline: %w", err)
+	}
+
+	reader := bufio.NewReader(conn)
+	writer := bufio.NewWriter(conn)
+
+	// Optional welcome banner terminated by an empty line.
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		if line == "\n" {
+			break
+		}
+	}
+
+	for _, flag := range flags {
+		if _, err := writer.WriteString(flag + "\n"); err != nil {
+			return nil, fmt.Errorf("error writing flag: %w", err)
+		}
+	}
+	if err := writer.Flush(); err != nil {
+		return nil, fmt.Errorf("error flushing flags: %w", err)
+	}
+
+	responsesParsed := make([]protocols.ResponseProtocol, len(flags))
+	flagIndex := make(map[string][]int, len(flags))
+	for i, f := range flags {
+		flagIndex[f] = append(flagIndex[f], i)
+	}
+
+	for range len(flags) {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return nil, fmt.Errorf("error reading response: %w", err)
+		}
+		line = strings.TrimSuffix(line, "\n")
+
+		matchedFlag := ""
+		for f := range flagIndex {
+			if rest, ok := strings.CutPrefix(line, f); ok {
+				if rest == "" || rest[0] == ' ' || rest[0] == '\t' {
+					matchedFlag = f
+					break
+				}
+			}
+		}
+		if matchedFlag == "" {
+			return nil, fmt.Errorf("malformed response line: %q", line)
+		}
+
+		indices := flagIndex[matchedFlag]
+		if len(indices) == 0 {
+			return nil, fmt.Errorf("unexpected duplicate response for flag %q", matchedFlag)
+		}
+		idx := indices[0]
+		flagIndex[matchedFlag] = indices[1:]
+
+		rest := strings.TrimLeft(line[len(matchedFlag):], " \t")
+		parts := strings.Fields(rest)
+		if len(parts) == 0 {
+			return nil, fmt.Errorf("missing status code in response: %q", line)
+		}
+		code := parts[0]
+		msg := ""
+		if len(parts) > 1 {
+			msg = strings.Join(parts[1:], " ")
+		}
+
+		responsesParsed[idx].Flag = matchedFlag
+		responsesParsed[idx].Msg = msg
+
+		switch code {
+		case "OK":
+			responsesParsed[idx].Status = models.StatusAccepted
+		case "DUP", "OWN", "OLD":
+			responsesParsed[idx].Status = models.StatusDenied
+		case "ERR":
+			responsesParsed[idx].Status = models.StatusError
+		case "INV":
+			responsesParsed[idx].Status = models.StatusNotValid
+		default:
+			responsesParsed[idx].Status = models.StatusError
+		}
+	}
+
+	return responsesParsed, nil
+}
+```
+
+---
+
+## Build as a Go Plugin
+
+Compile your protocol into a `.so` plugin:
+
+```bash
+go build -buildmode=plugin -o <name>.so <name>.go
+```
+
+- `-buildmode=plugin`: builds a runtime-loadable plugin
+- `<name>.so`: output plugin
+- `<name>.go`: source file
+
+---
+
+## Error Handling Checklist
+
+Your implementation should handle:
+
+- network failures (checker unreachable/timeouts)
+- invalid or malformed response bodies
+- JSON unmarshal errors
+
+On failure, return:
+
+- `nil` response
+- non-nil `error`
+
+---
+
+## Final Notes
+
+- Ensure the Flag Checker is reachable at the configured `host`.
+- Always send a valid team token.
+- Keep response parsing strict to avoid silent failures.
+- Prefer clear wrapped errors (`fmt.Errorf("...: %w", err)`) for easier debugging.

@@ -90,7 +90,7 @@ func Remove(name string) (string, error) {
 			logger.Log.Warn().Msg("Exploits directory does not exist, creating it")
 			os.Mkdir(exploitsDir, os.ModePerm)
 		}
-		path = filepath.Join(exploitsDir, namePathNormalized)
+		path = filepath.Join(config.DefaultPath, exploitsDir, namePathNormalized)
 	}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {

@@ -5,11 +5,11 @@ package api
 import (
 	"fmt"
 	"logger"
+	"os"
 	"strings"
 	"time"
 
 	"server/config"
-	"server/ui"
 
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v3"
@@ -17,13 +17,16 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
+const (
+	frontendDistDir   = "./server/frontend/dist"
+	frontendAssetsDir = "./server/frontend/dist/assets"
+	frontendIndexPath = "./server/frontend/dist/index.html"
+)
+
 // newConfig returns a configured Fiber config struct.
 // It adapts settings depending on the debug mode (e.g. logging, strict routing).
 func newConfig(debug bool) fiber.Config {
-	views := ui.InitTemplateEngine(!debug)
-
 	cfg := fiber.Config{
-		Views:       views,
 		JSONEncoder: sonic.Marshal,
 		JSONDecoder: sonic.Unmarshal,
 	}
@@ -50,9 +53,8 @@ func PrepareStatic(app *fiber.App) error {
 	}
 
 	routes := []staticRoute{
-		{"/css", "./server/public/css"},
-		{"/js", "./server/public/js"},
 		{"/images", "./server/public/images"},
+		{"/assets", frontendAssetsDir},
 	}
 
 	var staticCfg static.Config
@@ -75,10 +77,18 @@ func PrepareStatic(app *fiber.App) error {
 	return nil
 }
 
+func ServeFrontendIndex(c fiber.Ctx) error {
+	if _, err := os.Stat(frontendIndexPath); err != nil {
+		return c.Status(fiber.StatusNotFound).SendString("frontend build not found")
+	}
+
+	return c.SendFile(frontendIndexPath)
+}
+
 // NewApp initializes and returns a new Fiber app instance,
 // setting up static file routes, debug middleware, and template engine.
 func NewApp() (*fiber.App, error) {
-	staticPrefixes := []string{"/css", "/js", "/images", "/static"}
+	staticPrefixes := []string{"/css", "/js", "/images", "/assets", "/static"}
 	cfg := newConfig(config.Debug)
 	app := fiber.New(cfg)
 

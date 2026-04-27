@@ -137,14 +137,14 @@
                         "CookieAuth": []
                     }
                 ],
-                "description": "Returns current shared configuration used by clients/exploit runtime.",
+                "description": "Returns current server and shared configuration.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "config"
                 ],
-                "summary": "Get shared config",
+                "summary": "Get full config",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -160,7 +160,7 @@
                         "CookieAuth": []
                     }
                 ],
-                "description": "Updates shared configuration and restarts background runner loops.",
+                "description": "Updates server/shared configuration and restarts background runner loops.",
                 "consumes": [
                     "application/json"
                 ],
@@ -170,10 +170,10 @@
                 "tags": [
                     "config"
                 ],
-                "summary": "Update shared config",
+                "summary": "Update full config",
                 "parameters": [
                     {
-                        "description": "Shared config payload",
+                        "description": "Full config payload",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -239,6 +239,201 @@
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploit": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Uploads a new exploit file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "Upload exploit",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Exploit file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploit/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Deletes an exploit by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "Delete exploit",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Exploit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploit/{name}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns exploit(s) with content by name.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "Get exploit by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Exploit name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.ExploitWithContent"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploits": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns all stored exploits.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "List exploits",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
@@ -396,7 +591,7 @@
                         "CookieAuth": []
                     }
                 ],
-                "description": "Returns aggregated server/flags statistics.",
+                "description": "Returns aggregated server/flags statistics (grouped counts by service/status).",
                 "produces": [
                     "application/json"
                 ],
@@ -406,7 +601,7 @@
                 "summary": "Get stats",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "{\"flags_stats\": [{\"service\":\"svc\",\"status\":1,\"count\":10}, ...] }",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -622,6 +817,32 @@
         }
     },
     "definitions": {
+        "api.ExploitWithContent": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "submit_time": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
         "api.ResponseError": {
             "type": "object",
             "properties": {
@@ -653,40 +874,13 @@
             "type": "object",
             "properties": {
                 "configured": {
-                    "description": "True if configuration has been loaded and validated",
                     "type": "boolean"
                 },
-                "format_ip_teams": {
-                    "description": "Format string for generating team IPs",
-                    "type": "string"
+                "server": {
+                    "$ref": "#/definitions/config.Config"
                 },
-                "my_team_id": {
-                    "description": "ID of the current team",
-                    "type": "integer"
-                },
-                "nop_team": {
-                    "description": "The id of the nop team in the ctf",
-                    "type": "integer"
-                },
-                "range_ip_teams": {
-                    "description": "Number of teams / IP range",
-                    "type": "integer"
-                },
-                "regex_flag": {
-                    "description": "Regex used to identify flags in output",
-                    "type": "string"
-                },
-                "services": {
-                    "description": "List of services to exploit",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "integer",
-                        "format": "int32"
-                    }
-                },
-                "url_flag_ids": {
-                    "description": "URLFlagIds is the where the flagsId server is running",
-                    "type": "string"
+                "shared": {
+                    "$ref": "#/definitions/sharedconfig.Shared"
                 }
             }
         },
@@ -715,6 +909,52 @@
             "type": "object",
             "properties": {
                 "config": {
+                    "$ref": "#/definitions/config.FullConfig"
+                }
+            }
+        },
+        "config.Config": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "flag_ttl": {
+                    "type": "integer"
+                },
+                "max_flag_batch_size": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "submit_flag_checker_time": {
+                    "type": "integer"
+                },
+                "team_token": {
+                    "type": "string"
+                },
+                "tick_time": {
+                    "type": "integer"
+                },
+                "url_flag_checker": {
+                    "type": "string"
+                }
+            }
+        },
+        "config.FullConfig": {
+            "type": "object",
+            "properties": {
+                "configured": {
+                    "type": "boolean"
+                },
+                "server": {
+                    "$ref": "#/definitions/config.Config"
+                },
+                "shared": {
                     "$ref": "#/definitions/sharedconfig.Shared"
                 }
             }

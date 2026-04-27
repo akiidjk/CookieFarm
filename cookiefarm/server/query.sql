@@ -128,3 +128,56 @@ WHERE flag_code = ?;
 -- name: DeleteFlagByTTL :execrows
 DELETE FROM flags
 WHERE response_time < (CAST(strftime('%s', 'now') AS INTEGER) - ?);
+
+-- name: FlagsStats :many
+SELECT
+    team_id,
+    COUNT(*) AS total_flags,
+    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS accepted_flags,
+    SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS denied_flags,
+    SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS unsubmitted_flags,
+    SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS error_flags,
+    SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS not_valid_flags
+FROM flags
+GROUP BY team_id
+ORDER BY team_id;
+
+-- EXPLOITS QUERIES
+
+-- name: GetExploitByHash :one
+SELECT *
+FROM exploits
+WHERE hash = ?
+LIMIT 1;
+
+-- name: GetExploitsByUsername :many
+SELECT *
+FROM exploits
+WHERE username = ?
+ORDER BY submit_time DESC
+LIMIT ? OFFSET ?;
+
+-- name: GetAllExploits :many
+SELECT *
+FROM exploits
+ORDER BY submit_time DESC;
+
+-- name: CountExploits :one
+SELECT COUNT(*)
+FROM exploits
+LIMIT 1;
+
+-- name: GetExploitsByName :many
+SELECT *
+FROM exploits
+WHERE name = ?
+ORDER BY submit_time DESC;
+
+-- name: CreateExploit :exec
+
+INSERT INTO exploits(name, hash, submit_time, username, version)
+VALUES (?, ?, ?, ?, ?);
+
+-- name: DeleteExploitByID :exec
+DELETE FROM exploits
+WHERE id = ?;

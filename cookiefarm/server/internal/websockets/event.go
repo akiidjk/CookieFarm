@@ -6,7 +6,6 @@ import (
 	"logger"
 	"time"
 
-	"server/config"
 	"server/database"
 )
 
@@ -48,22 +47,13 @@ func FlagHandler(event Event, client *Client) error {
 
 	client.Egress <- outgoingEvent
 
-	logger.Log.Info().
+	logger.Log.Debug().
 		Int("client", client.Number).
 		Str("flag", flag.FlagCode).
 		Int64("team", flag.TeamID).
 		Str("service name", flag.ServiceName).
 		Uint16("port service", flag.PortService).
 		Msg("Flag received and sent to DB")
-
-	return nil
-}
-
-func ConfigHandler(event Event, client *Client) error {
-	var configData config.Config
-	if err := json.Unmarshal(event.Payload, &configData); err != nil {
-		return fmt.Errorf("bad payload in request: %v", err)
-	}
 
 	return nil
 }

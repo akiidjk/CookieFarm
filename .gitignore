@@ -137,5 +137,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .next
-!frontend/src/app/logs
 .env.just
+
+# exploits
+cookiefarm/exploits/save/*.py

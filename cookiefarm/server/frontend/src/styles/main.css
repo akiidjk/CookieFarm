@@ -1,0 +1,86 @@
+@import "@cloudflare/kumo/styles/tailwind";
+@import "tailwindcss";
+@source "../../node_modules/@cloudflare/kumo/dist/**/*.{js,jsx,ts,tsx}";
+
+:root {
+    color-scheme: light dark;
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family:
+        "IBM Plex Sans",
+        "Geist Sans",
+        ui-sans-serif,
+        system-ui,
+        sans-serif;
+    color: var(--text-color-default);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+::selection {
+    background: color-mix(in srgb, var(--color-kumo-brand) 30%, transparent);
+}
+
+.app-shell-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.live-dot-pulse {
+    animation: live-dot-pulse 1.6s ease-in-out infinite;
+}
+
+.dashboard-surface {
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--color-kumo-base) 92%, transparent);
+}
+
+.log-line a {
+    color: var(--text-color-link);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@keyframes live-dot-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(0.82);
+        opacity: 0.65;
+    }
+}
+
+
+/* Sovrascrivi i token di Kumo per il Dark Mode */
+html[data-mode="dark"] {
+    --color-kumo-brand: #B38E4F;
+    --color-kumo-brand-hover: #937749;
+    --color-kumo-canvas: #09090b;
+    --color-kumo-base: #18181b;
+    --color-kumo-line: #27272a;
+}

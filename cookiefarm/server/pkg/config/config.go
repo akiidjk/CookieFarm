@@ -3,7 +3,7 @@ package config
 import (
 	"protocols"
 	"sharedconfig"
-	"sync"
+	"sync/atomic"
 )
 
 type Config struct {
@@ -25,9 +25,8 @@ type FullConfig struct {
 }
 
 type ConfigManager struct {
-	mu    sync.RWMutex
-	cfg   FullConfig
 	token string
+	state atomic.Value // *FullConfig
 }
 
 var (

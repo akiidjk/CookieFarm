@@ -25,7 +25,7 @@ type AddFlagParams struct {
 	SubmitTime   uint64 `json:"submit_time"`
 	ResponseTime uint64 `json:"response_time"`
 	Status       int64  `json:"status"`
-	TeamID       int64  `json:"team_id"`
+	TeamID       uint16 `json:"team_id"`
 	Msg          string `json:"msg"`
 	Username     string `json:"username"`
 	ExploitName  string `json:"exploit_name"`

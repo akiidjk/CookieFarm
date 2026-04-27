@@ -13,6 +13,13 @@ var (
 func GetInstance() *ConfigManager {
 	once.Do(func() {
 		instance = &ConfigManager{}
+
+		instance.state.Store(&FullConfig{
+			Server: Config{},
+			Shared: sharedconfig.Shared{
+				Services: make(map[string]uint16),
+			},
+		})
 	})
 	return instance
 }

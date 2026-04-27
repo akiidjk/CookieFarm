@@ -50,7 +50,7 @@ func FlagHandler(event Event, client *Client) error {
 	logger.Log.Debug().
 		Int("client", client.Number).
 		Str("flag", flag.FlagCode).
-		Int64("team", flag.TeamID).
+		Uint16("team", flag.TeamID).
 		Str("service name", flag.ServiceName).
 		Uint16("port service", flag.PortService).
 		Msg("Flag received and sent to DB")

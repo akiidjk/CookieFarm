@@ -22,7 +22,7 @@ const (
 type Server struct {
 	listenAddr           *net.TCPAddr
 	listener             *net.TCPListener
-	shutdown             bool
+	shutdown             atomic.Bool
 	shutdownDeadline     time.Time
 	requestHandler       RequestHandlerFunc
 	connectionCreator    ConnectionCreatorFunc
@@ -89,18 +89,16 @@ func NewServer(listenAddr string) (*Server, error) {
 	s = &Server{
 		listenAddr:   la,
 		listenConfig: defaultListenConfig,
-		connStructPool: sync.Pool{
-			New: func() interface{} {
-				conn := s.connectionCreator()
-				conn.SetServer(s)
-				return conn
-			},
-		},
 	}
 
-	s.connectionCreator = func() Connection {
-		return &TCPConn{}
+	s.connStructPool = sync.Pool{
+		New: func() interface{} {
+			conn := s.connectionCreator()
+			conn.SetServer(s)
+			return conn
+		},
 	}
+	s.connectionCreator = func() Connection { return &TCPConn{} }
 
 	s.SetBallast(20)
 
@@ -167,7 +165,7 @@ func (s *Server) Shutdown(d time.Duration) (err error) {
 	if d > 0 {
 		s.shutdownDeadline = time.Now().Add(d)
 	}
-	s.shutdown = true
+	s.shutdown.Store(true)
 	logger.Log.Debug().Time("deadline", s.shutdownDeadline).Msg("Shutdown initiated")
 	err = s.listener.Close()
 	if err != nil {
@@ -189,6 +187,10 @@ func (s *Server) Serve() error {
 	s.wp.SetIdleWorkerLifetime(5 * time.Second)
 	s.wp.Start()
 	defer s.wp.Stop()
+
+	for i := range maxProcs {
+		go s.acceptLoop(i)
+	}
 
 	logger.Log.Debug().Int("numShards", maxProcs*2).Msg("Worker pool started")
 
@@ -250,7 +252,7 @@ func (s *Server) acceptLoop(id int) error {
 			logger.Log.Debug().Msg("Max accept connections reached, shutdown triggered")
 		}
 
-		if s.shutdown {
+		if s.shutdown.Load() {
 			_ = s.listener.Close()
 			logger.Log.Debug().Msg("acceptLoop detected shutdown, exiting")
 			break
@@ -259,7 +261,7 @@ func (s *Server) acceptLoop(id int) error {
 		tcpConn, err := s.listener.AcceptTCP()
 		if err != nil {
 			if opErr, ok := err.(*net.OpError); ok {
-				if !(opErr.Temporary() && opErr.Timeout()) && s.shutdown {
+				if !(opErr.Temporary() && opErr.Timeout()) && s.shutdown.Load() {
 					break
 				}
 			}
@@ -278,7 +280,6 @@ func (s *Server) acceptLoop(id int) error {
 		}
 
 		s.wp.AddTask(tcpConn)
-		go s.serveConn(tcpConn)
 		tcpConn = nil
 	}
 
@@ -286,6 +287,8 @@ func (s *Server) acceptLoop(id int) error {
 }
 
 func (s *Server) serveConn(netConn *net.TCPConn) {
+	s.connWaitGroup.Add(1)
+	defer s.connWaitGroup.Done()
 	logger.Log.Debug().Str("remote", netConn.RemoteAddr().String()).Msg("serveConn start")
 	conn := s.connStructPool.Get().(*TCPConn)
 
@@ -317,7 +320,6 @@ func StartServer(port uint16) error {
 		SocketDeferAccept: false,
 	})
 
-	logger.Log.Info().Str("addr", s.GetListenAddr().String()).Msg("CKP server configured with listen address")
 	s.SetRequestHandler(handler)
 	s.SetAllowThreadLocking(true)
 
@@ -325,6 +327,7 @@ func StartServer(port uint16) error {
 	if err != nil {
 		return err
 	}
+	logger.Log.Info().Str("addr", s.GetListenAddr().String()).Msg("CKP server configured with listen address")
 
 	return s.Serve()
 }

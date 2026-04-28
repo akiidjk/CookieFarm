@@ -8,7 +8,6 @@ use (
 	./client/internal/submitter
 	./client/internal/template
 	./client/internal/tui
-	./client/internal/websockets
 	./client/pkg/config
 	./client/pkg/process
 	./pkg/config
@@ -21,7 +20,6 @@ use (
 	./server/internal/ckp
 	./server/internal/core
 	./server/internal/database
-	./server/internal/websockets
 	./server/pkg/config
 	./server/pkg/pool
 )

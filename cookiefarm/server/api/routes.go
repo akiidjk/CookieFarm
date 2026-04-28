@@ -11,7 +11,6 @@ import (
 	"server/config"
 	"server/core"
 	"server/database"
-	"server/websockets"
 
 	jwtware "github.com/gofiber/contrib/v3/jwt"
 	"github.com/gofiber/fiber/v3"
@@ -86,17 +85,9 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	privateAPI.Post("/exploit/upload", h.HandlePostExploit)
 	privateAPI.Delete("/exploit/:id", h.HandleDeleteExploit)
 
-	websockets.GlobalManager = websockets.NewManager()
-	app.Use("/ws",
-		websockets.CookieAuthMiddleware,
-		websockets.WebSocketUpgrade,
-	)
-	app.Get("/ws", websockets.GlobalManager.ServeWS())
-
 	app.Get("/*", func(c fiber.Ctx) error {
 		path := c.Path()
 		if strings.HasPrefix(path, "/api/") ||
-			strings.HasPrefix(path, "/ws") ||
 			strings.HasPrefix(path, "/assets/") ||
 			strings.HasPrefix(path, "/css/") ||
 			strings.HasPrefix(path, "/js/") ||

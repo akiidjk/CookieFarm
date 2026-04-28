@@ -17,7 +17,7 @@ func buildPayload(flag database.Flag) []byte {
 	exploitName := filepath.Base(flag.ExploitName)
 	size := SIZE_TIMESTAMP + SIZE_PORT + SIZE_TEAMID +
 		len(flag.FlagCode) + 1 +
-		len(exploitName) + 1
+		len(exploitName) + 1 + 1
 
 	payload := make([]byte, size)
 
@@ -31,6 +31,8 @@ func buildPayload(flag database.Flag) []byte {
 	offset++
 	offset += copy(payload[offset:], exploitName)
 	payload[offset] = 0 // null terminator
+
+	payload[offset+1] = '\n'
 
 	return payload
 }

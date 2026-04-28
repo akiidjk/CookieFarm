@@ -157,7 +157,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 
 	opts := database.GetFilteredFlagsParams{
 		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
+		TeamID: teamID,                                                   // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
 			String: strings.TrimSpace(c.Query("search", "")),
 			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
@@ -179,7 +179,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	optsCount := database.CountFilteredFlagsParams{
 		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
 		ServiceName: serviceNull,                                              // Filter by service name
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
+		TeamID:      teamID,                                                   // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
 			String: strings.TrimSpace(c.Query("search", "")),
 			Valid:  strings.TrimSpace(c.Query("search", "")) != "",

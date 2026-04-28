@@ -14,6 +14,10 @@ sql:
             go_type:
               import: ""
               type: "uint16"
+          - column: "flags.team_id"
+            go_type:
+              import: ""
+              type: "uint16"
           - column: "flags.submit_time"
             go_type:
               import: ""

@@ -86,7 +86,7 @@ WHERE
 `
 
 type CountFilteredFlagsParams struct {
-	TeamID      sql.NullInt64  `json:"team_id"`
+	TeamID      uint16         `json:"team_id"`
 	Status      sql.NullInt64  `json:"status"`
 	ServiceName sql.NullString `json:"service_name"`
 	Search      interface{}    `json:"search"`
@@ -194,7 +194,7 @@ ORDER BY team_id
 `
 
 type FlagsStatsRow struct {
-	TeamID           int64           `json:"team_id"`
+	TeamID           uint16          `json:"team_id"`
 	TotalFlags       int64           `json:"total_flags"`
 	AcceptedFlags    sql.NullFloat64 `json:"accepted_flags"`
 	DeniedFlags      sql.NullFloat64 `json:"denied_flags"`
@@ -468,7 +468,7 @@ LIMIT ?7 OFFSET ?6
 `
 
 type GetFilteredFlagsParams struct {
-	TeamID      sql.NullInt64  `json:"team_id"`
+	TeamID      uint16         `json:"team_id"`
 	Status      sql.NullInt64  `json:"status"`
 	Search      interface{}    `json:"search"`
 	SearchField interface{}    `json:"search_field"`
@@ -622,9 +622,9 @@ LIMIT ? OFFSET ?
 `
 
 type GetFlagsByTeamParams struct {
-	TeamID int64 `json:"team_id"`
-	Limit  int64 `json:"limit"`
-	Offset int64 `json:"offset"`
+	TeamID uint16 `json:"team_id"`
+	Limit  int64  `json:"limit"`
+	Offset int64  `json:"offset"`
 }
 
 func (q *Queries) GetFlagsByTeam(ctx context.Context, arg GetFlagsByTeamParams) ([]Flag, error) {

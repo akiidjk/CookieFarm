@@ -187,7 +187,8 @@ func (s *Server) Serve() error {
 	if s.shutdownDeadline.IsZero() {
 		s.connWaitGroup.Wait()
 	} else {
-		diff := s.shutdownDeadline.Sub(time.Now())
+		diff := time.Until(s.shutdownDeadline)
+
 		if diff > 0 {
 			time.Sleep(diff)
 		}
@@ -280,7 +281,7 @@ func isIPv6Addr(addr *net.TCPAddr) bool {
 }
 
 func StartServer(port uint16) error {
-	s, err := NewServer(fmt.Sprintf(":%u", port))
+	s, err := NewServer(fmt.Sprintf(":%d", port))
 	if err != nil {
 		return err
 	}

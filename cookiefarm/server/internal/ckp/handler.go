@@ -27,7 +27,7 @@ func handler(conn Connection) {
 			continue
 		}
 
-		logger.Log.Info().
+		logger.Log.Debug().
 			Str("flag", flag.FlagCode).
 			Int64("team_id", flag.TeamID).
 			Msg("Received flag from CKP connection")
@@ -79,7 +79,7 @@ func parse(data []byte) (database.Flag, error) {
 		return database.Flag{}, err
 	}
 
-	result.ExploitName, _, err = findString(data[8+idx:])
+	result.ExploitName, _, err = findString(data[8+idx+1:])
 	return result, err
 }
 

@@ -20,23 +20,22 @@ const (
 )
 
 type Server struct {
-	listenAddr           *net.TCPAddr
-	listener             *net.TCPListener
-	shutdown             atomic.Bool
-	shutdownDeadline     time.Time
-	requestHandler       RequestHandlerFunc
-	connectionCreator    ConnectionCreatorFunc
-	ctx                  *context.Context
-	activeConnections    int32
-	maxAcceptConnections int32
-	acceptedConnections  int32
-	listenConfig         *ListenConfig
-	connWaitGroup        sync.WaitGroup
-	connStructPool       sync.Pool
-	wp                   *pool.WorkerPool[*net.TCPConn]
-	allowThreadLocking   bool
-	ballast              []byte
-	conns                *Connections
+	listenAddr          *net.TCPAddr
+	listener            *net.TCPListener
+	shutdown            atomic.Bool
+	shutdownDeadline    time.Time
+	requestHandler      RequestHandlerFunc
+	connectionCreator   ConnectionCreatorFunc
+	ctx                 *context.Context
+	activeConnections   int32
+	acceptedConnections int32
+	listenConfig        *ListenConfig
+	connWaitGroup       sync.WaitGroup
+	connStructPool      sync.Pool
+	wp                  *pool.WorkerPool[*net.TCPConn]
+	allowThreadLocking  bool
+	ballast             []byte
+	conns               *Connections
 }
 
 type ListenConfig struct {
@@ -134,10 +133,6 @@ func (s *Server) Listen() error {
 	return nil
 }
 
-func (s *Server) SetMaxAcceptConnections(limit int32) {
-	atomic.StoreInt32(&s.maxAcceptConnections, limit)
-}
-
 func (s *Server) GetActiveConnections() int32 {
 	return s.activeConnections
 }
@@ -226,10 +221,6 @@ func (s *Server) SetBallast(sizeInMiB int) {
 
 func (s *Server) acceptLoop() error {
 	for {
-		if s.maxAcceptConnections > 0 && s.acceptedConnections >= s.maxAcceptConnections {
-			s.Shutdown(0)
-		}
-
 		if s.shutdown.Load() {
 			_ = s.listener.Close()
 			break
@@ -261,11 +252,7 @@ func (s *Server) acceptLoop() error {
 			logger.Log.Warn().Str("remote", tcpConn.RemoteAddr().String()).Msg("Connection creator did not return *TCPConn; skipping add to conns")
 		}
 
-		newAcceptedConns := atomic.AddInt32(&s.acceptedConnections, 1)
-		if s.maxAcceptConnections > 0 && newAcceptedConns > s.maxAcceptConnections {
-			tcpConn.Close()
-			continue
-		}
+		atomic.AddInt32(&s.acceptedConnections, 1)
 
 		s.wp.AddTask(tcpConn)
 	}
@@ -306,7 +293,6 @@ func StartServer(port uint16) (*Connections, error) {
 
 	s.SetRequestHandler(handler)
 	s.SetAllowThreadLocking(true)
-	s.SetMaxAcceptConnections(50)
 
 	s.conns = &Connections{}
 

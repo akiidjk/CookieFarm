@@ -13,17 +13,29 @@ import (
 )
 
 func handler(conn Connection) {
-	data, err := read(conn)
-	if err != nil {
-		return
-	}
+	reader := bufio.NewReader(conn.GetNetConn())
 
-	flag, err := parse(data)
-	if err != nil {
-		return
-	}
+	for {
+		data, err := reader.ReadBytes('\n')
+		if err != nil {
+			return
+		}
 
-	database.GetCollector().AddFlag(flag)
+		flag, err := parse(data)
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("Failed to parse CKP flag")
+			continue
+		}
+
+		logger.Log.Info().
+			Str("flag", flag.FlagCode).
+			Int64("team_id", flag.TeamID).
+			Msg("Received flag from CKP connection")
+
+		if err := database.GetCollector().AddFlag(flag); err != nil {
+			logger.Log.Error().Err(err).Msg("Failed to add CKP flag")
+		}
+	}
 }
 
 func HandlerConfig(conn Connection, cfg []byte) {
@@ -69,11 +81,6 @@ func parse(data []byte) (database.Flag, error) {
 
 	result.ExploitName, _, err = findString(data[8+idx:])
 	return result, err
-}
-
-func read(conn Connection) ([]byte, error) {
-	reader := bufio.NewReader(conn.GetNetConn())
-	return reader.ReadBytes('\n')
 }
 
 func write(conn Connection, data []byte) error {

@@ -3,7 +3,6 @@ package ckp
 import (
 	"context"
 	"net"
-	"time"
 )
 
 type Connection interface {
@@ -12,11 +11,9 @@ type Connection interface {
 	GetServer() *Server
 	GetClientAddr() *net.TCPAddr
 	GetServerAddr() *net.TCPAddr
-	GetStartTime() time.Time
 	SetContext(ctx *context.Context)
 	GetContext() *context.Context
 
-	Start()
 	Reset(netConn net.Conn)
 	SetServer(server *Server)
 }
@@ -35,10 +32,6 @@ func (conn *TCPConn) GetClientAddr() *net.TCPAddr {
 
 func (conn *TCPConn) GetServerAddr() *net.TCPAddr {
 	return conn.LocalAddr().(*net.TCPAddr)
-}
-
-func (conn *TCPConn) GetStartTime() time.Time {
-	return time.Unix(conn.ts/1e9, conn.ts%1e9)
 }
 
 func (conn *TCPConn) SetContext(ctx *context.Context) {
@@ -73,8 +66,4 @@ func (conn *TCPConn) GetServer() *Server {
 func (conn *TCPConn) Reset(netConn net.Conn) {
 	conn.Conn = netConn
 	conn.ctx = nil
-}
-
-func (conn *TCPConn) Start() {
-	conn.ts = time.Now().UnixNano()
 }

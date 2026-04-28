@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"server/ckp"
 	"server/config"
 	"server/core"
 	"server/database"
@@ -28,6 +29,8 @@ var (
 	enablePprof bool // Enable pprof for profiling
 	Version     string
 )
+
+const CKP_PORT = 7777
 
 // RootCmd represents the base command when called without any subcommands
 // Exported for TUI usage
@@ -168,6 +171,8 @@ func Run(cmd *cobra.Command, args []string) {
 			errCh <- err
 		}
 	}()
+
+	go ckp.StartServer(CKP_PORT)
 
 	select {
 	case <-ctx.Done():

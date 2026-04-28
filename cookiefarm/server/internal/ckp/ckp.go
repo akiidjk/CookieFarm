@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"logger"
 	"net"
 	"pool"
 	"runtime"
@@ -103,11 +104,15 @@ func NewServer(listenAddr string) (*Server, error) {
 
 	s.SetBallast(20)
 
+	// Debug: new server created
+	logger.Log.Debug().Str("addr", la.String()).Msg("NewServer created")
+
 	return s, nil
 }
 
 func (s *Server) SetListenConfig(config *ListenConfig) {
 	s.listenConfig = config
+	logger.Log.Debug().Msg("ListenConfig set on server")
 }
 
 func (s *Server) GetListenConfig() *ListenConfig {
@@ -115,6 +120,7 @@ func (s *Server) GetListenConfig() *ListenConfig {
 }
 
 func (s *Server) Listen() error {
+	logger.Log.Info().Str("addr", s.listenAddr.String()).Msg("Starting CKP server...")
 	network := "tcp4"
 	if isIPv6Addr(s.listenAddr) {
 		network = "tcp6"
@@ -132,11 +138,13 @@ func (s *Server) Listen() error {
 	}
 
 	s.listener = tcpl
+	logger.Log.Debug().Str("addr", s.listenAddr.String()).Str("network", network).Msg("Listener created and bound")
 	return nil
 }
 
 func (s *Server) SetMaxAcceptConnections(limit int32) {
 	atomic.StoreInt32(&s.maxAcceptConnections, limit)
+	logger.Log.Debug().Int32("maxAcceptConnections", limit).Msg("Max accept connections set")
 }
 
 func (s *Server) GetActiveConnections() int32 {
@@ -160,6 +168,7 @@ func (s *Server) Shutdown(d time.Duration) (err error) {
 		s.shutdownDeadline = time.Now().Add(d)
 	}
 	s.shutdown = true
+	logger.Log.Debug().Time("deadline", s.shutdownDeadline).Msg("Shutdown initiated")
 	err = s.listener.Close()
 	if err != nil {
 		return err
@@ -168,6 +177,7 @@ func (s *Server) Shutdown(d time.Duration) (err error) {
 }
 
 func (s *Server) Halt() (err error) {
+	logger.Log.Debug().Msg("Halt called")
 	return s.Shutdown(-1 * time.Second)
 }
 
@@ -180,59 +190,69 @@ func (s *Server) Serve() error {
 	s.wp.Start()
 	defer s.wp.Stop()
 
-	if s.activeConnections == 0 {
-		return nil
-	}
+	logger.Log.Debug().Int("numShards", maxProcs*2).Msg("Worker pool started")
 
 	if s.shutdownDeadline.IsZero() {
+		logger.Log.Debug().Msg("Waiting for connections to finish")
 		s.connWaitGroup.Wait()
 	} else {
 		diff := time.Until(s.shutdownDeadline)
 
 		if diff > 0 {
+			logger.Log.Debug().Dur("wait", diff).Msg("Sleeping until shutdown deadline")
 			time.Sleep(diff)
 		}
 	}
 
+	logger.Log.Debug().Msg("Serve completed")
 	return nil
 }
 
 func (s *Server) SetRequestHandler(requestHandler RequestHandlerFunc) {
 	s.requestHandler = requestHandler
+	logger.Log.Debug().Msg("Request handler set")
 }
 
 func (s *Server) SetConnectionCreator(f ConnectionCreatorFunc) {
 	s.connectionCreator = f
+	logger.Log.Debug().Msg("Connection creator set")
 }
 
 func (s *Server) SetContext(ctx *context.Context) {
 	s.ctx = ctx
+	logger.Log.Debug().Msg("Context set on server")
 }
 
 func (s *Server) GetContext() *context.Context {
 	if s.ctx == nil {
 		ctx := context.Background()
 		s.ctx = &ctx
+		logger.Log.Debug().Msg("Background context created for server")
 	}
 	return s.ctx
 }
 
 func (s *Server) SetAllowThreadLocking(allow bool) {
 	s.allowThreadLocking = allow
+	logger.Log.Debug().Bool("allowThreadLocking", allow).Msg("Thread locking option set")
 }
 
 func (s *Server) SetBallast(sizeInMiB int) {
 	s.ballast = make([]byte, sizeInMiB*1024*1024)
+	logger.Log.Debug().Int("ballastMiB", sizeInMiB).Msg("Ballast set on server")
 }
 
 func (s *Server) acceptLoop(id int) error {
+	logger.Log.Debug().Int("acceptLoopID", id).Msg("acceptLoop started")
 	for {
 		if s.maxAcceptConnections > 0 && s.acceptedConnections >= s.maxAcceptConnections {
 			s.Shutdown(0)
+			logger.Log.Debug().Msg("Max accept connections reached, shutdown triggered")
 		}
 
 		if s.shutdown {
 			_ = s.listener.Close()
+			logger.Log.Debug().Msg("acceptLoop detected shutdown, exiting")
 			break
 		}
 
@@ -248,9 +268,12 @@ func (s *Server) acceptLoop(id int) error {
 			return err
 		}
 
+		logger.Log.Debug().Str("remote", tcpConn.RemoteAddr().String()).Msg("Accepted new connection (debug)")
+
 		newAcceptedConns := atomic.AddInt32(&s.acceptedConnections, 1)
 		if s.maxAcceptConnections > 0 && newAcceptedConns > s.maxAcceptConnections {
 			tcpConn.Close()
+			logger.Log.Debug().Str("remote", tcpConn.RemoteAddr().String()).Msg("Connection refused: max accepts exceeded")
 			continue
 		}
 
@@ -263,15 +286,17 @@ func (s *Server) acceptLoop(id int) error {
 }
 
 func (s *Server) serveConn(netConn *net.TCPConn) {
+	logger.Log.Debug().Str("remote", netConn.RemoteAddr().String()).Msg("serveConn start")
 	conn := s.connStructPool.Get().(*TCPConn)
 
 	atomic.AddInt32(&s.activeConnections, 1)
 
 	conn.Reset(netConn)
-	conn.Start()
 	s.requestHandler(conn)
 	conn.Close()
 	atomic.AddInt32(&s.activeConnections, -1)
+
+	logger.Log.Debug().Str("remote", netConn.RemoteAddr().String()).Int32("activeConnections", atomic.LoadInt32(&s.activeConnections)).Msg("serveConn finished")
 
 	s.connStructPool.Put(conn)
 }
@@ -292,6 +317,7 @@ func StartServer(port uint16) error {
 		SocketDeferAccept: false,
 	})
 
+	logger.Log.Info().Str("addr", s.GetListenAddr().String()).Msg("CKP server configured with listen address")
 	s.SetRequestHandler(handler)
 	s.SetAllowThreadLocking(true)
 

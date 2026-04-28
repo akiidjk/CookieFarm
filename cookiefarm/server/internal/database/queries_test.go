@@ -664,7 +664,7 @@ func TestCountFlags_AfterInserts_ReturnsCorrectCount(t *testing.T) {
 // the nullable / interface fields so callers only override what they need.
 func buildFilteredParams(teamID uint16, status int64, search, searchField string, limit, offset int64) GetFilteredFlagsParams {
 	return GetFilteredFlagsParams{
-		TeamID:      teamID,
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: status != 0},
 		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
 		Search:      nullOrValue(search),
 		SearchField: nullOrValue(searchField),
@@ -799,7 +799,7 @@ func TestGetFilteredFlags_EmptyDB_ReturnsEmpty(t *testing.T) {
 // buildCountFilteredParams builds a CountFilteredFlagsParams with sane defaults.
 func buildCountFilteredParams(teamID uint16, status int64, search, searchField string) CountFilteredFlagsParams {
 	return CountFilteredFlagsParams{
-		TeamID:      teamID,
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
 		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
 		Search:      nullOrValue(search),
 		SearchField: nullOrValue(searchField),

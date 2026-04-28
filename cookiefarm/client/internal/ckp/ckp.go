@@ -108,12 +108,12 @@ func (c *Client) SendWithRetry(addr string, data []byte, maxRetries int) error {
 	return errors.New("max retries reached")
 }
 
-func (c *Client) ReadPump() {
+func (c *Client) ReadPump(addr string) {
 	reader := bufio.NewReaderSize(c.conn, 65536)
 	for {
 		response, err := reader.ReadBytes('\n')
 		if err != nil {
-			if rerr := c.reconnect(ADDR); rerr != nil {
+			if rerr := c.reconnect(addr); rerr != nil {
 				logger.Log.Error().Err(rerr).Msg("Reconnect failed, retrying in 1s")
 				time.Sleep(1 * time.Second)
 				continue

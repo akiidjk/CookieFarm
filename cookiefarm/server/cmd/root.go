@@ -85,20 +85,7 @@ func init() {
 	}
 }
 
-// The main function initializes configuration, sets up logging, connects to the database,
-// configures the Fiber HTTP server, and handles graceful shutdown on system signals.
-func Run(cmd *cobra.Command, args []string) {
-	var level string
-	var err error
-
-	if config.Debug {
-		level = "debug"
-	} else {
-		level = "info"
-	}
-
-	cfg := config.GetInstance()
-
+func setup(cfg *config.ConfigManager) (*database.Store, *core.Runner) {
 	cfgDB := database.Config{
 		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL",
 		MaxOpenConns:    25,
@@ -114,20 +101,13 @@ func Run(cmd *cobra.Command, args []string) {
 	database.GetCollector().SetStore(store)
 	runner := core.NewRunner(store, cfg)
 
-	logger.Setup(level, false)
-	defer logger.Close()
+	setupPassword()
 
-	if config.UseConfigFile {
-		logger.Log.Info().Msg("Using file config...")
-		err := runner.LoadConfig(config.ConfigPath)
-		if err != nil {
-			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
-		}
-		runner.Run()
-	} else {
-		logger.Log.Info().Msg("Using web config...")
-	}
+	return store, runner
+}
 
+func setupPassword() {
+	var err error
 	config.Secret, err = api.InitSecret()
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to initialize secret key")
@@ -141,6 +121,36 @@ func Run(cmd *cobra.Command, args []string) {
 		logger.Log.Fatal().Err(err).Msg("Password hashing failed")
 	}
 	logger.Log.Debug().Str("hashed", config.Password).Msg("Password after hashing")
+}
+
+// The main function initializes configuration, sets up logging, connects to the database,
+// configures the Fiber HTTP server, and handles graceful shutdown on system signals.
+func Run(cmd *cobra.Command, args []string) {
+	var level string
+	var err error
+
+	if config.Debug {
+		level = "debug"
+	} else {
+		level = "info"
+	}
+
+	logger.Setup(level, false)
+	defer logger.Close()
+
+	cfg := config.GetInstance()
+	store, runner := setup(cfg)
+
+	if config.UseConfigFile {
+		logger.Log.Info().Msg("Using file config...")
+		err := runner.LoadConfig(config.ConfigPath)
+		if err != nil {
+			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
+		}
+		runner.Submission()
+	} else {
+		logger.Log.Info().Msg("Using web config...")
+	}
 
 	app, err := api.NewApp()
 	if err != nil {

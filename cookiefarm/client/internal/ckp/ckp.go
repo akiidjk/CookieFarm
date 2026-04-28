@@ -27,7 +27,6 @@ func NewClient(addr string) (*Client, error) {
 		return nil, err
 	}
 
-	// Performance tuning
 	conn.SetNoDelay(true)   // disable Nagle → no batching delay
 	conn.SetKeepAlive(true) // detect dead connections
 	conn.SetKeepAlivePeriod(30 * time.Second)
@@ -56,12 +55,12 @@ func (c *Client) Send(data []byte) error {
 	if _, err := c.writer.Write(data); err != nil {
 		return err
 	}
-	return c.writer.Flush() // flush bufio buffer to the socket
+	return c.writer.Flush()
 }
 
 func (c *Client) Receive() ([]byte, error) {
 	c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	return c.reader.ReadBytes('\n') // adjust delimiter to your protocol
+	return c.reader.ReadBytes('\n')
 }
 
 func (c *Client) Close() {

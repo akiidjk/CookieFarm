@@ -21,7 +21,7 @@ func NewRunner(s *database.Store, c *config.ConfigManager) *Runner {
 	return &Runner{store: s, config: c}
 }
 
-func (r *Runner) Run() {
+func (r *Runner) Submission() {
 	ctx, cancel := context.WithCancel(context.Background())
 	if r.shutdownCancel != nil {
 		r.shutdownCancel()

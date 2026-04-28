@@ -414,7 +414,7 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 	h.config.SetFullConfig(nextConfig)
 	h.config.SetConfigured(true)
 
-	h.runner.Run()
+	h.runner.Submission()
 
 	cfgJSON, err := json.Marshal(h.config.GetShared())
 	if err != nil {

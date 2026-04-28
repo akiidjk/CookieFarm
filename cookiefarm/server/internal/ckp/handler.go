@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 	"logger"
 	"strconv"
 
@@ -12,11 +13,41 @@ import (
 	"server/database"
 )
 
+func readUntilDelimiter(r *bufio.Reader, delim []byte, maxSize int) ([]byte, error) {
+	if len(delim) == 0 {
+		return nil, errors.New("empty delimiter")
+	}
+
+	buf := make([]byte, 0, 1024)
+
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			if err == io.EOF && len(buf) > 0 {
+				return nil, io.ErrUnexpectedEOF
+			}
+			return nil, err
+		}
+
+		buf = append(buf, b)
+
+		if maxSize > 0 && len(buf) > maxSize {
+			return nil, errors.New("message too large")
+		}
+
+		if len(buf) >= len(delim) && bytes.Equal(buf[len(buf)-len(delim):], delim) {
+			return buf[:len(buf)-len(delim)], nil
+		}
+	}
+}
+
+var DelimiterBytes = []byte{0xBB, 'T', 0xCC}
+
 func handler(conn Connection) {
 	reader := bufio.NewReader(conn.GetNetConn())
 
 	for {
-		data, err := reader.ReadBytes('\n')
+		data, err := readUntilDelimiter(reader, DelimiterBytes, 1024)
 		if err != nil {
 			return
 		}
@@ -55,6 +86,7 @@ func findString(data []byte) (string, int, error) {
 }
 
 func parse(data []byte) (database.Flag, error) {
+	logger.Log.Debug().Bytes("raw_data", data).Msg("Parsing CKP flag data")
 	if len(data) < 8 {
 		return database.Flag{}, errors.New("invalid length")
 	}

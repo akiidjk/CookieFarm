@@ -50,7 +50,7 @@ server-build-plugins:
      if grep -q '^package main' "$file"; then \
       filename=$(basename $file); \
       pluginname=${filename%.go}; \
-      go build -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
+      go build -gcflags="all=-m" -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
      else \
       echo "Skipping $file: not a main package"; \
      fi; \
@@ -60,11 +60,11 @@ server-build-plugins:
 [group('build')]
 [working-directory('cookiefarm')]
 server-build-plugins-prod:
-    @for file in $(shell find ./pkg/protocols -name '*.go' ! -name 'protocols.go'); do \
+    @for file in $(find ./pkg/protocols -name '*.go' ! -name 'protocols.go'); do \
      if grep -q '^package main' "$file"; then \
       filename=$(basename $file); \
       pluginname=${filename%.go}; \
-      GOOS={{ GOOS }} GOARCH={{ GOARCH }} go build -race -trimpath -gcflags="all=-m" -ldflags="-s -w -X main.Version={{ VERSION }}" -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
+      GOOS={{ GOOS }} GOARCH={{ GOARCH }} go build -race -trimpath  -ldflags="-s -w -X main.Version={{ VERSION }}" -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
      else \
       echo "Skipping $file: not a main package"; \
      fi; \

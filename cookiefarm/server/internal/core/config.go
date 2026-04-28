@@ -31,7 +31,7 @@ func (r *Runner) Run() {
 	go r.StartFlagProcessingLoop(ctx)
 
 	if r.config.GetFlagTTL() != 0 {
-		logger.Log.Warn().Msgf("Flag TTL is set to %d seconds, starting validation loop", r.config.GetFlagTTL())
+		logger.Log.Warn().Msgf("Flag TTL is set to %d ticks, starting validation loop", r.config.GetFlagTTL())
 		go r.ValidateFlagTTL(ctx, r.config.GetFlagTTL(), uint64(r.config.GetTickTime()))
 	}
 }

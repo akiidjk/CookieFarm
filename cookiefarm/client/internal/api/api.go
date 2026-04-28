@@ -125,5 +125,11 @@ func UploadExploit(exploitPath string) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusConflict {
+		logger.Log.Debug().Str("exploitPath", exploitPath).Msg("Exploit already exists, skipping upload")
+		return checkStatus(200, body)
+	}
+
 	return checkStatus(resp.StatusCode, body)
 }

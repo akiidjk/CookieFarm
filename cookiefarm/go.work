@@ -3,11 +3,11 @@ go 1.26.0
 use (
 	./client
 	./client/internal/api
+	./client/internal/ckp
 	./client/internal/exploit
 	./client/internal/submitter
 	./client/internal/template
 	./client/internal/tui
-	./client/internal/ckp
 	./client/internal/websockets
 	./client/pkg/config
 	./client/pkg/process

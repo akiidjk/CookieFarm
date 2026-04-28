@@ -36,6 +36,7 @@ type Server struct {
 	wp                   *pool.WorkerPool[*net.TCPConn]
 	allowThreadLocking   bool
 	ballast              []byte
+	conns                *Connections
 }
 
 type ListenConfig struct {
@@ -84,15 +85,13 @@ func NewServer(listenAddr string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	var s *Server
-
-	s = &Server{
+	var s *Server = &Server{
 		listenAddr:   la,
 		listenConfig: defaultListenConfig,
 	}
 
 	s.connStructPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			conn := s.connectionCreator()
 			conn.SetServer(s)
 			return conn
@@ -102,15 +101,11 @@ func NewServer(listenAddr string) (*Server, error) {
 
 	s.SetBallast(20)
 
-	// Debug: new server created
-	logger.Log.Debug().Str("addr", la.String()).Msg("NewServer created")
-
 	return s, nil
 }
 
 func (s *Server) SetListenConfig(config *ListenConfig) {
 	s.listenConfig = config
-	logger.Log.Debug().Msg("ListenConfig set on server")
 }
 
 func (s *Server) GetListenConfig() *ListenConfig {
@@ -136,13 +131,11 @@ func (s *Server) Listen() error {
 	}
 
 	s.listener = tcpl
-	logger.Log.Debug().Str("addr", s.listenAddr.String()).Str("network", network).Msg("Listener created and bound")
 	return nil
 }
 
 func (s *Server) SetMaxAcceptConnections(limit int32) {
 	atomic.StoreInt32(&s.maxAcceptConnections, limit)
-	logger.Log.Debug().Int32("maxAcceptConnections", limit).Msg("Max accept connections set")
 }
 
 func (s *Server) GetActiveConnections() int32 {
@@ -166,7 +159,6 @@ func (s *Server) Shutdown(d time.Duration) (err error) {
 		s.shutdownDeadline = time.Now().Add(d)
 	}
 	s.shutdown.Store(true)
-	logger.Log.Debug().Time("deadline", s.shutdownDeadline).Msg("Shutdown initiated")
 	err = s.listener.Close()
 	if err != nil {
 		return err
@@ -175,7 +167,6 @@ func (s *Server) Shutdown(d time.Duration) (err error) {
 }
 
 func (s *Server) Halt() (err error) {
-	logger.Log.Debug().Msg("Halt called")
 	return s.Shutdown(-1 * time.Second)
 }
 
@@ -192,76 +183,62 @@ func (s *Server) Serve() error {
 		go s.acceptLoop(i)
 	}
 
-	logger.Log.Debug().Int("numShards", maxProcs*2).Msg("Worker pool started")
-
 	if s.shutdownDeadline.IsZero() {
-		logger.Log.Debug().Msg("Waiting for connections to finish")
 		s.connWaitGroup.Wait()
 	} else {
 		diff := time.Until(s.shutdownDeadline)
 
 		if diff > 0 {
-			logger.Log.Debug().Dur("wait", diff).Msg("Sleeping until shutdown deadline")
 			time.Sleep(diff)
 		}
 	}
 
-	logger.Log.Debug().Msg("Serve completed")
 	return nil
 }
 
 func (s *Server) SetRequestHandler(requestHandler RequestHandlerFunc) {
 	s.requestHandler = requestHandler
-	logger.Log.Debug().Msg("Request handler set")
 }
 
 func (s *Server) SetConnectionCreator(f ConnectionCreatorFunc) {
 	s.connectionCreator = f
-	logger.Log.Debug().Msg("Connection creator set")
 }
 
 func (s *Server) SetContext(ctx *context.Context) {
 	s.ctx = ctx
-	logger.Log.Debug().Msg("Context set on server")
 }
 
 func (s *Server) GetContext() *context.Context {
 	if s.ctx == nil {
 		ctx := context.Background()
 		s.ctx = &ctx
-		logger.Log.Debug().Msg("Background context created for server")
 	}
 	return s.ctx
 }
 
 func (s *Server) SetAllowThreadLocking(allow bool) {
 	s.allowThreadLocking = allow
-	logger.Log.Debug().Bool("allowThreadLocking", allow).Msg("Thread locking option set")
 }
 
 func (s *Server) SetBallast(sizeInMiB int) {
 	s.ballast = make([]byte, sizeInMiB*1024*1024)
-	logger.Log.Debug().Int("ballastMiB", sizeInMiB).Msg("Ballast set on server")
 }
 
 func (s *Server) acceptLoop(id int) error {
-	logger.Log.Debug().Int("acceptLoopID", id).Msg("acceptLoop started")
 	for {
 		if s.maxAcceptConnections > 0 && s.acceptedConnections >= s.maxAcceptConnections {
 			s.Shutdown(0)
-			logger.Log.Debug().Msg("Max accept connections reached, shutdown triggered")
 		}
 
 		if s.shutdown.Load() {
 			_ = s.listener.Close()
-			logger.Log.Debug().Msg("acceptLoop detected shutdown, exiting")
 			break
 		}
 
 		tcpConn, err := s.listener.AcceptTCP()
 		if err != nil {
 			if opErr, ok := err.(*net.OpError); ok {
-				if !(opErr.Temporary() && opErr.Timeout()) && s.shutdown.Load() {
+				if (!opErr.Temporary() || !opErr.Timeout()) && s.shutdown.Load() {
 					break
 				}
 			}
@@ -270,12 +247,23 @@ func (s *Server) acceptLoop(id int) error {
 			return err
 		}
 
-		logger.Log.Debug().Str("remote", tcpConn.RemoteAddr().String()).Msg("Accepted new connection (debug)")
+		newConn := s.connectionCreator()
+		if newConn == nil {
+			tcpConn.Close()
+			logger.Log.Warn().Str("remote", tcpConn.RemoteAddr().String()).Msg("Connection creator returned nil; closing connection")
+			continue
+		}
+		if tcpC, ok := newConn.(*TCPConn); ok {
+			tcpC.SetServer(s)
+			tcpC.Reset(tcpConn)
+			s.conns.Add(tcpC)
+		} else {
+			logger.Log.Warn().Str("remote", tcpConn.RemoteAddr().String()).Msg("Connection creator did not return *TCPConn; skipping add to conns")
+		}
 
 		newAcceptedConns := atomic.AddInt32(&s.acceptedConnections, 1)
 		if s.maxAcceptConnections > 0 && newAcceptedConns > s.maxAcceptConnections {
 			tcpConn.Close()
-			logger.Log.Debug().Str("remote", tcpConn.RemoteAddr().String()).Msg("Connection refused: max accepts exceeded")
 			continue
 		}
 
@@ -289,18 +277,15 @@ func (s *Server) acceptLoop(id int) error {
 func (s *Server) serveConn(netConn *net.TCPConn) {
 	s.connWaitGroup.Add(1)
 	defer s.connWaitGroup.Done()
-	logger.Log.Debug().Str("remote", netConn.RemoteAddr().String()).Msg("serveConn start")
 	conn := s.connStructPool.Get().(*TCPConn)
 
 	atomic.AddInt32(&s.activeConnections, 1)
 
 	conn.Reset(netConn)
 	s.requestHandler(conn)
-	conn.Close()
 	atomic.AddInt32(&s.activeConnections, -1)
 
-	logger.Log.Debug().Str("remote", netConn.RemoteAddr().String()).Int32("activeConnections", atomic.LoadInt32(&s.activeConnections)).Msg("serveConn finished")
-
+	s.conns.Remove(conn)
 	s.connStructPool.Put(conn)
 }
 
@@ -308,10 +293,10 @@ func isIPv6Addr(addr *net.TCPAddr) bool {
 	return addr.IP.To4() == nil && len(addr.IP) == net.IPv6len
 }
 
-func StartServer(port uint16) error {
+func StartServer(port uint16) (*Connections, error) {
 	s, err := NewServer(fmt.Sprintf(":%d", port))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.SetListenConfig(&ListenConfig{
@@ -322,12 +307,16 @@ func StartServer(port uint16) error {
 
 	s.SetRequestHandler(handler)
 	s.SetAllowThreadLocking(true)
+	s.SetMaxAcceptConnections(50)
+
+	s.conns = &Connections{}
 
 	err = s.Listen()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	logger.Log.Info().Str("addr", s.GetListenAddr().String()).Msg("CKP server configured with listen address")
 
-	return s.Serve()
+	go s.Serve()
+
+	return s.conns, nil
 }

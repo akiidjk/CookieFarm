@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3/extractors"
 
+	"server/ckp"
 	"server/config"
 	"server/core"
 	"server/database"
@@ -18,13 +19,14 @@ import (
 )
 
 type Handler struct {
-	store  *database.Store
-	runner *core.Runner
-	config *config.ConfigManager
+	store       *database.Store
+	runner      *core.Runner
+	config      *config.ConfigManager
+	connections *ckp.Connections
 }
 
-func NewHandler(s *database.Store, r *core.Runner, c *config.ConfigManager) *Handler {
-	return &Handler{store: s, runner: r, config: c}
+func NewHandler(s *database.Store, r *core.Runner, c *config.ConfigManager, conns *ckp.Connections) *Handler {
+	return &Handler{store: s, runner: r, config: c, connections: conns}
 }
 
 // RegisterRoutes configures all routes and middlewares of the Fiber app,

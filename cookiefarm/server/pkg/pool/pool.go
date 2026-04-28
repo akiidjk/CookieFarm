@@ -21,7 +21,7 @@ type WorkerPool[T any] struct {
 	started            bool
 	stopped            bool
 	_                  [56]byte
-	spawnedWorkers     uint64
+	spawnedWorkers     atomic.Uint64
 }
 
 type workerInstance[T any] struct {
@@ -75,7 +75,7 @@ func (wp *WorkerPool[T]) SetIdleWorkerLifetime(d time.Duration) {
 }
 
 func (wp *WorkerPool[T]) GetSpawnedWorkers() int {
-	return int(atomic.LoadUint64(&wp.spawnedWorkers))
+	return int(wp.spawnedWorkers.Load())
 }
 
 func (wp *WorkerPool[T]) Start() {
@@ -85,7 +85,7 @@ func (wp *WorkerPool[T]) Start() {
 			shard := &poolShard[T]{
 				wp: wp,
 				workerCache: sync.Pool{
-					New: func() interface{} {
+					New: func() any {
 						return &workerInstance[T]{
 							taskChan: make(chan T),
 						}
@@ -187,17 +187,16 @@ func (shard *poolShard[T]) getWorker(task T) (worker *workerInstance[T]) {
 func (worker *workerInstance[T]) run() {
 	shard := worker.shard
 	wp := shard.wp
-	atomic.AddUint64(&wp.spawnedWorkers, +1)
+	wp.spawnedWorkers.Add(+1)
 
 	for task := range worker.taskChan {
 		wp.handlerFunc(task)
 		if !shard.setWorkerIdle(worker) {
 			break
 		}
-
 	}
 
-	atomic.AddUint64(&wp.spawnedWorkers, ^uint64(0))
+	wp.spawnedWorkers.Add(^uint64(0))
 	shard.workerCache.Put(worker)
 }
 
@@ -280,12 +279,12 @@ func (wp *WorkerPool[T]) cleanup() {
 }
 
 type spinLocker struct {
-	lock uint64
+	lock atomic.Uint64
 }
 
 func (s *spinLocker) Lock() {
 	schedulerRuns := 1
-	for !atomic.CompareAndSwapUint64(&s.lock, 0, 1) {
+	for !s.lock.CompareAndSwap(0, 1) {
 		for i := 0; i < schedulerRuns; i++ {
 			runtime.Gosched()
 		}
@@ -296,5 +295,5 @@ func (s *spinLocker) Lock() {
 }
 
 func (s *spinLocker) Unlock() {
-	atomic.StoreUint64(&s.lock, 0)
+	s.lock.Store(0)
 }

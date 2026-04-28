@@ -52,7 +52,7 @@ func (conn *TCPConn) GetNetConn() net.Conn {
 
 func (conn *TCPConn) GetNetTCPConn() (c *net.TCPConn) {
 	c, _ = conn.Conn.(*net.TCPConn)
-	return
+	return c
 }
 
 func (conn *TCPConn) SetServer(s *Server) {

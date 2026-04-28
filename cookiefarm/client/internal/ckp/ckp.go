@@ -2,8 +2,7 @@ package ckp
 
 import (
 	"bufio"
-	"fmt"
-	"log"
+	"errors"
 	"logger"
 	"net"
 	"sync"
@@ -27,7 +26,7 @@ func NewClient(addr string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.Log.Debug().Str("addr", addr).Msg("Connected to CKP server")
+
 	// Performance tuning
 	conn.SetNoDelay(true)   // disable Nagle → no batching delay
 	conn.SetKeepAlive(true) // detect dead connections
@@ -41,8 +40,6 @@ func NewClient(addr string) (*Client, error) {
 		Interval: 5 * time.Second,  // probe every 5s after that
 		Count:    3,                // drop after 3 unanswered probes
 	})
-
-	logger.Log.Debug().Msg("TCP connection configured with performance optimizations")
 
 	return &Client{
 		conn:   conn,
@@ -94,18 +91,36 @@ func (c *Client) reconnect(addr string) error {
 }
 
 func (c *Client) SendWithRetry(addr string, data []byte, maxRetries int) error {
-	logger.Log.Debug().Msgf("Attempting to send data with up to %d retries...", maxRetries)
-	logger.Log.Debug().Bytes("data", data).Msg("Data to send")
 	for i := range maxRetries {
 		if err := c.Send(data); err != nil {
-			log.Printf("send failed (attempt %d): %v — reconnecting...", i+1, err)
+			logger.Log.Error().Err(err).Msgf("Error sending data to CKP server, attempt %d/%d", i+1, maxRetries)
 			if rerr := c.reconnect(addr); rerr != nil {
+				logger.Log.Error().Err(rerr).Msg("Reconnect failed, retrying with backoff")
 				time.Sleep(time.Duration(i+1) * 200 * time.Millisecond) // backoff
 				continue
 			}
 			continue
 		}
+		logger.Log.Debug().Msg("Data sent successfully to CKP server")
 		return nil
 	}
-	return fmt.Errorf("max retries reached")
+	return errors.New("max retries reached")
+}
+
+func (conn *Client) ReadPump() {
+	reader := bufio.NewReaderSize(conn.conn, 65536)
+	for {
+		response, err := reader.ReadBytes('\n')
+		if err != nil {
+			if rerr := conn.reconnect(ADDR); rerr != nil {
+				logger.Log.Error().Err(rerr).Msg("Reconnect failed, retrying in 1s")
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			reader = bufio.NewReaderSize(conn.conn, 65536)
+			continue
+		}
+		logger.Log.Debug().Str("response", string(response)).Msg("Received response from CKP server")
+		handleConfig(response)
+	}
 }

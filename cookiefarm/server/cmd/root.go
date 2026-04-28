@@ -147,12 +147,14 @@ func Run(cmd *cobra.Command, args []string) {
 		logger.Log.Fatal().Err(err).Msg("Failed to initialize server")
 	}
 
+	connections, err := ckp.StartServer(CKP_PORT)
+
 	app.Use(fiberLogger.New(fiberLogger.Config{
 		Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
 		TimeFormat: time.RFC3339,
 		TimeZone:   "Local",
 	}))
-	handler := api.NewHandler(store, runner, cfg)
+	handler := api.NewHandler(store, runner, cfg, connections)
 	handler.RegisterRoutes(app)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -171,8 +173,6 @@ func Run(cmd *cobra.Command, args []string) {
 			errCh <- err
 		}
 	}()
-
-	go ckp.StartServer(CKP_PORT)
 
 	select {
 	case <-ctx.Done():

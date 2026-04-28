@@ -2,9 +2,15 @@ package ckp
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"path/filepath"
 	"server/database"
+	"sharedconfig"
+
+	"client/config"
 )
+
+var OnNewConfig func()
 
 const (
 	SIZE_TIMESTAMP = 4
@@ -35,4 +41,21 @@ func buildPayload(flag database.Flag) []byte {
 	payload[offset+1] = '\n'
 
 	return payload
+}
+
+func handleConfig(payload []byte) error {
+	var configReceived sharedconfig.Shared
+
+	if err := json.Unmarshal(payload, &configReceived); err != nil {
+		return err
+	}
+
+	cm := config.GetInstance()
+	cm.Get().Shared.Set(configReceived)
+
+	if OnNewConfig != nil {
+		go OnNewConfig()
+	}
+
+	return nil
 }

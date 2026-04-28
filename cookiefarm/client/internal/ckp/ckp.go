@@ -69,6 +69,8 @@ func (c *Client) Close() {
 }
 
 func (c *Client) reconnect(addr string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.conn.Close()
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
@@ -101,7 +103,6 @@ func (c *Client) SendWithRetry(addr string, data []byte, maxRetries int) error {
 			}
 			continue
 		}
-		logger.Log.Debug().Msg("Data sent successfully to CKP server")
 		return nil
 	}
 	return errors.New("max retries reached")

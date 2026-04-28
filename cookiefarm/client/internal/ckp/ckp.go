@@ -1,0 +1,111 @@
+package ckp
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"logger"
+	"net"
+	"sync"
+	"time"
+)
+
+type Client struct {
+	conn   *net.TCPConn
+	reader *bufio.Reader
+	writer *bufio.Writer
+	mu     sync.Mutex // serialize writes if multiple goroutines write
+}
+
+func NewClient(addr string) (*Client, error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		return nil, err
+	}
+	logger.Log.Debug().Str("addr", addr).Msg("Connected to CKP server")
+	// Performance tuning
+	conn.SetNoDelay(true)   // disable Nagle → no batching delay
+	conn.SetKeepAlive(true) // detect dead connections
+	conn.SetKeepAlivePeriod(30 * time.Second)
+	conn.SetReadBuffer(65536)
+	conn.SetWriteBuffer(65536)
+
+	conn.SetKeepAliveConfig(net.KeepAliveConfig{
+		Enable:   true,
+		Idle:     15 * time.Second, // send first probe after 15s idle
+		Interval: 5 * time.Second,  // probe every 5s after that
+		Count:    3,                // drop after 3 unanswered probes
+	})
+
+	logger.Log.Debug().Msg("TCP connection configured with performance optimizations")
+
+	return &Client{
+		conn:   conn,
+		reader: bufio.NewReaderSize(conn, 65536),
+		writer: bufio.NewWriterSize(conn, 65536),
+	}, nil
+}
+
+func (c *Client) Send(data []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	if _, err := c.writer.Write(data); err != nil {
+		return err
+	}
+	return c.writer.Flush() // flush bufio buffer to the socket
+}
+
+func (c *Client) Receive() ([]byte, error) {
+	c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	return c.reader.ReadBytes('\n') // adjust delimiter to your protocol
+}
+
+func (c *Client) Close() {
+	c.conn.Close()
+}
+
+func (c *Client) reconnect(addr string) error {
+	c.conn.Close()
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return err
+	}
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		return err
+	}
+	conn.SetNoDelay(true)
+	conn.SetKeepAlive(true)
+	conn.SetKeepAlivePeriod(30 * time.Second)
+	conn.SetReadBuffer(65536)
+	conn.SetWriteBuffer(65536)
+
+	c.conn = conn
+	c.reader = bufio.NewReaderSize(conn, 65536)
+	c.writer = bufio.NewWriterSize(conn, 65536)
+	return nil
+}
+
+func (c *Client) SendWithRetry(addr string, data []byte, maxRetries int) error {
+	logger.Log.Debug().Msgf("Attempting to send data with up to %d retries...", maxRetries)
+	logger.Log.Debug().Bytes("data", data).Msg("Data to send")
+	for i := range maxRetries {
+		if err := c.Send(data); err != nil {
+			log.Printf("send failed (attempt %d): %v — reconnecting...", i+1, err)
+			if rerr := c.reconnect(addr); rerr != nil {
+				time.Sleep(time.Duration(i+1) * 200 * time.Millisecond) // backoff
+				continue
+			}
+			continue
+		}
+		return nil
+	}
+	return fmt.Errorf("max retries reached")
+}

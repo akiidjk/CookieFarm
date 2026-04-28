@@ -111,7 +111,7 @@ func makeFlag(i int) database.Flag {
 		PortService: 1337,
 		SubmitTime:  uint64(time.Now().Unix()),
 		Status:      0,
-		TeamID:      uint16(i % 10),
+		TeamID:      int64(i % 10),
 		Username:    "tester",
 		ExploitName: "exp.py",
 		Msg:         "ok",

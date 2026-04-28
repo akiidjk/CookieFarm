@@ -85,7 +85,7 @@ func NewServer(listenAddr string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	var s *Server = &Server{
+	s := &Server{
 		listenAddr:   la,
 		listenConfig: defaultListenConfig,
 	}
@@ -179,8 +179,8 @@ func (s *Server) Serve() error {
 	s.wp.Start()
 	defer s.wp.Stop()
 
-	for i := range maxProcs {
-		go s.acceptLoop(i)
+	for range maxProcs {
+		go s.acceptLoop()
 	}
 
 	if s.shutdownDeadline.IsZero() {
@@ -224,7 +224,7 @@ func (s *Server) SetBallast(sizeInMiB int) {
 	s.ballast = make([]byte, sizeInMiB*1024*1024)
 }
 
-func (s *Server) acceptLoop(id int) error {
+func (s *Server) acceptLoop() error {
 	for {
 		if s.maxAcceptConnections > 0 && s.acceptedConnections >= s.maxAcceptConnections {
 			s.Shutdown(0)
@@ -268,7 +268,6 @@ func (s *Server) acceptLoop(id int) error {
 		}
 
 		s.wp.AddTask(tcpConn)
-		tcpConn = nil
 	}
 
 	return nil

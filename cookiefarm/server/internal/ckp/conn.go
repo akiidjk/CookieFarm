@@ -22,8 +22,8 @@ type TCPConn struct {
 	net.Conn
 	server            *Server
 	ctx               *context.Context
-	ts                int64
-	_cacheLinePadding [24]byte
+	ts                int64    //nolint
+	_cacheLinePadding [24]byte //nolint
 }
 
 func (conn *TCPConn) GetClientAddr() *net.TCPAddr {

@@ -26,8 +26,8 @@ func handler(conn Connection) {
 	database.GetCollector().AddFlag(flag)
 }
 
-func HandlerConfig(conn Connection, config []byte) {
-	err := write(conn, config)
+func HandlerConfig(conn Connection, cfg []byte) {
+	err := write(conn, cfg)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to write config data to CKP connection")
 	}
@@ -44,14 +44,14 @@ func findString(data []byte) (string, int, error) {
 
 func parse(data []byte) (database.Flag, error) {
 	if len(data) < 8 {
-		return database.Flag{}, errors.New("Invalid length")
+		return database.Flag{}, errors.New("invalid length")
 	}
 
 	port := binary.LittleEndian.Uint16(data[4:6])
 	teamID := binary.LittleEndian.Uint16(data[6:8])
 	msg := "Flag found for team: " + strconv.Itoa(int(teamID))
 
-	var result = database.Flag{
+	result := database.Flag{
 		SubmitTime:  uint64(binary.LittleEndian.Uint32(data[0:4])),
 		PortService: port,
 		TeamID:      int64(teamID),
@@ -67,7 +67,7 @@ func parse(data []byte) (database.Flag, error) {
 		return database.Flag{}, err
 	}
 
-	result.ExploitName, idx, err = findString(data[8+idx:])
+	result.ExploitName, _, err = findString(data[8+idx:])
 	return result, err
 }
 

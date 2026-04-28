@@ -107,17 +107,17 @@ func (c *Client) SendWithRetry(addr string, data []byte, maxRetries int) error {
 	return errors.New("max retries reached")
 }
 
-func (conn *Client) ReadPump() {
-	reader := bufio.NewReaderSize(conn.conn, 65536)
+func (c *Client) ReadPump() {
+	reader := bufio.NewReaderSize(c.conn, 65536)
 	for {
 		response, err := reader.ReadBytes('\n')
 		if err != nil {
-			if rerr := conn.reconnect(ADDR); rerr != nil {
+			if rerr := c.reconnect(ADDR); rerr != nil {
 				logger.Log.Error().Err(rerr).Msg("Reconnect failed, retrying in 1s")
 				time.Sleep(1 * time.Second)
 				continue
 			}
-			reader = bufio.NewReaderSize(conn.conn, 65536)
+			reader = bufio.NewReaderSize(c.conn, 65536)
 			continue
 		}
 		logger.Log.Debug().Str("response", string(response)).Msg("Received response from CKP server")

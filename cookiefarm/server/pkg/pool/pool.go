@@ -134,7 +134,7 @@ func (wp *WorkerPool[T]) AddTask(task T) error {
 		return errors.New("worker pool must be started first")
 	}
 
-	shard := wp.shards[rand.IntN(wp.numShards)]
+	shard := wp.shards[rand.IntN(wp.numShards)] //nolint:gosec
 	shard.getWorker(task)
 
 	return nil
@@ -233,13 +233,13 @@ func (wp *WorkerPool[T]) cleanup() {
 			shard.mutex.Lock()
 			idleWorkerList := shard.idleWorkerList
 			iws := len(idleWorkerList)
-			j := 0
 			s := 0
+			j := 0 //nolint
 
 			if iws > 400 {
 				s = (iws - 1) / 2
 				for s > 0 && now.Sub(idleWorkerList[s].lastUsed) < wp.idleWorkerLifetime {
-					s = s / 2
+					s /= 2
 				}
 
 				if s == 0 {

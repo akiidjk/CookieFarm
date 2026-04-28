@@ -14,9 +14,10 @@ const (
 
 // Protocol: 4 bytes timestamp | 2 bytes port | 2 bytes teamID | null-terminated flag code | null-terminated exploit name
 func buildPayload(flag database.Flag) []byte {
+	exploitName := filepath.Base(flag.ExploitName)
 	size := SIZE_TIMESTAMP + SIZE_PORT + SIZE_TEAMID +
 		len(flag.FlagCode) + 1 +
-		len(flag.ExploitName) + 1
+		len(exploitName) + 1
 
 	payload := make([]byte, size)
 
@@ -28,7 +29,7 @@ func buildPayload(flag database.Flag) []byte {
 	offset += copy(payload[offset:], flag.FlagCode)
 	payload[offset] = 0 // null terminator
 	offset++
-	offset += copy(payload[offset:], filepath.Base(flag.ExploitName))
+	offset += copy(payload[offset:], exploitName)
 	payload[offset] = 0 // null terminator
 
 	return payload

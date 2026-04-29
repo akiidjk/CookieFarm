@@ -1,17 +1,21 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from '@vitejs/plugin-react-swc'
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        plugins: [["babel-plugin-react-compiler", {}]],
-      },
-    }),
+    react(),
     tailwindcss(),
   ],
   build: {
+    target: "esnext",
+    minify: 'esbuild',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+      },
+    },
+    sourcemap: false,
     chunkSizeWarningLimit: 1200,
   },
   resolve: {

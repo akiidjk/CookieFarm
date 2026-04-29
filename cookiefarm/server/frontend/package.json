@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {
     "@cloudflare/kumo": "^1.19.0",
@@ -24,12 +25,18 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^4.0.0",
+    "@vitejs/plugin-react-swc": "^4.3.0",
     "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.5.0",
     "typescript": "^5.8.0",
+    "typescript-eslint": "^8.59.1",
     "vite": "^6.0.0"
   }
 }

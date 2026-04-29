@@ -56,7 +56,6 @@ export function ChartsPage() {
     [flags, config.server.tick_time],
   );
   const exploitShare = useMemo(() => buildExploitShare(flags), [flags]);
-  const topExploits = exploitShare.slice(0, 8);
 
   const totalPerTickOption = useMemo(() => {
     return {

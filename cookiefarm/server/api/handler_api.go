@@ -238,7 +238,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
 		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
-			String: strings.TrimSpace(c.Query("search", "")),
+			String: "%" + strings.TrimSpace(c.Query("search", "")) + "%",
 			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
 		}, // Value of the search query
 		SearchField: sql.NullString{
@@ -248,6 +248,8 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		Limit:  sql.NullInt64{Int64: int64(limit), Valid: true},
 		Offset: sql.NullInt64{Int64: int64(offset), Valid: true},
 	}
+
+	logger.Log.Info().Int64("status", optsStatus).Str("search_field", c.Query("search_field", "flag_code")).Str("search", strings.TrimSpace(c.Query("search", ""))).Str("service", optsService).Uint16("team_id", teamID).Int64("limit", opts.Limit.Int64).Int64("offset", opts.Offset.Int64).Msg("Fetching filtered flags with options")
 
 	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
 	if err != nil {
@@ -260,7 +262,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		ServiceName: serviceNull,                                              // Filter by service name
 		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
-			String: strings.TrimSpace(c.Query("search", "")),
+			String: "%" + strings.TrimSpace(c.Query("search", "")) + "%",
 			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
 		}, // Value of the search query
 		SearchField: sql.NullString{

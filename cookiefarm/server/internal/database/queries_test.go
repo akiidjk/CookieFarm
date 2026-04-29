@@ -668,7 +668,6 @@ func buildFilteredParams(teamID int64, status int64, search, searchField string,
 		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
 		Search:      nullOrValue(search),
 		SearchField: nullOrValue(searchField),
-		SearchLike:  sql.NullString{String: "%" + search + "%", Valid: search != ""},
 		Limit:       sql.NullInt64{Int64: limit, Valid: true},
 		Offset:      sql.NullInt64{Int64: offset, Valid: true},
 	}
@@ -803,7 +802,6 @@ func buildCountFilteredParams(teamID uint16, status int64, search, searchField s
 		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
 		Search:      nullOrValue(search),
 		SearchField: nullOrValue(searchField),
-		SearchLike:  sql.NullString{String: "%" + search + "%", Valid: search != ""},
 	}
 }
 

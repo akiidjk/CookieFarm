@@ -60,18 +60,18 @@ WHERE
     AND (
         sqlc.narg('search') IS NULL
         OR (
-            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search_like'))
+            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search'))
             OR (sqlc.narg('search_field') = 'all' AND (
-                flag_code    LIKE sqlc.narg('search_like')
-                OR service_name  LIKE sqlc.narg('search_like')
-                OR exploit_name  LIKE sqlc.narg('search_like')
-                OR msg           LIKE sqlc.narg('search_like')
-                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search_like')
+                flag_code    LIKE sqlc.narg('search')
+                OR service_name  LIKE sqlc.narg('search')
+                OR exploit_name  LIKE sqlc.narg('search')
+                OR msg           LIKE sqlc.narg('search')
+                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search')
             ))
-            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search_like'))
+            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search'))
         )
 )
 ORDER BY submit_time DESC
@@ -87,18 +87,18 @@ WHERE
     AND (
         sqlc.narg('search') IS NULL
         OR (
-            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search_like'))
+            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search'))
             OR (sqlc.narg('search_field') = 'all' AND (
-                flag_code    LIKE sqlc.narg('search_like')
-                OR service_name  LIKE sqlc.narg('search_like')
-                OR exploit_name  LIKE sqlc.narg('search_like')
-                OR msg           LIKE sqlc.narg('search_like')
-                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search_like')
+                flag_code    LIKE sqlc.narg('search')
+                OR service_name  LIKE sqlc.narg('search')
+                OR exploit_name  LIKE sqlc.narg('search')
+                OR msg           LIKE sqlc.narg('search')
+                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search')
             ))
-            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search_like'))
+            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search'))
     )
 );
 

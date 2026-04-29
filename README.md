@@ -32,8 +32,8 @@ Make sure you have the following installed:
 
 | Directory       | Description |
 |------------------|-------------|
-| [`client/`](./docs/client/README.md) | Handles exploit creation and flag submission |
-| [`server/`](./docs/server/README.md) | Manages exploit distribution, flag collection, and monitoring |
+| [`client/`](./tech-docs/client/README.md) | Handles exploit creation and flag submission |
+| [`server/`](./tech-docs/server/README.md) | Manages exploit distribution, flag collection, and monitoring |
 
 --- -->
 
@@ -108,7 +108,7 @@ shared:
    docker compose up --build
 ```
 
-📘 For more configuration details, refer to the [server documentation](./docs/server/README.md).
+📘 For more configuration details, refer to the [server documentation](./tech-docs/server/README.md).
 ---
 
 ### 💻 Using the Client & Running Exploits
@@ -137,7 +137,7 @@ shared:
    ckc exploit run -e your_exploit_name.py -n CookieService -t 120 -T 40
    ```
 
-📘 For more usage examples, check out the [client documentation](./docs/client/README.md).
+📘 For more usage examples, check out the [client documentation](./tech-docs/client/README.md).
 
 ---
 

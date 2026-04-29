@@ -72,4 +72,4 @@ jobs:
           go-version: '1.26.1'
 
       - name: Run tests
-        run: go test work ./... >  2>&1
+        run: go test work ./...  2>&1

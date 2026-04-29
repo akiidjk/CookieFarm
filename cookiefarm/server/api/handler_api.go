@@ -249,8 +249,6 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		Offset: sql.NullInt64{Int64: int64(offset), Valid: true},
 	}
 
-	logger.Log.Info().Int64("status", optsStatus).Str("search_field", c.Query("search_field", "flag_code")).Str("search", strings.TrimSpace(c.Query("search", ""))).Str("service", optsService).Uint16("team_id", teamID).Int64("limit", opts.Limit.Int64).Int64("offset", opts.Offset.Int64).Msg("Fetching filtered flags with options")
-
 	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to fetch filtered flags")

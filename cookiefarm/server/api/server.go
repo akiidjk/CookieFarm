@@ -4,6 +4,7 @@ package api
 
 import (
 	"fmt"
+	"io/fs"
 	"logger"
 	"os"
 	"strings"
@@ -18,8 +19,6 @@ import (
 )
 
 const (
-	frontendDistDir   = "./server/frontend/dist"
-	frontendAssetsDir = "./server/frontend/dist/assets"
 	frontendIndexPath = "./server/frontend/dist/index.html"
 )
 
@@ -47,32 +46,40 @@ func newConfig(debug bool) fiber.Config {
 }
 
 func PrepareStatic(app *fiber.App) error {
-	type staticRoute struct {
-		route string
-		dir   string
+	frontendFS := os.DirFS("./server/frontend/dist")
+	publicFS := os.DirFS("./server/public")
+
+	assetsFS, err := fs.Sub(frontendFS, "assets")
+	if err != nil {
+		return err
 	}
 
-	routes := []staticRoute{
-		{"/images", "./server/public/images"},
-		{"/assets", frontendAssetsDir},
+	imagesFS, err := fs.Sub(publicFS, "images")
+	if err != nil {
+		return err
 	}
 
-	var staticCfg static.Config
-	if config.Cache {
-		staticCfg = static.Config{
-			Compress:      true,
-			CacheDuration: 10 * time.Second,
-			MaxAge:        3600,
-		}
-	} else {
-		staticCfg = static.Config{
-			Compress: true,
-		}
-	}
+	app.Use("/assets", static.New("", static.Config{
+		FS:            assetsFS,
+		Compress:      true,
+		MaxAge:        31536000,
+		CacheDuration: 10 * time.Second,
+	}))
 
-	for _, r := range routes {
-		app.Get(r.route+"/*", static.New(r.dir, staticCfg))
-	}
+	app.Use("/images", static.New("", static.Config{
+		FS:            imagesFS,
+		Compress:      true,
+		MaxAge:        3600,
+		CacheDuration: 10 * time.Second,
+	}))
+
+	app.Use("/", static.New("", static.Config{
+		FS:            frontendFS,
+		IndexNames:    []string{"index.html"},
+		Compress:      true,
+		MaxAge:        0,
+		CacheDuration: 10 * time.Second,
+	}))
 
 	return nil
 }

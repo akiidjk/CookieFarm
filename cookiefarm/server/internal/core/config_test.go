@@ -69,7 +69,7 @@ func TestRun_FirstCall_TTLDisabled_SpawnsProcessingLoop(t *testing.T) {
 
 	r := newTestRunner(t)
 
-	assert.NotPanics(t, func() { r.Run() })
+	assert.NotPanics(t, func() { r.Submission() })
 
 	// shutdownCancel must have been set by Run.
 	assert.NotNil(t, r.shutdownCancel)
@@ -92,7 +92,7 @@ func TestRun_FirstCall_TTLEnabled_DoesNotPanic(t *testing.T) {
 	t.Cleanup(func() { cfg.SetSubmitFlagCheckerTime(origInterval) })
 
 	r := newTestRunner(t)
-	assert.NotPanics(t, func() { r.Run() })
+	assert.NotPanics(t, func() { r.Submission() })
 	assert.NotNil(t, r.shutdownCancel)
 	resetShutdownCancel(t, r)
 }
@@ -111,7 +111,7 @@ func TestRun_SetsShutdownCancel(t *testing.T) {
 	r := newTestRunner(t)
 	require.Nil(t, r.shutdownCancel, "shutdownCancel should be nil before Run")
 
-	r.Run()
+	r.Submission()
 
 	assert.NotNil(t, r.shutdownCancel, "Run must set shutdownCancel")
 	resetShutdownCancel(t, r)
@@ -130,12 +130,12 @@ func TestRun_Reentrant_CancelsPreviousContext(t *testing.T) {
 
 	r := newTestRunner(t)
 
-	r.Run()
+	r.Submission()
 	firstCancel := r.shutdownCancel
 	require.NotNil(t, firstCancel)
 
 	// Second call: the previous cancel must have been invoked, a new one set.
-	r.Run()
+	r.Submission()
 	secondCancel := r.shutdownCancel
 	require.NotNil(t, secondCancel)
 
@@ -161,9 +161,9 @@ func TestRun_Reentrant_DoesNotPanic(t *testing.T) {
 	r := newTestRunner(t)
 
 	assert.NotPanics(t, func() {
-		r.Run()
-		r.Run()
-		r.Run()
+		r.Submission()
+		r.Submission()
+		r.Submission()
 	})
 	resetShutdownCancel(t, r)
 }
@@ -307,7 +307,7 @@ func TestLoadConfig_ValidFile_StartsRunner(t *testing.T) {
 
 	err := r.LoadConfig(path)
 	require.NoError(t, err)
-	r.Run()
+	r.Submission()
 
 	// If Run() was called, shutdownCancel must have been set.
 	assert.NotNil(t, r.shutdownCancel)
@@ -355,7 +355,7 @@ func TestRun_GoroutinesTerminateAfterCancel(t *testing.T) {
 	t.Cleanup(func() { cfg.SetFlagTTL(origTTL) })
 
 	r := newTestRunner(t)
-	r.Run()
+	r.Submission()
 
 	require.NotNil(t, r.shutdownCancel)
 
@@ -383,7 +383,7 @@ func TestRun_WithNilStore_SpawnsLoopWithoutPanic(t *testing.T) {
 	// tries to query the store, but that is contained inside the goroutine.
 	cfg2 := newTestConfig(t)
 	r := NewRunner(nil, cfg2)
-	assert.NotPanics(t, func() { r.Run() })
+	assert.NotPanics(t, func() { r.Submission() })
 
 	// Allow the goroutine to start and hit the store, then cancel.
 	time.Sleep(20 * time.Millisecond)

@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"server/ckp"
 	"server/config"
 	"server/core"
 	"server/database"
@@ -28,6 +29,8 @@ var (
 	enablePprof bool // Enable pprof for profiling
 	Version     string
 )
+
+const CKP_PORT = 7777
 
 // RootCmd represents the base command when called without any subcommands
 // Exported for TUI usage
@@ -48,11 +51,11 @@ func Execute() {
 
 func RunPprof() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/debug/pprof/", pprof.Index)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.HandleFunc("/", pprof.Index)
+	mux.HandleFunc("/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/profile", pprof.Profile)
+	mux.HandleFunc("/symbol", pprof.Symbol)
+	mux.HandleFunc("/trace", pprof.Trace)
 
 	go func() {
 		logger.Log.Info().Msg("pprof attivo su :6060")
@@ -82,20 +85,7 @@ func init() {
 	}
 }
 
-// The main function initializes configuration, sets up logging, connects to the database,
-// configures the Fiber HTTP server, and handles graceful shutdown on system signals.
-func Run(cmd *cobra.Command, args []string) {
-	var level string
-	var err error
-
-	if config.Debug {
-		level = "debug"
-	} else {
-		level = "info"
-	}
-
-	cfg := config.GetInstance()
-
+func setupEnv(cfg *config.ConfigManager) (*database.Store, *core.Runner) {
 	cfgDB := database.Config{
 		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL",
 		MaxOpenConns:    25,
@@ -111,20 +101,13 @@ func Run(cmd *cobra.Command, args []string) {
 	database.GetCollector().SetStore(store)
 	runner := core.NewRunner(store, cfg)
 
-	logger.Setup(level, false)
-	defer logger.Close()
+	setupPassword()
 
-	if config.UseConfigFile {
-		logger.Log.Info().Msg("Using file config...")
-		err := runner.LoadConfig(config.ConfigPath)
-		if err != nil {
-			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
-		}
-		runner.Run()
-	} else {
-		logger.Log.Info().Msg("Using web config...")
-	}
+	return store, runner
+}
 
+func setupPassword() {
+	var err error
 	config.Secret, err = api.InitSecret()
 	if err != nil {
 		logger.Log.Fatal().Err(err).Msg("Failed to initialize secret key")
@@ -138,37 +121,34 @@ func Run(cmd *cobra.Command, args []string) {
 		logger.Log.Fatal().Err(err).Msg("Password hashing failed")
 	}
 	logger.Log.Debug().Str("hashed", config.Password).Msg("Password after hashing")
+}
 
-	app, err := api.NewApp()
-	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("Failed to initialize server")
-	}
-
-	app.Use(fiberLogger.New(fiberLogger.Config{
-		Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
-		TimeFormat: time.RFC3339,
-		TimeZone:   "Local",
-	}))
-	handler := api.NewHandler(store, runner, cfg)
-	handler.RegisterRoutes(app)
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer stop()
-
-	addr := ":" + config.ServerPort
-	errCh := make(chan error, 1)
-	go func() {
-		logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")
-		err := app.Listen(addr, fiber.ListenConfig{
-			DisableStartupMessage: !config.Debug,
-			EnablePrintRoutes:     config.Debug,
-			EnablePrefork:         false,
-		})
+func loadConfig(runner *core.Runner) {
+	if config.UseConfigFile {
+		logger.Log.Info().Msg("Using file config...")
+		err := runner.LoadConfig(config.ConfigPath)
 		if err != nil {
-			errCh <- err
+			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
 		}
-	}()
+		runner.Submission()
+	} else {
+		logger.Log.Info().Msg("Using web config...")
+	}
+}
 
+func listen(app *fiber.App, addr string, errCh chan<- error) {
+	logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")
+	err := app.Listen(addr, fiber.ListenConfig{
+		DisableStartupMessage: !config.Debug,
+		EnablePrintRoutes:     config.Debug,
+		EnablePrefork:         false,
+	})
+	if err != nil {
+		errCh <- err
+	}
+}
+
+func handleShutdown(app *fiber.App, ctx context.Context, errCh <-chan error) {
 	select {
 	case <-ctx.Done():
 		logger.Log.Warn().Msg("Shutdown signal received, terminating...")
@@ -186,4 +166,57 @@ func Run(cmd *cobra.Command, args []string) {
 	}
 
 	logger.Log.Info().Msg("Server stopped gracefully")
+}
+
+func setupApp(store *database.Store, runner *core.Runner, cfg *config.ConfigManager, connections *ckp.Connections) *fiber.App {
+	app, err := api.NewApp()
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to initialize server")
+	}
+
+	app.Use(fiberLogger.New(fiberLogger.Config{
+		Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
+		TimeFormat: time.RFC3339,
+		TimeZone:   "Local",
+	}))
+	handler := api.NewHandler(store, runner, cfg, connections)
+	handler.RegisterRoutes(app)
+
+	return app
+}
+
+// The main function initializes configuration, sets up logging, connects to the database,
+// configures the Fiber HTTP server, and handles graceful shutdown on system signals.
+func Run(cmd *cobra.Command, args []string) {
+	var level string
+
+	if config.Debug {
+		level = "debug"
+	} else {
+		level = "info"
+	}
+
+	logger.Setup(level, false)
+	defer logger.Close()
+
+	cfg := config.GetInstance()
+	store, runner := setupEnv(cfg)
+
+	loadConfig(runner)
+
+	connections, err := ckp.StartServer(CKP_PORT)
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to start CKP server")
+	}
+
+	app := setupApp(store, runner, cfg, connections)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer stop()
+
+	addr := ":" + config.ServerPort
+	errCh := make(chan error, 1)
+	go listen(app, addr, errCh)
+
+	handleShutdown(app, ctx, errCh)
 }

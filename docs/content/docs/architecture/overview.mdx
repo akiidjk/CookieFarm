@@ -10,7 +10,7 @@ CookieFarm is built around 4 core blocks:
 1. `cks` (Go server)
 2. `ckc` (Go client)
 3. Python `cookiefarm` exploiter runtime
-4. web dashboard (server-rendered templates + HTMX)
+4. web dashboard (React/Vite SPA)
 
 ## A/D Operational Flow
 
@@ -18,7 +18,7 @@ CookieFarm is built around 4 core blocks:
 2. Start it with `ckc exploit run` or `ckc exploit test`.
 3. The client launches the exploit process and parses each JSON line from Python runtime output.
 4. Valid flags are forwarded to server:
-   - WebSocket (default)
+   - CKP over TCP port `7777` (default)
    - direct HTTP with `-S`
 5. Server persists flags in SQLite.
 6. Server runner sends batches to the external flag checker via configured protocol.
@@ -36,7 +36,8 @@ CookieFarm is built around 4 core blocks:
 Key files:
 - `cookiefarm/client/cmd/*`
 - `cookiefarm/client/internal/exploit/*`
-- `cookiefarm/client/internal/websockets/*`
+- `cookiefarm/client/internal/ckp/*`
+- `cookiefarm/client/internal/submitter/*`
 
 ## Python exploit runtime
 
@@ -54,33 +55,33 @@ Key files:
 
 - REST API (`/api/v1/*`)
 - cookie-based JWT auth
-- HTTP and WebSocket flag ingestion
+- CKP and HTTP flag ingestion
 - SQLite persistence (`flags`)
 - periodic submit loop to external checker
 - optional TTL cleanup
 
 Key files:
 - `cookiefarm/server/api/*`
+- `cookiefarm/server/internal/ckp/*`
 - `cookiefarm/server/internal/core/*`
 - `cookiefarm/server/internal/database/*`
-- `cookiefarm/server/internal/websockets/*`
 
 ## Dashboard
 
-- server-side rendered templates
-- HTMX partial updates for flags and pagination
+- React/Vite single page application
+- REST API data loading for flags, stats, charts, config, and exploit metadata
 - manual flag submit/delete
-- server/shared configuration modal
+- server/shared configuration page
 
 Key files:
-- `cookiefarm/server/internal/ui/views/*`
-- `cookiefarm/server/assets/js/*`
+- `cookiefarm/server/frontend/src/*`
+- `cookiefarm/server/frontend/src/api/*`
 
 ## End-to-End Data Path
 
 ```text
 Python exploit -> ckc parser -> flags channel
-                        -> websocket/http -> cks API/WS
+                        -> CKP TCP/http -> cks CKP/API
                         -> collector -> sqlite flags
                         -> runner submit loop -> flagchecker
                         -> status update in DB -> dashboard
@@ -88,7 +89,7 @@ Python exploit -> ckc parser -> flags channel
 
 ## Practical Competition Decisions
 
-- Keep WebSocket as default for continuous ingestion.
+- Keep CKP as default for continuous ingestion.
 - Always run `ckc exploit test` before full run.
 - Keep `tick_time` and `thread_count` conservative; network saturation reduces accepted rate.
 - Track `submit_time` vs `response_time` delta to detect checker slowdown or backlog.

@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
+	"server/ckp"
 	"server/config"
 	"server/database"
 	"server/internal/exploit"
-	"server/websockets"
 
 	json "github.com/bytedance/sonic"
 	"github.com/golang-jwt/jwt/v4"
@@ -414,7 +414,7 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 	h.config.SetFullConfig(nextConfig)
 	h.config.SetConfigured(true)
 
-	h.runner.Run()
+	h.runner.Submission()
 
 	cfgJSON, err := json.Marshal(h.config.GetShared())
 	if err != nil {
@@ -425,15 +425,8 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 		})
 	}
 
-	event := websockets.Event{
-		Type:    websockets.ConfigMessage,
-		Payload: cfgJSON,
-	}
-
-	if websockets.GlobalManager != nil {
-		for client := range websockets.GlobalManager.Clients {
-			client.Egress <- event
-		}
+	for _, conn := range h.connections.GetAll() {
+		ckp.HandlerConfig(conn, append(cfgJSON, byte('\n')))
 	}
 
 	return c.JSON(ResponseSuccess{Message: "Configuration updated successfully"})

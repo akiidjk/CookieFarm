@@ -10,18 +10,18 @@ description: Role of the `cks` server in CookieFarm and exposed runtime services
 Main responsibilities:
 
 - client/dashboard authentication
-- flag ingestion through API/WebSocket
+- flag ingestion through CKP and API
 - SQLite persistence
 - periodic submission to external checker
-- dashboard rendering
+- React/Vite dashboard serving
 
 ## Main components
 
-- `api/` REST routes + view handlers
+- `api/` REST routes, auth, Swagger, and frontend fallback
+- `internal/ckp/` TCP flag ingestion and config broadcast
 - `internal/core/` submit loop and TTL loop
 - `internal/database/` store + SQLC queries + collector
-- `internal/websockets/` WS manager for ingest/config broadcast
-- `internal/ui/` dashboard templates
+- `frontend/` React/Vite dashboard
 
 ## Configuration modes
 

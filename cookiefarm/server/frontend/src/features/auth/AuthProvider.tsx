@@ -5,10 +5,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import useSWR from "swr";
 import { Navigate, useLocation } from "react-router";
-import { login as loginRequest, logout as logoutRequest, verifyAuth } from "@/api/auth";
+import { authVerifyKey, login as loginRequest, logout as logoutRequest, verifyAuth } from "@/api/auth";
 import { PageSkeleton } from "@/components/PageSkeleton";
-import { useInterval } from "@/hooks/useInterval";
 
 type AuthStatus = "checking" | "authenticated" | "anonymous";
 
@@ -23,27 +23,22 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider(props: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("checking");
+  const authQuery = useSWR(authVerifyKey, verifyAuth, {
+    refreshInterval: status === "authenticated" ? 60_000 : 0,
+  });
 
   async function refresh(): Promise<boolean> {
-    const isAuthenticated = await verifyAuth();
+    const isAuthenticated = await authQuery.mutate();
     setStatus(isAuthenticated ? "authenticated" : "anonymous");
-    return isAuthenticated;
+    return Boolean(isAuthenticated);
   }
 
   useEffect(() => {
-    void refresh();
-  }, []);
-
-  useInterval(
-    () => {
-      if (status !== "authenticated") {
-        return;
-      }
-      void refresh();
-    },
-    60_000,
-    { enabled: status === "authenticated" },
-  );
+    if (authQuery.data === undefined) {
+      return;
+    }
+    setStatus(authQuery.data ? "authenticated" : "anonymous");
+  }, [authQuery.data]);
 
   return (
     <AuthContext.Provider
@@ -54,12 +49,14 @@ export function AuthProvider(props: { children: ReactNode }) {
             ...(username ? { username } : {}),
             password,
           });
+          void authQuery.mutate(true, { revalidate: false });
           setStatus("authenticated");
         },
         logout: async () => {
           try {
             await logoutRequest();
           } finally {
+            void authQuery.mutate(false, { revalidate: false });
             setStatus("anonymous");
           }
         },

@@ -1,21 +1,19 @@
-import { startTransition, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Banner } from "@cloudflare/kumo/components/banner";
 import { Breadcrumbs } from "@cloudflare/kumo";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Pagination } from "@cloudflare/kumo/components/pagination";
 import { Select } from "@cloudflare/kumo/components/select";
-import { Switch } from "@cloudflare/kumo/components/switch";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useConfig } from "@/api/config";
-import { fetchFlags, useFlags, type FlagStatus, type FlagsQuery } from "@/api/flags";
+import { useFlags, type FlagStatus, type FlagsQuery } from "@/api/flags";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useInterval } from "@/hooks/useInterval";
-import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { FlagFilters, type FlagFilterState } from "./FlagFilters";
 import { FlagTable } from "./FlagTable";
 
 const defaultPageSize = 40;
+const flagsRefreshInterval = 10_000;
 
 const defaultFilters: FlagFilterState = {
   status: "all",
@@ -43,57 +41,32 @@ function buildFlagsRequest(
 
 export function FlagsPage() {
   const config = useConfig();
-  const seedPage = useFlags({ limit: defaultPageSize, offset: 0 });
   const [filters, setFilters] = useState<FlagFilterState>(defaultFilters);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [rows, setRows] = useState(seedPage.flags);
-  const [totalCount, setTotalCount] = useState(seedPage.n_flags);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(filters.search, 300);
-
-  useEffect(() => {
-    setRows(seedPage.flags);
-    setTotalCount(seedPage.n_flags);
-  }, [seedPage.flags, seedPage.n_flags]);
-
-  async function refreshFlags(): Promise<void> {
-    const response = await fetchFlags(
+  const flagsRequest = useMemo(
+    () =>
       buildFlagsRequest(page, pageSize, {
         ...filters,
         search: debouncedSearch,
       }),
-    );
-    startTransition(() => {
-      setRows(response.flags);
-      setTotalCount(response.n_flags);
-    });
+    [debouncedSearch, filters, page, pageSize],
+  );
+  const flagsQuery = useFlags(flagsRequest, {
+    refreshInterval: flagsRefreshInterval,
+  });
+  const rows = flagsQuery.data!.flags;
+  const totalCount = flagsQuery.data!.n_flags;
+
+  async function refreshFlags(): Promise<void> {
+    await flagsQuery.mutate();
     setErrorMessage(null);
   }
-
-  useEffect(() => {
-    void refreshFlags().catch((error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : "Flag refresh failed");
-    });
-  }, [debouncedSearch, filters.service, filters.status, filters.team, filters.searchField, page, pageSize]);
-
-  useInterval(
-    () => {
-      void refreshFlags().catch((error: unknown) => {
-        setErrorMessage(error instanceof Error ? error.message : "Flag refresh failed");
-      });
-    },
-    10_000,
-    { enabled: autoRefreshEnabled },
-  );
-
-  useRefreshOnFocus(() => {
-    void refreshFlags().catch((error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : "Flag refresh failed");
-    });
-  });
+  const visibleErrorMessage =
+    errorMessage ?? (flagsQuery.error instanceof Error ? flagsQuery.error.message : null);
 
   return (
     <div className="space-y-6">
@@ -120,12 +93,12 @@ export function FlagsPage() {
         </Button>
       </PageHeader>
 
-      {errorMessage ? (
+      {visibleErrorMessage ? (
         <Banner
           variant="error"
           icon={<WarningCircle weight="fill" />}
           title="Unable to refresh flags"
-          description={errorMessage}
+          description={visibleErrorMessage}
         />
       ) : null}
 
@@ -138,7 +111,7 @@ export function FlagsPage() {
         }}
       />
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-kumo-line bg-kumo-base p-4">
+      <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-kumo-line bg-kumo-base p-4">
         <div className="flex items-center gap-3">
           <span className="text-sm text-kumo-fg-secondary">Rows per page</span>
           <Select
@@ -156,12 +129,6 @@ export function FlagsPage() {
             }}
           />
         </div>
-
-        <Switch
-          checked={autoRefreshEnabled}
-          label="Auto refresh every 10s"
-          onCheckedChange={setAutoRefreshEnabled}
-        />
       </section>
 
       <FlagTable rows={rows} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import useSWR from "swr";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Sidebar } from "@cloudflare/kumo/components/sidebar";
 import { Text } from "@cloudflare/kumo/components/text";
@@ -17,7 +17,6 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 import { apiFetch } from "@/api/client";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LiveDot } from "@/components/LiveDot";
-import { useInterval } from "@/hooks/useInterval";
 import { CookieIcon, HouseIcon, HouseSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 
 const apiStatusSchema = z.object({
@@ -38,23 +37,19 @@ export function AppLayout() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [status, setStatus] = useState<"connecting" | "open" | "closed" | "error">(
-    "connecting",
+  const apiStatus = useSWR(
+    "api:status",
+    () => apiFetch("/", {}, apiStatusSchema),
+    { refreshInterval: 15_000 },
   );
-
-  useInterval(
-    () => {
-      void apiFetch("/", {}, apiStatusSchema)
-        .then((response) => {
-          setStatus(response.message ? "open" : "error");
-        })
-        .catch(() => {
-          setStatus("closed");
-        });
-    },
-    15000,
-    { immediate: true },
-  );
+  const status: "connecting" | "open" | "closed" | "error" =
+    apiStatus.isLoading
+      ? "connecting"
+      : apiStatus.error
+        ? "closed"
+        : apiStatus.data?.message
+          ? "open"
+          : "error";
 
   return (
     <Sidebar.Provider defaultOpen variant="inset" collapsible="icon">

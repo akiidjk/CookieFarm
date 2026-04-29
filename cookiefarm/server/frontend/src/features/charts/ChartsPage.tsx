@@ -1,5 +1,6 @@
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import * as echarts from "echarts/core";
+import { mutate as swrMutate } from "swr";
 import { BarChart, LineChart, PieChart } from "echarts/charts";
 import { Banner } from "@cloudflare/kumo/components/banner";
 import { Breadcrumbs } from "@cloudflare/kumo/components/breadcrumbs";
@@ -14,11 +15,10 @@ import {
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { WarningCircle } from "@phosphor-icons/react";
-import { fetchConfig, useConfig } from "@/api/config";
-import { fetchAllFlags, useAllFlags } from "@/api/flags";
-import { fetchStatsSummary, useStatsSummary } from "@/api/stats";
+import { configKey, useConfig } from "@/api/config";
+import { useAllFlags } from "@/api/flags";
+import { useStatsSummary } from "@/api/stats";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
-import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { buildExploitShare, buildTickSeries, formatTickLabel } from "./chartData";
 
 echarts.use([
@@ -36,46 +36,20 @@ echarts.use([
 const isDarkMode = true;
 
 export function ChartsPage() {
-  const seedConfig = useConfig();
-  const seedFlags = useAllFlags();
-  const seedSummary = useStatsSummary();
-  const [config, setConfig] = useState(seedConfig);
-  const [flags, setFlags] = useState(seedFlags.flags);
-  const [summary, setSummary] = useState(seedSummary);
+  const config = useConfig();
+  const flagsQuery = useAllFlags();
+  const summaryQuery = useStatsSummary();
+  const flags = flagsQuery.data!.flags;
+  const summary = summaryQuery.data!;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    setConfig(seedConfig);
-  }, [seedConfig]);
-
-  useEffect(() => {
-    setFlags(seedFlags.flags);
-  }, [seedFlags.flags]);
-
-  useEffect(() => {
-    setSummary(seedSummary);
-  }, [seedSummary]);
-
   async function refreshCharts(): Promise<void> {
-    const [nextConfig, nextFlags, nextSummary] = await Promise.all([
-      fetchConfig(),
-      fetchAllFlags(),
-      fetchStatsSummary(),
-    ]);
-
-    startTransition(() => {
-      setConfig(nextConfig);
-      setFlags(nextFlags.flags);
-      setSummary(nextSummary);
-    });
+    await Promise.all([swrMutate(configKey), flagsQuery.mutate(), summaryQuery.mutate()]);
     setErrorMessage(null);
   }
-
-  useRefreshOnFocus(() => {
-    void refreshCharts().catch((error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : "Chart refresh failed");
-    });
-  }, { immediate: true });
+  const swrError = flagsQuery.error ?? summaryQuery.error;
+  const visibleErrorMessage =
+    errorMessage ?? (swrError instanceof Error ? swrError.message : null);
 
   const tickSeries = useMemo(
     () => buildTickSeries(flags, config.server.tick_time),
@@ -295,12 +269,12 @@ export function ChartsPage() {
         </Button>
       </PageHeader>
 
-      {errorMessage ? (
+      {visibleErrorMessage ? (
         <Banner
           variant="error"
           icon={<WarningCircle weight="fill" />}
           title="Unable to refresh charts"
-          description={errorMessage}
+          description={visibleErrorMessage}
         />
       ) : null}
 

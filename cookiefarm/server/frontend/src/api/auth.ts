@@ -10,6 +10,8 @@ const emptyResponseSchema = z.object({}).passthrough();
 
 export type LoginPayload = z.infer<typeof loginPayloadSchema>;
 
+export const authVerifyKey = "/auth/verify";
+
 export async function login(payload: LoginPayload): Promise<void> {
   await apiFetch(
     "/auth/login",
@@ -23,7 +25,7 @@ export async function login(payload: LoginPayload): Promise<void> {
 
 export async function verifyAuth(): Promise<boolean> {
   try {
-    await apiFetch("/auth/verify", {}, emptyResponseSchema);
+    await apiFetch(authVerifyKey, {}, emptyResponseSchema);
     return true;
   } catch {
     return false;

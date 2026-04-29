@@ -1,6 +1,6 @@
-import { use } from "react";
+import useSWR, { mutate } from "swr";
 import { z } from "zod";
-import { apiFetch, cached, invalidateCached } from "./client";
+import { apiFetch } from "./client";
 
 export const configServicesSchema = z.record(
   z.string().trim().min(1),
@@ -47,16 +47,16 @@ export const protocolsResponseSchema = z.object({
 
 export type ProtocolsResponse = z.infer<typeof protocolsResponseSchema>;
 
-export async function fetchConfig(): Promise<Config> {
-  return apiFetch("/config/full", {}, configSchema);
-}
+export const configKey = "/config/full";
+export const protocolsKey = "/protocols";
 
-export function readConfig(): Promise<Config> {
-  return cached("config:detail", fetchConfig);
+export async function fetchConfig(): Promise<Config> {
+  return apiFetch(configKey, {}, configSchema);
 }
 
 export function useConfig() {
-  return use(readConfig());
+  const { data } = useSWR(configKey, fetchConfig, { suspense: true });
+  return data as Config;
 }
 
 export async function updateConfig(config: Config): Promise<Config> {
@@ -77,20 +77,18 @@ export async function updateConfig(config: Config): Promise<Config> {
     },
   );
 
-  invalidateCached("config:");
-  return fetchConfig();
+  const nextConfig = await fetchConfig();
+  void mutate(configKey, nextConfig, { revalidate: false });
+  return nextConfig;
 }
 
 export async function fetchProtocols(): Promise<ProtocolsResponse> {
-  return apiFetch("/protocols", {}, protocolsResponseSchema);
-}
-
-export function readProtocols(): Promise<ProtocolsResponse> {
-  return cached("protocols:list", fetchProtocols);
+  return apiFetch(protocolsKey, {}, protocolsResponseSchema);
 }
 
 export function useProtocols() {
-  return use(readProtocols());
+  const { data } = useSWR(protocolsKey, fetchProtocols, { suspense: true });
+  return data as ProtocolsResponse;
 }
 
 export function servicesToEntries(services: ConfigServices): Array<[string, number]> {

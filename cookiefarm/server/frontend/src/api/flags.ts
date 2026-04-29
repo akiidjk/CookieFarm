@@ -1,6 +1,6 @@
-import { use } from "react";
+import useSWR, { mutate, type SWRConfiguration } from "swr";
 import { z } from "zod";
-import { apiFetch, cached, invalidateCached } from "./client";
+import { apiFetch } from "./client";
 
 export const flagStatusSchema = z.union([
   z.literal(0),
@@ -72,6 +72,12 @@ function buildFlagsQuery(params: FlagsQuery): string {
   return query.toString();
 }
 
+export function flagsKey(params: FlagsQuery) {
+  return ["/flags", params.limit, buildFlagsQuery(params)] as const;
+}
+
+export const allFlagsKey = "/flags";
+
 export async function fetchFlags(params: FlagsQuery): Promise<FlagsResponse> {
   return apiFetch(
     `/flags/${params.limit}?${buildFlagsQuery(params)}`,
@@ -81,24 +87,22 @@ export async function fetchFlags(params: FlagsQuery): Promise<FlagsResponse> {
 }
 
 export async function fetchAllFlags(): Promise<FlagsResponse> {
-  return apiFetch("/flags", {}, flagsResponseSchema);
+  return apiFetch(allFlagsKey, {}, flagsResponseSchema);
 }
 
-export function readFlags(params: FlagsQuery): Promise<FlagsResponse> {
-  const queryKey = `${params.limit}:${buildFlagsQuery(params)}`;
-  return cached(`flags:${queryKey}`, () => fetchFlags(params));
+export function useFlags(params: FlagsQuery, options: SWRConfiguration = {}) {
+  return useSWR(flagsKey(params), () => fetchFlags(params), {
+    suspense: true,
+    keepPreviousData: true,
+    ...options,
+  });
 }
 
-export function useFlags(params: FlagsQuery) {
-  return use(readFlags(params));
-}
-
-export function readAllFlags(): Promise<FlagsResponse> {
-  return cached("flags:all", fetchAllFlags);
-}
-
-export function useAllFlags() {
-  return use(readAllFlags());
+export function useAllFlags(options: SWRConfiguration = {}) {
+  return useSWR(allFlagsKey, fetchAllFlags, {
+    suspense: true,
+    ...options,
+  });
 }
 
 export async function submitFlag(flag: Flag): Promise<void> {
@@ -113,7 +117,7 @@ export async function submitFlag(flag: Flag): Promise<void> {
       ),
     },
   );
-  invalidateFlagsCache();
+  void invalidateFlagsCache();
 }
 
 export async function deleteFlag(flagCode: string): Promise<void> {
@@ -123,9 +127,9 @@ export async function deleteFlag(flagCode: string): Promise<void> {
       method: "DELETE",
     },
   );
-  invalidateFlagsCache();
+  void invalidateFlagsCache();
 }
 
 export function invalidateFlagsCache() {
-  invalidateCached("flags:");
+  return mutate((key) => Array.isArray(key) ? key[0] === "/flags" : key === allFlagsKey);
 }

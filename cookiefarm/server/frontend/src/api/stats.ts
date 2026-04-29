@@ -1,6 +1,6 @@
-import { use } from "react";
+import useSWR, { type SWRConfiguration } from "swr";
 import { z } from "zod";
-import { apiFetch, cached } from "./client";
+import { apiFetch } from "./client";
 
 const sqlFloatSchema = z.object({
   Float64: z.number(),
@@ -25,14 +25,15 @@ export const statsSummarySchema = z.object({
 
 export type StatsSummary = z.infer<typeof statsSummarySchema>;
 
+export const statsSummaryKey = "/stats";
+
 export async function fetchStatsSummary(): Promise<StatsSummary> {
-  return apiFetch("/stats", {}, statsSummarySchema);
+  return apiFetch(statsSummaryKey, {}, statsSummarySchema);
 }
 
-export function readStatsSummary(): Promise<StatsSummary> {
-  return cached("stats:summary", fetchStatsSummary);
-}
-
-export function useStatsSummary() {
-  return use(readStatsSummary());
+export function useStatsSummary(options: SWRConfiguration = {}) {
+  return useSWR(statsSummaryKey, fetchStatsSummary, {
+    suspense: true,
+    ...options,
+  });
 }

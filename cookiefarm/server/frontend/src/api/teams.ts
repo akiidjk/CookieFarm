@@ -1,6 +1,6 @@
-import { use } from "react";
+import useSWR from "swr";
 import { z } from "zod";
-import { apiFetch, cached } from "./client";
+import { apiFetch } from "./client";
 
 export const teamSchema = z.object({
   ip: z.string(),
@@ -12,14 +12,12 @@ export type Team = z.infer<typeof teamSchema>;
 
 const teamsSchema = z.array(teamSchema);
 
-export async function fetchTeams(): Promise<Team[]> {
-  return apiFetch("/teams", {}, teamsSchema);
-}
+export const teamsKey = "/teams";
 
-export function readTeams(): Promise<Team[]> {
-  return cached("teams:list", fetchTeams);
+export async function fetchTeams(): Promise<Team[]> {
+  return apiFetch(teamsKey, {}, teamsSchema);
 }
 
 export function useTeams() {
-  return use(readTeams());
+  return useSWR(teamsKey, fetchTeams, { suspense: true });
 }

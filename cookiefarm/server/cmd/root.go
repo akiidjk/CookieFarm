@@ -51,11 +51,11 @@ func Execute() {
 
 func RunPprof() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/debug/pprof/", pprof.Index)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	mux.HandleFunc("/", pprof.Index)
+	mux.HandleFunc("/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/profile", pprof.Profile)
+	mux.HandleFunc("/symbol", pprof.Symbol)
+	mux.HandleFunc("/trace", pprof.Trace)
 
 	go func() {
 		logger.Log.Info().Msg("pprof attivo su :6060")
@@ -85,7 +85,7 @@ func init() {
 	}
 }
 
-func setup(cfg *config.ConfigManager) (*database.Store, *core.Runner) {
+func setupEnv(cfg *config.ConfigManager) (*database.Store, *core.Runner) {
 	cfgDB := database.Config{
 		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL",
 		MaxOpenConns:    25,
@@ -123,24 +123,7 @@ func setupPassword() {
 	logger.Log.Debug().Str("hashed", config.Password).Msg("Password after hashing")
 }
 
-// The main function initializes configuration, sets up logging, connects to the database,
-// configures the Fiber HTTP server, and handles graceful shutdown on system signals.
-func Run(cmd *cobra.Command, args []string) {
-	var level string
-	var err error
-
-	if config.Debug {
-		level = "debug"
-	} else {
-		level = "info"
-	}
-
-	logger.Setup(level, false)
-	defer logger.Close()
-
-	cfg := config.GetInstance()
-	store, runner := setup(cfg)
-
+func loadConfig(runner *core.Runner) {
 	if config.UseConfigFile {
 		logger.Log.Info().Msg("Using file config...")
 		err := runner.LoadConfig(config.ConfigPath)
@@ -151,39 +134,21 @@ func Run(cmd *cobra.Command, args []string) {
 	} else {
 		logger.Log.Info().Msg("Using web config...")
 	}
+}
 
-	app, err := api.NewApp()
+func listen(app *fiber.App, addr string, errCh chan<- error) {
+	logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")
+	err := app.Listen(addr, fiber.ListenConfig{
+		DisableStartupMessage: !config.Debug,
+		EnablePrintRoutes:     config.Debug,
+		EnablePrefork:         false,
+	})
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("Failed to initialize server")
+		errCh <- err
 	}
+}
 
-	connections, err := ckp.StartServer(CKP_PORT)
-
-	app.Use(fiberLogger.New(fiberLogger.Config{
-		Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
-		TimeFormat: time.RFC3339,
-		TimeZone:   "Local",
-	}))
-	handler := api.NewHandler(store, runner, cfg, connections)
-	handler.RegisterRoutes(app)
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer stop()
-
-	addr := ":" + config.ServerPort
-	errCh := make(chan error, 1)
-	go func() {
-		logger.Log.Info().Str("addr", addr).Msg("HTTP server starting")
-		err := app.Listen(addr, fiber.ListenConfig{
-			DisableStartupMessage: !config.Debug,
-			EnablePrintRoutes:     config.Debug,
-			EnablePrefork:         false,
-		})
-		if err != nil {
-			errCh <- err
-		}
-	}()
-
+func handleShutdown(app *fiber.App, ctx context.Context, errCh <-chan error) {
 	select {
 	case <-ctx.Done():
 		logger.Log.Warn().Msg("Shutdown signal received, terminating...")
@@ -201,4 +166,57 @@ func Run(cmd *cobra.Command, args []string) {
 	}
 
 	logger.Log.Info().Msg("Server stopped gracefully")
+}
+
+func setupApp(store *database.Store, runner *core.Runner, cfg *config.ConfigManager, connections *ckp.Connections) *fiber.App {
+	app, err := api.NewApp()
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to initialize server")
+	}
+
+	app.Use(fiberLogger.New(fiberLogger.Config{
+		Format:     "[${time}] ${ip} - ${method} ${path} - ${status}\n",
+		TimeFormat: time.RFC3339,
+		TimeZone:   "Local",
+	}))
+	handler := api.NewHandler(store, runner, cfg, connections)
+	handler.RegisterRoutes(app)
+
+	return app
+}
+
+// The main function initializes configuration, sets up logging, connects to the database,
+// configures the Fiber HTTP server, and handles graceful shutdown on system signals.
+func Run(cmd *cobra.Command, args []string) {
+	var level string
+
+	if config.Debug {
+		level = "debug"
+	} else {
+		level = "info"
+	}
+
+	logger.Setup(level, false)
+	defer logger.Close()
+
+	cfg := config.GetInstance()
+	store, runner := setupEnv(cfg)
+
+	loadConfig(runner)
+
+	connections, err := ckp.StartServer(CKP_PORT)
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("Failed to start CKP server")
+	}
+
+	app := setupApp(store, runner, cfg, connections)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer stop()
+
+	addr := ":" + config.ServerPort
+	errCh := make(chan error, 1)
+	go listen(app, addr, errCh)
+
+	handleShutdown(app, ctx, errCh)
 }

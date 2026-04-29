@@ -58,12 +58,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"path/filepath"
+	"server/database"
+	"sharedconfig"
 	"testing"
 	"time"
 
 	"client/config"
-	"server/database"
-	"sharedconfig"
 )
 
 func TestBuildPayload_EncodesCanonicalFrame(t *testing.T) {
@@ -135,7 +135,7 @@ func TestHandleConfig_ValidJSONUpdatesSharedConfigAndInvokesCallback(t *testing.
 	called := make(chan struct{}, 1)
 	OnNewConfig = func() { called <- struct{}{} }
 
-	err := handleConfig([]byte(`{"services":{"web":8080,"db":5432},"regex_flag":"FLAG\\{[A-Z0-9]+\\}","format_ip_teams":"10.10.{}.1","my_team_id":7,"url_flag_ids":"http://ids.local","nop_team":1,"range_ip_teams":20,"configured":true}`))
+	err := handleConfig([]byte(`{"services":{"web":8080,"db":5432},"regex_flag":"FLAG\\{[A-Z0-9]+\\}","format_ip_teams":"10.10.{}.1","my_team_id":7,"url_flag_ids":"http://ids.local","nop_team":1,"range_ip_teams":20,"configured":true}`)) // nolint
 	if err != nil {
 		t.Fatalf("handleConfig returned unexpected error: %v", err)
 	}

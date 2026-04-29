@@ -560,6 +560,10 @@ func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
 		})
 	}
 
+	if exploits == nil {
+		exploits = []database.Exploit{}
+	}
+
 	return c.JSON(fiber.Map{
 		"exploits": exploits,
 		"count":    len(exploits),

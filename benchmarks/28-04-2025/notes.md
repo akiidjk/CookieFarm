@@ -102,7 +102,7 @@ def exploit(ip, port, name_service, flag_ids: list):
 
 #### Number of flags retrieved with CKP
 
-47,970 I have done a 1 tick more so 47,970 - 1170 (1 tick) = 46,800 flags retrieved with CKP in 40 tick. NO FLAGS LOSE!!!
+47,970 I have done a 1 tick more so 47,970 - 1170 (1 tick) = 46,800 flags retrieved with CKP in 40 tick. NO FLAGS LOSS!!!
 
 #### Number of flags retrieved with Websockets
 

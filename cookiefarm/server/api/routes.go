@@ -69,6 +69,7 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 		),
 	}))
 	privateAPI.Get("/stats", h.HandleGetStats)
+	privateAPI.Get("/stats/charts", h.HandleGetChartStats)
 	privateAPI.Get("/flags", h.HandleGetAllFlags)
 	privateAPI.Get("/flags/:limit", h.HandleGetPaginatedFlags)
 	privateAPI.Get("/config", h.HandleGetConfig)

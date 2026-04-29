@@ -10,9 +10,9 @@ import {
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { Chart, ChartLegend, ChartPalette } from "@cloudflare/kumo/components/chart";
-import type { Flag } from "@/api/flags";
 import type { StatsSummary } from "@/api/stats";
-import { buildTickSeries, formatTickLabel } from "@/features/charts/chartData";
+import { formatTickLabel } from "@/features/charts/chartData";
+import type { TickPoint } from "@/features/charts/chartData";
 
 echarts.use([
   BarChart,
@@ -27,15 +27,11 @@ echarts.use([
 
 export function StatsBar(props: {
   summary: StatsSummary;
-  flags: Flag[];
-  tickSeconds: number;
+  tickSeries: TickPoint[];
 }) {
   const isDarkMode = true;
   const stats = props.summary.flags_stats ?? [];
-  const tickSeries = useMemo(
-    () => buildTickSeries(props.flags, props.tickSeconds),
-    [props.flags, props.tickSeconds],
-  );
+  const tickSeries = props.tickSeries;
 
   const flagsOverTimeOption = useMemo(() => {
     return {

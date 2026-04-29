@@ -11,6 +11,28 @@ type ResponseFlags struct {
 	Nflags int64           `json:"n_flags"`
 }
 
+type ResponseChartStats struct {
+	TickSeries   []FlagTickPoint    `json:"tick_series"`
+	ExploitShare []FlagExploitShare `json:"exploit_share"`
+	TotalFlags   int64              `json:"total_flags"`
+}
+
+type FlagTickPoint struct {
+	Timestamp int64 `json:"timestamp"`
+	Total     int64 `json:"total"`
+	Queued    int64 `json:"queued"`
+	Accepted  int64 `json:"accepted"`
+	Denied    int64 `json:"denied"`
+	Error     int64 `json:"error"`
+	Invalid   int64 `json:"invalid"`
+}
+
+type FlagExploitShare struct {
+	Name       string  `json:"name"`
+	Value      int64   `json:"value"`
+	Percentage float64 `json:"percentage"`
+}
+
 // SigninRequest from the client to the server
 type SigninRequest struct {
 	Username string `json:"username,omitzero"` // Username for authentication

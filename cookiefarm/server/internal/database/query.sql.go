@@ -179,6 +179,43 @@ func (q *Queries) DeleteFlagByTTL(ctx context.Context, dollar_1 interface{}) (in
 	return result.RowsAffected()
 }
 
+const flagsExploitShare = `-- name: FlagsExploitShare :many
+SELECT
+    exploit_name,
+    COUNT(*) AS value
+FROM flags
+GROUP BY exploit_name
+ORDER BY value DESC, exploit_name ASC
+`
+
+type FlagsExploitShareRow struct {
+	ExploitName string `json:"exploit_name"`
+	Value       int64  `json:"value"`
+}
+
+func (q *Queries) FlagsExploitShare(ctx context.Context) ([]FlagsExploitShareRow, error) {
+	rows, err := q.db.QueryContext(ctx, flagsExploitShare)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlagsExploitShareRow
+	for rows.Next() {
+		var i FlagsExploitShareRow
+		if err := rows.Scan(&i.ExploitName, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const flagsStats = `-- name: FlagsStats :many
 SELECT
     team_id,
@@ -220,6 +257,67 @@ func (q *Queries) FlagsStats(ctx context.Context) ([]FlagsStatsRow, error) {
 			&i.UnsubmittedFlags,
 			&i.ErrorFlags,
 			&i.NotValidFlags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const flagsTickStats = `-- name: FlagsTickStats :many
+SELECT
+    (submit_time / ?) * ? AS timestamp,
+    COUNT(*) AS total,
+    SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS queued,
+    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS accepted,
+    SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS denied,
+    SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS error,
+    SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS invalid
+FROM flags
+WHERE submit_time > 0
+GROUP BY timestamp
+ORDER BY timestamp
+`
+
+type FlagsTickStatsParams struct {
+	SubmitTime   uint64 `json:"submit_time"`
+	SubmitTime_2 uint64 `json:"submit_time_2"`
+}
+
+type FlagsTickStatsRow struct {
+	Timestamp int64           `json:"timestamp"`
+	Total     int64           `json:"total"`
+	Queued    sql.NullFloat64 `json:"queued"`
+	Accepted  sql.NullFloat64 `json:"accepted"`
+	Denied    sql.NullFloat64 `json:"denied"`
+	Error     sql.NullFloat64 `json:"error"`
+	Invalid   sql.NullFloat64 `json:"invalid"`
+}
+
+func (q *Queries) FlagsTickStats(ctx context.Context, arg FlagsTickStatsParams) ([]FlagsTickStatsRow, error) {
+	rows, err := q.db.QueryContext(ctx, flagsTickStats, arg.SubmitTime, arg.SubmitTime_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlagsTickStatsRow
+	for rows.Next() {
+		var i FlagsTickStatsRow
+		if err := rows.Scan(
+			&i.Timestamp,
+			&i.Total,
+			&i.Queued,
+			&i.Accepted,
+			&i.Denied,
+			&i.Error,
+			&i.Invalid,
 		); err != nil {
 			return nil, err
 		}

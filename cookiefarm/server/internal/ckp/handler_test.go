@@ -65,11 +65,11 @@ import (
 	"errors"
 	"io"
 	"net"
+	"sharedconfig"
 	"testing"
 	"time"
 
 	"server/config"
-	"sharedconfig"
 )
 
 func TestReadUntilDelimiter_CategoryPartition(t *testing.T) {
@@ -354,7 +354,7 @@ type memoryConnection struct {
 	serverAddr *net.TCPAddr
 }
 
-func (c *memoryConnection) Read(_ []byte) (int, error) {
+func (*memoryConnection) Read(_ []byte) (int, error) {
 	return 0, io.EOF
 }
 
@@ -362,7 +362,7 @@ func (c *memoryConnection) Write(p []byte) (int, error) {
 	return c.Buffer.Write(p)
 }
 
-func (c *memoryConnection) Close() error {
+func (*memoryConnection) Close() error {
 	return nil
 }
 
@@ -374,15 +374,15 @@ func (c *memoryConnection) RemoteAddr() net.Addr {
 	return c.clientAddr
 }
 
-func (c *memoryConnection) SetDeadline(_ time.Time) error {
+func (*memoryConnection) SetDeadline(_ time.Time) error {
 	return nil
 }
 
-func (c *memoryConnection) SetReadDeadline(_ time.Time) error {
+func (*memoryConnection) SetReadDeadline(_ time.Time) error {
 	return nil
 }
 
-func (c *memoryConnection) SetWriteDeadline(_ time.Time) error {
+func (*memoryConnection) SetWriteDeadline(_ time.Time) error {
 	return nil
 }
 
@@ -414,7 +414,7 @@ func (c *memoryConnection) GetContext() *context.Context {
 	return c.ctx
 }
 
-func (c *memoryConnection) Reset(_ net.Conn) {}
+func (*memoryConnection) Reset(_ net.Conn) {}
 
 func (c *memoryConnection) SetServer(server *Server) {
 	c.server = server

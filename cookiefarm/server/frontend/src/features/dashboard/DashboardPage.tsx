@@ -7,8 +7,8 @@ import { useKumoToastManager } from "@cloudflare/kumo/components/toast";
 import { ArrowSquareOut, WarningCircle } from "@phosphor-icons/react";
 import { Link } from "react-router";
 import { useConfig } from "@/api/config";
-import { deleteFlag, submitFlag, useAllFlags, useFlags } from "@/api/flags";
-import { useStatsSummary } from "@/api/stats";
+import { deleteFlag, submitFlag, useFlags } from "@/api/flags";
+import { useChartStats, useStatsSummary } from "@/api/stats";
 import { FlagTable } from "@/features/flags/FlagTable";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
 import { StatsBar } from "./StatsBar";
@@ -27,13 +27,15 @@ export function DashboardPage() {
   const toast = useKumoToastManager();
   const config = useConfig();
   const summaryQuery = useStatsSummary({ refreshInterval: dashboardRefreshInterval });
-  const chartFlagsQuery = useAllFlags({ refreshInterval: dashboardRefreshInterval });
+  const chartStatsQuery = useChartStats(config.server.tick_time, {
+    refreshInterval: dashboardRefreshInterval,
+  });
   const flagsQuery = useFlags(
     { limit: 25, offset: 0 },
     { refreshInterval: dashboardRefreshInterval },
   );
   const summary = summaryQuery.data!;
-  const chartFlags = chartFlagsQuery.data!.flags;
+  const chartStats = chartStatsQuery.data!;
   const flags = flagsQuery.data!.flags;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [flagCode, setFlagCode] = useState("");
@@ -43,13 +45,13 @@ export function DashboardPage() {
   async function refreshDashboard(): Promise<void> {
     await Promise.all([
       summaryQuery.mutate(),
-      chartFlagsQuery.mutate(),
+      chartStatsQuery.mutate(),
       flagsQuery.mutate(),
     ]);
     setErrorMessage(null);
   }
 
-  const swrError = summaryQuery.error ?? chartFlagsQuery.error ?? flagsQuery.error;
+  const swrError = summaryQuery.error ?? chartStatsQuery.error ?? flagsQuery.error;
   const visibleErrorMessage =
     errorMessage ?? (swrError instanceof Error ? swrError.message : null);
 
@@ -58,7 +60,7 @@ export function DashboardPage() {
       <PageHeader
         breadcrumbs={breadcrumbs}
         title="Dashboard"
-        description="Collector overview, manual submit/delete actions, and the latest stored flags."
+        description="Collector overview, manual submit/delete actions, and recent stored flags."
       >
         <Link
           to="/flags"
@@ -88,8 +90,7 @@ export function DashboardPage() {
 
       <StatsBar
         summary={summary}
-        flags={chartFlags}
-        tickSeconds={config.server.tick_time}
+        tickSeries={chartStats.tick_series}
       />
 
       <section className="rounded-2xl border border-kumo-line bg-kumo-base p-4">
@@ -206,7 +207,7 @@ export function DashboardPage() {
         <div>
           <h2 className="text-lg font-semibold text-kumo-fg-primary">Latest Flags</h2>
           <p className="text-sm text-kumo-fg-secondary mt-1">
-            The newest 25 rows
+            The newest 25 rows. Dashboard charts use aggregated stats, not the full flag archive.
           </p>
         </div>
         <FlagTable

@@ -69,18 +69,18 @@ WHERE
     AND (
         ?4 IS NULL
         OR (
-            (?5 = 'flag_code'    AND flag_code    LIKE ?6)
-            OR (?5 = 'service_name' AND service_name LIKE ?6)
-            OR (?5 = 'exploit_name' AND exploit_name LIKE ?6)
-            OR (?5 = 'msg'          AND msg          LIKE ?6)
+            (?5 = 'flag_code'    AND flag_code    LIKE ?4)
+            OR (?5 = 'service_name' AND service_name LIKE ?4)
+            OR (?5 = 'exploit_name' AND exploit_name LIKE ?4)
+            OR (?5 = 'msg'          AND msg          LIKE ?4)
             OR (?5 = 'all' AND (
-                flag_code    LIKE ?6
-                OR service_name  LIKE ?6
-                OR exploit_name  LIKE ?6
-                OR msg           LIKE ?6
-                OR CAST(team_id AS TEXT) LIKE ?6
+                flag_code    LIKE ?4
+                OR service_name  LIKE ?4
+                OR exploit_name  LIKE ?4
+                OR msg           LIKE ?4
+                OR CAST(team_id AS TEXT) LIKE ?4
             ))
-            OR (?5 IS NULL AND flag_code LIKE ?6)
+            OR (?5 IS NULL AND flag_code LIKE ?4)
     )
 )
 `
@@ -91,7 +91,6 @@ type CountFilteredFlagsParams struct {
 	ServiceName sql.NullString `json:"service_name"`
 	Search      interface{}    `json:"search"`
 	SearchField interface{}    `json:"search_field"`
-	SearchLike  sql.NullString `json:"search_like"`
 }
 
 func (q *Queries) CountFilteredFlags(ctx context.Context, arg CountFilteredFlagsParams) (int64, error) {
@@ -101,7 +100,6 @@ func (q *Queries) CountFilteredFlags(ctx context.Context, arg CountFilteredFlags
 		arg.ServiceName,
 		arg.Search,
 		arg.SearchField,
-		arg.SearchLike,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -179,6 +177,43 @@ func (q *Queries) DeleteFlagByTTL(ctx context.Context, dollar_1 interface{}) (in
 	return result.RowsAffected()
 }
 
+const flagsExploitShare = `-- name: FlagsExploitShare :many
+SELECT
+    exploit_name,
+    COUNT(*) AS value
+FROM flags
+GROUP BY exploit_name
+ORDER BY value DESC, exploit_name ASC
+`
+
+type FlagsExploitShareRow struct {
+	ExploitName string `json:"exploit_name"`
+	Value       int64  `json:"value"`
+}
+
+func (q *Queries) FlagsExploitShare(ctx context.Context) ([]FlagsExploitShareRow, error) {
+	rows, err := q.db.QueryContext(ctx, flagsExploitShare)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlagsExploitShareRow
+	for rows.Next() {
+		var i FlagsExploitShareRow
+		if err := rows.Scan(&i.ExploitName, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const flagsStats = `-- name: FlagsStats :many
 SELECT
     team_id,
@@ -220,6 +255,67 @@ func (q *Queries) FlagsStats(ctx context.Context) ([]FlagsStatsRow, error) {
 			&i.UnsubmittedFlags,
 			&i.ErrorFlags,
 			&i.NotValidFlags,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const flagsTickStats = `-- name: FlagsTickStats :many
+SELECT
+    (submit_time / ?) * ? AS timestamp,
+    COUNT(*) AS total,
+    SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS queued,
+    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS accepted,
+    SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS denied,
+    SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS error,
+    SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS invalid
+FROM flags
+WHERE submit_time > 0
+GROUP BY timestamp
+ORDER BY timestamp
+`
+
+type FlagsTickStatsParams struct {
+	SubmitTime   uint64 `json:"submit_time"`
+	SubmitTime_2 uint64 `json:"submit_time_2"`
+}
+
+type FlagsTickStatsRow struct {
+	Timestamp int64           `json:"timestamp"`
+	Total     int64           `json:"total"`
+	Queued    sql.NullFloat64 `json:"queued"`
+	Accepted  sql.NullFloat64 `json:"accepted"`
+	Denied    sql.NullFloat64 `json:"denied"`
+	Error     sql.NullFloat64 `json:"error"`
+	Invalid   sql.NullFloat64 `json:"invalid"`
+}
+
+func (q *Queries) FlagsTickStats(ctx context.Context, arg FlagsTickStatsParams) ([]FlagsTickStatsRow, error) {
+	rows, err := q.db.QueryContext(ctx, flagsTickStats, arg.SubmitTime, arg.SubmitTime_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlagsTickStatsRow
+	for rows.Next() {
+		var i FlagsTickStatsRow
+		if err := rows.Scan(
+			&i.Timestamp,
+			&i.Total,
+			&i.Queued,
+			&i.Accepted,
+			&i.Denied,
+			&i.Error,
+			&i.Invalid,
 		); err != nil {
 			return nil, err
 		}
@@ -449,32 +545,31 @@ WHERE
     AND (
         ?3 IS NULL
         OR (
-            (?4 = 'flag_code'    AND flag_code    LIKE ?5)
-            OR (?4 = 'service_name' AND service_name LIKE ?5)
-            OR (?4 = 'exploit_name' AND exploit_name LIKE ?5)
-            OR (?4 = 'msg'          AND msg          LIKE ?5)
+            (?4 = 'flag_code'    AND flag_code    LIKE ?3)
+            OR (?4 = 'service_name' AND service_name LIKE ?3)
+            OR (?4 = 'exploit_name' AND exploit_name LIKE ?3)
+            OR (?4 = 'msg'          AND msg          LIKE ?3)
             OR (?4 = 'all' AND (
-                flag_code    LIKE ?5
-                OR service_name  LIKE ?5
-                OR exploit_name  LIKE ?5
-                OR msg           LIKE ?5
-                OR CAST(team_id AS TEXT) LIKE ?5
+                flag_code    LIKE ?3
+                OR service_name  LIKE ?3
+                OR exploit_name  LIKE ?3
+                OR msg           LIKE ?3
+                OR CAST(team_id AS TEXT) LIKE ?3
             ))
-            OR (?4 IS NULL AND flag_code LIKE ?5)
+            OR (?4 IS NULL AND flag_code LIKE ?3)
         )
 )
 ORDER BY submit_time DESC
-LIMIT ?7 OFFSET ?6
+LIMIT ?6 OFFSET ?5
 `
 
 type GetFilteredFlagsParams struct {
-	TeamID      sql.NullInt64  `json:"team_id"`
-	Status      sql.NullInt64  `json:"status"`
-	Search      interface{}    `json:"search"`
-	SearchField interface{}    `json:"search_field"`
-	SearchLike  sql.NullString `json:"search_like"`
-	Offset      sql.NullInt64  `json:"offset"`
-	Limit       sql.NullInt64  `json:"limit"`
+	TeamID      sql.NullInt64 `json:"team_id"`
+	Status      sql.NullInt64 `json:"status"`
+	Search      interface{}   `json:"search"`
+	SearchField interface{}   `json:"search_field"`
+	Offset      sql.NullInt64 `json:"offset"`
+	Limit       sql.NullInt64 `json:"limit"`
 }
 
 func (q *Queries) GetFilteredFlags(ctx context.Context, arg GetFilteredFlagsParams) ([]Flag, error) {
@@ -483,7 +578,6 @@ func (q *Queries) GetFilteredFlags(ctx context.Context, arg GetFilteredFlagsPara
 		arg.Status,
 		arg.Search,
 		arg.SearchField,
-		arg.SearchLike,
 		arg.Offset,
 		arg.Limit,
 	)

@@ -31,7 +31,7 @@ const initialActionState: ConfigFormState = {
   completedAt: 0,
 };
 
-function fieldError(message: string | undefined): { error: string } | {} {
+function fieldError(message: string | undefined): { error: string } | object {
   return message ? { error: message } : {};
 }
 

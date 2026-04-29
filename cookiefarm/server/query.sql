@@ -60,18 +60,18 @@ WHERE
     AND (
         sqlc.narg('search') IS NULL
         OR (
-            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search_like'))
+            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search'))
             OR (sqlc.narg('search_field') = 'all' AND (
-                flag_code    LIKE sqlc.narg('search_like')
-                OR service_name  LIKE sqlc.narg('search_like')
-                OR exploit_name  LIKE sqlc.narg('search_like')
-                OR msg           LIKE sqlc.narg('search_like')
-                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search_like')
+                flag_code    LIKE sqlc.narg('search')
+                OR service_name  LIKE sqlc.narg('search')
+                OR exploit_name  LIKE sqlc.narg('search')
+                OR msg           LIKE sqlc.narg('search')
+                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search')
             ))
-            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search_like'))
+            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search'))
         )
 )
 ORDER BY submit_time DESC
@@ -87,18 +87,18 @@ WHERE
     AND (
         sqlc.narg('search') IS NULL
         OR (
-            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search_like'))
-            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search_like'))
+            (sqlc.narg('search_field') = 'flag_code'    AND flag_code    LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'service_name' AND service_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'exploit_name' AND exploit_name LIKE sqlc.narg('search'))
+            OR (sqlc.narg('search_field') = 'msg'          AND msg          LIKE sqlc.narg('search'))
             OR (sqlc.narg('search_field') = 'all' AND (
-                flag_code    LIKE sqlc.narg('search_like')
-                OR service_name  LIKE sqlc.narg('search_like')
-                OR exploit_name  LIKE sqlc.narg('search_like')
-                OR msg           LIKE sqlc.narg('search_like')
-                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search_like')
+                flag_code    LIKE sqlc.narg('search')
+                OR service_name  LIKE sqlc.narg('search')
+                OR exploit_name  LIKE sqlc.narg('search')
+                OR msg           LIKE sqlc.narg('search')
+                OR CAST(team_id AS TEXT) LIKE sqlc.narg('search')
             ))
-            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search_like'))
+            OR (sqlc.narg('search_field') IS NULL AND flag_code LIKE sqlc.narg('search'))
     )
 );
 
@@ -141,6 +141,28 @@ SELECT
 FROM flags
 GROUP BY team_id
 ORDER BY team_id;
+
+-- name: FlagsTickStats :many
+SELECT
+    (submit_time / ?) * ? AS timestamp,
+    COUNT(*) AS total,
+    SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS queued,
+    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS accepted,
+    SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS denied,
+    SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS error,
+    SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS invalid
+FROM flags
+WHERE submit_time > 0
+GROUP BY timestamp
+ORDER BY timestamp;
+
+-- name: FlagsExploitShare :many
+SELECT
+    exploit_name,
+    COUNT(*) AS value
+FROM flags
+GROUP BY exploit_name
+ORDER BY value DESC, exploit_name ASC;
 
 -- EXPLOITS QUERIES
 

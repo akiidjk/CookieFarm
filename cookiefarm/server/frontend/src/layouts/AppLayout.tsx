@@ -9,15 +9,13 @@ import {
   Flag,
   Gear,
   SignOut,
-  Moon,
   SidebarSimple,
-  Sun,
 } from "@phosphor-icons/react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { apiFetch } from "@/api/client";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LiveDot } from "@/components/LiveDot";
-import { CookieIcon, HouseIcon, HouseSimpleIcon } from "@phosphor-icons/react/dist/ssr";
+import { HouseIcon } from "@phosphor-icons/react/dist/ssr";
 
 const apiStatusSchema = z.object({
   message: z.string(),

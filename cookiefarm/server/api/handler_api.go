@@ -22,6 +22,14 @@ import (
 
 const flagCheckerHostNotConfigureWarnMessage = "Flagchecker host not configured"
 
+func sqlNullFloatToInt64(value sql.NullFloat64) int64 {
+	if !value.Valid {
+		return 0
+	}
+
+	return int64(value.Float64)
+}
+
 // ---------- GET ----------------
 
 // HandleGetConfig returns the current shared configuration of the server.
@@ -104,6 +112,77 @@ func (h *Handler) HandleGetStats(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"flags_stats": rows})
 }
 
+// HandleGetChartStats returns aggregated chart data without returning raw flags.
+//
+// @Summary Get chart stats
+// @Description Returns tick-bucket and exploit-share aggregates for charts.
+// @Tags stats
+// @Produce json
+// @Security CookieAuth
+// @Param tick_seconds query int false "Tick bucket size in seconds"
+// @Success 200 {object} ResponseChartStats
+// @Failure 500 {object} ResponseError
+// @Router /stats/charts [get]
+func (h *Handler) HandleGetChartStats(c fiber.Ctx) error {
+	tickSeconds := fiber.Query[int](c, "tick_seconds", 60)
+	if tickSeconds <= 0 {
+		tickSeconds = 60
+	}
+
+	tickRows, err := h.store.Queries.FlagsTickStats(c.RequestCtx(), database.FlagsTickStatsParams{
+		SubmitTime:   uint64(tickSeconds),
+		SubmitTime_2: uint64(tickSeconds),
+	})
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag tick stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	tickSeries := make([]FlagTickPoint, 0, len(tickRows))
+	for _, row := range tickRows {
+		tickSeries = append(tickSeries, FlagTickPoint{
+			Timestamp: row.Timestamp,
+			Total:     row.Total,
+			Queued:    sqlNullFloatToInt64(row.Queued),
+			Accepted:  sqlNullFloatToInt64(row.Accepted),
+			Denied:    sqlNullFloatToInt64(row.Denied),
+			Error:     sqlNullFloatToInt64(row.Error),
+			Invalid:   sqlNullFloatToInt64(row.Invalid),
+		})
+	}
+
+	exploitRows, err := h.store.Queries.FlagsExploitShare(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag exploit share")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	var totalFlags int64
+	for _, row := range exploitRows {
+		totalFlags += row.Value
+	}
+
+	exploitShare := make([]FlagExploitShare, 0, len(exploitRows))
+	for _, row := range exploitRows {
+		percentage := 0.0
+		if totalFlags > 0 {
+			percentage = (float64(row.Value) / float64(totalFlags)) * 100
+		}
+
+		exploitShare = append(exploitShare, FlagExploitShare{
+			Name:       filepath.Base(row.ExploitName),
+			Value:      row.Value,
+			Percentage: percentage,
+		})
+	}
+
+	return c.JSON(ResponseChartStats{
+		TickSeries:   tickSeries,
+		ExploitShare: exploitShare,
+		TotalFlags:   totalFlags,
+	})
+}
+
 // HandleGetPaginatedFlags returns paginated and filtered flags.
 //
 // @Summary List flags (paginated)
@@ -159,7 +238,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
 		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
-			String: strings.TrimSpace(c.Query("search", "")),
+			String: "%" + strings.TrimSpace(c.Query("search", "")) + "%",
 			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
 		}, // Value of the search query
 		SearchField: sql.NullString{
@@ -181,7 +260,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		ServiceName: serviceNull,                                              // Filter by service name
 		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
-			String: strings.TrimSpace(c.Query("search", "")),
+			String: "%" + strings.TrimSpace(c.Query("search", "")) + "%",
 			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
 		}, // Value of the search query
 		SearchField: sql.NullString{
@@ -477,6 +556,10 @@ func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
 			Error: "Failed to fetch exploits",
 		})
+	}
+
+	if exploits == nil {
+		exploits = []database.Exploit{}
 	}
 
 	return c.JSON(fiber.Map{

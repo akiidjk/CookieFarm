@@ -16,10 +16,9 @@ import {
 import { CanvasRenderer } from "echarts/renderers";
 import { WarningCircle } from "@phosphor-icons/react";
 import { configKey, useConfig } from "@/api/config";
-import { useAllFlags } from "@/api/flags";
-import { useStatsSummary } from "@/api/stats";
+import { useChartStats, useStatsSummary } from "@/api/stats";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
-import { buildExploitShare, buildTickSeries, formatTickLabel } from "./chartData";
+import { formatTickLabel } from "./chartData";
 
 echarts.use([
   BarChart,
@@ -37,26 +36,21 @@ const isDarkMode = true;
 
 export function ChartsPage() {
   const config = useConfig();
-  const flagsQuery = useAllFlags();
+  const chartStatsQuery = useChartStats(config.server.tick_time);
   const summaryQuery = useStatsSummary();
-  const flags = flagsQuery.data!.flags;
+  const chartStats = chartStatsQuery.data!;
   const summary = summaryQuery.data!;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function refreshCharts(): Promise<void> {
-    await Promise.all([swrMutate(configKey), flagsQuery.mutate(), summaryQuery.mutate()]);
+    await Promise.all([swrMutate(configKey), chartStatsQuery.mutate(), summaryQuery.mutate()]);
     setErrorMessage(null);
   }
-  const swrError = flagsQuery.error ?? summaryQuery.error;
+  const swrError = chartStatsQuery.error ?? summaryQuery.error;
   const visibleErrorMessage =
     errorMessage ?? (swrError instanceof Error ? swrError.message : null);
-
-  const tickSeries = useMemo(
-    () => buildTickSeries(flags, config.server.tick_time),
-    [flags, config.server.tick_time],
-  );
-  const exploitShare = useMemo(() => buildExploitShare(flags), [flags]);
-  const topExploits = exploitShare.slice(0, 8);
+  const tickSeries = chartStats.tick_series;
+  const exploitShare = chartStats.exploit_share;
 
   const totalPerTickOption = useMemo(() => {
     return {
@@ -240,7 +234,7 @@ export function ChartsPage() {
     };
   }, [summary]);
 
-  const totalFlags = flags.length;
+  const totalFlags = chartStats.total_flags;
   const latestTickCount = tickSeries[tickSeries.length - 1]?.total ?? 0;
   const leadingExploit = exploitShare[0];
 

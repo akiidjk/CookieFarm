@@ -152,14 +152,16 @@ func (wp *WorkerPool[T]) AddTaskForShard(task T, shardIdx int) error {
 }
 
 func (shard *poolShard[T]) getWorker(task T) (worker *workerInstance[T]) {
-	worker = shard.idleWorker1
-	if worker != nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)), unsafe.Pointer(worker), nil) { //nolint:gosec
+	ptr1 := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)))
+	if ptr1 != nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)), ptr1, nil) { //nolint:gosec
+		worker = (*workerInstance[T])(ptr1)
 		worker.taskChan <- task
 		return worker
 	}
 
-	worker = shard.idleWorker2
-	if worker != nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)), unsafe.Pointer(worker), nil) { //nolint:gosec
+	ptr2 := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)))
+	if ptr2 != nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)), ptr2, nil) { //nolint:gosec
+		worker = (*workerInstance[T])(ptr2)
 		worker.taskChan <- task
 		return worker
 	}
@@ -203,10 +205,10 @@ func (worker *workerInstance[T]) run() {
 func (shard *poolShard[T]) setWorkerIdle(worker *workerInstance[T]) bool {
 	worker.lastUsed = time.Now()
 
-	if shard.idleWorker2 == nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)), nil, unsafe.Pointer(worker)) { //nolint:gosec
+	if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)), nil, unsafe.Pointer(worker)) { //nolint:gosec
 		return true
 	}
-	if shard.idleWorker1 == nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)), nil, unsafe.Pointer(worker)) { //nolint:gosec
+	if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)), nil, unsafe.Pointer(worker)) { //nolint:gosec
 		return true
 	}
 

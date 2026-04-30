@@ -82,7 +82,7 @@ ipython_config.py
 .spyproject
 
 # compose useless
-./tests/docker-compose.yml
+./tests/compose.yml
 
 # Binaries
 tailwindcss

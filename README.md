@@ -104,7 +104,7 @@ shared:
 4. Start the server with Docker Compose:
 
 ```bash
-docker compose -f docker-compose.yml up --build
+docker compose -f compose.yml up --build
 ```
 
 > [!NOTE]

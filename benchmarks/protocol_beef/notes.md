@@ -4,7 +4,7 @@
 
 ## Goal
 
-Overload server and client with 40 hosts, 5 threads per host, 10 ticks, and 30 flag requests per thread.
+Overload server and client with 40 hosts, 5 threads per host, 40 ticks, and 30 flag requests per thread.
 
 ### Summary
 

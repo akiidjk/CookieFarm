@@ -264,7 +264,7 @@ func TestGetPagedFlags_FirstPage_ReturnsCorrectWindow(t *testing.T) {
 		sampleFlag("FLAG{page_003}"),
 	})
 
-	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 2, Offset: 0})
+	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 2, Offset: sql.NullInt64{Int64: 0, Valid: true}})
 	assertNoError(t, err, "GetPagedFlags page 1")
 	assertFlagSliceLen(t, 2, got, "GetPagedFlags page 1")
 }
@@ -277,7 +277,7 @@ func TestGetPagedFlags_SecondPage_ReturnsRemainder(t *testing.T) {
 		sampleFlag("FLAG{page2_003}"),
 	})
 
-	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 2, Offset: 2})
+	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 2, Offset: sql.NullInt64{Int64: 2, Valid: true}})
 	assertNoError(t, err, "GetPagedFlags page 2")
 	assertFlagSliceLen(t, 1, got, "GetPagedFlags page 2")
 }
@@ -286,7 +286,7 @@ func TestGetPagedFlags_OffsetBeyondTotal_ReturnsEmpty(t *testing.T) {
 	q := newTestQueries(t)
 	insertFlags(t, q, []Flag{sampleFlag("FLAG{paged_solo}")})
 
-	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 10, Offset: 999})
+	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 10, Offset: sql.NullInt64{Int64: 999, Valid: true}})
 	assertNoError(t, err, "GetPagedFlags offset>total")
 	assertFlagSliceLen(t, 0, got, "GetPagedFlags offset beyond total")
 }
@@ -301,7 +301,7 @@ func TestGetPagedFlagCodes_FirstPage(t *testing.T) {
 		sampleFlag("FLAG{pcode_003}"),
 	})
 
-	codes, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Limit: 2, Offset: 0})
+	codes, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Limit: 2, Offset: sql.NullInt64{Int64: 0, Valid: true}})
 	assertNoError(t, err, "GetPagedFlagCodes page 1")
 	assertStringSliceLen(t, 2, codes, "GetPagedFlagCodes page 1")
 }
@@ -310,7 +310,7 @@ func TestGetPagedFlagCodes_OffsetBeyondTotal_ReturnsEmpty(t *testing.T) {
 	q := newTestQueries(t)
 	insertFlags(t, q, []Flag{sampleFlag("FLAG{pcode_solo}")})
 
-	codes, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Limit: 10, Offset: 999})
+	codes, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Limit: 10, Offset: sql.NullInt64{Int64: 999, Valid: true}})
 	assertNoError(t, err, "GetPagedFlagCodes offset>total")
 	assertStringSliceLen(t, 0, codes, "GetPagedFlagCodes offset beyond total")
 }
@@ -329,9 +329,9 @@ func TestGetFlagsByTeam_ReturnsOnlyRequestedTeam(t *testing.T) {
 	insertFlags(t, q, []Flag{team1Flag, team2Flag})
 
 	got, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{
-		TeamID: 1,
+		TeamID: sql.NullInt64{Int64: 1, Valid: true},
 		Limit:  10,
-		Offset: 0,
+		Offset: sql.NullInt64{Int64: 0, Valid: true},
 	})
 	assertNoError(t, err, "GetFlagsByTeam team=1")
 	assertFlagSliceLen(t, 1, got, "GetFlagsByTeam team=1 result")
@@ -347,9 +347,9 @@ func TestGetFlagsByTeam_TeamWithNoFlags_ReturnsEmpty(t *testing.T) {
 	insertFlag(t, q, flag)
 
 	got, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{
-		TeamID: 99,
+		TeamID: sql.NullInt64{Int64: 99, Valid: true},
 		Limit:  10,
-		Offset: 0,
+		Offset: sql.NullInt64{Int64: 0, Valid: true},
 	})
 	assertNoError(t, err, "GetFlagsByTeam non-existent team")
 	assertFlagSliceLen(t, 0, got, "GetFlagsByTeam non-existent team result")
@@ -363,11 +363,19 @@ func TestGetFlagsByTeam_PaginationWorks(t *testing.T) {
 		insertFlag(t, q, f)
 	}
 
-	page1, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{TeamID: 7, Limit: 3, Offset: 0})
+	page1, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{
+		TeamID: sql.NullInt64{Int64: 7, Valid: true},
+		Limit:  3,
+		Offset: sql.NullInt64{Int64: 0, Valid: true},
+	})
 	assertNoError(t, err, "GetFlagsByTeam page1")
 	assertFlagSliceLen(t, 3, page1, "GetFlagsByTeam page1")
 
-	page2, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{TeamID: 7, Limit: 3, Offset: 3})
+	page2, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{
+		TeamID: sql.NullInt64{Int64: 7, Valid: true},
+		Limit:  3,
+		Offset: sql.NullInt64{Int64: 3, Valid: true},
+	})
 	assertNoError(t, err, "GetFlagsByTeam page2")
 	assertFlagSliceLen(t, 2, page2, "GetFlagsByTeam page2")
 }
@@ -664,12 +672,12 @@ func TestCountFlags_AfterInserts_ReturnsCorrectCount(t *testing.T) {
 // the nullable / interface fields so callers only override what they need.
 func buildFilteredParams(teamID int64, status int64, search, searchField string, limit, offset int64) GetFilteredFlagsParams {
 	return GetFilteredFlagsParams{
-		TeamID:      sql.NullInt64{Int64: teamID, Valid: teamID != 0},
-		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
-		Search:      nullOrValue(search),
-		SearchField: nullOrValue(searchField),
-		Limit:       sql.NullInt64{Int64: limit, Valid: true},
-		Offset:      sql.NullInt64{Int64: offset, Valid: true},
+		// TeamID:      sql.NullInt64{Int64: teamID, Valid: teamID != 0},
+		// Status:      sql.NullInt64{Int64: status, Valid: status != 0},
+		// Search:      nullOrValue(search),
+		// SearchField: nullOrValue(searchField),
+		Limit:  sql.NullInt64{Int64: limit, Valid: true},
+		Offset: sql.NullInt64{Int64: offset, Valid: true},
 	}
 }
 

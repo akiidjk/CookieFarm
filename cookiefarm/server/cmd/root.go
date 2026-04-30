@@ -15,7 +15,7 @@ import (
 	"server/core"
 	"server/database"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 
 	"server/api"
 

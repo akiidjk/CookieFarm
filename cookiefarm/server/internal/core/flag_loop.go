@@ -75,7 +75,7 @@ func (r *Runner) UpdateFlags(flags []protocols.ResponseProtocol) {
 	}
 
 	valid := flags[:0] // Reuse the same slice to avoid extra allocations
-
+	logger.Log.Debug().Msgf("Processing %d flag responses", len(flags))
 	for _, f := range flags {
 		if _, exists := statusCounts[f.Status]; exists {
 			statusCounts[f.Status]++

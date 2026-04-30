@@ -129,10 +129,7 @@ func (h *Handler) HandleGetChartStats(c fiber.Ctx) error {
 		tickSeconds = 60
 	}
 
-	tickRows, err := h.store.Queries.FlagsTickStats(c.RequestCtx(), database.FlagsTickStatsParams{
-		SubmitTime:   uint64(tickSeconds),
-		SubmitTime_2: uint64(tickSeconds),
-	})
+	tickRows, err := h.store.Queries.FlagsTickStats(c.RequestCtx(), uint64(tickSeconds))
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to fetch flag tick stats")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
@@ -141,7 +138,7 @@ func (h *Handler) HandleGetChartStats(c fiber.Ctx) error {
 	tickSeries := make([]FlagTickPoint, 0, len(tickRows))
 	for _, row := range tickRows {
 		tickSeries = append(tickSeries, FlagTickPoint{
-			Timestamp: row.Timestamp,
+			Timestamp: row.Bucket,
 			Total:     row.Total,
 			Queued:    sqlNullFloatToInt64(row.Queued),
 			Accepted:  sqlNullFloatToInt64(row.Accepted),
@@ -206,10 +203,11 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		logger.Log.Warn().Msg("Invalid or missing limit parameter")
 		limit = config.DefaultLimit
 	}
-	offset := fiber.Query[int](c, "offset", config.DefaultOffset)
+
+	offset := fiber.Query[int](c, "offset", 0)
 	if offset < 0 {
 		logger.Log.Warn().Msg("Invalid offset parameter, using default")
-		offset = config.DefaultOffset
+		offset = limit
 	}
 
 	// Build filter options from query parameters
@@ -245,9 +243,17 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
 			Valid:  true,
 		}, // Field to apply the search query to (default: flag_code)
-		Limit:  sql.NullInt64{Int64: int64(limit), Valid: true},
-		Offset: sql.NullInt64{Int64: int64(offset), Valid: true},
+		Limit:       sql.NullInt64{Int64: int64(limit), Valid: true},
+		Offset:      sql.NullInt64{Int64: int64(offset), Valid: true},
+		ServiceName: serviceNull,
 	}
+
+	logger.Log.Debug().
+		Int64("status", opts.Status.Int64).
+		Int64("team_id", opts.TeamID.Int64).
+		Int64("limit", int64(limit)).
+		Int64("offset", int64(offset)).
+		Msg("Fetching paginated flags with filters")
 
 	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
 	if err != nil {
@@ -256,9 +262,8 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	optsCount := database.CountFilteredFlagsParams{
-		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		ServiceName: serviceNull,                                              // Filter by service name
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
+		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
+		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
 			String: "%" + strings.TrimSpace(c.Query("search", "")) + "%",
 			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
@@ -266,8 +271,8 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		SearchField: sql.NullString{
 			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
 			Valid:  true,
-		}, // Field to apply the search query (default: flag_code)
-
+		}, // Field to apply the search query to (default: flag_code)
+		ServiceName: serviceNull,
 	}
 
 	// Get filtered count for accurate pagination
@@ -347,11 +352,10 @@ func (h *Handler) HandlePostFlags(c fiber.Ctx) error {
 		logger.Log.Error().Err(err).Msg("Invalid SubmitFlags payload")
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(ResponseError{Error: err.Error()})
 	}
-	for _, flag := range payload.Flags {
-		if err := h.store.Queries.AddFlag(c.RequestCtx(), database.MapFromFlagToDBParams(flag)); err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to insert flags")
-			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
-		}
+
+	if err := h.store.BulkInsertThings(c, payload.Flags); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to insert flags")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
 	return c.JSON(ResponseSuccess{Message: "Flags submitted successfully"})

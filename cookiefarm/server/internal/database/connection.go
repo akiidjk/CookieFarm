@@ -6,7 +6,7 @@ import (
 	_ "embed"
 	"time"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed schema.sql
@@ -21,7 +21,7 @@ type Config struct {
 }
 
 func NewDB(cfg Config) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", cfg.DSN)
+	db, err := sql.Open("sqlite3", cfg.DSN)
 	if err != nil {
 		return nil, err
 	}

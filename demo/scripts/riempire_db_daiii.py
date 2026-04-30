@@ -20,10 +20,10 @@ headers = {"Content-Type": "application/json", "Cookie": f"token={s.cookies['tok
 
 # Simulation parameters
 # Number of 120-second windows ("tickets") to emulate
-tickets_to_emulate = 200
+tickets_to_emulate = 100
 window_seconds = 120
-min_flags_per_window = 20
-max_flags_per_window = 120
+min_flags_per_window = 10
+max_flags_per_window = 100
 
 services = ["http", "ssh", "dns", "smtp", "ftp", "redis", "mysql", "postgres"]
 
@@ -55,7 +55,6 @@ for ticket in range(tickets_to_emulate):
         flags_batch.append(
             {
                 "status": random.randint(0, 2),
-                "id": str(uuid.uuid4()),
                 "team_id": random.randint(1, 80),
                 "port_service": random.randint(1, 65535),
                 "service_name": service_name,

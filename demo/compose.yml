@@ -53,12 +53,6 @@ services:
     networks:
       net:
         ipv4_address: 10.10.8.1
-  service9:
-    build:
-      context: ./app
-    networks:
-      net:
-        ipv4_address: 10.10.9.1
 
 networks:
   net:

@@ -556,18 +556,18 @@ if [ "$mode" = "build" ]; then
 
     cd cookiefarm
     gum_spin "Building and starting containers (this may take a while)..." \
-        sh -c 'docker compose -f docker-compose.yml up --build -d 2>&1'
+        sh -c 'docker compose -f compose.yml up --build -d 2>&1'
 
 # ── Compose-only mode: download + docker up ───────────────────────────────────
 else
-    require_cmd wget "Install wget to download docker-compose.yml"
+    require_cmd wget "Install wget to download compose.yml"
     require_cmd docker "Install Docker to run containers"
 
     mkdir -p CookieFarm
     cd CookieFarm
 
-    gum_spin "Downloading docker-compose.yml..." \
-        wget -q https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/refs/heads/main/cookiefarm/docker-compose.yml
+    gum_spin "Downloading compose.yml..." \
+        wget -q https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/refs/heads/main/cookiefarm/compose.yml
 
     gum_ask_basic
     write_env .      # → ./.env
@@ -575,7 +575,7 @@ else
     confirm
 
     gum_spin "Starting containers..." \
-        sh -c 'docker compose -f docker-compose.yml up --build -d 2>&1'
+        sh -c 'docker compose -f compose.yml up --build -d 2>&1'
 fi
 
 # ── Success banner ────────────────────────────────────────────────────────────

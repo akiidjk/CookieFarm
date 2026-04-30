@@ -9,8 +9,8 @@ description: Practical CookieFarm server deployment with Docker Compose.
 
 Repository includes:
 
-- `cookiefarm/docker-compose.yml` (prebuilt image)
-- `cookiefarm/docker-compose.build.yml` (local build)
+- `cookiefarm/compose.yml` (prebuilt image)
+- `cookiefarm/compose.build.yml` (local build)
 
 ## Quick start
 
@@ -22,7 +22,7 @@ docker compose up -d
 Local build mode:
 
 ```bash
-docker compose -f docker-compose.build.yml up -d --build
+docker compose -f compose.build.yml up -d --build
 ```
 
 ## Recommended persistence

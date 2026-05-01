@@ -275,7 +275,7 @@ func TestAddFlag_ReachesMaxBufferSize_TriggersFlush(t *testing.T) {
 	fc := newStartedCollector(t, store)
 
 	// Fill the buffer up to maxBufferSize to trigger an immediate flush.
-	for i := range maxBufferSize {
+	for i := range defaultMaxBufferSize {
 		f := sampleFlag("FLAG{maxbuf_" + itoa(i) + "}")
 		if err := fc.AddFlag(f); err != nil {
 			t.Fatalf("AddFlag %d: %v", i, err)
@@ -296,7 +296,7 @@ func TestAddFlag_WhenBufferFull_FlagsWrittenToDB(t *testing.T) {
 	// We insert exactly maxBufferSize flags.  The last one should trigger the
 	// immediate flush path inside AddFlag.
 	lastCode := "FLAG{maxbuf_last}"
-	for i := range maxBufferSize - 1 {
+	for i := range defaultMaxBufferSize - 1 {
 		f := sampleFlag("FLAG{maxbuf_pre_" + itoa(i) + "}")
 		if err := fc.AddFlag(f); err != nil {
 			t.Fatalf("AddFlag pre %d: %v", i, err)
@@ -426,7 +426,7 @@ func TestFlushWithContext_WithFlag_PersistsToDatabase(t *testing.T) {
 func TestFlushWithContext_NilStore_ReturnsError(t *testing.T) {
 	// Build a collector with no store explicitly set.
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    nil,
 	}
@@ -447,7 +447,7 @@ func TestFlushWithContext_NilStore_ReturnsError(t *testing.T) {
 func TestFlushWithContext_NilStore_RequeuesFlags(t *testing.T) {
 	// Same setup as above — nil store, one flag in buffer.
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    nil,
 	}
@@ -601,7 +601,7 @@ func TestGetStats_AfterFailedFlush_FailedFlushesIncremented(t *testing.T) {
 	// FailedFlushes is correctly incremented.
 	// Create a collector with a nil store so every flush attempt fails.
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    nil,
 		running:  true,
@@ -728,7 +728,7 @@ func TestAddFlag_ErrorPath_MutexNotLeaked(t *testing.T) {
 	fc.Start()
 
 	// Fill the buffer up to maxBufferSize - 1.
-	for i := range maxBufferSize - 1 {
+	for i := range defaultMaxBufferSize - 1 {
 		f := sampleFlag("FLAG{mutexleak_pre_" + itoa(i) + "}")
 		// These go into the buffer; they don't trigger the flush path yet.
 		// We bypass the error check because the store is only consulted on flush.

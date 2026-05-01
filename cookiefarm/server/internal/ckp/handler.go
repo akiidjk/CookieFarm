@@ -58,7 +58,7 @@ func handler(conn Connection) {
 			continue
 		}
 
-		logger.Log.Debug().
+		logger.Log.Trace().
 			Str("flag", flag.FlagCode).
 			Int64("team_id", flag.TeamID).
 			Msg("Received flag from CKP connection")
@@ -86,7 +86,7 @@ func findString(data []byte) (string, int, error) {
 }
 
 func parse(data []byte) (database.Flag, error) {
-	logger.Log.Debug().Bytes("raw_data", data).Msg("Parsing CKP flag data")
+	logger.Log.Trace().Bytes("raw_data", data).Msg("Parsing CKP flag data")
 	if len(data) < 8 {
 		return database.Flag{}, errors.New("invalid length")
 	}

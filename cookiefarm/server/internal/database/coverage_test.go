@@ -628,7 +628,7 @@ func TestStoreWithTx_BulkInsert_ThenReadInExternalTx(t *testing.T) {
 // flush to fail and verifies the collector keeps running afterwards.
 func TestStart_TimerFires_FlushErrorCollectorKeepsRunning(t *testing.T) {
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    nil, // nil store → every flush fails
 	}
@@ -663,7 +663,7 @@ func TestStart_TimerFires_FlushErrorCollectorKeepsRunning(t *testing.T) {
 // timer-triggered flush fails, FailedFlushes is incremented.
 func TestStart_TimerFires_FlushErrorRecordedInStats(t *testing.T) {
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    nil,
 	}
@@ -785,7 +785,7 @@ func TestFlushWithContext_BufferOverflow_FlagsDropped(t *testing.T) {
 	}
 
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize*3),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize*3),
 		stopChan: make(chan struct{}),
 		store:    store,
 		running:  true,
@@ -794,7 +794,7 @@ func TestFlushWithContext_BufferOverflow_FlagsDropped(t *testing.T) {
 
 	// Step 1: put half the max capacity into the buffer — these become
 	// flagsToInsert when FlushWithContext snaps them.
-	half := maxBufferSize / 2
+	half := defaultMaxBufferSize / 2
 	for i := range half {
 		fc.buffer = append(fc.buffer, sampleFlag(fmt.Sprintf("FLAG{of_snap_%03d}", i)))
 	}
@@ -818,7 +818,7 @@ func TestFlushWithContext_BufferOverflow_FlagsDropped(t *testing.T) {
 	// len(buffer) + len(flagsToInsert=half) > maxBufferSize.
 	// We add (maxBufferSize - half + 1) entries to guarantee overflow.
 	fc.mutex.Lock()
-	overflow := maxBufferSize - half + 1
+	overflow := defaultMaxBufferSize - half + 1
 	for i := range overflow {
 		fc.buffer = append(fc.buffer, sampleFlag(fmt.Sprintf("FLAG{of_fill_%03d}", i)))
 	}

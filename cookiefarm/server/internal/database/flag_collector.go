@@ -9,21 +9,24 @@ import (
 )
 
 const (
-	maxBufferSize = 100
-	flushInterval = 10 * time.Second
-	flushTimeout  = 10 * time.Second
+	defaultMaxBufferSize = 500
+	minBufferSize        = 100
+	maxBufferSizeLimit   = 5000
+	flushInterval        = 10 * time.Second
+	flushTimeout         = 10 * time.Second
 )
 
 // FlagCollector manages the collection and flushing of flags to the database
 type FlagCollector struct {
-	buffer     []Flag         // Buffer for storing flags
-	mutex      sync.Mutex     // Mutex for thread-safe access
-	flushTimer *time.Timer    // Timer for periodic flushing
-	stopChan   chan struct{}  // Channel to signal stop
-	running    bool           // Indicates if the collector is running
-	flushCond  *sync.Cond     // Condition variable for flushing
-	stats      CollectorStats // Statistics about the collector
-	store      *Store         // Reference to the database store
+	buffer        []Flag         // Buffer for storing flags
+	mutex         sync.Mutex     // Mutex for thread-safe access
+	flushTimer    *time.Timer    // Timer for periodic flushing
+	stopChan      chan struct{}  // Channel to signal stop
+	running       bool           // Indicates if the collector is running
+	flushCond     *sync.Cond     // Condition variable for flushing
+	stats         CollectorStats // Statistics about the collector
+	store         *Store         // Reference to the database store
+	maxBufferSize int
 }
 
 // CollectorStats holds statistics about the flag collector
@@ -48,8 +51,9 @@ var (
 func GetCollector() *FlagCollector {
 	once.Do(func() {
 		c := &FlagCollector{
-			buffer:   make([]Flag, 0, maxBufferSize),
-			stopChan: make(chan struct{}),
+			buffer:        make([]Flag, 0, defaultMaxBufferSize),
+			stopChan:      make(chan struct{}),
+			maxBufferSize: defaultMaxBufferSize,
 		}
 		c.flushCond = sync.NewCond(&c.mutex)
 		collector = c
@@ -63,6 +67,37 @@ func (fc *FlagCollector) SetStore(s *Store) {
 	fc.mutex.Lock()
 	defer fc.mutex.Unlock()
 	fc.store = s
+}
+
+func (fc *FlagCollector) GetMaxBufferSize() int {
+	fc.mutex.Lock()
+	defer fc.mutex.Unlock()
+	return fc.maxBufferSize
+}
+
+func (fc *FlagCollector) adjustBufferSize() {
+	stats := fc.stats
+
+	totalFlushes := stats.SuccessfulFlushes + stats.FailedFlushes
+	if totalFlushes < 5 {
+		return
+	}
+	failRate := float64(stats.FailedFlushes) / float64(totalFlushes)
+
+	switch {
+	case failRate > 0.3:
+		fc.maxBufferSize = max(minBufferSize, fc.maxBufferSize/2)
+		logger.Log.Warn().
+			Float64("fail_rate", failRate).
+			Int("new_max", fc.maxBufferSize).
+			Msg("High flush failure rate, reducing buffer size")
+
+	case failRate < 0.05 && stats.TotalFlagsFlushed > 1000:
+		fc.maxBufferSize = min(maxBufferSizeLimit, fc.maxBufferSize*2)
+		logger.Log.Debug().
+			Int("new_max", fc.maxBufferSize).
+			Msg("Healthy flush rate, increasing buffer size")
+	}
 }
 
 // Start the collector to begin collecting flags
@@ -109,7 +144,7 @@ func (fc *FlagCollector) Start() {
 	}()
 
 	logger.Log.Info().
-		Int("max_buffer", maxBufferSize).
+		Int("max_buffer", defaultMaxBufferSize).
 		Dur("flush_interval", flushInterval).
 		Msg("Flag collector started")
 }
@@ -165,11 +200,16 @@ func (fc *FlagCollector) AddFlag(flag Flag) error {
 	fc.stats.TotalFlagsReceived++
 	fc.buffer = append(fc.buffer, flag)
 
-	if len(fc.buffer) >= maxBufferSize {
-		logger.Log.Debug().Msg("Flushing flag buffer due to size limit")
+	if len(fc.buffer) >= fc.maxBufferSize {
+		logger.Log.Debug().
+			Int("buffer_size", len(fc.buffer)).
+			Int("max_buffer_size", fc.maxBufferSize).
+			Msg("Flushing flag buffer due to size limit")
+
 		flagsToInsert := make([]Flag, len(fc.buffer))
 		copy(flagsToInsert, fc.buffer)
 		fc.buffer = fc.buffer[:0]
+		fc.adjustBufferSize()
 
 		fc.mutex.Unlock()
 		ctx := context.Background()
@@ -182,7 +222,7 @@ func (fc *FlagCollector) AddFlag(flag Flag) error {
 		fc.updateFlushStats(err, len(flagsToInsert))
 
 		if err != nil {
-			if len(fc.buffer)+len(flagsToInsert) <= maxBufferSize {
+			if len(fc.buffer)+len(flagsToInsert) <= defaultMaxBufferSize {
 				fc.buffer = append(fc.buffer, flagsToInsert...)
 			} else {
 				logger.Log.Error().
@@ -215,7 +255,6 @@ func (fc *FlagCollector) FlushWithContext(ctx context.Context) error {
 	flagsToInsert := make([]Flag, len(fc.buffer))
 	copy(flagsToInsert, fc.buffer)
 	fc.buffer = fc.buffer[:0]
-
 	fc.stats.TotalFlushes++
 
 	if fc.store == nil {
@@ -226,16 +265,20 @@ func (fc *FlagCollector) FlushWithContext(ctx context.Context) error {
 		return nilErr
 	}
 
+	fc.adjustBufferSize()
 	fc.mutex.Unlock()
-	var err error
-	fc.store.BulkInsertThings(ctx, flagsToInsert)
+
+	err := fc.store.BulkInsertThings(ctx, flagsToInsert)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error flushing flag buffer to database")
+	}
 	fc.mutex.Lock()
 	defer fc.mutex.Unlock()
 
 	fc.updateFlushStats(err, len(flagsToInsert))
 
 	if err != nil {
-		if len(fc.buffer)+len(flagsToInsert) <= maxBufferSize {
+		if len(fc.buffer)+len(flagsToInsert) <= defaultMaxBufferSize {
 			fc.buffer = append(fc.buffer, flagsToInsert...)
 		} else {
 			logger.Log.Error().

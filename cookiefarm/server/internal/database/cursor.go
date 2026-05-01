@@ -12,7 +12,10 @@ type Cursor struct {
 }
 
 func EncodeCursor(submitTime int64, id int64) string {
-	b, _ := json.Marshal(Cursor{Time: submitTime, ID: id})
+	b, err := json.Marshal(Cursor{Time: submitTime, ID: id})
+	if err != nil {
+		return ""
+	}
 	return base64.StdEncoding.EncodeToString(b)
 }
 

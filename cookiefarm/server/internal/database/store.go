@@ -57,10 +57,7 @@ func (s *Store) BulkInsertThings(ctx context.Context, rows []Flag) error {
 	}()
 
 	for start := 0; start < len(rows); start += maxRowsPerBatch {
-		end := start + maxRowsPerBatch
-		if end > len(rows) {
-			end = len(rows)
-		}
+		end := min(start+maxRowsPerBatch, len(rows))
 
 		batch := rows[start:end]
 

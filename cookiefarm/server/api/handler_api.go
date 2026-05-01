@@ -250,7 +250,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		Int64("status", opts.Status.Int64).
 		Int64("team_id", opts.TeamID.Int64).
 		Int64("limit", int64(limit)).
-		Int64("cursor id", int64(cursorID.Int64)).
+		Int64("cursor id", cursorID.Int64).
 		Int64("cursor time", cursorTime.Int64).
 		Msg("Fetching paginated flags with filters")
 
@@ -261,7 +261,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	var nextCursor string
-	if len(flags) == int(limit) {
+	if len(flags) == limit {
 		last := flags[len(flags)-1]
 		nextCursor = database.EncodeCursor(last.SubmitTime.Int64, last.ID)
 	}

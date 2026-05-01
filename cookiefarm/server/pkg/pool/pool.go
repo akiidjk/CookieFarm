@@ -152,14 +152,14 @@ func (wp *WorkerPool[T]) AddTaskForShard(task T, shardIdx int) error {
 }
 
 func (shard *poolShard[T]) getWorker(task T) (worker *workerInstance[T]) {
-	ptr1 := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)))
+	ptr1 := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)))                                  //nolint:gosec
 	if ptr1 != nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker1)), ptr1, nil) { //nolint:gosec
 		worker = (*workerInstance[T])(ptr1)
 		worker.taskChan <- task
 		return worker
 	}
 
-	ptr2 := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)))
+	ptr2 := atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)))                                  //nolint:gosec
 	if ptr2 != nil && atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&shard.idleWorker2)), ptr2, nil) { //nolint:gosec
 		worker = (*workerInstance[T])(ptr2)
 		worker.taskChan <- task

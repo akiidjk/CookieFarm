@@ -213,9 +213,7 @@ func (fc *FlagCollector) AddFlag(flag Flag) error {
 
 		fc.mutex.Unlock()
 		ctx := context.Background()
-		var err error
-
-		err = fc.store.BulkInsertThings(ctx, flagsToInsert)
+		var err = fc.store.BulkInsertThings(ctx, flagsToInsert)
 
 		fc.mutex.Lock()
 

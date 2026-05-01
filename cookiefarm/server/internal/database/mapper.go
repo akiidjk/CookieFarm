@@ -30,7 +30,7 @@ func MapFromResponseProtocolToParamsToUpdate(params protocols.ResponseProtocol) 
 }
 
 func MapFromGetFilteredFlagsRowToFlag(row []GetFilteredFlagsRow) []Flag {
-	var flags []Flag
+	var flags = make([]Flag, 0, len(row))
 	for _, r := range row {
 		flags = append(flags, Flag{
 			ID:           r.ID,

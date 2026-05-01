@@ -40,6 +40,10 @@ type SigninRequest struct {
 	Password string `json:"password"`
 }
 
+type AuthVerifyResponse struct {
+	Username string `json:"username"`
+}
+
 // Pagination structure for manage data in the view
 type Pagination struct {
 	PageList []int // List of page numbers to display in the pagination

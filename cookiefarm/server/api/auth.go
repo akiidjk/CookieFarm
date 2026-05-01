@@ -160,13 +160,29 @@ func HandleVerify(c fiber.Ctx) error {
 			"error": "JWT token is required",
 		})
 	}
-	if _, err := VerifyToken(token); err != nil {
+	jwtToken, err := VerifyToken(token)
+	if err != nil {
 		logger.Log.Warn().Err(err).Msg("JWT verification failed")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid or expired JWT token",
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
+
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid JWT token",
+		})
+	}
+
+	username, ok := claims["username"].(string)
+	if !ok || username == "" {
+		username = "cookieguest"
+	}
+
+	return c.Status(fiber.StatusOK).JSON(AuthVerifyResponse{
+		Username: username,
+	})
 }
 
 // HandleLogout clears the JWT cookie.

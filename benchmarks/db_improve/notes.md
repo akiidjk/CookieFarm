@@ -1,6 +1,6 @@
 # Benchmark Notes
 
-## 30-04-2025
+## 1-05-2025
 
 ## Goal
 
@@ -9,7 +9,7 @@ Check the perfomance differences between the current implementation of the Datab
 ### Summary
 
 - 40 hosts
-- sha: 2ce6d275998a6cc73d6ec39ce378810c61ed1771
+- sha: 9c2ed70be7e5248f3f7fd2c4ff9ca35b7c6a17e5
 - branch: improve/database
 - cks version: 1.3.0
 - ckc version: 1.3.0
@@ -100,7 +100,7 @@ base_submit_time = random.randint(1_700_000_000, 1_750_000_000)
 
 - 2ce6d275998a6cc73d6ec39ce378810c61ed1771:
 
-CPU	53%
+CPU	5,3%
 user	0,676
 system	0,075
 total	1,413
@@ -108,3 +108,19 @@ total	1,413
 Total flags 35448 in 1,413 seconds so 25.008 flags/s
 
 Fetch random page 40ms
+
+- 2d9a804d4bb855d93c7f4eb68dd20b6ee8d7c6da:
+
+CPU	0%
+user	0,705
+system	0,093
+total	4:25,05
+
+Total flags 37339 in 265,05 seconds so 140.8 flags/s
+
+Fetch random page 0.23ms
+
+But in the old implementation i use limit and offset to fetch the flags, so the time to fetch a random page grows with the number of flags in the database, while in the new implementation i use a id to fetch the flags, so the time to fetch a random page is constant. This is why in the new implementation it takes 40ms to 70ms to fetch a random page, while in the old implementation it takes 0.23ms but grows with the number of flags.
+
+Old: 230k flags like from 170ms to 220ms
+New: 250k flags from 70ms to 77ms

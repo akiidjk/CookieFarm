@@ -1,42 +1,44 @@
 # Benchmark Notes
 
-## 1-05-2025
+## 30-04-2025
 
 ## Goal
 
-Check the perfomance differences between the current implementation of the Database and the new one using mattn + some query tweks. We will run the same exploit on both implementations and compare the results.
+Overload the two solution with 40 hosts, 5 threads per host, 40 ticks, and 30 flag requests.
+
+See difference between DF and CK
 
 ### Summary
 
 - 40 hosts
-- sha: 9c2ed70be7e5248f3f7fd2c4ff9ca35b7c6a17e5
-- branch: improve/database
+- sha: 69cc5821a16fc38e6670e666bc0c8d5ee311e57a
+- branch: dev
 - cks version: 1.3.0
 - ckc version: 1.3.0
 
-The original is the dev branch with hash 2d9a804d4bb855d93c7f4eb68dd20b6ee8d7c6da
-
 ## CK config
 
-### 9c2ed70be7e5248f3f7fd2c4ff9ca35b7c6a17e5
+### CK Server spec
 
 32 GB RAM
 32 vCPU
 LAN
+
+(same machine)
 
 - Build command: `just server-build-prod`, `just server-build-plugins-prod`
 - Command run: `../bin/cks -c`
-- Run command: `time python3 riempire_db_daiii.py`
 
-### 2d9a804d4bb855d93c7f4eb68dd20b6ee8d7c6da
+### CK Client spec
 
 32 GB RAM
 32 vCPU
 LAN
 
+(same machine)
+
 - Build command: `just client-build-prod`
 - Command run: `./bin/ckc exploit run -e benchmark -n CookieService -t 5 -T 10`
-- Run command: `time python3 riempire_db_daiii.py`
 
 ### Cks config used:
 
@@ -46,7 +48,7 @@ configured: true
 # Server
 server:
   url_flag_checker: "http://localhost:5001/flags"
-  team_token: "pippo"
+  team_token: ""
   submit_flag_checker_time: 30
   max_flag_batch_size: 5000
   protocol: "cc_http"
@@ -69,58 +71,74 @@ shared:
   url_flag_ids: "http://localhost:5001/flagIds"
 ```
 
-### Test config
+### Ckc config used:
+
+```yaml
+host: 127.0.0.1
+username: cookieguest
+port: 8080
+https: false
+```
+
+### Exploit used
 
 ```python
-tickets_to_emulate = 150
-window_seconds = 120
-min_flags_per_window = 99
-max_flags_per_window = 299
+#!/usr/bin/env python3
+import requests
+from cookiefarm import exploit_manager
 
-services = ["http", "ssh", "dns", "smtp", "ftp", "redis", "mysql", "postgres"]
+@exploit_manager
+def exploit(ip, port, name_service, flag_ids: list):
+    for _ in range(30):
+        r = requests.get(f"http://{ip}:{port}/get-flag")
+        print(r.text)
+```
 
-exploits = [
-    "sqli_blind",
-    "rce_template_injection",
-    "path_traversal",
-    "auth_bypass",
-    "deserialization_rce",
-    "command_injection",
-    "ssrf",
-    "buffer_overflow",
-]
+## DF 
 
-batch_size = 4_000
-base_submit_time = random.randint(1_700_000_000, 1_750_000_000)
+### Server config
+
+```python
+CONFIG = {
+    "TEAMS": {"Team #{}".format(i): "10.10.{}.1".format(i) for i in range(0, 39 + 1)},
+    "FLAG_FORMAT": r"[A-Z0-9]{31}=",
+    "SYSTEM_PROTOCOL": "ructf_http",
+    "SYSTEM_URL": "http://localhost:5001/submit",
+    "SYSTEM_TOKEN": "password",
+    "SUBMIT_FLAG_LIMIT": 100,
+    "SUBMIT_PERIOD": 5,
+    "FLAG_LIFETIME": 5 * 60,
+    "SERVER_PASSWORD": "password",
+    "ENABLE_API_AUTH": False,
+    "API_TOKEN": "00000000000000000000",
+}
+```
+
+
+### Exploit used
+
+```python
+#!/usr/bin/env python3
+import sys
+
+import requests
+
+
+def exploit(ip, port, name_service, flag_ids: list):
+    for _ in range(30):
+        r = requests.get(f"http://{ip}:{port}/get-flag")
+        print(r.text, flush=True)
+
+
+exploit(sys.argv[1], 8081, None, [])
 ```
 
 ### Results
 
-#### Time of inserting flags in the database:
+#### Perfomance metrics:
 
-- 2ce6d275998a6cc73d6ec39ce378810c61ed1771:
+![perf](./result.png)
 
-CPU	5,3%
-user	0,676
-system	0,075
-total	1,413
+We can see a lot of ram usage from the DF client (500mb), but also a lot of CPU usage from the CK client and server (5%). The DF client is using more RAM because he spawn a different process for each team so more team == more ram instead CK client use threads and not process so less ram usage but more CPU usage.
 
-Total flags 35448 in 1,413 seconds so 25.008 flags/s
-
-Fetch random page 40ms
-
-- 2d9a804d4bb855d93c7f4eb68dd20b6ee8d7c6da:
-
-CPU	0%
-user	0,705
-system	0,093
-total	4:25,05
-
-Total flags 37339 in 265,05 seconds so 140.8 flags/s
-
-Fetch random page 0.23ms
-
-But in the old implementation i use limit and offset to fetch the flags, so the time to fetch a random page grows with the number of flags in the database, while in the new implementation i use a id to fetch the flags, so the time to fetch a random page is constant. This is why in the new implementation it takes 40ms to 70ms to fetch a random page, while in the old implementation it takes 0.23ms but grows with the number of flags.
-
-Old: 230k flags like from 170ms to 220ms
-New: 250k flags from 70ms to 77ms
+Also the CK server is using more CPU because of some internal constraint given by sqlc.

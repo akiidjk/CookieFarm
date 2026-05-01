@@ -20,10 +20,10 @@ headers = {"Content-Type": "application/json", "Cookie": f"token={s.cookies['tok
 
 # Simulation parameters
 # Number of 120-second windows ("tickets") to emulate
-tickets_to_emulate = 100
+tickets_to_emulate = 129
 window_seconds = 120
-min_flags_per_window = 10
-max_flags_per_window = 100
+min_flags_per_window = 99
+max_flags_per_window = 456
 
 services = ["http", "ssh", "dns", "smtp", "ftp", "redis", "mysql", "postgres"]
 
@@ -38,7 +38,7 @@ exploits = [
     "buffer_overflow",
 ]
 
-batch_size = 2_000
+batch_size = 4_000
 base_submit_time = random.randint(1_700_000_000, 1_750_000_000)
 
 flags_batch = []

@@ -436,11 +436,9 @@ func (h *Handler) HandlePostFlagsStandalone(c fiber.Ctx) error {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(ResponseError{Error: err.Error()})
 	}
 
-	for _, flag := range payload.Flags {
-		if err := h.store.Queries.AddFlag(c.RequestCtx(), database.MapFromFlagToDBParams(flag)); err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to insert single flag")
-			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
-		}
+	if err := h.store.BulkInsertThings(c.RequestCtx(), payload.Flags); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to insert single flag")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
 	if h.config.GetURLFlagChecker() == "" {

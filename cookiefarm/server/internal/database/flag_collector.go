@@ -174,9 +174,9 @@ func (fc *FlagCollector) AddFlag(flag Flag) error {
 		fc.mutex.Unlock()
 		ctx := context.Background()
 		var err error
-		for _, flag := range flagsToInsert {
-			err = fc.store.Queries.AddFlag(ctx, MapFromFlagToDBParams(flag))
-		}
+
+		err = fc.store.BulkInsertThings(ctx, flagsToInsert)
+
 		fc.mutex.Lock()
 
 		fc.updateFlushStats(err, len(flagsToInsert))
@@ -228,9 +228,7 @@ func (fc *FlagCollector) FlushWithContext(ctx context.Context) error {
 
 	fc.mutex.Unlock()
 	var err error
-	for _, flag := range flagsToInsert {
-		err = fc.store.Queries.AddFlag(ctx, MapFromFlagToDBParams(flag))
-	}
+	fc.store.BulkInsertThings(ctx, flagsToInsert)
 	fc.mutex.Lock()
 	defer fc.mutex.Unlock()
 

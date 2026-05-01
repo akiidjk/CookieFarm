@@ -213,7 +213,7 @@ func (fc *FlagCollector) AddFlag(flag Flag) error {
 
 		fc.mutex.Unlock()
 		ctx := context.Background()
-		var err = fc.store.BulkInsertThings(ctx, flagsToInsert)
+		err := fc.store.BulkInsertFlags(ctx, flagsToInsert)
 
 		fc.mutex.Lock()
 
@@ -266,7 +266,7 @@ func (fc *FlagCollector) FlushWithContext(ctx context.Context) error {
 	fc.adjustBufferSize()
 	fc.mutex.Unlock()
 
-	err := fc.store.BulkInsertThings(ctx, flagsToInsert)
+	err := fc.store.BulkInsertFlags(ctx, flagsToInsert)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Error flushing flag buffer to database")
 	}

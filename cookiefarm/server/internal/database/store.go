@@ -37,7 +37,7 @@ func (s *Store) WithTx(ctx context.Context, fn func(*Queries) error) error {
 // team_id, msg, username, exploit_name
 // ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
-func (s *Store) BulkInsertThings(ctx context.Context, rows []Flag) error {
+func (s *Store) BulkInsertFlags(ctx context.Context, rows []Flag) error {
 	if len(rows) == 0 {
 		return nil
 	}

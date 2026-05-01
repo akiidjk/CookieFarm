@@ -9,7 +9,7 @@ Check the perfomance differences between the current implementation of the Datab
 ### Summary
 
 - 40 hosts
-- sha: 9c2ed70be7e5248f3f7fd2c4ff9ca35b7c6a17e5
+- sha: 2ce6d275998a6cc73d6ec39ce378810c61ed1771
 - branch: improve/database
 - cks version: 1.3.0
 - ckc version: 1.3.0
@@ -26,19 +26,17 @@ LAN
 
 - Build command: `just server-build-prod`, `just server-build-plugins-prod`
 - Command run: `../bin/cks -c`
-- Build command: `just client-build-prod`
-- Command run: `./bin/ckc exploit run -e benchmark -n CookieService -t 5 -T 10`
+- Run command: `time python3 riempire_db_daiii.py`
 
 ### 2d9a804d4bb855d93c7f4eb68dd20b6ee8d7c6da
 
 32 GB RAM
-16 vCPU
+32 vCPU
 LAN
 
 - Build command: `just client-build-prod`
 - Command run: `./bin/ckc exploit run -e benchmark -n CookieService -t 5 -T 10`
-- Build command: `just client-build-prod`
-- Command run: `./bin/ckc exploit run -e benchmark -n CookieService -t 5 -T 10`
+- Run command: `time python3 riempire_db_daiii.py`
 
 ### Cks config used:
 
@@ -71,29 +69,40 @@ shared:
   url_flag_ids: "http://localhost:5001/flagIds"
 ```
 
-### Ckc config used:
-
-```yaml
-host: 127.0.0.1
-username: cookieguest
-port: 8080
-https: false
-```
-
-### Exploit used
+### Test config
 
 ```python
-#!/usr/bin/env python3
-import requests
-from cookiefarm import exploit_manager
+tickets_to_emulate = 150
+window_seconds = 120
+min_flags_per_window = 99
+max_flags_per_window = 299
 
-@exploit_manager
-def exploit(ip, port, name_service, flag_ids: list):
-    for _ in range(30):
-        r = requests.get(f"http://{ip}:{port}/get-flag")
-        print(r.text)
+services = ["http", "ssh", "dns", "smtp", "ftp", "redis", "mysql", "postgres"]
+
+exploits = [
+    "sqli_blind",
+    "rce_template_injection",
+    "path_traversal",
+    "auth_bypass",
+    "deserialization_rce",
+    "command_injection",
+    "ssrf",
+    "buffer_overflow",
+]
+
+batch_size = 4_000
+base_submit_time = random.randint(1_700_000_000, 1_750_000_000)
 ```
 
 ### Results
 
-#### Perfomance metrics:
+#### Time of inserting flags in the database:
+
+- 2ce6d275998a6cc73d6ec39ce378810c61ed1771:
+
+CPU	53%
+user	0,676
+system	0,075
+total	1,413
+
+Total flags 35448 in 1,413 seconds so 25.008 flags/s

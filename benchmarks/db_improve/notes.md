@@ -106,3 +106,5 @@ system	0,075
 total	1,413
 
 Total flags 35448 in 1,413 seconds so 25.008 flags/s
+
+Fetch random page 40ms

@@ -87,7 +87,7 @@ func init() {
 
 func setupEnv(cfg *config.ConfigManager) (*database.Store, *core.Runner) {
 	cfgDB := database.Config{
-		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL",
+		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL&mode=rwc",
 		MaxOpenConns:    25,
 		MaxIdleConns:    5,
 		ConnMaxLifetime: 5 * time.Minute,

@@ -204,16 +204,12 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		limit = config.DefaultLimit
 	}
 
-	offset := fiber.Query[int](c, "offset", 0)
-	if offset < 0 {
-		logger.Log.Warn().Msg("Invalid offset parameter, using default")
-		offset = limit
-	}
-
 	// Build filter options from query parameters
 	optsStatus := int64(fiber.Query[int](c, "status", 5))
 	optsService := strings.TrimSpace(c.Query("service", ""))
 	teamStr := strings.TrimSpace(c.Query("team", ""))
+	searchStr := strings.TrimSpace(c.Query("search", ""))
+	searchField := strings.TrimSpace(c.Query("search_field", ""))
 
 	var serviceNull sql.NullString
 	if optsService != "" {
@@ -232,27 +228,30 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		}
 	}
 
+	cursorTime, cursorID := database.ParseCursor(c.Query("cursor", ""))
 	opts := database.GetFilteredFlagsParams{
-		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
-		Search: sql.NullString{
-			String: "%" + strings.TrimSpace(c.Query("search", "")) + "%",
-			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
-		}, // Value of the search query
-		SearchField: sql.NullString{
-			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
-			Valid:  true,
-		}, // Field to apply the search query to (default: flag_code)
-		Limit:       sql.NullInt64{Int64: int64(limit), Valid: true},
-		Offset:      sql.NullInt64{Int64: int64(offset), Valid: true},
+		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5},
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
 		ServiceName: serviceNull,
+		Search: sql.NullString{
+			String: "%" + searchStr + "%",
+			Valid:  searchStr != "",
+		},
+		SearchField: sql.NullString{
+			String: searchField,
+			Valid:  searchStr != "" && searchField != "",
+		},
+		Limit:      sql.NullInt64{Int64: int64(limit), Valid: true},
+		CursorTime: cursorTime,
+		CursorID:   cursorID,
 	}
 
 	logger.Log.Debug().
 		Int64("status", opts.Status.Int64).
 		Int64("team_id", opts.TeamID.Int64).
 		Int64("limit", int64(limit)).
-		Int64("offset", int64(offset)).
+		Int64("cursor id", int64(cursorID.Int64)).
+		Int64("cursor time", cursorTime.Int64).
 		Msg("Fetching paginated flags with filters")
 
 	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
@@ -261,17 +260,23 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
+	var nextCursor string
+	if len(flags) == int(limit) {
+		last := flags[len(flags)-1]
+		nextCursor = database.EncodeCursor(last.SubmitTime.Int64, last.ID)
+	}
+
 	optsCount := database.CountFilteredFlagsParams{
 		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
 		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
 		Search: sql.NullString{
-			String: "%" + strings.TrimSpace(c.Query("search", "")) + "%",
-			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
-		}, // Value of the search query
+			String: "%" + searchStr + "%",
+			Valid:  searchStr != "",
+		},
 		SearchField: sql.NullString{
-			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
-			Valid:  true,
-		}, // Field to apply the search query to (default: flag_code)
+			String: searchField,
+			Valid:  searchStr != "" && searchField != "",
+		},
 		ServiceName: serviceNull,
 	}
 
@@ -283,12 +288,13 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	if flags == nil {
-		flags = []database.Flag{}
+		flags = []database.GetFilteredFlagsRow{}
 	}
 
 	return c.JSON(ResponseFlags{
 		Nflags: nFlags,
-		Flags:  flags,
+		Next:   nextCursor,
+		Flags:  database.MapFromGetFilteredFlagsRowToFlag(flags),
 	})
 }
 

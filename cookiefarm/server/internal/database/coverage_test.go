@@ -364,30 +364,6 @@ func TestGetFirstNFlagCodes_QueryContextError_ReturnsError(t *testing.T) {
 	}
 }
 
-func TestGetPagedFlags_QueryContextError_ReturnsError(t *testing.T) {
-	q := &Queries{db: &errorDB{}}
-	_, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Offset: sql.NullInt64{Int64: 10, Valid: true}, Limit: sql.NullInt64{Int64: 0, Valid: true}})
-	if err == nil {
-		t.Error("GetPagedFlags with broken DBTX must return an error")
-	}
-}
-
-func TestGetPagedFlagCodes_QueryContextError_ReturnsError(t *testing.T) {
-	q := &Queries{db: &errorDB{}}
-	_, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Offset: sql.NullInt64{Int64: 10, Valid: true}, Limit: sql.NullInt64{Int64: 0, Valid: true}})
-	if err == nil {
-		t.Error("GetPagedFlagCodes with broken DBTX must return an error")
-	}
-}
-
-func TestGetFlagsByTeam_QueryContextError_ReturnsError(t *testing.T) {
-	q := &Queries{db: &errorDB{}}
-	_, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{TeamID: sql.NullInt64{Int64: 1, Valid: true}, Limit: sql.NullInt64{Int64: 10, Valid: true}, Offset: sql.NullInt64{Int64: 0, Valid: true}})
-	if err == nil {
-		t.Error("GetFlagsByTeam with broken DBTX must return an error")
-	}
-}
-
 func TestGetUnsubmittedFlags_QueryContextError_ReturnsError(t *testing.T) {
 	q := &Queries{db: &errorDB{}}
 	_, err := q.GetUnsubmittedFlags(context.Background(), 10)

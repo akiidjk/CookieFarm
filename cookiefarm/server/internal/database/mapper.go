@@ -28,3 +28,28 @@ func MapFromResponseProtocolToParamsToUpdate(params protocols.ResponseProtocol) 
 		ResponseTime: uint64(time.Now().Unix()),
 	}
 }
+
+func MapFromGetFilteredFlagsRowToFlag(row []GetFilteredFlagsRow) []Flag {
+	var flags []Flag
+	for _, r := range row {
+		flags = append(flags, Flag{
+			ID:           r.ID,
+			FlagCode:     r.FlagCode,
+			ServiceName:  r.ServiceName,
+			PortService:  uint16(r.PortService),
+			TeamID:       r.TeamID,
+			Username:     r.Username,
+			ExploitName:  r.ExploitName,
+			Status:       r.Status,
+			Msg:          r.Msg,
+			SubmitTime:   uint64(r.SubmitTime.Int64),
+			ResponseTime: uint64(r.ResponseTime.Int64),
+		})
+	}
+
+	if len(flags) == 0 {
+		return []Flag{}
+	}
+
+	return flags
+}

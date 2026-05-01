@@ -545,62 +545,84 @@ func (q *Queries) GetExploitsByUsername(ctx context.Context, arg GetExploitsByUs
 }
 
 const getFilteredFlags = `-- name: GetFilteredFlags :many
-SELECT id, flag_code, service_name, port_service, submit_time, response_time, msg, status, team_id, username, exploit_name, deleted_at
-FROM flags
-WHERE
-    deleted_at IS NULL
-    AND (flags.team_id = ?1 OR ?1 IS NULL)
-    AND (flags.status = ?2 OR ?2 is NULL)
-    AND (flags.service_name = ?3 OR ?3 IS NULL)
-    AND (
-        ?4 IS NULL
-        OR (
-            (?5 = 'flag_code'    AND flags.flag_code    LIKE ?4)
-            OR (?5 = 'service_name' AND flags.service_name LIKE ?4)
-            OR (?5 = 'exploit_name' AND flags.exploit_name LIKE ?4)
-            OR (?5 = 'msg'          AND flags.msg          LIKE ?4)
-            OR (?5 = 'all' AND (
-                flags.flag_code    LIKE ?4
-                OR flags.service_name  LIKE ?4
-                OR flags.exploit_name  LIKE ?4
-                OR flags.msg           LIKE ?4
-                OR CAST(flags.team_id AS TEXT) LIKE ?4
+WITH filtered AS (
+    SELECT id, flag_code, service_name, port_service, submit_time, response_time, msg, status, team_id, username, exploit_name, deleted_at
+    FROM flags
+    WHERE
+        deleted_at IS NULL
+        AND (flags.team_id    = ?4      OR ?4      IS NULL)
+        AND (flags.status     = ?5       OR ?5       IS NULL)
+        AND (flags.service_name = ?6 OR ?6 IS NULL)
+        AND (
+            ?7 IS NULL
+            OR (?8 = 'flag_code'    AND flags.flag_code    LIKE ?7)
+            OR (?8 = 'service_name' AND flags.service_name LIKE ?7)
+            OR (?8 = 'exploit_name' AND flags.exploit_name LIKE ?7)
+            OR (?8 = 'msg'          AND flags.msg          LIKE ?7)
+            OR (?8 = 'all' AND (
+                flags.flag_code     LIKE ?7
+                OR flags.service_name   LIKE ?7
+                OR flags.exploit_name   LIKE ?7
+                OR flags.msg            LIKE ?7
+                OR CAST(flags.team_id AS TEXT) LIKE ?7
             ))
-            OR (?5 IS NULL AND flags.flag_code LIKE ?4)
-    ))
-    AND id BETWEEN
-    (SELECT MIN(f.id) FROM flags as f WHERE f.deleted_at IS NULL) + ?6 AND
-    (SELECT MIN(f.id) FROM flags as f WHERE f.deleted_at IS NULL) + ?6 + ?7 - 1
+            OR (?8 IS NULL AND flags.flag_code LIKE ?7)
+        )
+)
+SELECT id, flag_code, service_name, port_service, submit_time, response_time, msg, status, team_id, username, exploit_name, deleted_at FROM filtered
+WHERE (
+    ?1 IS NULL
+    OR submit_time < ?1
+    OR (submit_time = ?1 AND id < ?2)
+)
 ORDER BY submit_time DESC, id DESC
+LIMIT ?3
 `
 
 type GetFilteredFlagsParams struct {
+	CursorTime  interface{}    `json:"cursor_time"`
+	CursorID    sql.NullInt64  `json:"cursor_id"`
+	Limit       sql.NullInt64  `json:"limit"`
 	TeamID      sql.NullInt64  `json:"team_id"`
 	Status      sql.NullInt64  `json:"status"`
 	ServiceName sql.NullString `json:"service_name"`
 	Search      interface{}    `json:"search"`
 	SearchField interface{}    `json:"search_field"`
-	Offset      sql.NullInt64  `json:"offset"`
-	Limit       sql.NullInt64  `json:"limit"`
 }
 
-func (q *Queries) GetFilteredFlags(ctx context.Context, arg GetFilteredFlagsParams) ([]Flag, error) {
+type GetFilteredFlagsRow struct {
+	ID           int64         `json:"id"`
+	FlagCode     string        `json:"flag_code"`
+	ServiceName  string        `json:"service_name"`
+	PortService  int64         `json:"port_service"`
+	SubmitTime   sql.NullInt64 `json:"submit_time"`
+	ResponseTime sql.NullInt64 `json:"response_time"`
+	Msg          string        `json:"msg"`
+	Status       int64         `json:"status"`
+	TeamID       int64         `json:"team_id"`
+	Username     string        `json:"username"`
+	ExploitName  string        `json:"exploit_name"`
+	DeletedAt    interface{}   `json:"deleted_at"`
+}
+
+func (q *Queries) GetFilteredFlags(ctx context.Context, arg GetFilteredFlagsParams) ([]GetFilteredFlagsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getFilteredFlags,
+		arg.CursorTime,
+		arg.CursorID,
+		arg.Limit,
 		arg.TeamID,
 		arg.Status,
 		arg.ServiceName,
 		arg.Search,
 		arg.SearchField,
-		arg.Offset,
-		arg.Limit,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Flag
+	var items []GetFilteredFlagsRow
 	for rows.Next() {
-		var i Flag
+		var i GetFilteredFlagsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.FlagCode,
@@ -726,141 +748,6 @@ func (q *Queries) GetFlagByCode(ctx context.Context, flagCode string) (Flag, err
 		&i.DeletedAt,
 	)
 	return i, err
-}
-
-const getFlagsByTeam = `-- name: GetFlagsByTeam :many
-SELECT id, flag_code, service_name, port_service, submit_time, response_time, msg, status, team_id, username, exploit_name, deleted_at
-FROM flags
-WHERE team_id = ?1
-AND id > ?2 AND id < (?2 + ?3)
-AND deleted_at IS NULL
-ORDER BY submit_time DESC
-`
-
-type GetFlagsByTeamParams struct {
-	TeamID sql.NullInt64 `json:"team_id"`
-	Offset sql.NullInt64 `json:"offset"`
-	Limit  interface{}   `json:"limit"`
-}
-
-func (q *Queries) GetFlagsByTeam(ctx context.Context, arg GetFlagsByTeamParams) ([]Flag, error) {
-	rows, err := q.db.QueryContext(ctx, getFlagsByTeam, arg.TeamID, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Flag
-	for rows.Next() {
-		var i Flag
-		if err := rows.Scan(
-			&i.ID,
-			&i.FlagCode,
-			&i.ServiceName,
-			&i.PortService,
-			&i.SubmitTime,
-			&i.ResponseTime,
-			&i.Msg,
-			&i.Status,
-			&i.TeamID,
-			&i.Username,
-			&i.ExploitName,
-			&i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getPagedFlagCodes = `-- name: GetPagedFlagCodes :many
-SELECT flag_code FROM flags
-WHERE id > ?1 AND id < (?1 + ?2)
-AND deleted_at IS NULL
-ORDER BY submit_time DESC
-`
-
-type GetPagedFlagCodesParams struct {
-	Offset sql.NullInt64 `json:"offset"`
-	Limit  interface{}   `json:"limit"`
-}
-
-func (q *Queries) GetPagedFlagCodes(ctx context.Context, arg GetPagedFlagCodesParams) ([]string, error) {
-	rows, err := q.db.QueryContext(ctx, getPagedFlagCodes, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var flag_code string
-		if err := rows.Scan(&flag_code); err != nil {
-			return nil, err
-		}
-		items = append(items, flag_code)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getPagedFlags = `-- name: GetPagedFlags :many
-SELECT id, flag_code, service_name, port_service, submit_time, response_time, msg, status, team_id, username, exploit_name, deleted_at
-FROM flags
-WHERE id > ?1 AND id < (?1 + ?2)
-AND deleted_at IS NULL
-ORDER BY submit_time DESC
-`
-
-type GetPagedFlagsParams struct {
-	Offset sql.NullInt64 `json:"offset"`
-	Limit  interface{}   `json:"limit"`
-}
-
-func (q *Queries) GetPagedFlags(ctx context.Context, arg GetPagedFlagsParams) ([]Flag, error) {
-	rows, err := q.db.QueryContext(ctx, getPagedFlags, arg.Offset, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Flag
-	for rows.Next() {
-		var i Flag
-		if err := rows.Scan(
-			&i.ID,
-			&i.FlagCode,
-			&i.ServiceName,
-			&i.PortService,
-			&i.SubmitTime,
-			&i.ResponseTime,
-			&i.Msg,
-			&i.Status,
-			&i.TeamID,
-			&i.Username,
-			&i.ExploitName,
-			&i.DeletedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getUnsubmittedFlagCodes = `-- name: GetUnsubmittedFlagCodes :many

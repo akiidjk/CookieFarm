@@ -1,14 +1,13 @@
+import base64
 import json
 import random
-import string
-import uuid
 
 from shitcurl import login, send_post_request
 
 
-def random_flag_code(length=50):
-    charset = string.ascii_uppercase + string.digits
-    return "BTC{" + "".join(random.choices(charset, k=length)) + "}"
+def random_flag_code(length=32):
+    random_bytes = bytes(random.randint(0, 255) for _ in range(length))
+    return base64.b64encode(random_bytes).decode("utf-8")[:length].upper()
 
 
 # login

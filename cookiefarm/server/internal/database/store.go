@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	COUNT_FLAGS_QUERY = `SELECT COUNT(*) FROM flags WHERE deleted_at IS NULL`
-	BASE_FLAGS_QUERY  = `SELECT id, flag_code, service_name, port_service, submit_time, response_time, status, team_id, msg, username, exploit_name, deleted_at  FROM flags WHERE deleted_at IS NULL`
+	CountFlagsQuery = `SELECT COUNT(*) FROM flags WHERE deleted_at IS NULL`
+	BaseFlagsQuery  = `SELECT id, flag_code, service_name, port_service, submit_time, response_time, status, team_id, msg, username, exploit_name, deleted_at  FROM flags WHERE deleted_at IS NULL`
 )
 
 type Store struct {
@@ -111,6 +111,14 @@ func (s *Store) BulkInsertFlags(ctx context.Context, rows []Flag) error {
 	return tx.Commit()
 }
 
+var allowedSearchFields = map[string]bool{
+	"flag_code":    true,
+	"service_name": true,
+	"username":     true,
+	"exploit_name": true,
+	"msg":          true,
+}
+
 func buildQuery(base string, q FlagsQuery) (*strings.Builder, []any) {
 	var (
 		sb   strings.Builder
@@ -132,8 +140,12 @@ func buildQuery(base string, q FlagsQuery) (*strings.Builder, []any) {
 		args = append(args, q.ServiceName.String)
 	}
 	if q.Search.Valid && q.SearchField.Valid {
+		if !allowedSearchFields[q.SearchField.String] {
+			return nil, args
+		}
 		sb.WriteString(" AND " + q.SearchField.String + " LIKE ?")
-		args = append(args, "%"+q.Search.String+"%")
+		safe := strings.NewReplacer(`%`, `\%`, `_`, `\_`).Replace(q.Search.String)
+		args = append(args, "%"+safe+"%")
 	}
 
 	return &sb, args
@@ -150,9 +162,7 @@ func (s *Store) QueryFlagsParams(ctx context.Context, q FlagsQuery) ([]Flag, err
 		q.Limit.Int64 = 40
 	}
 
-	var args []any
-
-	sb, args := buildQuery(BASE_FLAGS_QUERY, q)
+	sb, args := buildQuery(BaseFlagsQuery, q)
 
 	sb.WriteString(" AND (submit_time < ? OR (submit_time = ? AND id < ?))")
 	args = append(args, q.CursorTime.Int64, q.CursorTime.Int64, q.CursorID.Int64)
@@ -196,9 +206,7 @@ func (s *Store) QueryFlagsParams(ctx context.Context, q FlagsQuery) ([]Flag, err
 }
 
 func (s *Store) CountFlags(ctx context.Context, q FlagsQuery) (int64, error) {
-	var args []any
-
-	sb, args := buildQuery(COUNT_FLAGS_QUERY, q)
+	sb, args := buildQuery(CountFlagsQuery, q)
 
 	var count int64
 	err := s.db.QueryRowContext(ctx, sb.String(), args...).Scan(&count)

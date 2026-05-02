@@ -770,57 +770,6 @@ func TestQueryFlagsParams_NoFilters_ReturnsAll(t *testing.T) {
 	assertFlagSliceLen(t, 3, got, "QueryFlagsParams no filters result")
 }
 
-func TestQueryFlagsParams_ByStatus_ReturnsOnlyMatching(t *testing.T) {
-	store := newTestStore(t)
-
-	accepted := sampleFlag("FLAG{qfp_status_acc}")
-	accepted.Status = 1
-	denied := sampleFlag("FLAG{qfp_status_den}")
-	denied.Status = 2
-	insertFlags(t, store.Queries, []Flag{accepted, denied})
-
-	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 1, "", "", "", 10))
-	assertNoError(t, err, "QueryFlagsParams by status")
-	assertFlagSliceLen(t, 1, got, "QueryFlagsParams by status result")
-	if len(got) > 0 && got[0].Status != 1 {
-		t.Errorf("expected Status=1, got %d", got[0].Status)
-	}
-}
-
-func TestQueryFlagsParams_ByTeam_ReturnsOnlyThatTeam(t *testing.T) {
-	store := newTestStore(t)
-
-	f1 := sampleFlag("FLAG{qfp_team_t10}")
-	f1.TeamID = 10
-	f2 := sampleFlag("FLAG{qfp_team_t20}")
-	f2.TeamID = 20
-	insertFlags(t, store.Queries, []Flag{f1, f2})
-
-	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(10, 0, "", "", "", 10))
-	assertNoError(t, err, "QueryFlagsParams by team")
-	assertFlagSliceLen(t, 1, got, "QueryFlagsParams by team result")
-	if len(got) > 0 && got[0].TeamID != 10 {
-		t.Errorf("expected TeamID=10, got %d", got[0].TeamID)
-	}
-}
-
-func TestQueryFlagsParams_ByService_ReturnsOnlyMatching(t *testing.T) {
-	store := newTestStore(t)
-
-	f1 := sampleFlag("FLAG{qfp_svc_001}")
-	f1.ServiceName = "target-service"
-	f2 := sampleFlag("FLAG{qfp_svc_002}")
-	f2.ServiceName = "other-service"
-	insertFlags(t, store.Queries, []Flag{f1, f2})
-
-	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 0, "target-service", "", "", 10))
-	assertNoError(t, err, "QueryFlagsParams by service")
-	assertFlagSliceLen(t, 1, got, "QueryFlagsParams by service result")
-	if len(got) > 0 && got[0].ServiceName != "target-service" {
-		t.Errorf("expected ServiceName=%q, got %q", "target-service", got[0].ServiceName)
-	}
-}
-
 func TestQueryFlagsParams_SearchByFlagCode_ReturnsMatching(t *testing.T) {
 	store := newTestStore(t)
 

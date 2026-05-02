@@ -8,6 +8,7 @@
 
 # Track background process PIDs
 PIDS=()
+BENCHMARK_DUR=5
 
 # Cleanup function to kill all background processes and avoid zombie processes
 cleanup() {
@@ -31,7 +32,7 @@ trap cleanup SIGINT SIGTERM EXIT
 echo "==> Setting up CookieFarm"
 just server-run-prod &
 PIDS+=($!)
-sleep 5
+sleep 3
 
 echo "==> Setting up DestructiveFarm"
 (cd /tmp/DestructiveFarm && ./server/start_server.sh) &
@@ -40,8 +41,8 @@ sleep 5
 
 echo "Servers should be running in the background."
 
-echo "==> Press Enter when you are ready to START the exploits..."
-read -p "Press [Enter] key to start..."
+# echo "==> Press Enter when you are ready to START the exploits..."
+# read -p "Press [Enter] key to start..."
 
 echo "==> Starting CookieFarm Exploit..."
 # Example command to run CF exploit:
@@ -65,12 +66,17 @@ CPU_RAM_PID=$!
 PIDS+=($CPU_RAM_PID)
 
 echo "==> Starting flag count timeline generation..."
-./generate_flag_timeline.sh &
+./generate_flag_timeline.sh $BENCHMARK_DUR &
 TIMELINE_PID=$!
 PIDS+=($TIMELINE_PID)
 
-echo "==> Benchmark is running. Waiting for 10 minutes (600 seconds) for completion..."
+echo "==> Benchmark is running. Waiting for $BENCHMARK_DUR seconds for completion..."
 wait $TIMELINE_PID
+
+echo "==> Benchmark duration completed. Stopping exploits and monitoring..."
+pkill -f "../../../bin/ckc exploit run -e benchmark -n CookieService -t 5 -T 10"
+pkill -f "python3 ./start_sploit.py benchmark.py -u http://localhost:5000 --attack-period 5"
+pkill -f "python3 /tmp/DestructiveFarm/client/benchmark.py"
 
 echo "==> Benchmark measurement finished. Stopping exploits and servers..."
 
@@ -79,6 +85,8 @@ echo "==> Running pagination benchmarks..."
 
 echo "==> Parsing CPU and RAM stats..."
 ./parse_cpu_ram.sh
+
+./break_the_query.sh
 
 echo "==> Generating charts..."
 python3 generate_charts.py \
@@ -89,6 +97,10 @@ python3 generate_charts.py \
     --cf-lat ../output/cf_latency_cold.json \
     --df-lat-warm ../output/df_latency_warm.json \
     --cf-lat-warm ../output/cf_latency_warm.json \
+    --df-lat-break ../output/df_latency_cold_breakQUERY.json \
+    --cf-lat-break ../output/cf_latency_cold_breakQUERY.json \
+    --df-lat-warm-break ../output/df_latency_warm_breakQUERY.json \
+    --cf-lat-warm-break ../output/cf_latency_warm_breakQUERY.json \
     --output ../output/charts/
 
 echo "==> Benchmark complete! Results and charts are in the 'benchmarks/ckvsdf/output' folder."

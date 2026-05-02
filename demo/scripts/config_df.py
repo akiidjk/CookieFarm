@@ -1,5 +1,5 @@
 CONFIG = {
-    "TEAMS": {"Team #{}".format(i): "10.10.{}.1".format(i) for i in range(0, 40 + 1)},
+    "TEAMS": {"Team #{}".format(i): "10.10.{}.1".format(i) for i in range(1, 40)},
     "FLAG_FORMAT": r"[A-Z0-9]{31}=",
     "SYSTEM_PROTOCOL": "ructf_http",
     "SYSTEM_URL": "http://localhost:5001/flags",

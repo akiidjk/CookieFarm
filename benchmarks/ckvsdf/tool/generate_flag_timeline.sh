@@ -3,28 +3,22 @@
 # Make sure we have directories ready
 mkdir -p ../output
 
-# CookieFarm (Polling SQLite database directly)
-echo "Starting CookieFarm Timeline generation..."
+CF_DB="../../../cookiefarm/cookiefarm.db"
+DF_DB="/tmp/DestructiveFarm/server/flags.sqlite"
+CF_OUT="../output/cf_flag_count_timeline.txt"
+DF_OUT="../output/df_flag_count_timeline.txt"
+QUERY="SELECT COUNT(*) FROM flags"
+DURATION="${1:-1200}"
+
+echo "==> Starting synchronized flag count timeline generation..."
+echo "    CF DB: $CF_DB"
+echo "    DF DB: $DF_DB"
+echo "    Duration: $DURATION seconds"
+
 python3 generate_flag_timeline.py \
-    --db ../../../cookiefarm/cookiefarm.db \
-    --query "SELECT COUNT(*) FROM flags" \
-    --output ../output/cf_flag_count_timeline.txt \
-    --duration 1200 &
-CF_PID=$!
+    --source "CF:${CF_DB}:${QUERY}:${CF_OUT}" \
+    --source "DF:${DF_DB}:${QUERY}:${DF_OUT}" \
+    --interval 0.5 \
+    --duration $DURATION
 
-# DestructiveFarm (Polling SQLite database directly)
-echo "Starting DestructiveFarm Timeline generation..."
-python3 generate_flag_timeline.py \
-    --db /tmp/DestructiveFarm/server/flags.sqlite \
-    --query "SELECT COUNT(*) FROM flags" \
-    --output ../output/df_flag_count_timeline.txt \
-    --duration 1200 &
-DF_PID=$!
-
-echo "Both timelines are being generated in the background."
-echo "CookieFarm PID: $CF_PID"
-echo "DestructiveFarm PID: $DF_PID"
-
-wait $CF_PID
-wait $DF_PID
 echo "Done."

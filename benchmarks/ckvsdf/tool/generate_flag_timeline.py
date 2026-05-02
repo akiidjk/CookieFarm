@@ -2,31 +2,22 @@
 """
 generate_flag_timeline.py — Records flag count growth over time during a benchmark run.
 
-Polls the server's flag count endpoint every 500ms and writes:
+Polls multiple SQLite databases simultaneously (same tick using threads) and writes:
     <epoch_ms> <count>
-to a file, which is later consumed by generate_charts.py.
+to separate output files.
 
 Usage:
+    # Multi-source synchronized polling (recommended):
     python3 generate_flag_timeline.py \
-        --url   http://localhost:8080/api/v1/flags/count \
-        --field count \
-        --output benchmark/cookiefarm/flag_count_timeline.txt \
+        --source "CF:../../../cookiefarm/cookiefarm.db:SELECT COUNT(*) FROM flags:../output/cf_flag_count_timeline.txt" \
+        --source "DF:/tmp/DestructiveFarm/server/flags.sqlite:SELECT COUNT(*) FROM flags:../output/df_flag_count_timeline.txt" \
         --duration 600
 
-    # Or query a SQLite database directly:
+    # Single-source legacy mode:
     python3 generate_flag_timeline.py \
         --db cookiefarm.db \
-        --query "SELECT COUNT(*) FROM flags" \
-        --output benchmark/cookiefarm/flag_count_timeline.txt \
+        --output ../output/cf_flag_count_timeline.txt \
         --duration 600
-
-    # Or stop manually with Ctrl+C — partial data is always saved.
-
-Supported response shapes:
-    {"count": 1234}
-    {"data": {"total": 1234}}
-    {"flags": [...]}          ← will count array length if --field not resolvable
-    Plain integer text: 1234
 """
 
 import argparse
@@ -35,6 +26,7 @@ import os
 import signal
 import sqlite3
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -42,28 +34,35 @@ import urllib.request
 # ── Args ───────────────────────────────────────────────────────────────────────
 
 parser = argparse.ArgumentParser(
-    description="Poll a flag count endpoint or database and record a timeline for benchmark charting."
+    description="Poll SQLite databases simultaneously and record flag count timelines."
 )
-parser.add_argument("--url", required=False, help="Full URL of the flag count endpoint")
 parser.add_argument(
-    "--db", required=False, help="Path to SQLite database to query directly"
+    "--source",
+    action="append",
+    default=[],
+    metavar="LABEL:DB_PATH:QUERY:OUTPUT",
+    help=(
+        "A source definition. Format: LABEL:DB_PATH:QUERY:OUTPUT_FILE. "
+        "Repeatable for multiple simultaneous sources."
+    ),
+)
+# Legacy single-source args
+parser.add_argument("--db", required=False, help="(legacy) Path to a single SQLite DB")
+parser.add_argument(
+    "--url", required=False, help="(legacy) URL of a flag count endpoint"
 )
 parser.add_argument(
     "--query",
-    required=False,
     default="SELECT COUNT(*) FROM flags",
-    help="SQL query to execute if --db is used",
+    help="(legacy) SQL query for single --db mode",
 )
 parser.add_argument(
-    "--field",
-    default="count",
-    help="JSON field name for the count value (default: count). Supports dot notation: data.total",
+    "--output", required=False, help="(legacy) Output file for single source"
 )
 parser.add_argument(
-    "--output",
-    required=True,
-    help="Output file path, e.g. benchmark/cookiefarm/flag_count_timeline.txt",
+    "--field", default="count", help="(legacy) JSON field for --url mode"
 )
+parser.add_argument("--header", action="append", default=[], metavar="KEY:VALUE")
 parser.add_argument(
     "--interval",
     type=float,
@@ -71,211 +70,179 @@ parser.add_argument(
     help="Polling interval in seconds (default: 0.5)",
 )
 parser.add_argument(
-    "--duration",
-    type=int,
-    default=0,
-    help="Stop after N seconds (default: 0 = run until Ctrl+C)",
+    "--duration", type=int, default=0, help="Stop after N seconds (0 = Ctrl+C)"
 )
-parser.add_argument(
-    "--timeout",
-    type=int,
-    default=5,
-    help="HTTP request or DB timeout in seconds (default: 5)",
-)
-parser.add_argument(
-    "--header",
-    action="append",
-    default=[],
-    metavar="KEY:VALUE",
-    help="Extra HTTP headers, e.g. --header 'Authorization: Bearer TOKEN'. Repeatable.",
-)
+parser.add_argument("--timeout", type=int, default=5, help="DB/HTTP timeout in seconds")
 args = parser.parse_args()
 
-if not args.url and not args.db:
-    parser.error("Must provide either --url or --db")
+# ── Build source list ──────────────────────────────────────────────────────────
+
+
+class Source:
+    def __init__(self, label: str, db: str, query: str, output: str):
+        self.label = label
+        self.db = db
+        self.query = query
+        self.output = output
+        self.samples: list[tuple[int, int]] = []
+        self.lock = threading.Lock()
+
+
+sources: list[Source] = []
+
+for raw in args.source:
+    parts = raw.split(":", 3)
+    if len(parts) != 4:
+        print(
+            f"ERROR: --source must be LABEL:DB_PATH:QUERY:OUTPUT_FILE, got: {raw}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    label, db, query, output = parts
+    sources.append(Source(label.strip(), db.strip(), query.strip(), output.strip()))
+
+# Legacy fallback
+if not sources:
+    if not args.db and not args.url:
+        parser.error(
+            "Must provide at least one --source, or --db / --url for legacy mode."
+        )
+    if not args.output:
+        parser.error("--output is required in legacy single-source mode.")
+    label = "DB" if args.db else "URL"
+    sources.append(Source(label, args.db or args.url, args.query, args.output))
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-def resolve_field(data: dict, dotpath: str):
-    """Navigate dot-separated keys into a nested dict."""
-    parts = dotpath.split(".")
-    node = data
-    for p in parts:
-        if isinstance(node, dict) and p in node:
-            node = node[p]
-        else:
-            return None
-    return node
-
-
-def extract_count(body: bytes) -> int | None:
-    text = body.decode("utf-8", errors="replace").strip()
-
-    # Try plain integer response first
+def poll_sqlite(source: Source, timeout: int) -> int | None:
     try:
-        return int(text)
-    except ValueError:
-        pass
-
-    # Try JSON
-    try:
-        data = json.loads(text)
-    except json.JSONDecodeError:
-        return None
-
-    # Dot-path field resolution
-    val = resolve_field(data, args.field)
-    if val is not None:
-        try:
-            return int(val)
-        except (TypeError, ValueError):
-            pass
-
-    # Fallback: count array if top-level is list
-    if isinstance(data, list):
-        return len(data)
-
-    # Fallback: look for any key named 'count', 'total', 'size', 'length'
-    for key in ("count", "total", "size", "length", "n"):
-        if key in data:
-            try:
-                return int(data[key])
-            except (TypeError, ValueError):
-                pass
-
-    return None
-
-
-def build_request(url: str) -> urllib.request.Request:
-    req = urllib.request.Request(url)
-    for h in args.header:
-        if ":" in h:
-            k, v = h.split(":", 1)
-            req.add_header(k.strip(), v.strip())
-    return req
-
-
-def poll_db() -> int | None:
-    try:
-        # Use URI connection with timeout
-        conn = sqlite3.connect(args.db, timeout=args.timeout)
+        conn = sqlite3.connect(source.db, timeout=timeout)
         cursor = conn.cursor()
-        cursor.execute(args.query)
+        cursor.execute(source.query)
         row = cursor.fetchone()
         conn.close()
-        if row is not None:
-            return int(row[0])
+        return int(row[0]) if row is not None else None
     except Exception as e:
-        print(f"  DB Error: {e}")
-    return None
+        print(f"\n  [{source.label}] DB Error: {e}")
+        return None
 
 
-# ── Setup output file ──────────────────────────────────────────────────────────
-
-os.makedirs(
-    os.path.dirname(args.output) if os.path.dirname(args.output) else ".", exist_ok=True
-)
-
-samples: list[tuple[int, int]] = []
-start_time = time.time()
-
-
-def flush_output():
-    with open(args.output, "w") as f:
-        for epoch_ms, count in samples:
+def flush_source(source: Source):
+    os.makedirs(
+        os.path.dirname(source.output) if os.path.dirname(source.output) else ".",
+        exist_ok=True,
+    )
+    with open(source.output, "w") as f:
+        for epoch_ms, count in source.samples:
             f.write(f"{epoch_ms} {count}\n")
-    print(f"\n✓ Saved {len(samples)} samples → {args.output}")
+    print(f"  ✓ [{source.label}] Saved {len(source.samples)} samples → {source.output}")
+
+
+# ── Signal handling ────────────────────────────────────────────────────────────
+
+stop_event = threading.Event()
 
 
 def handle_interrupt(sig, frame):
-    flush_output()
-    sys.exit(0)
+    print("\n==> Stopping...")
+    stop_event.set()
 
 
 signal.signal(signal.SIGINT, handle_interrupt)
 signal.signal(signal.SIGTERM, handle_interrupt)
 
-# ── Polling loop ───────────────────────────────────────────────────────────────
+# ── Worker thread per source ───────────────────────────────────────────────────
 
-if args.db:
-    print(f"Polling DB: {args.db}")
-    print(f"Query:   {args.query}")
-else:
-    print(f"Polling URL: {args.url}")
-    print(f"Field:   {args.field}")
+# A barrier ensures all threads poll at the same tick
+barrier = threading.Barrier(len(sources))
 
-print(f"Interval: {args.interval}s  |  Duration: {args.duration or '∞'}s")
-print(f"Output:  {args.output}")
-print("Press Ctrl+C to stop early.\n")
 
-req = build_request(args.url) if args.url else None
-consecutive_errors = 0
-MAX_ERRORS = 10
-last_count = 0
+def worker(source: Source, start_time: float):
+    last_count = 0
+    consecutive_errors = 0
+    MAX_ERRORS = 10
 
-while True:
-    now_ms = int(time.time() * 1000)
-    elapsed = time.time() - start_time
+    while not stop_event.is_set():
+        # Synchronize: all threads reach this point together before polling
+        try:
+            barrier.wait(timeout=args.interval + 1.0)
+        except threading.BrokenBarrierError:
+            break
 
-    count = None
-    try:
-        if args.db:
-            count = poll_db()
-        else:
-            with urllib.request.urlopen(req, timeout=args.timeout) as resp:
-                body = resp.read()
-            count = extract_count(body)
+        if stop_event.is_set():
+            break
+
+        now_ms = int(time.time() * 1000)
+        elapsed = time.time() - start_time
+        count = poll_sqlite(source, args.timeout)
 
         if count is None:
-            if not args.db:
-                print(
-                    f"  [{elapsed:6.1f}s] WARNING: Could not parse count from response."
-                )
             consecutive_errors += 1
+            if consecutive_errors >= MAX_ERRORS:
+                print(f"\n  [{source.label}] ERROR: {MAX_ERRORS} consecutive failures.")
+                stop_event.set()
         else:
-            samples.append((now_ms, count))
+            with source.lock:
+                source.samples.append((now_ms, count))
             delta = count - last_count
-            bar = "█" * min(
-                40,
-                int(
-                    count
-                    / max(
-                        1,
-                        (
-                            args.flags_per_round
-                            if hasattr(args, "flags_per_round")
-                            else 1200
-                        ),
-                    )
-                    * 40
-                ),
-            )
             print(
-                f"  [{elapsed:6.1f}s] flags={count:6d}  Δ={delta:+5d}  {bar}", end="\r"
+                f"  [{elapsed:6.1f}s] {source.label}: flags={count:6d}  Δ={delta:+5d}",
+                end="\r",
             )
             last_count = count
             consecutive_errors = 0
 
-    except urllib.error.URLError as e:
-        consecutive_errors += 1
-        print(
-            f"  [{elapsed:6.1f}s] HTTP error ({consecutive_errors}/{MAX_ERRORS}): {e.reason}"
-        )
-        if consecutive_errors >= MAX_ERRORS:
-            print(f"\nERROR: {MAX_ERRORS} consecutive failures. Stopping.")
-            flush_output()
-            sys.exit(1)
+        # Check duration limit
+        if args.duration > 0 and elapsed >= args.duration:
+            stop_event.set()
 
-    except Exception as e:
-        consecutive_errors += 1
-        print(f"  [{elapsed:6.1f}s] Unexpected error: {e}")
 
-    # Check duration limit
-    if args.duration > 0 and elapsed >= args.duration:
-        print(f"\nDuration limit reached ({args.duration}s).")
-        break
+# ── Ticker thread: controls the shared interval ───────────────────────────────
 
-    time.sleep(args.interval)
 
-flush_output()
+def ticker(start_time: float):
+    """Wakes up every `interval` seconds and resets the barrier so all workers fire together."""
+    while not stop_event.is_set():
+        time.sleep(args.interval)
+        if stop_event.is_set():
+            break
+        try:
+            barrier.reset()
+        except Exception:
+            pass
+
+
+# ── Main ───────────────────────────────────────────────────────────────────────
+
+for s in sources:
+    os.makedirs(
+        os.path.dirname(s.output) if os.path.dirname(s.output) else ".", exist_ok=True
+    )
+
+print("==> Starting synchronized flag count timeline polling")
+for s in sources:
+    print(f"  [{s.label}] DB: {s.db}")
+    print(f"  [{s.label}] Query: {s.query}")
+    print(f"  [{s.label}] Output: {s.output}")
+print(f"  Interval: {args.interval}s | Duration: {args.duration or '∞'}s")
+print("Press Ctrl+C to stop early.\n")
+
+start_time = time.time()
+threads = []
+
+for source in sources:
+    t = threading.Thread(target=worker, args=(source, start_time), daemon=True)
+    threads.append(t)
+    t.start()
+
+# Wait for all threads (they stop via stop_event)
+for t in threads:
+    t.join()
+
+print()
+for s in sources:
+    flush_source(s)
+
+if args.duration > 0:
+    print(f"\nDuration limit reached ({args.duration}s).")

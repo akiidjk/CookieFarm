@@ -28,17 +28,12 @@ while true; do
     FLASK=$(get_pids "python3 -m flask run --host 0.0.0.0")
     CKS=$(get_pids "cks -c")
     CKC=$(get_pids "ckc exploit run -e benchmark -n CookieService")
-
-    # CLIENTS robusti (zero race condition)
-    CLIENTS=$(for p in /proc/[0-9]*; do
-        cmd=$(cat "$p/cmdline" 2>/dev/null | tr '\0' ' ')
-        echo "$cmd" | grep -q "DestructiveFarm/client/benchmark.py" && basename "$p"
-    done)
+    CLIENTS=$(get_pids "python3 /tmp/DestructiveFarm/client/benchmark.py")
 
     get_group_stats "FLASK" $FLASK
     get_group_stats "CKS" $CKS
     get_group_stats "CKC" $CKC
     get_group_stats "CLIENTS" $CLIENTS
 
-    sleep 2
+    sleep 0.5
 done | tee ../output/stats_samples.txt

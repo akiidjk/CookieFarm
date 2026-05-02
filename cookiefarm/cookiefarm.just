@@ -26,6 +26,12 @@ server-build:
 server-run: server-build server-build-plugins
     @{{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} -c -D
 
+# Run the server in development mode
+[group('build')]
+[working-directory('cookiefarm')]
+server-run-prod: server-build-prod server-build-plugins-prod
+    @{{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} -c
+
 # Build server for production
 [group('build')]
 [working-directory('cookiefarm')]

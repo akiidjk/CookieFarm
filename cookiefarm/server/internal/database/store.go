@@ -90,7 +90,6 @@ func (s *Store) BulkInsertFlags(ctx context.Context, rows []Flag) error {
 		if _, err = stmt.ExecContext(ctx, args...); err != nil {
 			return err
 		}
-
 	}
 
 	return tx.Commit()

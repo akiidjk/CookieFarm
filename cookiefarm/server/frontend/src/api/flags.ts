@@ -30,13 +30,14 @@ export type Flag = z.infer<typeof flagSchema>;
 export const flagsResponseSchema = z.object({
   flags: z.array(flagSchema),
   n_flags: z.number().int().nonnegative(),
+  next: z.string(),
 });
 
 export type FlagsResponse = z.infer<typeof flagsResponseSchema>;
 
 export type FlagsQuery = {
   limit: number;
-  offset: number;
+  cursor?: string;
   status?: FlagStatus;
   service?: string;
   team?: string;
@@ -49,9 +50,10 @@ const submitFlagRequestSchema = z.object({
 });
 
 function buildFlagsQuery(params: FlagsQuery): string {
-  const query = new URLSearchParams({
-    offset: String(params.offset),
-  });
+  const query = new URLSearchParams();
+  if (params.cursor) {
+    query.set("cursor", params.cursor);
+  }
 
   if (params.status !== undefined) {
     query.set("status", String(params.status));

@@ -75,20 +75,31 @@ func (r *Runner) UpdateFlags(flags []protocols.ResponseProtocol) {
 	}
 
 	valid := flags[:0] // Reuse the same slice to avoid extra allocations
-
+	logger.Log.Debug().Msgf("Processing %d flag responses", len(flags))
 	for _, f := range flags {
 		if _, exists := statusCounts[f.Status]; exists {
 			statusCounts[f.Status]++
 			valid = append(valid, f)
 		}
 	}
+
 	ctx := context.Background()
-	for _, f := range valid {
-		if err := r.store.Queries.UpdateFlagStatusByCode(ctx, database.MapFromResponseProtocolToParamsToUpdate(f)); err != nil {
-			logger.Log.Error().
-				Err(err).
-				Msg("Failed to update flags")
+
+	err := r.store.WithTx(ctx, func(q *database.Queries) error {
+		for _, f := range valid {
+			if err := q.UpdateFlagStatusByCode(ctx, database.MapFromResponseProtocolToParamsToUpdate(f)); err != nil {
+				logger.Log.Error().
+					Err(err).
+					Str("flag_code", f.Flag).
+					Int64("status", f.Status).
+					Msg("Failed to update flag status")
+			}
 		}
+		return nil
+	})
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to update flags in database")
+		return
 	}
 
 	total := statusCounts[models.StatusAccepted] + statusCounts[models.StatusDenied] + statusCounts[models.StatusError]

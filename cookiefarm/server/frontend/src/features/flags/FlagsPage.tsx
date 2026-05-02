@@ -2,9 +2,8 @@ import { useMemo, useState } from "react";
 import { Banner } from "@cloudflare/kumo/components/banner";
 import { Breadcrumbs } from "@cloudflare/kumo";
 import { Button } from "@cloudflare/kumo/components/button";
-import { Pagination } from "@cloudflare/kumo/components/pagination";
 import { Select } from "@cloudflare/kumo/components/select";
-import { WarningCircle } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, WarningCircle } from "@phosphor-icons/react";
 import { useConfig } from "@/api/config";
 import { useFlags, type FlagStatus, type FlagsQuery } from "@/api/flags";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
@@ -24,13 +23,13 @@ const defaultFilters: FlagFilterState = {
 };
 
 function buildFlagsRequest(
-  page: number,
+  cursor: string,
   pageSize: number,
   filters: FlagFilterState,
 ): FlagsQuery {
   return {
     limit: pageSize,
-    offset: (page - 1) * pageSize,
+    ...(cursor ? { cursor } : {}),
     ...(filters.status !== "all" ? { status: Number(filters.status) as FlagStatus } : {}),
     ...(filters.service ? { service: filters.service } : {}),
     ...(filters.team.trim() ? { team: filters.team.trim() } : {}),
@@ -42,24 +41,48 @@ function buildFlagsRequest(
 export function FlagsPage() {
   const config = useConfig();
   const [filters, setFilters] = useState<FlagFilterState>(defaultFilters);
-  const [page, setPage] = useState(1);
+  const [cursor, setCursor] = useState<string>("");
+  const [previousCursors, setPreviousCursors] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState(defaultPageSize);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(filters.search, 300);
   const flagsRequest = useMemo(
     () =>
-      buildFlagsRequest(page, pageSize, {
+      buildFlagsRequest(cursor, pageSize, {
         ...filters,
         search: debouncedSearch,
       }),
-    [debouncedSearch, filters, page, pageSize],
+    [cursor, debouncedSearch, filters, pageSize],
   );
   const flagsQuery = useFlags(flagsRequest, {
     refreshInterval: flagsRefreshInterval,
   });
   const rows = flagsQuery.data!.flags;
   const totalCount = flagsQuery.data!.n_flags;
+  const nextCursor = flagsQuery.data!.next;
+
+  const currentPage = previousCursors.length + 1;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  function resetCursor() {
+    setCursor("");
+    setPreviousCursors([]);
+  }
+
+  function goToNextPage() {
+    if (!nextCursor) return;
+    setPreviousCursors((prev) => [...prev, cursor]);
+    setCursor(nextCursor);
+  }
+
+  function goToPrevPage() {
+    if (previousCursors.length === 0) return;
+    const updated = [...previousCursors];
+    const prevCursor = updated.pop()!;
+    setPreviousCursors(updated);
+    setCursor(prevCursor);
+  }
 
   async function refreshFlags(): Promise<void> {
     await flagsQuery.mutate();
@@ -106,7 +129,7 @@ export function FlagsPage() {
         filters={filters}
         services={config.shared.services}
         onChange={(nextFilters) => {
-          setPage(1);
+          resetCursor();
           setFilters(nextFilters);
         }}
       />
@@ -118,7 +141,7 @@ export function FlagsPage() {
             aria-label="Rows per page"
             value={String(pageSize)}
             onValueChange={(value) => {
-              setPage(1);
+              resetCursor();
               setPageSize(Number(value));
             }}
             items={{
@@ -133,17 +156,28 @@ export function FlagsPage() {
 
       <FlagTable rows={rows} />
 
-      <section className="rounded-2xl border border-kumo-line bg-kumo-base p-4">
-        <Pagination
-          page={page}
-          setPage={setPage}
-          perPage={pageSize}
-          totalCount={totalCount}
-        >
-          <Pagination.Info />
-          <Pagination.Separator />
-          <Pagination.Controls />
-        </Pagination>
+      <section className="flex items-center justify-between rounded-2xl border border-kumo-line bg-kumo-base p-4">
+        <span className="text-sm text-kumo-fg-secondary">
+          Page {currentPage} of {totalPages} &mdash; {totalCount} total flags
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={goToPrevPage}
+            disabled={previousCursors.length === 0}
+          >
+            <CaretLeft weight="bold" />
+            Previous
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={goToNextPage}
+            disabled={!nextCursor}
+          >
+            Next
+            <CaretRight weight="bold" />
+          </Button>
+        </div>
       </section>
     </div>
   );

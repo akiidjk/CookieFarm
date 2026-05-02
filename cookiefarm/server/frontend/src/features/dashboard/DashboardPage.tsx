@@ -31,7 +31,7 @@ export function DashboardPage() {
     refreshInterval: dashboardRefreshInterval,
   });
   const flagsQuery = useFlags(
-    { limit: 25, offset: 0 },
+    { limit: 25 },
     { refreshInterval: dashboardRefreshInterval },
   );
   const summary = summaryQuery.data!;

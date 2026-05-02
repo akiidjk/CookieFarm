@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // --- db.go: (*Queries).WithTx -------------------------------------------------
@@ -364,30 +364,6 @@ func TestGetFirstNFlagCodes_QueryContextError_ReturnsError(t *testing.T) {
 	}
 }
 
-func TestGetPagedFlags_QueryContextError_ReturnsError(t *testing.T) {
-	q := &Queries{db: &errorDB{}}
-	_, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 10, Offset: 0})
-	if err == nil {
-		t.Error("GetPagedFlags with broken DBTX must return an error")
-	}
-}
-
-func TestGetPagedFlagCodes_QueryContextError_ReturnsError(t *testing.T) {
-	q := &Queries{db: &errorDB{}}
-	_, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Limit: 10, Offset: 0})
-	if err == nil {
-		t.Error("GetPagedFlagCodes with broken DBTX must return an error")
-	}
-}
-
-func TestGetFlagsByTeam_QueryContextError_ReturnsError(t *testing.T) {
-	q := &Queries{db: &errorDB{}}
-	_, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{TeamID: 1, Limit: 10, Offset: 0})
-	if err == nil {
-		t.Error("GetFlagsByTeam with broken DBTX must return an error")
-	}
-}
-
 func TestGetUnsubmittedFlags_QueryContextError_ReturnsError(t *testing.T) {
 	q := &Queries{db: &errorDB{}}
 	_, err := q.GetUnsubmittedFlags(context.Background(), 10)
@@ -472,7 +448,7 @@ func TestDeleteFlagByCode_ExecContextError_ReturnsError(t *testing.T) {
 // CountFlags by using a closed *sql.DB whose QueryRowContext returns an error
 // row on Scan.
 func TestCountFlags_ClosedDB_ReturnsError(t *testing.T) {
-	rawDB, err := sql.Open("sqlite", ":memory:")
+	rawDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("sql.Open: %v", err)
 	}
@@ -487,24 +463,11 @@ func TestCountFlags_ClosedDB_ReturnsError(t *testing.T) {
 
 // TestCountFilteredFlags_ClosedDB_ReturnsError exercises the Scan error branch
 // in CountFilteredFlags.
-func TestCountFilteredFlags_ClosedDB_ReturnsError(t *testing.T) {
-	rawDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		t.Fatalf("sql.Open: %v", err)
-	}
-	rawDB.Close()
-
-	q := &Queries{db: rawDB}
-	_, err = q.CountFilteredFlags(context.Background(), CountFilteredFlagsParams{})
-	if err == nil {
-		t.Error("CountFilteredFlags on closed DB must return an error")
-	}
-}
 
 // TestGetFlagByCode_ClosedDB_ReturnsError exercises the Scan error branch in
 // GetFlagByCode.
 func TestGetFlagByCode_ClosedDB_ReturnsError(t *testing.T) {
-	rawDB, err := sql.Open("sqlite", ":memory:")
+	rawDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("sql.Open: %v", err)
 	}
@@ -599,7 +562,7 @@ func TestNewDB_IdempotentSchemaApply(t *testing.T) {
 // TestStoreWithTx_BeginTxError_ReturnsError verifies that if BeginTx fails
 // (closed DB), Store.WithTx propagates the error and never calls fn.
 func TestStoreWithTx_BeginTxError_ReturnsError(t *testing.T) {
-	rawDB, err := sql.Open("sqlite", ":memory:")
+	rawDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("sql.Open: %v", err)
 	}
@@ -665,7 +628,7 @@ func TestStoreWithTx_BulkInsert_ThenReadInExternalTx(t *testing.T) {
 // flush to fail and verifies the collector keeps running afterwards.
 func TestStart_TimerFires_FlushErrorCollectorKeepsRunning(t *testing.T) {
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    nil, // nil store → every flush fails
 	}
@@ -700,7 +663,7 @@ func TestStart_TimerFires_FlushErrorCollectorKeepsRunning(t *testing.T) {
 // timer-triggered flush fails, FailedFlushes is incremented.
 func TestStart_TimerFires_FlushErrorRecordedInStats(t *testing.T) {
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    nil,
 	}
@@ -822,7 +785,7 @@ func TestFlushWithContext_BufferOverflow_FlagsDropped(t *testing.T) {
 	}
 
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize*3),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize*3),
 		stopChan: make(chan struct{}),
 		store:    store,
 		running:  true,
@@ -831,7 +794,7 @@ func TestFlushWithContext_BufferOverflow_FlagsDropped(t *testing.T) {
 
 	// Step 1: put half the max capacity into the buffer — these become
 	// flagsToInsert when FlushWithContext snaps them.
-	half := maxBufferSize / 2
+	half := defaultMaxBufferSize / 2
 	for i := range half {
 		fc.buffer = append(fc.buffer, sampleFlag(fmt.Sprintf("FLAG{of_snap_%03d}", i)))
 	}
@@ -855,7 +818,7 @@ func TestFlushWithContext_BufferOverflow_FlagsDropped(t *testing.T) {
 	// len(buffer) + len(flagsToInsert=half) > maxBufferSize.
 	// We add (maxBufferSize - half + 1) entries to guarantee overflow.
 	fc.mutex.Lock()
-	overflow := maxBufferSize - half + 1
+	overflow := defaultMaxBufferSize - half + 1
 	for i := range overflow {
 		fc.buffer = append(fc.buffer, sampleFlag(fmt.Sprintf("FLAG{of_fill_%03d}", i)))
 	}

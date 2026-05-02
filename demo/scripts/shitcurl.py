@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
 
-import requests
 import json
 import logging
+import os
+
+import requests
 
 s = requests.Session()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 BASE_URL = "http://localhost:8080"
+
 
 def send_post_request(endpoint, headers=None, data=None, files=None):
     url = f"{BASE_URL}/{endpoint}"
     try:
         logging.info(f"Sending POST request to {url} with data: {data}")
-        response = s.post(url, headers=headers, data=data, files=files,cookies=s.cookies)
+        response = s.post(
+            url, headers=headers, data=data, files=files, cookies=s.cookies
+        )
         response.raise_for_status()
         logging.info(f"Response received: {response.status_code}")
         return response
@@ -23,11 +30,12 @@ def send_post_request(endpoint, headers=None, data=None, files=None):
         logging.error(f"Other error occurred: {err}")
     return None
 
-def login(password):
+
+def login(password) -> requests.Response:
     logging.info("Logging in with provided password...")
-    payload = {'password': password}
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    response = send_post_request('api/v1/auth/login', headers=headers, data=payload)
+    payload = {"password": password}
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    response = send_post_request("api/v1/auth/login", headers=headers, data=payload)
 
     if response:
         if response.status_code == 200:
@@ -40,19 +48,21 @@ def login(password):
         logging.error("Failed to send login request.")
         return None
 
+
 def configure(config_data):
     logging.info("Configuring the system with provided configuration data...")
     headers = {
-        'Content-Type': 'application/json',
-        'Cookie': f"token={s.cookies['token']}"
+        "Content-Type": "application/json",
+        "Cookie": f"token={s.cookies['token']}",
     }
     payload = json.dumps(config_data)
-    response = send_post_request('api/v1/config', headers=headers, data=payload)
+    response = send_post_request("api/v1/config", headers=headers, data=payload)
 
     if response:
         logging.info("Configuration updated successfully.")
         return response.json()
     return None
+
 
 def upload_exploit(file_path):
     logging.info(f"Uploading exploit from {file_path}...")
@@ -76,17 +86,19 @@ def upload_exploit(file_path):
             return None
 
         # Open the file in a context manager so it is closed after the request
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             # Let requests set the multipart Content-Type; provide the field name 'file'
-            files = {'file': (filename, f)}
+            files = {"file": (filename, f)}
 
             # Include token as a Cookie header only if present in the session cookies.
             headers = {}
-            token = s.cookies.get('token')
+            token = s.cookies.get("token")
             if token:
-                headers['Cookie'] = f"token={token}"
+                headers["Cookie"] = f"token={token}"
 
-            response = send_post_request('api/v1/exploit/upload', headers=headers, files=files)
+            response = send_post_request(
+                "api/v1/exploit/upload", headers=headers, files=files
+            )
 
             if response:
                 logging.info("Exploit uploaded successfully.")
@@ -100,11 +112,11 @@ def upload_exploit(file_path):
         logging.error(f"Error uploading exploit: {err}")
     return None
 
-if __name__ == '__main__':
-    password = 'password'
-    login(password)
-    upload_exploit('/home/akiidjk/.config/cookiefarm/exploits/main.py')
 
+if __name__ == "__main__":
+    password = "password"
+    login(password)
+    upload_exploit(f"{os.getenv('HOME')}/.config/cookiefarm/exploits/main.py")
 
     # config_data = json.load(open('config.json', 'r'))
     # config_data = {

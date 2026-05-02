@@ -8,6 +8,7 @@ import (
 // ResponseFlags represents the response for the flags api
 type ResponseFlags struct {
 	Flags  []database.Flag `json:"flags"`
+	Next   string          `json:"next"`
 	Nflags int64           `json:"n_flags"`
 }
 

@@ -17,7 +17,7 @@ build: server-build client-build
 server-build:
     @echo -e "{{ CYAN }}[*] Building server...{{ RESET }}"
     @{{ MKDIR_CMD }} {{ SERVER_BIN_DIR }}
-    @go build  -race  -gcflags="all=-m" -o {{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} {{ SERVER_CMD_DIR }}{{ PATHSEP }}{{ SERVER_MAIN_FILE }}
+    @go build  -race  -gcflags="-m" -o {{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} {{ SERVER_CMD_DIR }}{{ PATHSEP }}{{ SERVER_MAIN_FILE }}
     @echo -e "{{ GREEN }}[+] Server build complete!{{ RESET }}"
 
 # Run the server in development mode
@@ -50,7 +50,7 @@ server-build-plugins:
      if grep -q '^package main' "$file"; then \
       filename=$(basename $file); \
       pluginname=${filename%.go}; \
-      go build -race -gcflags="all=-m" -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
+      go build -race -gcflags="-m" -buildmode=plugin -o "./pkg/protocols/$pluginname.so" "$file"; \
      else \
       echo "Skipping $file: not a main package"; \
      fi; \

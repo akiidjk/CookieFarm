@@ -15,7 +15,7 @@ import (
 	"server/core"
 	"server/database"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 
 	"server/api"
 
@@ -87,9 +87,9 @@ func init() {
 
 func setupEnv(cfg *config.ConfigManager) (*database.Store, *core.Runner) {
 	cfgDB := database.Config{
-		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL",
-		MaxOpenConns:    25,
-		MaxIdleConns:    5,
+		DSN:             "file:cookiefarm.db?cache=shared&_journal=WAL&mode=rwc&_busy_timeout=5000",
+		MaxOpenConns:    1, // SQLite does not support concurrent writes, so we limit to 1 connection for safety
+		MaxIdleConns:    1,
 		ConnMaxLifetime: 5 * time.Minute,
 		ConnMaxIdleTime: 1 * time.Minute,
 	}

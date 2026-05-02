@@ -98,7 +98,7 @@ export function FlagTable(props: {
         size: 360,
         minSize: 180,
         cell: ({ getValue }) => (
-          <span className="line-clamp-2 break-words">{getValue<string>() || "-"}</span>
+          <span className="line-clamp-2 wrap-break-words">{getValue<string>() || "-"}</span>
         ),
       },
       {
@@ -148,7 +148,7 @@ export function FlagTable(props: {
         sortingFn: (rowA, rowB) => {
           const getDuration = (row: Row<Flag>) =>
             row.original.response_time === 0 ||
-            row.original.response_time < row.original.submit_time
+              row.original.response_time < row.original.submit_time
               ? Number.POSITIVE_INFINITY
               : row.original.response_time - row.original.submit_time;
 

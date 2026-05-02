@@ -40,7 +40,6 @@ var (
 )
 
 const (
-	ConfigPath    string = "config.yml" // Path to configuration file
-	DefaultLimit  int    = 100          // Default maximum number of flags to retrieve in the view
-	DefaultOffset int    = 0            // Default offset for pagination
+	ConfigPath   string = "config.yml" // Path to configuration file
+	DefaultLimit int    = 100          // Default maximum number of flags to retrieve in the view
 )

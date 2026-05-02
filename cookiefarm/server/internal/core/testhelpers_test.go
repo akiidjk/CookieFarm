@@ -13,7 +13,7 @@ import (
 	"server/config"
 	"server/database"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // --- DB / Store helpers -------------------------------------------------------

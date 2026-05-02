@@ -180,7 +180,7 @@ func assertFlagSliceLen(t *testing.T, want int, got []Flag, label string) {
 func newTestCollector(t *testing.T, store *Store) *FlagCollector {
 	t.Helper()
 	fc := &FlagCollector{
-		buffer:   make([]Flag, 0, maxBufferSize),
+		buffer:   make([]Flag, 0, defaultMaxBufferSize),
 		stopChan: make(chan struct{}),
 		store:    store,
 	}

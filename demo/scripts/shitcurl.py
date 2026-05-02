@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 
 import requests
 
@@ -115,7 +116,7 @@ def upload_exploit(file_path):
 if __name__ == "__main__":
     password = "password"
     login(password)
-    upload_exploit("/home/akiidjk/.config/cookiefarm/exploits/main.py")
+    upload_exploit(f"{os.getenv('HOME')}/.config/cookiefarm/exploits/main.py")
 
     # config_data = json.load(open('config.json', 'r'))
     # config_data = {

@@ -165,7 +165,11 @@ docker compose -f compose.yml up --build
 
 ## 🤖 Benchmaks
 
-soon...
+**DestructiveFarm VS CookieFarm**
+
+![benchmarks](benchmarks/ckvsdf/benchmark.png)
+
+See the full benchmark report [here](benchmarks/ckvsdf/README.md).
 
 ## ☕ Support
 

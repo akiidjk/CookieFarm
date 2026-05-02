@@ -17,7 +17,7 @@ BASE_URL = "http://localhost:8080"
 def send_post_request(endpoint, headers=None, data=None, files=None):
     url = f"{BASE_URL}/{endpoint}"
     try:
-        logging.info(f"Sending POST request to {url} with data: {data}")
+        logging.info(f"Sending POST request to {url}")
         response = s.post(
             url, headers=headers, data=data, files=files, cookies=s.cookies
         )

@@ -18,7 +18,7 @@ shared:
     CookieService: 8081
     vulnify: 1337
     app-nc: 1338
-  range_ip_teams: 39
+  range_ip_teams: 40
   format_ip_teams: "10.10.{}.1"
   my_team_id: 1
   regex_flag: "[A-Z0-9]{31}="

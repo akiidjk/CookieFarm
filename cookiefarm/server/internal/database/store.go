@@ -81,9 +81,16 @@ func (s *Store) BulkInsertFlags(ctx context.Context, rows []Flag) error {
 		}
 		sb.WriteString(";")
 
-		if _, err = tx.ExecContext(ctx, sb.String(), args...); err != nil {
+		stmt, err := tx.PrepareContext(ctx, sb.String())
+		if err != nil {
 			return err
 		}
+
+		defer stmt.Close()
+		if _, err = stmt.ExecContext(ctx, args...); err != nil {
+			return err
+		}
+
 	}
 
 	return tx.Commit()

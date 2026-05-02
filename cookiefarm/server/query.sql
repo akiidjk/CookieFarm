@@ -45,40 +45,6 @@ WHERE status = 0
 AND deleted_at IS NULL
 LIMIT ?;
 
--- name: GetFilteredFlags :many
-WITH filtered AS (
-    SELECT *
-    FROM flags
-    WHERE
-        deleted_at IS NULL
-        AND (flags.team_id    = sqlc.narg('team_id')      OR sqlc.narg('team_id')      IS NULL)
-        AND (flags.status     = sqlc.narg('status')       OR sqlc.narg('status')       IS NULL)
-        AND (flags.service_name = sqlc.narg('service_name') OR sqlc.narg('service_name') IS NULL)
-        AND (
-            sqlc.narg('search') IS NULL
-            OR (sqlc.narg('search_field') = 'flag_code'    AND flags.flag_code    LIKE sqlc.narg('search'))
-            OR (sqlc.narg('search_field') = 'service_name' AND flags.service_name LIKE sqlc.narg('search'))
-            OR (sqlc.narg('search_field') = 'exploit_name' AND flags.exploit_name LIKE sqlc.narg('search'))
-            OR (sqlc.narg('search_field') = 'msg'          AND flags.msg          LIKE sqlc.narg('search'))
-            OR (sqlc.narg('search_field') = 'all' AND (
-                flags.flag_code     LIKE sqlc.narg('search')
-                OR flags.service_name   LIKE sqlc.narg('search')
-                OR flags.exploit_name   LIKE sqlc.narg('search')
-                OR flags.msg            LIKE sqlc.narg('search')
-                OR CAST(flags.team_id AS TEXT) LIKE sqlc.narg('search')
-            ))
-            OR (sqlc.narg('search_field') IS NULL AND flags.flag_code LIKE sqlc.narg('search'))
-        )
-)
-SELECT * FROM filtered
-WHERE (
-    sqlc.narg('cursor_time') IS NULL
-    OR submit_time < sqlc.narg('cursor_time')
-    OR (submit_time = sqlc.narg('cursor_time') AND id < sqlc.narg('cursor_id'))
-)
-ORDER BY submit_time DESC, id DESC
-LIMIT sqlc.narg('limit');
-
 -- name: CountFilteredFlags :one
 SELECT COUNT(*) FROM flags
 WHERE

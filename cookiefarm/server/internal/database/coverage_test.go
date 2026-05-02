@@ -380,14 +380,6 @@ func TestGetUnsubmittedFlagCodes_QueryContextError_ReturnsError(t *testing.T) {
 	}
 }
 
-func TestGetFilteredFlags_QueryContextError_ReturnsError(t *testing.T) {
-	q := &Queries{db: &errorDB{}}
-	_, err := q.GetFilteredFlags(context.Background(), GetFilteredFlagsParams{})
-	if err == nil {
-		t.Error("GetFilteredFlags with broken DBTX must return an error")
-	}
-}
-
 // TestDeleteFlagByTTL_ExecContextError_ReturnsError exercises the ExecContext
 // failure branch in DeleteFlagByTTL (RowsAffected is never reached).
 func TestDeleteFlagByTTL_ExecContextError_ReturnsError(t *testing.T) {

@@ -229,7 +229,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	cursorTime, cursorID := database.ParseCursor(c.Query("cursor", ""))
-	opts := database.GetFilteredFlagsParams{
+	opts := database.FlagsQuery{
 		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5},
 		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
 		ServiceName: serviceNull,
@@ -247,54 +247,42 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 	}
 
 	logger.Log.Debug().
-		Int64("status", opts.Status.Int64).
-		Int64("team_id", opts.TeamID.Int64).
+		// Int64("status", opts.Status.Int64).
+		// Int64("team_id", opts.TeamID.Int64).
 		Int64("limit", int64(limit)).
 		Int64("cursor id", cursorID.Int64).
 		Int64("cursor time", cursorTime.Int64).
 		Msg("Fetching paginated flags with filters")
 
-	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
+	flags, err := h.store.QueryFlagsParams(c.RequestCtx(), opts)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to fetch filtered flags")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
+	h.store.QueryFlagsParams(c, opts)
+
 	var nextCursor string
 	if len(flags) == limit {
 		last := flags[len(flags)-1]
-		nextCursor = database.EncodeCursor(last.SubmitTime.Int64, last.ID)
-	}
-
-	optsCount := database.CountFilteredFlagsParams{
-		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
-		Search: sql.NullString{
-			String: "%" + searchStr + "%",
-			Valid:  searchStr != "",
-		},
-		SearchField: sql.NullString{
-			String: searchField,
-			Valid:  searchStr != "" && searchField != "",
-		},
-		ServiceName: serviceNull,
+		nextCursor = database.EncodeCursor(int64(last.SubmitTime), last.ID)
 	}
 
 	// Get filtered count for accurate pagination
-	nFlags, err := h.store.Queries.CountFilteredFlags(c.RequestCtx(), optsCount)
+	nFlags, err := h.store.CountFlags(c.RequestCtx(), opts)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to count filtered flags")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
 	if flags == nil {
-		flags = []database.GetFilteredFlagsRow{}
+		flags = []database.Flag{}
 	}
 
 	return c.JSON(ResponseFlags{
 		Nflags: nFlags,
 		Next:   nextCursor,
-		Flags:  database.MapFromGetFilteredFlagsRowToFlag(flags),
+		Flags:  flags,
 	})
 }
 

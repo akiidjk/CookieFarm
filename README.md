@@ -200,7 +200,7 @@ For a full list of all authors and contributors, see [the contributors page](htt
 CookieFarm follows good practices of security, but 100% security cannot be assured.
 CookieFarm is provided **"as is"** without any **warranty**. Use at your own risk.
 
-_For more information and to report security issues, please refer to our [security documentation](docs/SECURITY.md)._
+_For more information and to report security issues, please refer to our [security documentation](SECURITY.md)._
 
 ## 🧾 License
 

@@ -146,7 +146,7 @@ func (h *Handler) HandleGetChartStats(c fiber.Ctx) error {
 	tickSeries := make([]FlagTickPoint, 0, len(tickRows))
 	for _, row := range tickRows {
 		tickSeries = append(tickSeries, FlagTickPoint{
-			Timestamp: row.Bucket,
+			Timestamp: row.Bucket * int64(tickSeconds),
 			Total:     row.Total,
 			Queued:    sqlNullFloatToInt64(row.Queued),
 			Accepted:  sqlNullFloatToInt64(row.Accepted),
@@ -195,7 +195,7 @@ func (h *Handler) HandleGetChartStats(c fiber.Ctx) error {
 
 		series.Total += row.Value
 		series.Data = append(series.Data, FlagExploitTickPoint{
-			Timestamp: row.Bucket,
+			Timestamp: row.Bucket * int64(tickSeconds),
 			Value:     row.Value,
 		})
 	}

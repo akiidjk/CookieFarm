@@ -221,6 +221,105 @@ func (q *Queries) FlagsExploitShare(ctx context.Context) ([]FlagsExploitShareRow
 	return items, nil
 }
 
+const flagsExploitStatusStats = `-- name: FlagsExploitStatusStats :many
+SELECT
+	exploit_name,
+	COUNT(*) AS total,
+	SUM(status = 0) AS queued,
+	SUM(status = 1) AS accepted,
+	SUM(status = 2) AS denied,
+	SUM(status = 3) AS error,
+	SUM(status = 4) AS invalid
+FROM flags
+WHERE deleted_at IS NULL
+AND exploit_name IS NOT NULL
+GROUP BY exploit_name
+ORDER BY total DESC, exploit_name
+`
+
+type FlagsExploitStatusStatsRow struct {
+	ExploitName string          `json:"exploit_name"`
+	Total       int64           `json:"total"`
+	Queued      sql.NullFloat64 `json:"queued"`
+	Accepted    sql.NullFloat64 `json:"accepted"`
+	Denied      sql.NullFloat64 `json:"denied"`
+	Error       sql.NullFloat64 `json:"error"`
+	Invalid     sql.NullFloat64 `json:"invalid"`
+}
+
+func (q *Queries) FlagsExploitStatusStats(ctx context.Context) ([]FlagsExploitStatusStatsRow, error) {
+	rows, err := q.db.QueryContext(ctx, flagsExploitStatusStats)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlagsExploitStatusStatsRow
+	for rows.Next() {
+		var i FlagsExploitStatusStatsRow
+		if err := rows.Scan(
+			&i.ExploitName,
+			&i.Total,
+			&i.Queued,
+			&i.Accepted,
+			&i.Denied,
+			&i.Error,
+			&i.Invalid,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const flagsExploitTickStats = `-- name: FlagsExploitTickStats :many
+SELECT
+	exploit_name,
+	submit_time / ? AS bucket,
+	COUNT(*) AS value
+FROM flags
+WHERE submit_time > 0
+AND deleted_at IS NULL
+AND exploit_name IS NOT NULL
+GROUP BY exploit_name, bucket
+ORDER BY exploit_name, bucket
+`
+
+type FlagsExploitTickStatsRow struct {
+	ExploitName string `json:"exploit_name"`
+	Bucket      int64  `json:"bucket"`
+	Value       int64  `json:"value"`
+}
+
+func (q *Queries) FlagsExploitTickStats(ctx context.Context, submitTime uint64) ([]FlagsExploitTickStatsRow, error) {
+	rows, err := q.db.QueryContext(ctx, flagsExploitTickStats, submitTime)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlagsExploitTickStatsRow
+	for rows.Next() {
+		var i FlagsExploitTickStatsRow
+		if err := rows.Scan(&i.ExploitName, &i.Bucket, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const flagsStats = `-- name: FlagsStats :many
 SELECT
     team_id,

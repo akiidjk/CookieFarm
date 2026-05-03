@@ -13,9 +13,11 @@ type ResponseFlags struct {
 }
 
 type ResponseChartStats struct {
-	TickSeries   []FlagTickPoint    `json:"tick_series"`
-	ExploitShare []FlagExploitShare `json:"exploit_share"`
-	TotalFlags   int64              `json:"total_flags"`
+	TickSeries              []FlagTickPoint              `json:"tick_series"`
+	ExploitShare            []FlagExploitShare           `json:"exploit_share"`
+	ExploitTickSeries       []FlagExploitTickSeries      `json:"exploit_tick_series"`
+	ExploitStatusPercentage []FlagExploitStatusBreakdown `json:"exploit_status_percentage"`
+	TotalFlags              int64                        `json:"total_flags"`
 }
 
 type FlagTickPoint struct {
@@ -32,6 +34,32 @@ type FlagExploitShare struct {
 	Name       string  `json:"name"`
 	Value      int64   `json:"value"`
 	Percentage float64 `json:"percentage"`
+}
+
+type FlagExploitTickSeries struct {
+	Name  string                 `json:"name"`
+	Total int64                  `json:"total"`
+	Data  []FlagExploitTickPoint `json:"data"`
+}
+
+type FlagExploitTickPoint struct {
+	Timestamp int64 `json:"timestamp"`
+	Value     int64 `json:"value"`
+}
+
+type FlagExploitStatusBreakdown struct {
+	Name          string  `json:"name"`
+	Total         int64   `json:"total"`
+	Queued        float64 `json:"queued"`
+	Accepted      float64 `json:"accepted"`
+	Denied        float64 `json:"denied"`
+	Error         float64 `json:"error"`
+	Invalid       float64 `json:"invalid"`
+	QueuedCount   int64   `json:"queued_count"`
+	AcceptedCount int64   `json:"accepted_count"`
+	DeniedCount   int64   `json:"denied_count"`
+	ErrorCount    int64   `json:"error_count"`
+	InvalidCount  int64   `json:"invalid_count"`
 }
 
 // SigninRequest from the client to the server

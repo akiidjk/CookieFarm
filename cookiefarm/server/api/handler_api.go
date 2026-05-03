@@ -30,6 +30,14 @@ func sqlNullFloatToInt64(value sql.NullFloat64) int64 {
 	return int64(value.Float64)
 }
 
+func percentage(part int64, total int64) float64 {
+	if total <= 0 {
+		return 0
+	}
+
+	return (float64(part) / float64(total)) * 100
+}
+
 // ---------- GET ----------------
 
 // HandleGetConfig returns the current shared configuration of the server.
@@ -161,22 +169,78 @@ func (h *Handler) HandleGetChartStats(c fiber.Ctx) error {
 
 	exploitShare := make([]FlagExploitShare, 0, len(exploitRows))
 	for _, row := range exploitRows {
-		percentage := 0.0
-		if totalFlags > 0 {
-			percentage = (float64(row.Value) / float64(totalFlags)) * 100
-		}
-
 		exploitShare = append(exploitShare, FlagExploitShare{
 			Name:       filepath.Base(row.ExploitName),
 			Value:      row.Value,
-			Percentage: percentage,
+			Percentage: percentage(row.Value, totalFlags),
+		})
+	}
+
+	exploitTickRows, err := h.store.Queries.FlagsExploitTickStats(c.RequestCtx(), uint64(tickSeconds))
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag exploit tick stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	exploitTickSeriesByName := make(map[string]*FlagExploitTickSeries)
+	exploitTickOrder := make([]string, 0)
+	for _, row := range exploitTickRows {
+		name := filepath.Base(row.ExploitName)
+		series, exists := exploitTickSeriesByName[name]
+		if !exists {
+			series = &FlagExploitTickSeries{Name: name, Data: []FlagExploitTickPoint{}}
+			exploitTickSeriesByName[name] = series
+			exploitTickOrder = append(exploitTickOrder, name)
+		}
+
+		series.Total += row.Value
+		series.Data = append(series.Data, FlagExploitTickPoint{
+			Timestamp: row.Bucket,
+			Value:     row.Value,
+		})
+	}
+
+	exploitTickSeries := make([]FlagExploitTickSeries, 0, len(exploitTickOrder))
+	for _, name := range exploitTickOrder {
+		exploitTickSeries = append(exploitTickSeries, *exploitTickSeriesByName[name])
+	}
+
+	exploitStatusRows, err := h.store.Queries.FlagsExploitStatusStats(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag exploit status stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	exploitStatusPercentage := make([]FlagExploitStatusBreakdown, 0, len(exploitStatusRows))
+	for _, row := range exploitStatusRows {
+		queued := sqlNullFloatToInt64(row.Queued)
+		accepted := sqlNullFloatToInt64(row.Accepted)
+		denied := sqlNullFloatToInt64(row.Denied)
+		errorCount := sqlNullFloatToInt64(row.Error)
+		invalid := sqlNullFloatToInt64(row.Invalid)
+
+		exploitStatusPercentage = append(exploitStatusPercentage, FlagExploitStatusBreakdown{
+			Name:          filepath.Base(row.ExploitName),
+			Total:         row.Total,
+			Queued:        percentage(queued, row.Total),
+			Accepted:      percentage(accepted, row.Total),
+			Denied:        percentage(denied, row.Total),
+			Error:         percentage(errorCount, row.Total),
+			Invalid:       percentage(invalid, row.Total),
+			QueuedCount:   queued,
+			AcceptedCount: accepted,
+			DeniedCount:   denied,
+			ErrorCount:    errorCount,
+			InvalidCount:  invalid,
 		})
 	}
 
 	return c.JSON(ResponseChartStats{
-		TickSeries:   tickSeries,
-		ExploitShare: exploitShare,
-		TotalFlags:   totalFlags,
+		TickSeries:              tickSeries,
+		ExploitShare:            exploitShare,
+		ExploitTickSeries:       exploitTickSeries,
+		ExploitStatusPercentage: exploitStatusPercentage,
+		TotalFlags:              totalFlags,
 	})
 }
 

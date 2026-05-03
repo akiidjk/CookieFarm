@@ -41,9 +41,37 @@ export const exploitShareSchema = z.object({
   percentage: z.number(),
 });
 
+export const exploitTickPointSchema = z.object({
+  timestamp: z.number().int(),
+  value: z.number().int(),
+});
+
+export const exploitTickSeriesSchema = z.object({
+  name: z.string(),
+  total: z.number().int(),
+  data: z.array(exploitTickPointSchema),
+});
+
+export const exploitStatusPercentageSchema = z.object({
+  name: z.string(),
+  total: z.number().int(),
+  queued: z.number(),
+  accepted: z.number(),
+  denied: z.number(),
+  error: z.number(),
+  invalid: z.number(),
+  queued_count: z.number().int(),
+  accepted_count: z.number().int(),
+  denied_count: z.number().int(),
+  error_count: z.number().int(),
+  invalid_count: z.number().int(),
+});
+
 export const chartStatsSchema = z.object({
   tick_series: z.array(chartTickPointSchema),
   exploit_share: z.array(exploitShareSchema),
+  exploit_tick_series: z.array(exploitTickSeriesSchema),
+  exploit_status_percentage: z.array(exploitStatusPercentageSchema),
   total_flags: z.number().int(),
 });
 

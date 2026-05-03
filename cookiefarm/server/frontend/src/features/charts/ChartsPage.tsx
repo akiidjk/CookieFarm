@@ -51,8 +51,10 @@ export function ChartsPage() {
     errorMessage ?? (swrError instanceof Error ? swrError.message : null);
   const tickSeries = chartStats.tick_series;
   const exploitShare = chartStats.exploit_share;
+  const exploitTickSeries = chartStats.exploit_tick_series;
+  const exploitStatusBreakdown = chartStats.exploit_status_percentage;
 
-  const totalPerTickOption = useMemo(() => {
+  const flagsOverTimeOption = useMemo(() => {
     return {
       tooltip: {
         trigger: "axis" as const,
@@ -75,10 +77,11 @@ export function ChartsPage() {
       series: [
         {
           name: "Flags",
+          data: tickSeries.map((point) => point.total),
           type: "line" as const,
           smooth: true,
+          symbol: "circle" as const,
           symbolSize: 6,
-          data: tickSeries.map((point) => point.total),
           lineStyle: { width: 3, color: ChartPalette.semantic("Neutral", isDarkMode) },
           itemStyle: { color: ChartPalette.semantic("Neutral", isDarkMode) },
           areaStyle: { color: "rgba(173, 173, 184, 0.16)" },
@@ -86,6 +89,114 @@ export function ChartsPage() {
       ],
     };
   }, [tickSeries]);
+
+  const exploitPerTickOption = useMemo(() => {
+    const ticks = tickSeries.map((point) => point.timestamp);
+
+    return {
+      tooltip: {
+        trigger: "axis" as const,
+        axisPointer: { type: "line" as const },
+      },
+      legend: {
+        type: "scroll" as const,
+        top: 0,
+        textStyle: { color: "#D4D4D8" },
+      },
+      grid: { top: 55, right: 20, bottom: 45, left: 55 },
+      xAxis: {
+        type: "category" as const,
+        boundaryGap: false,
+        data: ticks.map((timestamp) => formatTickLabel(timestamp)),
+        axisLabel: { color: "#A1A1AA", hideOverlap: true },
+        axisLine: { lineStyle: { color: "#3F3F46" } },
+      },
+      yAxis: {
+        type: "value" as const,
+        minInterval: 1,
+        axisLabel: { color: "#A1A1AA" },
+        splitLine: { lineStyle: { color: "#3F3F46" } },
+      },
+      series: exploitTickSeries.map((item, index) => {
+        const valuesByTick = new Map(item.data.map((point) => [point.timestamp, point.value]));
+
+        return {
+          name: item.name,
+          type: "line" as const,
+          smooth: true,
+          symbolSize: 5,
+          data: ticks.map((timestamp) => valuesByTick.get(timestamp) ?? 0),
+          lineStyle: { width: 2, color: ChartPalette.categorical(index, isDarkMode) },
+          itemStyle: { color: ChartPalette.categorical(index, isDarkMode) },
+        };
+      }),
+    };
+  }, [exploitTickSeries, tickSeries]);
+
+  const exploitStatusPercentageOption = useMemo(() => {
+    return {
+      tooltip: {
+        trigger: "axis" as const,
+        axisPointer: { type: "shadow" as const },
+        valueFormatter: (value: unknown) =>
+          typeof value === "number" ? `${value.toFixed(1)}%` : String(value),
+      },
+      legend: {
+        top: 0,
+        textStyle: { color: "#D4D4D8" },
+      },
+      grid: { top: 50, right: 20, bottom: 80, left: 55 },
+      xAxis: {
+        type: "category" as const,
+        data: exploitStatusBreakdown.map((item) => item.name),
+        axisLabel: { color: "#A1A1AA", hideOverlap: true, rotate: 30 },
+        axisLine: { lineStyle: { color: "#3F3F46" } },
+      },
+      yAxis: {
+        type: "value" as const,
+        max: 100,
+        axisLabel: { color: "#A1A1AA", formatter: "{value}%" },
+        splitLine: { lineStyle: { color: "#3F3F46" } },
+      },
+      series: [
+        {
+          name: "Accepted",
+          type: "bar" as const,
+          stack: "status",
+          data: exploitStatusBreakdown.map((item) => Number(item.accepted.toFixed(2))),
+          itemStyle: { color: ChartPalette.categorical(0, isDarkMode) },
+        },
+        {
+          name: "Denied",
+          type: "bar" as const,
+          stack: "status",
+          data: exploitStatusBreakdown.map((item) => Number(item.denied.toFixed(2))),
+          itemStyle: { color: ChartPalette.semantic("Attention", isDarkMode) },
+        },
+        {
+          name: "Error",
+          type: "bar" as const,
+          stack: "status",
+          data: exploitStatusBreakdown.map((item) => Number(item.error.toFixed(2))),
+          itemStyle: { color: ChartPalette.semantic("Warning", isDarkMode) },
+        },
+        {
+          name: "Queued",
+          type: "bar" as const,
+          stack: "status",
+          data: exploitStatusBreakdown.map((item) => Number(item.queued.toFixed(2))),
+          itemStyle: { color: ChartPalette.semantic("Neutral", isDarkMode) },
+        },
+        {
+          name: "Invalid",
+          type: "bar" as const,
+          stack: "status",
+          data: exploitStatusBreakdown.map((item) => Number(item.invalid.toFixed(2))),
+          itemStyle: { color: ChartPalette.categorical(4, isDarkMode) },
+        },
+      ],
+    };
+  }, [exploitStatusBreakdown]);
 
   const statusPerTickOption = useMemo(() => {
     return {
@@ -236,6 +347,11 @@ export function ChartsPage() {
 
   const totalFlags = chartStats.total_flags;
   const latestTickCount = tickSeries[tickSeries.length - 1]?.total ?? 0;
+  const totalTickFlags = tickSeries.reduce((acc, point) => acc + point.total, 0);
+  const busiestTick = tickSeries.reduce(
+    (current, point) => (point.total > current.total ? point : current),
+    tickSeries[0] ?? { timestamp: 0, total: 0 },
+  );
   const leadingExploit = exploitShare[0];
 
   return (
@@ -302,14 +418,40 @@ export function ChartsPage() {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-2">
+        <section className="flex flex-col rounded-2xl border border-kumo-line bg-kumo-base p-4">
+          <h2 className="mb-4 text-sm font-medium text-kumo-fg-primary">Flags Over Time</h2>
+          <div className="flex-1">
+            <Chart
+              echarts={echarts}
+              options={flagsOverTimeOption}
+              isDarkMode={isDarkMode}
+              height={250}
+            />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-4">
+            <ChartLegend.SmallItem
+              name="History"
+              color={ChartPalette.semantic("Neutral", isDarkMode)}
+              value={String(totalTickFlags)}
+              unit="flags"
+            />
+            <ChartLegend.SmallItem
+              name="Peak Tick"
+              color={ChartPalette.categorical(1, isDarkMode)}
+              value={String(busiestTick.total)}
+              unit="flags"
+            />
+          </div>
+        </section>
+
         <section className="rounded-2xl border border-kumo-line bg-kumo-base p-4">
           <h2 className="mb-2 text-sm font-medium text-kumo-fg-primary">Flags Per Tick</h2>
           <p className="mb-4 text-sm text-kumo-fg-secondary">
-            Total submitted flags grouped by collector tick.
+            Submitted flags grouped by collector tick, split into one line per exploit.
           </p>
           <Chart
             echarts={echarts}
-            options={totalPerTickOption}
+            options={exploitPerTickOption}
             isDarkMode={isDarkMode}
             height={320}
           />
@@ -323,6 +465,21 @@ export function ChartsPage() {
           <Chart
             echarts={echarts}
             options={statusPerTickOption}
+            isDarkMode={isDarkMode}
+            height={320}
+          />
+        </section>
+
+        <section className="rounded-2xl border border-kumo-line bg-kumo-base p-4">
+          <h2 className="mb-2 text-sm font-medium text-kumo-fg-primary">
+            Exploit Status Percentage
+          </h2>
+          <p className="mb-4 text-sm text-kumo-fg-secondary">
+            Accepted, denied, error, queued, and invalid percentages for each exploit.
+          </p>
+          <Chart
+            echarts={echarts}
+            options={exploitStatusPercentageOption}
             isDarkMode={isDarkMode}
             height={320}
           />

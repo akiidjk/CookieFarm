@@ -5,7 +5,7 @@ import { Input } from "@cloudflare/kumo/components/input";
 import { Select } from "@cloudflare/kumo/components/select";
 import { SensitiveInput } from "@cloudflare/kumo/components/sensitive-input";
 import { useKumoToastManager } from "@cloudflare/kumo/components/toast";
-import { ArrowBendLeftDownIcon, ArrowDownIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { ApiError } from "@/api/client";
 import {
   configSchema,
@@ -16,7 +16,6 @@ import {
 } from "@/api/config";
 import { FormSubmitButton } from "@/components/FormSubmitButton";
 import { ConfigServicesEditor } from "./ConfigServicesEditor";
-import { Button } from "@cloudflare/kumo";
 
 type ConfigFormState = {
   errorMessage: string | null;

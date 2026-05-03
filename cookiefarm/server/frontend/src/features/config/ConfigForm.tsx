@@ -5,7 +5,7 @@ import { Input } from "@cloudflare/kumo/components/input";
 import { Select } from "@cloudflare/kumo/components/select";
 import { SensitiveInput } from "@cloudflare/kumo/components/sensitive-input";
 import { useKumoToastManager } from "@cloudflare/kumo/components/toast";
-import { WarningCircleIcon } from "@phosphor-icons/react";
+import { WarningCircleIconIcon } from "@phosphor-icons/react";
 import { ApiError } from "@/api/client";
 import {
   configSchema,
@@ -116,7 +116,7 @@ export function ConfigForm(props: {
       {state.errorMessage ? (
         <Banner
           variant="error"
-          icon={<WarningCircleIcon weight="fill" />}
+          icon={<WarningCircleIconIcon weight="fill" />}
           title="Unable to save configuration"
           description={state.errorMessage}
         />

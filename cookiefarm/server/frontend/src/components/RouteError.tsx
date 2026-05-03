@@ -1,6 +1,6 @@
 import { Banner } from "@cloudflare/kumo/components/banner";
 import { Button } from "@cloudflare/kumo/components/button";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useRouteError } from "react-router";
 
 function getErrorMessage(error: unknown): string {
@@ -22,7 +22,7 @@ export function RouteError() {
     <div className="p-6">
       <Banner
         variant="error"
-        icon={<WarningCircle weight="fill" />}
+        icon={<WarningCircleIcon weight="fill" />}
         title="Route Error"
         description={getErrorMessage(error)}
         action={

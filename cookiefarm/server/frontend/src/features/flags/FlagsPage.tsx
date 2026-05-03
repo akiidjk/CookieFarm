@@ -3,7 +3,7 @@ import { Banner } from "@cloudflare/kumo/components/banner";
 import { Breadcrumbs } from "@cloudflare/kumo";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Select } from "@cloudflare/kumo/components/select";
-import { CaretLeft, CaretRight, WarningCircle } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, WarningCircleIcon } from "@phosphor-icons/react";
 import { useConfig } from "@/api/config";
 import { useFlags, type FlagStatus, type FlagsQuery } from "@/api/flags";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
@@ -119,7 +119,7 @@ export function FlagsPage() {
       {visibleErrorMessage ? (
         <Banner
           variant="error"
-          icon={<WarningCircle weight="fill" />}
+          icon={<WarningCircleIcon weight="fill" />}
           title="Unable to refresh flags"
           description={visibleErrorMessage}
         />

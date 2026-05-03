@@ -12,7 +12,7 @@ import { cn } from "@cloudflare/kumo/utils";
 import {
   Check,
   Copy,
-  WarningCircle,
+  WarningCircleIcon,
   X,
 } from "@phosphor-icons/react";
 
@@ -129,7 +129,7 @@ export function DeleteResource({
         <div className="flex flex-col p-6 gap-4">
           <div className="flex flex-col gap-2">
             {errorMessage && (
-              <Banner icon={<WarningCircle />} variant="error">
+              <Banner icon={<WarningCircleIcon />} variant="error">
                 {errorMessage}
               </Banner>
             )}

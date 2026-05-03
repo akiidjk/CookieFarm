@@ -4,7 +4,7 @@ import { Breadcrumbs } from "@cloudflare/kumo/components/breadcrumbs";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Input } from "@cloudflare/kumo/components/input";
 import { useKumoToastManager } from "@cloudflare/kumo/components/toast";
-import { ArrowSquareOut, WarningCircle } from "@phosphor-icons/react";
+import { ArrowSquareOut, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "react-router";
 import { useConfig } from "@/api/config";
 import { deleteFlag, submitFlag, useFlags } from "@/api/flags";
@@ -74,7 +74,7 @@ export function DashboardPage() {
       {visibleErrorMessage ? (
         <Banner
           variant="error"
-          icon={<WarningCircle weight="fill" />}
+          icon={<WarningCircleIcon weight="fill" />}
           title="Refresh failed"
           description={visibleErrorMessage}
         />

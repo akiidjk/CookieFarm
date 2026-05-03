@@ -3,11 +3,10 @@ import { mutate as swrMutate } from "swr";
 import { Banner } from "@cloudflare/kumo/components/banner";
 import { Breadcrumbs } from "@cloudflare/kumo/components/breadcrumbs";
 import { Button } from "@cloudflare/kumo/components/button";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { configKey, useConfig } from "@/api/config";
 import { useChartStats, useStatsSummary } from "@/api/stats";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
-import { ChartWindowControls } from "./ChartWindowControls";
 import { ChartsSummary } from "./ChartsSummary";
 import { ExploitCharts } from "./ExploitCharts";
 import { TeamStatusChart } from "./TeamStatusChart";
@@ -21,7 +20,7 @@ export function ChartsPage() {
   const chartStats = chartStatsQuery.data!;
   const summary = summaryQuery.data!;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { dataZoom, onDataZoom, windowSize, setWindowSize } = useSyncedBucketZoom(
+  const { dataZoom, onDataZoom } = useSyncedBucketZoom(
     chartStats.tick_series.length,
   );
 
@@ -62,19 +61,13 @@ export function ChartsPage() {
       {visibleErrorMessage ? (
         <Banner
           variant="error"
-          icon={<WarningCircle weight="fill" />}
+          icon={<WarningCircleIcon weight="fill" />}
           title="Unable to refresh charts"
           description={visibleErrorMessage}
         />
       ) : null}
 
       <ChartsSummary chartStats={chartStats} />
-      <ChartWindowControls
-        value={windowSize}
-        max={chartStats.tick_series.length}
-        onChange={setWindowSize}
-      />
-
       <div className="grid gap-4 xl:grid-cols-2">
         <TimeCharts chartStats={chartStats} dataZoom={dataZoom} onDataZoom={onDataZoom} />
         <ExploitCharts chartStats={chartStats} />

@@ -22,6 +22,7 @@ export function TimeCharts(props: {
         trigger: "axis" as const,
         axisPointer: { type: "line" as const },
       },
+      animation: true,
       dataZoom: props.dataZoom,
       grid: { top: 30, right: 20, bottom: 55, left: 55 },
       xAxis: {
@@ -61,6 +62,7 @@ export function TimeCharts(props: {
         trigger: "axis" as const,
         axisPointer: { type: "line" as const },
       },
+      animation: true,
       legend: {
         type: "scroll" as const,
         top: 0,
@@ -103,6 +105,7 @@ export function TimeCharts(props: {
         trigger: "axis" as const,
         axisPointer: { type: "line" as const },
       },
+      animation: true,
       legend: {
         top: 0,
         textStyle: { color: "#D4D4D8" },

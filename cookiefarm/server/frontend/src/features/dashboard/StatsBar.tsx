@@ -95,7 +95,7 @@ export function StatsBar(props: {
           type: "bar" as const,
           stack: "total",
           data: stats.map((s) => s.accepted_flags),
-          itemStyle: { color: ChartPalette.color(0, isDarkMode) },
+          itemStyle: { color: ChartPalette.categorical(0, isDarkMode) },
         },
         {
           name: "Denied",
@@ -116,7 +116,7 @@ export function StatsBar(props: {
           type: "bar" as const,
           stack: "total",
           data: stats.map((s) => s.unsubmitted_flags),
-          itemStyle: { color: ChartPalette.semantic("NeutralLight", isDarkMode) },
+          itemStyle: { color: ChartPalette.semantic("Neutral", isDarkMode) },
         },
       ],
     };
@@ -153,7 +153,7 @@ export function StatsBar(props: {
           />
           <ChartLegend.SmallItem
             name="Peak Tick"
-            color={ChartPalette.color(1, isDarkMode)}
+            color={ChartPalette.categorical(1, isDarkMode)}
             value={String(busiestTick.total)}
             unit="flags"
           />
@@ -173,7 +173,7 @@ export function StatsBar(props: {
         <div className="mt-4 flex flex-wrap gap-4">
           <ChartLegend.SmallItem
             name="Accepted"
-            color={ChartPalette.color(0, isDarkMode)}
+            color={ChartPalette.categorical(0, isDarkMode)}
             value={String(totalAcceptedCount)}
           />
           <ChartLegend.SmallItem
@@ -188,7 +188,7 @@ export function StatsBar(props: {
           />
           <ChartLegend.SmallItem
             name="Unsubmitted"
-            color={ChartPalette.semantic("NeutralLight", isDarkMode)}
+            color={ChartPalette.semantic("Neutral", isDarkMode)}
             value={String(totalUnsubmittedCount)}
           />
         </div>

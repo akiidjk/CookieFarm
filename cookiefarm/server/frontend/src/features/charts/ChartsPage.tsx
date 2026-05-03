@@ -117,8 +117,8 @@ export function ChartsPage() {
           type: "line" as const,
           smooth: true,
           data: tickSeries.map((point) => point.accepted),
-          itemStyle: { color: ChartPalette.color(0, isDarkMode) },
-          lineStyle: { color: ChartPalette.color(0, isDarkMode), width: 2 },
+          itemStyle: { color: ChartPalette.categorical(0, isDarkMode) },
+          lineStyle: { color: ChartPalette.categorical(0, isDarkMode), width: 2 },
         },
         {
           name: "Denied",
@@ -141,8 +141,8 @@ export function ChartsPage() {
           type: "line" as const,
           smooth: true,
           data: tickSeries.map((point) => point.queued),
-          itemStyle: { color: ChartPalette.semantic("NeutralLight", isDarkMode) },
-          lineStyle: { color: ChartPalette.semantic("NeutralLight", isDarkMode), width: 2 },
+          itemStyle: { color: ChartPalette.semantic("Neutral", isDarkMode) },
+          lineStyle: { color: ChartPalette.semantic("Neutral", isDarkMode), width: 2 },
         },
       ],
     };
@@ -174,7 +174,7 @@ export function ChartsPage() {
           data: exploitShare.map((item, index) => ({
             name: item.name,
             value: item.value,
-            itemStyle: { color: ChartPalette.color(index, isDarkMode) },
+            itemStyle: { color: ChartPalette.categorical(index, isDarkMode) },
           })),
         },
       ],
@@ -207,7 +207,7 @@ export function ChartsPage() {
           type: "bar" as const,
           stack: "total",
           data: stats.map((item) => item.accepted_flags),
-          itemStyle: { color: ChartPalette.color(0, isDarkMode) },
+          itemStyle: { color: ChartPalette.categorical(0, isDarkMode) },
         },
         {
           name: "Denied",
@@ -228,7 +228,7 @@ export function ChartsPage() {
           type: "bar" as const,
           stack: "total",
           data: stats.map((item) => item.unsubmitted_flags),
-          itemStyle: { color: ChartPalette.semantic("NeutralLight", isDarkMode) },
+          itemStyle: { color: ChartPalette.semantic("Neutral", isDarkMode) },
         },
       ],
     };
@@ -281,21 +281,21 @@ export function ChartsPage() {
         />
         <ChartLegend.LargeItem
           name="Latest Tick"
-          color={ChartPalette.color(0, isDarkMode)}
+          color={ChartPalette.categorical(0, isDarkMode)}
           value={String(latestTickCount)}
           unit="flags"
         />
         {leadingExploit ? (
           <ChartLegend.LargeItem
             name="Top Exploit"
-            color={ChartPalette.color(1, isDarkMode)}
+            color={ChartPalette.categorical(1, isDarkMode)}
             value={`${leadingExploit.percentage.toFixed(1)}%`}
             unit={leadingExploit.name}
           />
         ) : (
           <ChartLegend.LargeItem
             name="Top Exploit"
-            color={ChartPalette.color(1, isDarkMode)}
+            color={ChartPalette.categorical(1, isDarkMode)}
             value="0%"
           />
         )}

@@ -1,3 +1,4 @@
+import { Button } from "@cloudflare/kumo/components/button";
 import { Input } from "@cloudflare/kumo/components/input";
 import { Select } from "@cloudflare/kumo/components/select";
 import { Tabs } from "@cloudflare/kumo/components/tabs";
@@ -27,20 +28,36 @@ export function FlagFilters(props: {
 }) {
   return (
     <section className="space-y-4 rounded-2xl border border-kumo-line bg-kumo-base p-4">
-      <Tabs
-        variant="segmented"
-        tabs={statusTabs.map((tab) => ({
-          value: tab.value,
-          label: tab.label,
-        }))}
-        value={props.filters.status}
-        onValueChange={(value) => {
-          props.onChange({
-            ...props.filters,
-            status: value as FlagFilterState["status"],
-          });
-        }}
-      />
+      <div className="flex items-center justify-between">
+        <Tabs
+          variant="segmented"
+          tabs={statusTabs.map((tab) => ({
+            value: tab.value,
+            label: tab.label,
+          }))}
+          value={props.filters.status}
+          onValueChange={(value) => {
+            props.onChange({
+              ...props.filters,
+              status: value as FlagFilterState["status"],
+            });
+          }}
+        />
+        <Button
+          variant="secondary"
+          onClick={() => {
+            props.onChange({
+              status: "all",
+              service: "",
+              team: "",
+              search: "",
+              searchField: "flag_code",
+            });
+          }}
+        >
+          Reset
+        </Button>
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-4">
         <Select

@@ -1,10 +1,8 @@
 import { useDeferredValue, useMemo, useRef, useState } from "react";
-import { Button } from "@cloudflare/kumo/components/button";
 import { ClipboardText } from "@cloudflare/kumo/components/clipboard-text";
 import { Empty } from "@cloudflare/kumo/components/empty";
-import { Input } from "@cloudflare/kumo/components/input";
 import { Table } from "@cloudflare/kumo/components/table";
-import { CaretDown, CaretUp, CaretUpDown, X } from "@phosphor-icons/react";
+import { CaretDown, CaretUp, CaretUpDown } from "@phosphor-icons/react";
 import {
   flexRender,
   getCoreRowModel,
@@ -77,7 +75,7 @@ export function FlagTable(props: {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnSizing, setColumnSizing] = useState({});
-  const [globalFilterInput, setGlobalFilterInput] = useState("");
+  const [globalFilterInput] = useState("");
   const globalFilter = useDeferredValue(globalFilterInput);
   const columns = useMemo<ColumnDef<Flag>[]>(
     () => [
@@ -224,39 +222,8 @@ export function FlagTable(props: {
     })
     : tableRows;
   const columnCount = table.getVisibleLeafColumns().length;
-  const hasActiveTableState =
-    sorting.length > 0 || columnFilters.length > 0 || globalFilterInput.length > 0;
-
   return (
     <section className="overflow-hidden rounded-2xl border border-kumo-line bg-kumo-base">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-kumo-line p-3">
-        <Input
-          size="sm"
-          className="min-w-64"
-          aria-label="Filter visible flags"
-          placeholder="Filter visible flags..."
-          value={globalFilterInput}
-          onChange={(event) => setGlobalFilterInput(event.currentTarget.value)}
-        />
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-kumo-fg-secondary" aria-live="polite">
-            {tableRows.length} of {props.rows.length} rows
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={<X size={14} weight="bold" />}
-            disabled={!hasActiveTableState}
-            onClick={() => {
-              setGlobalFilterInput("");
-              table.resetSorting();
-              table.resetColumnFilters();
-            }}
-          >
-            Reset
-          </Button>
-        </div>
-      </div>
       <div ref={parentRef} className="max-h-[70vh] overflow-auto">
         <Table layout="fixed">
           <colgroup>

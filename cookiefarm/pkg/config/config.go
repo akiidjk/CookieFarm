@@ -9,7 +9,7 @@ type Shared struct {
 	NOPTeam       int               `json:"nop_team" yaml:"nop_team"`               // The id of the nop team in the ctf
 	RangeIPTeams  uint8             `json:"range_ip_teams" yaml:"range_ip_teams"`   // Number of teams / IP range
 	Configured    bool              `json:"configured" yaml:"configured"`           // True if configuration has been loaded and validated
-    FlagIdsFormat string            `json:"flagids_format" yaml:"flagids_format"`   // Format string for generating flag IDs
+	FlagIdsFormat string            `json:"flagids_format" yaml:"flagids_format"`   // Format string for generating flag IDs
 }
 
 func (cfg *Shared) Set(newcfg Shared) {

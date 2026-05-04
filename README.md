@@ -48,10 +48,9 @@ pip install cookiefarm
 
 #### Automatic Setup
 
-if you have alredy installed using the script do simple:
+if you have already installed using the script do simple:
 
 ```docker compose up --build -d```
-
 
 #### Manual Setup
 
@@ -71,8 +70,8 @@ CONFIG_FILE=true  # Set if the server takes the config from config.yml in the fi
 PORT=8080            # Define the port the server will listen on
 ```
 
-  > [!WARNING]
-  > For production environments, set `DEBUG=false` and use a strong, unique password
+> [!WARNING]
+> For production environments, set `DEBUG=false` and use a strong, unique password
 
 3. Create the config.yml file in the server directory to configure the services and teams:
 
@@ -114,28 +113,33 @@ docker compose -f compose.yml up --build
 ### 💻 Using the Client & Running Exploits
 
 1. Run the installation :
-  ```bash
-  pip install cookiefarm
-  ```
-  > [!NOTE]
-  > After installation, the `ckc` command is available globally in your terminal (or in your virtual environment if you are using one).
+```bash
+pip install cookiefarm
+```
+> [!NOTE]
+> After installation, the `ckc` command is available globally in your terminal (or in your virtual environment if you are using one).
 
-2. Log in and configure the client:
-   ```bash
-   ckc login -P SuperSecret -H 192.168.1.10 -p 8000 -u your_username
-   ```
+2. Config the client by logging in with the server credentials:
+```bash
+ckc config edit -H 192.168.1.10 -p 8000
+```
 
-3. Install the Python helper module and create a new exploit template:
-   ```bash
-   ckc exploit create -n your_exploit_name
-   ```
+3. Log in and configure the client:
+```bash
+ckc login -P SuperSecret -u your_username
+```
 
-   This will generate `your_exploit_name.py` in `~/.cookiefarm/exploits/`.
+4. Install the Python helper module and create a new exploit template:
+```bash
+ckc exploit create -n your_exploit_name
+```
 
-4. Run your exploit:
-   ```bash
-   ckc exploit run -e your_exploit_name.py -n CookieService -t 120 -T 40
-   ```
+This will generate `your_exploit_name.py` in `~/.cookiefarm/exploits/`.
+
+5. Run your exploit:
+```bash
+ckc exploit run -e your_exploit_name.py -n CookieService -t 120 -T 40
+```
 > [!NOTE]
 > For more usage examples, check out the [client documentation](https://cookiefarm.bytethecookies.org/docs/client/overview).
 

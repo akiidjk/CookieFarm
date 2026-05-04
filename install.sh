@@ -496,7 +496,7 @@ confirm() {
     printf "\n"
 
     # Optional: open editor
-    if gum_confirm "Open a file in $EDITOR before deploying?"; then
+    if gum_confirm "Open a file in ${EDITOR:-vi} before deploying?"; then
         local chosen_file
         chosen_file="$("$GUM_BIN" file . --all --cursor="🍪")"
         if [ -n "${chosen_file:-}" ] && [ -f "$chosen_file" ]; then
@@ -575,7 +575,7 @@ else
     confirm
 
     gum_spin "Starting containers..." \
-        sh -c 'docker compose -f compose.yml up --build -d 2>&1'
+    sh -c 'docker compose -f compose.yml pull && docker compose -f compose.yml up --build --pull always -d 2>&1'
 fi
 
 # ── Success banner ────────────────────────────────────────────────────────────

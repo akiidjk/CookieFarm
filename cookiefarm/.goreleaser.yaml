@@ -17,7 +17,7 @@ builds:
     main: ./client/main.go
     binary: ckc
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
       - GO111MODULE=on
       - GOFLAGS=-trimpath
       - GODEBUG=asyncpreemptoff=1

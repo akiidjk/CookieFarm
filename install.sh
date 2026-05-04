@@ -315,6 +315,8 @@ my_team_id=""
 regex_flag=""
 nop_team=""
 url_flag_ids=""
+flagids_format=""
+
 
 # Tracked output paths (set during write_env / gum_ask_config)
 ENV_FILE=""
@@ -451,6 +453,28 @@ print((datetime.now(timezone.utc) + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M
         --value "http://10.10.10.1:8081/flagIds" \
         --placeholder "http://<ip>:8081/flagIds")"
 
+    # Flag IDs Format Selection
+    flagids_format_choice="$(gum_choose \
+        --header "Select Flag IDs Format Template" \
+        --no-limit \
+        "CyberChallenge Template" \
+        "Faust Template" \
+        "Custom")"
+
+    case "$flagids_format_choice" in
+        "CyberChallenge Template")
+            flagids_format="[service].[teams].[id]"
+            ;;
+        "Faust Template")
+            flagids_format="flag_ids.[service].[teams].[id]"
+            ;;
+        "Custom")
+            flagids_format="$(gum_input "flagids_format" \
+                --value "[service].[teams].[id]" \
+                --placeholder "Enter custom template (e.g., custom.[service].[teams].[id])")"
+            ;;
+    esac
+
     # ── Write config.yml ──────────────────────────────────────────────────────
     mkdir -p "$(dirname "$dest")"
     gum_log_debug "Creating config file" path "$dest"
@@ -479,6 +503,7 @@ ${services_yaml}  range_ip_teams: ${range_ip_teams}
   regex_flag: "${regex_flag}"
   nop_team: ${nop_team}
   url_flag_ids: "${url_flag_ids}"
+  flagids_format: "${flagids_format}"
 EOF
     printf "%b✔%b  Wrote %b%s%b\n" \
         "$C_GREEN" "$RESET" "${BOLD}${C_ARGUMENT}" "$dest" "$RESET"

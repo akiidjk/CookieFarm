@@ -96,7 +96,11 @@ export function ConfigForm(props: {
   }, [props.config]);
 
   useEffect(() => {
-    if (!state.result || state.completedAt === 0 || handledAtRef.current === state.completedAt) {
+    if (
+      !state.result ||
+      state.completedAt === 0 ||
+      handledAtRef.current === state.completedAt
+    ) {
       return;
     }
 
@@ -104,14 +108,20 @@ export function ConfigForm(props: {
     toast.add({
       variant: "success",
       title: "Configuration saved",
-      description: "Runtime settings have been updated for the current session.",
+      description:
+        "Runtime settings have been updated for the current session.",
     });
     props.onSaved?.(state.result);
   }, [props.onSaved, state.completedAt, state.result, toast]);
 
   return (
     <form action={submitAction} className="space-y-4">
-      <input type="hidden" name="payload" value={JSON.stringify(draft)} readOnly />
+      <input
+        type="hidden"
+        name="payload"
+        value={JSON.stringify(draft)}
+        readOnly
+      />
 
       {state.errorMessage ? (
         <Banner
@@ -282,7 +292,9 @@ export function ConfigForm(props: {
           setOpenSections((current) => ({ ...current, shared: open }));
         }}
       >
-        <Collapsible.DefaultTrigger className=" hover:bg-kumo-overlay text-kumo-fg rounded-md px-3 py-2">Shared</Collapsible.DefaultTrigger>
+        <Collapsible.DefaultTrigger className=" hover:bg-kumo-overlay text-kumo-fg rounded-md px-3 py-2">
+          Shared
+        </Collapsible.DefaultTrigger>
         <Collapsible.DefaultPanel keepMounted>
           <div className="grid gap-4 md:grid-cols-2">
             <Input
@@ -375,6 +387,21 @@ export function ConfigForm(props: {
                 }));
               }}
             />
+            <Input
+              label="Flag Ids Format"
+              type="text"
+              value={draft.shared.flagids_format}
+              {...fieldError(state.fieldErrors.flagids_format)}
+              onChange={(event) => {
+                setDraft((current) => ({
+                  ...current,
+                  shared: {
+                    ...current.shared,
+                    flagids_format: event.target.value,
+                  },
+                }));
+              }}
+            />
 
             <div className="rounded-xl border border-kumo-line bg-kumo-overlay p-4 md:col-span-2">
               <ConfigServicesEditor
@@ -390,7 +417,9 @@ export function ConfigForm(props: {
                 }}
               />
               {state.fieldErrors.services ? (
-                <p className="mt-2 text-sm text-kumo-danger">{state.fieldErrors.services}</p>
+                <p className="mt-2 text-sm text-kumo-danger">
+                  {state.fieldErrors.services}
+                </p>
               ) : null}
             </div>
           </div>
@@ -402,7 +431,9 @@ export function ConfigForm(props: {
       </div>
 
       <div className="flex justify-end">
-        <FormSubmitButton pendingLabel="Saving...">Save Configuration</FormSubmitButton>
+        <FormSubmitButton pendingLabel="Saving...">
+          Save Configuration
+        </FormSubmitButton>
       </div>
     </form>
   );

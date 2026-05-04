@@ -24,3 +24,4 @@ shared:
   regex_flag: "[A-Z0-9]{31}="
   nop_team: 0
   url_flag_ids: "http://localhost:5001/flagIds"
+  flagids_format: "[service].[team].[id]"

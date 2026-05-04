@@ -98,7 +98,9 @@ shared:
   my_team_id: 1
   nop_team: 0
   url_flag_ids: "<address_of_flagIds>"
+  flagids_format: "[service].[team].[id]"
 ```
+
   
 4. Start the server with Docker Compose:
 

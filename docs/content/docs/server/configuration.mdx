@@ -55,6 +55,7 @@ shared:
   nop_team: 0
   range_ip_teams: 20
   url_flag_ids: "http://127.0.0.1:5002/flagids"
+  flagids_format: "[service].[team].[id]"  
 ```
 
 ## Most important competition fields
@@ -65,8 +66,10 @@ shared:
 - `shared.regex_flag`: regex used by exploit runtime
 - `shared.services`: service-to-port map
 - `shared.url_flag_ids`: flag IDs endpoint
+- `shared.flagids_format`: flag IDs structure
 
 ## Operational notes
 
 - If `url_flag_checker` is empty, server stores flags but cannot forward them.
 - `flag_ttl` is in ticks (`flag_ttl * tick_time` seconds).
+- `flagids_format`: flag IDs structure that defines how flags are formatted (e.g., `[service].[team].[id]` means flags follow a pattern with service name, team number, and flag ID separated by dots)

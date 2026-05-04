@@ -27,6 +27,7 @@ export const sharedConfigSchema = z.object({
   url_flag_ids: z.string().trim(),
   nop_team: z.number().int().nonnegative(),
   range_ip_teams: z.number().int().nonnegative().max(255),
+  flagids_format: z.string().trim(),
   configured: z.boolean().default(false),
 });
 
@@ -60,22 +61,19 @@ export function useConfig() {
 }
 
 export async function updateConfig(config: Config): Promise<Config> {
-  await apiFetch(
-    "/config",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        config: {
-          ...config,
+  await apiFetch("/config", {
+    method: "POST",
+    body: JSON.stringify({
+      config: {
+        ...config,
+        configured: true,
+        shared: {
+          ...config.shared,
           configured: true,
-          shared: {
-            ...config.shared,
-            configured: true,
-          },
         },
-      }),
-    },
-  );
+      },
+    }),
+  });
 
   const nextConfig = await fetchConfig();
   void mutate(configKey, nextConfig, { revalidate: false });
@@ -91,11 +89,17 @@ export function useProtocols() {
   return data as ProtocolsResponse;
 }
 
-export function servicesToEntries(services: ConfigServices): Array<[string, number]> {
-  return Object.entries(services).sort(([left], [right]) => left.localeCompare(right));
+export function servicesToEntries(
+  services: ConfigServices,
+): Array<[string, number]> {
+  return Object.entries(services).sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
 }
 
-export function entriesToServices(entries: Array<[string, number]>): ConfigServices {
+export function entriesToServices(
+  entries: Array<[string, number]>,
+): ConfigServices {
   return Object.fromEntries(
     entries
       .map(([name, port]) => [name.trim(), port] as const)

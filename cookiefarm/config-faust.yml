@@ -23,3 +23,4 @@ shared:
   regex_flag: "BTC_[A-Za-z0-9/+]{32}"
   nop_team: 1
   url_flag_ids: "http://10.10.0.1:8011/competition/teams.json"
+  flagids_format: "flagids.[service].[team].[id]"

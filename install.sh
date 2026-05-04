@@ -220,10 +220,15 @@ gum_input_int() {
 
 gum_confirm() {
     "$GUM_BIN" confirm \
+        --prompt.foreground "$GC_BASE" \
         --selected.background "$GC_TITLE" \
         --selected.foreground "#0A0C0D" \
         --unselected.foreground "$GC_DIM" \
         "$@"
+}
+
+gum_choose() {
+    "$GUM_BIN" choose  "$@"
 }
 
 format_command() {
@@ -456,7 +461,7 @@ print((datetime.now(timezone.utc) + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M
     # Flag IDs Format Selection
     flagids_format_choice="$(gum_choose \
         --header "Select Flag IDs Format Template" \
-        --no-limit \
+        --limit 1 \
         "CyberChallenge Template" \
         "Faust Template" \
         "Custom")"

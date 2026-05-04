@@ -1,41 +1,19 @@
-import { startTransition, useEffect, useState } from "react";
+import { useState } from "react";
 import { Banner } from "@cloudflare/kumo/components/banner";
 import { Breadcrumbs } from "@cloudflare/kumo/components/breadcrumbs";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Input } from "@cloudflare/kumo/components/input";
-import { Select } from "@cloudflare/kumo/components/select";
-import { Checkbox } from "@cloudflare/kumo/components/checkbox";
 import { useKumoToastManager } from "@cloudflare/kumo/components/toast";
-import { ArrowSquareOut, WarningCircle } from "@phosphor-icons/react";
+import { ArrowSquareOut, WarningCircleIcon } from "@phosphor-icons/react";
 import { Link } from "react-router";
 import { useConfig } from "@/api/config";
-import { deleteFlag, fetchAllFlags, fetchFlags, submitFlag, useAllFlags, useFlags } from "@/api/flags";
-import { fetchStatsSummary, useStatsSummary, type StatsSummary } from "@/api/stats";
+import { deleteFlag, submitFlag, useFlags } from "@/api/flags";
+import { useChartStats, useStatsSummary } from "@/api/stats";
 import { FlagTable } from "@/features/flags/FlagTable";
 import { PageHeader } from "@/components/kumo/page-header/page-header";
-import { useInterval } from "@/hooks/useInterval";
-import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { StatsBar } from "./StatsBar";
 
-const autoRefreshEnabledStorageKey = "cookiefarm-dashboard-auto-refresh-enabled";
-const autoRefreshMsStorageKey = "cookiefarm-dashboard-auto-refresh-ms";
-
-function readStoredAutoRefreshEnabled(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return window.localStorage.getItem(autoRefreshEnabledStorageKey) === "true";
-}
-
-function readStoredRefreshMs(): number {
-  if (typeof window === "undefined") {
-    return 10_000;
-  }
-
-  const storedValue = Number(window.localStorage.getItem(autoRefreshMsStorageKey));
-  return [5000, 10000, 60000, 120000].includes(storedValue) ? storedValue : 10_000;
-}
+const dashboardRefreshInterval = 10_000;
 
 const breadcrumbs = (
   <Breadcrumbs className="px-3 py-2 text-sm">
@@ -48,80 +26,41 @@ const breadcrumbs = (
 export function DashboardPage() {
   const toast = useKumoToastManager();
   const config = useConfig();
-  const seedSummary = useStatsSummary();
-  const seedChartFlags = useAllFlags();
-  const seedFlags = useFlags({ limit: 25, offset: 0 });
-  const [summary, setSummary] = useState<StatsSummary>(seedSummary);
-  const [chartFlags, setChartFlags] = useState(seedChartFlags.flags);
-  const [flags, setFlags] = useState(seedFlags.flags);
+  const summaryQuery = useStatsSummary({ refreshInterval: dashboardRefreshInterval });
+  const chartStatsQuery = useChartStats(config.server.tick_time, {
+    refreshInterval: dashboardRefreshInterval,
+  });
+  const flagsQuery = useFlags(
+    { limit: 25 },
+    { refreshInterval: dashboardRefreshInterval },
+  );
+  const summary = summaryQuery.data!;
+  const chartStats = chartStatsQuery.data!;
+  const flags = flagsQuery.data!.flags;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [flagCode, setFlagCode] = useState("");
-  const [refreshMs, setRefreshMs] = useState(readStoredRefreshMs);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(readStoredAutoRefreshEnabled);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    setSummary(seedSummary);
-  }, [seedSummary]);
-
-  useEffect(() => {
-    setFlags(seedFlags.flags);
-  }, [seedFlags.flags]);
-
-  useEffect(() => {
-    setChartFlags(seedChartFlags.flags);
-  }, [seedChartFlags.flags]);
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      autoRefreshEnabledStorageKey,
-      autoRefreshEnabled ? "true" : "false",
-    );
-  }, [autoRefreshEnabled]);
-
-  useEffect(() => {
-    window.localStorage.setItem(autoRefreshMsStorageKey, String(refreshMs));
-  }, [refreshMs]);
-
   async function refreshDashboard(): Promise<void> {
-    const [nextSummary, nextChartFlags, nextFlags] = await Promise.all([
-      fetchStatsSummary(),
-      fetchAllFlags(),
-      fetchFlags({ limit: 25, offset: 0 }),
+    await Promise.all([
+      summaryQuery.mutate(),
+      chartStatsQuery.mutate(),
+      flagsQuery.mutate(),
     ]);
-
-    startTransition(() => {
-      setSummary(nextSummary);
-      setChartFlags(nextChartFlags.flags);
-      setFlags(nextFlags.flags);
-    });
     setErrorMessage(null);
   }
 
-  useInterval(
-    () => {
-      void refreshDashboard()
-        .catch((error: unknown) => {
-          setErrorMessage(error instanceof Error ? error.message : "Dashboard refresh failed");
-        });
-    },
-    refreshMs,
-    { enabled: autoRefreshEnabled },
-  );
-
-  useRefreshOnFocus(() => {
-    void refreshDashboard().catch((error: unknown) => {
-      setErrorMessage(error instanceof Error ? error.message : "Dashboard refresh failed");
-    });
-  }, { immediate: true });
+  const swrError = summaryQuery.error ?? chartStatsQuery.error ?? flagsQuery.error;
+  const visibleErrorMessage =
+    errorMessage ?? (swrError instanceof Error ? swrError.message : null);
 
   return (
     <div className="space-y-6">
       <PageHeader
         breadcrumbs={breadcrumbs}
         title="Dashboard"
-        description="Collector overview, manual submit/delete actions, and the latest stored flags."
+        description="Collector overview, manual submit/delete actions, and recent stored flags."
       >
         <Link
           to="/flags"
@@ -132,12 +71,12 @@ export function DashboardPage() {
         </Link>
       </PageHeader>
 
-      {errorMessage ? (
+      {visibleErrorMessage ? (
         <Banner
           variant="error"
-          icon={<WarningCircle weight="fill" />}
+          icon={<WarningCircleIcon weight="fill" />}
           title="Refresh failed"
-          description={errorMessage}
+          description={visibleErrorMessage}
         />
       ) : null}
 
@@ -151,8 +90,7 @@ export function DashboardPage() {
 
       <StatsBar
         summary={summary}
-        flags={chartFlags}
-        tickSeconds={config.server.tick_time}
+        tickSeries={chartStats.tick_series}
       />
 
       <section className="rounded-2xl border border-kumo-line bg-kumo-base p-4">
@@ -249,29 +187,6 @@ export function DashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Checkbox
-              label="Auto refresh"
-              checked={autoRefreshEnabled}
-              onCheckedChange={(v) => {
-                setAutoRefreshEnabled(Boolean(v));
-              }}
-              className="text-sm text-kumo-fg-secondary"
-            />
-            <Select
-              aria-label="Refresh interval"
-              className="rounded-xl border border-kumo-line bg-kumo-overlay px-3 py-2 text-sm text-kumo-fg-primary"
-              value={String(refreshMs)}
-              disabled={!autoRefreshEnabled}
-              onValueChange={(v) => {
-                setRefreshMs(Number(v));
-              }}
-              items={{
-                5000: "5s",
-                10000: "10s",
-                60000: "1m",
-                120000: "2m",
-              }}
-            />
             <Button
               variant="secondary"
               onClick={() => {
@@ -292,7 +207,7 @@ export function DashboardPage() {
         <div>
           <h2 className="text-lg font-semibold text-kumo-fg-primary">Latest Flags</h2>
           <p className="text-sm text-kumo-fg-secondary mt-1">
-            The newest 25 rows
+            The newest 25 rows. Dashboard charts use aggregated stats, not the full flag archive.
           </p>
         </div>
         <FlagTable

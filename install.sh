@@ -32,24 +32,34 @@ GC_ERROR="#E74C3C"
 
 last_command=""
 current_command=""
+failed_wrapped_title=""
+failed_wrapped_command=""
+error_reported=0
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 
 err_report() {
-    local exit_code=$?
+    local exit_code="${3:-$?}"
     local lineno="${1:-${BASH_LINENO[0]:-0}}"
+    local command="${2:-${current_command:-${last_command:-unknown}}}"
     [ "$exit_code" -eq 0 ] && return 0
+    error_reported=1
     printf "%b ERROR %b %s%b (exit %d, line %d)\n" \
         "${BOLD}${C_ERROR_BG}${C_ERROR_FG}" "$RESET" \
-        "${last_command:-unknown}" "$RESET" \
+        "${command:-unknown}" "$RESET" \
         "$exit_code" "$lineno" >&2
+    if [ -n "${failed_wrapped_command:-}" ]; then
+        printf "%b       %bSpinner task: %s\n" "$C_DIM" "$RESET" "${failed_wrapped_title:-unknown}" >&2
+        printf "%b       %bWrapped command: %s\n" "$C_DIM" "$RESET" "$failed_wrapped_command" >&2
+    fi
     [ -x "${GUM_BIN:-}" ] &&
         "$GUM_BIN" log --structured --level error --time rfc822 \
             "Command failed" \
-            exit_code "$exit_code" line "$lineno" command "${last_command:-unknown}" >&2 || true
+            exit_code "$exit_code" line "$lineno" command "${command:-unknown}" \
+            wrapped_title "${failed_wrapped_title:-}" wrapped_command "${failed_wrapped_command:-}" >&2 || true
 }
 
-trap 'err_report ${LINENO}' ERR
-trap 'code=$?; [ "$code" -ne 0 ] && err_report' EXIT
+trap 'err_report "$LINENO" "$BASH_COMMAND"' ERR
+trap 'code=$?; [ "$code" -ne 0 ] && [ "${error_reported:-0}" -eq 0 ] && err_report "$LINENO" "${current_command:-unknown}" "$code"' EXIT
 
 require_cmd() {
     local cmd="$1"
@@ -216,15 +226,47 @@ gum_confirm() {
         "$@"
 }
 
+format_command() {
+    local quoted="" part q
+    for part in "$@"; do
+        printf -v q '%q' "$part"
+        quoted="${quoted}${quoted:+ }${q}"
+    done
+    printf '%s' "$quoted"
+}
+
 gum_spin() {
     local title="$1"
     shift
+    local cmd_display exit_code
+
+    cmd_display="$(format_command "$@")"
+    failed_wrapped_title=""
+    failed_wrapped_command=""
+
+    set +e
     "$GUM_BIN" spin \
         --spinner minidot \
         --title "$title" \
         --spinner.foreground "$GC_TITLE" \
         --title.foreground "$GC_BASE" \
         -- "$@"
+    exit_code=$?
+    set -e
+
+    if [ "$exit_code" -ne 0 ]; then
+        failed_wrapped_title="$title"
+        failed_wrapped_command="${cmd_display:-<empty>}"
+        printf "%b ERROR %b Spinner task failed (exit %d)\n" \
+            "${BOLD}${C_ERROR_BG}${C_ERROR_FG}" "$RESET" "$exit_code" >&2
+        printf "%b       %bTask: %s\n" "$C_DIM" "$RESET" "$failed_wrapped_title" >&2
+        printf "%b       %bWrapped command: %s\n" "$C_DIM" "$RESET" "$failed_wrapped_command" >&2
+        [ -x "${GUM_BIN:-}" ] &&
+            "$GUM_BIN" log --structured --level error --time rfc822 \
+                "Spinner task failed" \
+                exit_code "$exit_code" title "$failed_wrapped_title" command "$failed_wrapped_command" >&2 || true
+        return "$exit_code"
+    fi
 }
 
 gum_log_info() {
@@ -496,7 +538,7 @@ confirm() {
     printf "\n"
 
     # Optional: open editor
-    if gum_confirm "Open a file in $EDITOR before deploying?"; then
+    if gum_confirm "Open a file in ${EDITOR:-vi} before deploying?"; then
         local chosen_file
         chosen_file="$("$GUM_BIN" file . --all --cursor="🍪")"
         if [ -n "${chosen_file:-}" ] && [ -f "$chosen_file" ]; then
@@ -556,18 +598,18 @@ if [ "$mode" = "build" ]; then
 
     cd cookiefarm
     gum_spin "Building and starting containers (this may take a while)..." \
-        sh -c 'docker compose -f docker-compose.yml up --build -d 2>&1'
+        sh -c 'docker compose -f compose.yml up --build -d 2>&1'
 
 # ── Compose-only mode: download + docker up ───────────────────────────────────
 else
-    require_cmd wget "Install wget to download docker-compose.yml"
+    require_cmd wget "Install wget to download compose.yml"
     require_cmd docker "Install Docker to run containers"
 
     mkdir -p CookieFarm
     cd CookieFarm
 
-    gum_spin "Downloading docker-compose.yml..." \
-        wget -q https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/refs/heads/main/cookiefarm/docker-compose.yml
+    gum_spin "Downloading compose.yml..." \
+        wget -q -O compose.yml https://raw.githubusercontent.com/ByteTheCookies/CookieFarm/dev/cookiefarm/compose.yml
 
     gum_ask_basic
     write_env .      # → ./.env
@@ -575,7 +617,7 @@ else
     confirm
 
     gum_spin "Starting containers..." \
-        sh -c 'docker compose -f docker-compose.yml up --build -d 2>&1'
+    sh -c 'docker compose -f compose.yml pull && docker compose -f compose.yml up --build --pull always -d 2>&1'
 fi
 
 # ── Success banner ────────────────────────────────────────────────────────────

@@ -7,10 +7,10 @@ import (
 
 	"github.com/gofiber/fiber/v3/extractors"
 
+	"server/ckp"
 	"server/config"
 	"server/core"
 	"server/database"
-	"server/websockets"
 
 	jwtware "github.com/gofiber/contrib/v3/jwt"
 	"github.com/gofiber/fiber/v3"
@@ -18,13 +18,14 @@ import (
 )
 
 type Handler struct {
-	store  *database.Store
-	runner *core.Runner
-	config *config.ConfigManager
+	store       *database.Store
+	runner      *core.Runner
+	config      *config.ConfigManager
+	connections *ckp.Connections
 }
 
-func NewHandler(s *database.Store, r *core.Runner, c *config.ConfigManager) *Handler {
-	return &Handler{store: s, runner: r, config: c}
+func NewHandler(s *database.Store, r *core.Runner, c *config.ConfigManager, conns *ckp.Connections) *Handler {
+	return &Handler{store: s, runner: r, config: c, connections: conns}
 }
 
 // RegisterRoutes configures all routes and middlewares of the Fiber app,
@@ -68,6 +69,7 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 		),
 	}))
 	privateAPI.Get("/stats", h.HandleGetStats)
+	privateAPI.Get("/stats/charts", h.HandleGetChartStats)
 	privateAPI.Get("/flags", h.HandleGetAllFlags)
 	privateAPI.Get("/flags/:limit", h.HandleGetPaginatedFlags)
 	privateAPI.Get("/config", h.HandleGetConfig)
@@ -78,17 +80,15 @@ func (h *Handler) RegisterRoutes(app *fiber.App) {
 	privateAPI.Post("/submit-flags-standalone", h.HandlePostFlagsStandalone)
 	privateAPI.Delete("/delete-flag", h.HandleDeleteFlag)
 
-	websockets.GlobalManager = websockets.NewManager()
-	app.Use("/ws",
-		websockets.CookieAuthMiddleware,
-		websockets.WebSocketUpgrade,
-	)
-	app.Get("/ws", websockets.GlobalManager.ServeWS())
+	// exploits endpoints
+	privateAPI.Get("/exploits", h.HandleGetExploits)
+	privateAPI.Get("/exploit/:name", h.HandleGetExploit)
+	privateAPI.Post("/exploit/upload", h.HandlePostExploit)
+	privateAPI.Delete("/exploit/:id", h.HandleDeleteExploit)
 
 	app.Get("/*", func(c fiber.Ctx) error {
 		path := c.Path()
 		if strings.HasPrefix(path, "/api/") ||
-			strings.HasPrefix(path, "/ws") ||
 			strings.HasPrefix(path, "/assets/") ||
 			strings.HasPrefix(path, "/css/") ||
 			strings.HasPrefix(path, "/js/") ||

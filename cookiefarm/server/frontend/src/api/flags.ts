@@ -1,6 +1,6 @@
-import { use } from "react";
+import useSWR, { mutate, type SWRConfiguration } from "swr";
 import { z } from "zod";
-import { apiFetch, cached, invalidateCached } from "./client";
+import { apiFetch } from "./client";
 
 export const flagStatusSchema = z.union([
   z.literal(0),
@@ -30,13 +30,14 @@ export type Flag = z.infer<typeof flagSchema>;
 export const flagsResponseSchema = z.object({
   flags: z.array(flagSchema),
   n_flags: z.number().int().nonnegative(),
+  next: z.string(),
 });
 
 export type FlagsResponse = z.infer<typeof flagsResponseSchema>;
 
 export type FlagsQuery = {
   limit: number;
-  offset: number;
+  cursor?: string;
   status?: FlagStatus;
   service?: string;
   team?: string;
@@ -49,9 +50,10 @@ const submitFlagRequestSchema = z.object({
 });
 
 function buildFlagsQuery(params: FlagsQuery): string {
-  const query = new URLSearchParams({
-    offset: String(params.offset),
-  });
+  const query = new URLSearchParams();
+  if (params.cursor) {
+    query.set("cursor", params.cursor);
+  }
 
   if (params.status !== undefined) {
     query.set("status", String(params.status));
@@ -72,6 +74,12 @@ function buildFlagsQuery(params: FlagsQuery): string {
   return query.toString();
 }
 
+export function flagsKey(params: FlagsQuery) {
+  return ["/flags", params.limit, buildFlagsQuery(params)] as const;
+}
+
+export const allFlagsKey = "/flags";
+
 export async function fetchFlags(params: FlagsQuery): Promise<FlagsResponse> {
   return apiFetch(
     `/flags/${params.limit}?${buildFlagsQuery(params)}`,
@@ -81,24 +89,22 @@ export async function fetchFlags(params: FlagsQuery): Promise<FlagsResponse> {
 }
 
 export async function fetchAllFlags(): Promise<FlagsResponse> {
-  return apiFetch("/flags", {}, flagsResponseSchema);
+  return apiFetch(allFlagsKey, {}, flagsResponseSchema);
 }
 
-export function readFlags(params: FlagsQuery): Promise<FlagsResponse> {
-  const queryKey = `${params.limit}:${buildFlagsQuery(params)}`;
-  return cached(`flags:${queryKey}`, () => fetchFlags(params));
+export function useFlags(params: FlagsQuery, options: SWRConfiguration = {}) {
+  return useSWR(flagsKey(params), () => fetchFlags(params), {
+    suspense: true,
+    keepPreviousData: true,
+    ...options,
+  });
 }
 
-export function useFlags(params: FlagsQuery) {
-  return use(readFlags(params));
-}
-
-export function readAllFlags(): Promise<FlagsResponse> {
-  return cached("flags:all", fetchAllFlags);
-}
-
-export function useAllFlags() {
-  return use(readAllFlags());
+export function useAllFlags(options: SWRConfiguration = {}) {
+  return useSWR(allFlagsKey, fetchAllFlags, {
+    suspense: true,
+    ...options,
+  });
 }
 
 export async function submitFlag(flag: Flag): Promise<void> {
@@ -113,7 +119,7 @@ export async function submitFlag(flag: Flag): Promise<void> {
       ),
     },
   );
-  invalidateFlagsCache();
+  void invalidateFlagsCache();
 }
 
 export async function deleteFlag(flagCode: string): Promise<void> {
@@ -123,9 +129,9 @@ export async function deleteFlag(flagCode: string): Promise<void> {
       method: "DELETE",
     },
   );
-  invalidateFlagsCache();
+  void invalidateFlagsCache();
 }
 
 export function invalidateFlagsCache() {
-  invalidateCached("flags:");
+  return mutate((key) => Array.isArray(key) ? key[0] === "/flags" : key === allFlagsKey);
 }

@@ -28,6 +28,16 @@ RUN for file in $(find ./pkg/protocols -name '*.go' ! -name 'protocols.go'); do 
  fi; \
 done
 
+
+FROM oven/bun:1.3.0-alpine AS bun
+
+WORKDIR /app/server/frontend
+
+COPY ./server/frontend/ /app/server/frontend/
+
+RUN bun install --frozen-lockfile
+RUN bun run build
+
 FROM alpine:3.23.3 AS prod
 
 WORKDIR /app
@@ -39,9 +49,7 @@ COPY --from=build /app/bin/cks /app/bin/cks
 COPY --from=build /app/server/public /app/server/public
 COPY --from=build /app/config.yml /app/config.yml
 COPY --from=build /app/pkg/protocols /app/pkg/protocols
-COPY --from=build /app/server/frontend/dist /app/server/frontend/dist
-COPY --from=build /app/server/frontend/dist/assets /app/server/frontend/dist/assets
-COPY --from=build /app/server/frontend/dist/index.html /app/server/frontend/dist/index.html
+COPY --from=bun /app/server/frontend/dist /app/server/frontend/dist
 COPY ./run.sh /app/run.sh
 
 RUN touch /app/cookiefarm.db \

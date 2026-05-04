@@ -2,7 +2,7 @@ import { useActionState, useEffect } from "react";
 import { Banner } from "@cloudflare/kumo/components/banner";
 import { Button } from "@cloudflare/kumo/components/button";
 import { Input } from "@cloudflare/kumo/components/input";
-import { WarningCircle } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useLocation, useNavigate } from "react-router";
 import { ApiError } from "@/api/client";
 import { useAuth } from "./AuthProvider";
@@ -86,7 +86,7 @@ export function LoginPage() {
           {state.errorMessage ? (
             <Banner
               variant="error"
-              icon={<WarningCircle weight="fill" />}
+              icon={<WarningCircleIcon weight="fill" />}
               title="Authentication failed"
               description={state.errorMessage}
             />

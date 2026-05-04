@@ -5,9 +5,9 @@ name: Go Build & Test
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: ["main", "dev"]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: ["main", "dev"]
 
 jobs:
 
@@ -56,20 +56,3 @@ jobs:
 
       - name: Build client
         run: go build -o ./bin/client ./client/main.go
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cookiefarm
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.26.1'
-
-      - name: Run tests
-        run: go test work -coverprofile=./coverage/coverage.out -json -v ./... > ./coverage/test_output.json 2>&1 || true

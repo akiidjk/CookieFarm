@@ -1,23 +1,23 @@
-import { useState } from "react";
-import { Button } from "@cloudflare/kumo/components/button";
+import useSWR from "swr";
+import { Avatar } from "@cloudflare/kumo/primitives/avatar";
+import { DropdownMenu } from "@cloudflare/kumo/components/dropdown";
 import { Sidebar } from "@cloudflare/kumo/components/sidebar";
 import { Text } from "@cloudflare/kumo/components/text";
 import { z } from "zod";
 import {
+  Bug,
   ChartBar,
   Flag,
   Gear,
   SignOut,
-  Moon,
   SidebarSimple,
-  Sun,
 } from "@phosphor-icons/react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { apiFetch } from "@/api/client";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LiveDot } from "@/components/LiveDot";
-import { useInterval } from "@/hooks/useInterval";
-import { CookieIcon, HouseIcon, HouseSimpleIcon } from "@phosphor-icons/react/dist/ssr";
+import { HouseIcon } from "@phosphor-icons/react/dist/ssr";
+import { Button } from "@cloudflare/kumo";
 
 const apiStatusSchema = z.object({
   message: z.string(),
@@ -29,30 +29,37 @@ const navigationItems = [
   { href: "/", label: "Dashboard", icon: HouseIcon },
   { href: "/charts", label: "Charts", icon: ChartBar },
   { href: "/flags", label: "Flags", icon: Flag },
+  { href: "/exploits", label: "Exploits", icon: Bug },
   { href: "/config", label: "Config", icon: Gear },
 ] as const;
+
+function getUserInitials(username: string): string {
+  return username
+    .split(/[\s._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "C";
+}
 
 export function AppLayout() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [status, setStatus] = useState<"connecting" | "open" | "closed" | "error">(
-    "connecting",
+  const username = auth.user?.username ?? "cookieguest";
+  const apiStatus = useSWR(
+    "api:status",
+    () => apiFetch("/", {}, apiStatusSchema),
+    { refreshInterval: 15_000 },
   );
-
-  useInterval(
-    () => {
-      void apiFetch("/", {}, apiStatusSchema)
-        .then((response) => {
-          setStatus(response.message ? "open" : "error");
-        })
-        .catch(() => {
-          setStatus("closed");
-        });
-    },
-    15000,
-    { immediate: true },
-  );
+  const status: "connecting" | "open" | "closed" | "error" =
+    apiStatus.isLoading
+      ? "connecting"
+      : apiStatus.error
+        ? "closed"
+        : apiStatus.data?.message
+          ? "open"
+          : "error";
 
   return (
     <Sidebar.Provider defaultOpen variant="inset" collapsible="icon">
@@ -61,7 +68,7 @@ export function AppLayout() {
         <Sidebar className="border-r border-kumo-line/60 bg-kumo-base/95">
           <Sidebar.Header className="px-3 py-4">
             <div className="flex items-center gap-3">
-              <img src="/images/logo.png" alt="CookieFarm Logo" width={24} height={24} className="block" />
+              <img src="/images/logo_mucca.png" alt="CookieFarm Logo" width={48} height={48} className="block" />
               {/* ② Show dynamic name here too, not just the top bar */}
               <div className="min-w-0">
                 <div className="truncate font-semibold text-kumo-fg-primary">
@@ -119,20 +126,49 @@ export function AppLayout() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <LiveDot status={status} showLabel />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    void auth.logout().then(() => {
-                      navigate("/login", { replace: true });
-                    });
-                  }}
-                >
-                  <SignOut size={16} />
-                  Sign out
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenu.Trigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        className="flex min-w-0 items-center gap-2  "
+                      />
+                    }
+                  >
+                    <Avatar.Root className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-kumo-canvas">
+                      <Avatar.Image
+                        src="/images/logo.png"
+                        alt={`${username} profile picture`}
+                        className="size-full object-cover"
+                      />
+                      <Avatar.Fallback className="text-xs font-semibold text-kumo-fg-primary">
+                        {getUserInitials(username)}
+                      </Avatar.Fallback>
+                    </Avatar.Root>
+                    <Text
+                      size="lg"
+                      bold
+                      title={username}
+                    >
+                      {username}
+                    </Text>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Content>
+                    <DropdownMenu.Item
+                      icon={SignOut}
+                      variant="danger"
+                      onClick={() => {
+                        void auth.logout().then(() => {
+                          navigate("/login", { replace: true });
+                        });
+                      }}
+                    >
+                      Sign out
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu>
               </div>
             </div>
           </header>

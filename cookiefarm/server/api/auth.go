@@ -26,7 +26,7 @@ func InitSecret() ([]byte, error) {
 }
 
 // VerifyToken validates the JWT token using the secret key.
-func VerifyToken(token string) error {
+func VerifyToken(token string) (*jwt.Token, error) {
 	tok, err := jwt.Parse(token, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
@@ -38,25 +38,25 @@ func VerifyToken(token string) error {
 		return config.Secret, nil
 	})
 	if err != nil {
-		return fmt.Errorf("token parse error: %w", err)
+		return nil, fmt.Errorf("token parse error: %w", err)
 	}
 	if !tok.Valid {
-		return errors.New("invalid token")
+		return nil, errors.New("invalid token")
 	}
 
 	if claims, ok := tok.Claims.(jwt.MapClaims); ok {
 		if exp, ok := claims["exp"].(float64); ok {
 			if time.Now().Unix() > int64(exp) {
-				return errors.New("token is expired")
+				return nil, errors.New("token is expired")
 			}
 		} else {
-			return errors.New("invalid expiration claim in token")
+			return nil, errors.New("invalid expiration claim in token")
 		}
 	} else {
-		return errors.New("invalid token claims")
+		return nil, errors.New("invalid token claims")
 	}
 
-	return nil
+	return tok, nil
 }
 
 // HashPassword hashes the password using bcrypt.
@@ -160,13 +160,29 @@ func HandleVerify(c fiber.Ctx) error {
 			"error": "JWT token is required",
 		})
 	}
-	if err := VerifyToken(token); err != nil {
+	jwtToken, err := VerifyToken(token)
+	if err != nil {
 		logger.Log.Warn().Err(err).Msg("JWT verification failed")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid or expired JWT token",
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{})
+
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid JWT token",
+		})
+	}
+
+	username, ok := claims["username"].(string)
+	if !ok || username == "" {
+		username = "cookieguest"
+	}
+
+	return c.Status(fiber.StatusOK).JSON(AuthVerifyResponse{
+		Username: username,
+	})
 }
 
 // HandleLogout clears the JWT cookie.
@@ -190,7 +206,7 @@ func CookieAuthMiddleware(c fiber.Ctx) error {
 		logger.Log.Warn().Msg("JWT cookie missing")
 		return c.Redirect().To("/login")
 	}
-	if err := VerifyToken(token); err != nil {
+	if _, err := VerifyToken(token); err != nil {
 		logger.Log.Warn().Err(err).Msg("JWT verification failed")
 		return c.Redirect().To("/login")
 	}

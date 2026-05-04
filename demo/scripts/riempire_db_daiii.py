@@ -1,14 +1,13 @@
+import base64
 import json
 import random
-import string
-import uuid
 
 from shitcurl import login, send_post_request
 
 
-def random_flag_code(length=50):
-    charset = string.ascii_uppercase + string.digits
-    return "BTC{" + "".join(random.choices(charset, k=length)) + "}"
+def random_flag_code(length=32):
+    random_bytes = bytes(random.randint(0, 255) for _ in range(length))
+    return base64.b64encode(random_bytes).decode("utf-8")[:length].upper()
 
 
 # login
@@ -20,10 +19,10 @@ headers = {"Content-Type": "application/json", "Cookie": f"token={s.cookies['tok
 
 # Simulation parameters
 # Number of 120-second windows ("tickets") to emulate
-tickets_to_emulate = 200
+tickets_to_emulate = 400
 window_seconds = 120
-min_flags_per_window = 20
-max_flags_per_window = 120
+min_flags_per_window = 200
+max_flags_per_window = 600
 
 services = ["http", "ssh", "dns", "smtp", "ftp", "redis", "mysql", "postgres"]
 
@@ -38,7 +37,7 @@ exploits = [
     "buffer_overflow",
 ]
 
-batch_size = 2_000
+batch_size = 10_000
 base_submit_time = random.randint(1_700_000_000, 1_750_000_000)
 
 flags_batch = []
@@ -55,7 +54,6 @@ for ticket in range(tickets_to_emulate):
         flags_batch.append(
             {
                 "status": random.randint(0, 2),
-                "id": str(uuid.uuid4()),
                 "team_id": random.randint(1, 80),
                 "port_service": random.randint(1, 65535),
                 "service_name": service_name,

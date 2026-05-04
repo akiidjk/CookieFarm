@@ -1,7 +1,5 @@
 import { z, type ZodType } from "zod";
 
-const cachedRequests = new Map<string, Promise<unknown>>();
-
 export const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "/api/v1").trim();
 
 export class ApiError extends Error {
@@ -114,28 +112,6 @@ export async function apiFetch<T>(
   }
 
   return schema.parse(body);
-}
-
-export function cached<T>(key: string, loader: () => Promise<T>): Promise<T> {
-  const existing = cachedRequests.get(key);
-  if (existing) {
-    return existing as Promise<T>;
-  }
-
-  const promise = loader();
-  cachedRequests.set(key, promise);
-  promise.catch(() => {
-    cachedRequests.delete(key);
-  });
-  return promise;
-}
-
-export function invalidateCached(prefix: string) {
-  for (const key of cachedRequests.keys()) {
-    if (key.startsWith(prefix)) {
-      cachedRequests.delete(key);
-    }
-  }
 }
 
 export function buildWebSocketUrl(path: string): string {

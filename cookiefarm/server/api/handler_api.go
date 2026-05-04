@@ -9,16 +9,34 @@ import (
 	"strconv"
 	"strings"
 
+	"server/ckp"
 	"server/config"
 	"server/database"
-	"server/websockets"
+	"server/internal/exploit"
 
 	json "github.com/bytedance/sonic"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/gofiber/fiber/v3"
 )
 
 const flagCheckerHostNotConfigureWarnMessage = "Flagchecker host not configured"
+
+func sqlNullFloatToInt64(value sql.NullFloat64) int64 {
+	if !value.Valid {
+		return 0
+	}
+
+	return int64(value.Float64)
+}
+
+func percentage(part int64, total int64) float64 {
+	if total <= 0 {
+		return 0
+	}
+
+	return (float64(part) / float64(total)) * 100
+}
 
 // ---------- GET ----------------
 
@@ -102,6 +120,130 @@ func (h *Handler) HandleGetStats(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"flags_stats": rows})
 }
 
+// HandleGetChartStats returns aggregated chart data without returning raw flags.
+//
+// @Summary Get chart stats
+// @Description Returns tick-bucket and exploit-share aggregates for charts.
+// @Tags stats
+// @Produce json
+// @Security CookieAuth
+// @Param tick_seconds query int false "Tick bucket size in seconds"
+// @Success 200 {object} ResponseChartStats
+// @Failure 500 {object} ResponseError
+// @Router /stats/charts [get]
+func (h *Handler) HandleGetChartStats(c fiber.Ctx) error {
+	tickSeconds := fiber.Query[int](c, "tick_seconds", 60)
+	if tickSeconds <= 0 {
+		tickSeconds = 60
+	}
+
+	tickRows, err := h.store.Queries.FlagsTickStats(c.RequestCtx(), uint64(tickSeconds))
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag tick stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	tickSeries := make([]FlagTickPoint, 0, len(tickRows))
+	for _, row := range tickRows {
+		tickSeries = append(tickSeries, FlagTickPoint{
+			Timestamp: row.Bucket * int64(tickSeconds),
+			Total:     row.Total,
+			Queued:    sqlNullFloatToInt64(row.Queued),
+			Accepted:  sqlNullFloatToInt64(row.Accepted),
+			Denied:    sqlNullFloatToInt64(row.Denied),
+			Error:     sqlNullFloatToInt64(row.Error),
+			Invalid:   sqlNullFloatToInt64(row.Invalid),
+		})
+	}
+
+	exploitRows, err := h.store.Queries.FlagsExploitShare(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag exploit share")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	var totalFlags int64
+	for _, row := range exploitRows {
+		totalFlags += row.Value
+	}
+
+	exploitShare := make([]FlagExploitShare, 0, len(exploitRows))
+	for _, row := range exploitRows {
+		exploitShare = append(exploitShare, FlagExploitShare{
+			Name:       filepath.Base(row.ExploitName),
+			Value:      row.Value,
+			Percentage: percentage(row.Value, totalFlags),
+		})
+	}
+
+	exploitTickRows, err := h.store.Queries.FlagsExploitTickStats(c.RequestCtx(), uint64(tickSeconds))
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag exploit tick stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	exploitTickSeriesByName := make(map[string]*FlagExploitTickSeries)
+	exploitTickOrder := make([]string, 0)
+	for _, row := range exploitTickRows {
+		name := filepath.Base(row.ExploitName)
+		series, exists := exploitTickSeriesByName[name]
+		if !exists {
+			series = &FlagExploitTickSeries{Name: name, Data: []FlagExploitTickPoint{}}
+			exploitTickSeriesByName[name] = series
+			exploitTickOrder = append(exploitTickOrder, name)
+		}
+
+		series.Total += row.Value
+		series.Data = append(series.Data, FlagExploitTickPoint{
+			Timestamp: row.Bucket * int64(tickSeconds),
+			Value:     row.Value,
+		})
+	}
+
+	exploitTickSeries := make([]FlagExploitTickSeries, 0, len(exploitTickOrder))
+	for _, name := range exploitTickOrder {
+		exploitTickSeries = append(exploitTickSeries, *exploitTickSeriesByName[name])
+	}
+
+	exploitStatusRows, err := h.store.Queries.FlagsExploitStatusStats(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch flag exploit status stats")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
+	}
+
+	exploitStatusPercentage := make([]FlagExploitStatusBreakdown, 0, len(exploitStatusRows))
+	for _, row := range exploitStatusRows {
+		queued := sqlNullFloatToInt64(row.Queued)
+		accepted := sqlNullFloatToInt64(row.Accepted)
+		denied := sqlNullFloatToInt64(row.Denied)
+		errorCount := sqlNullFloatToInt64(row.Error)
+		invalid := sqlNullFloatToInt64(row.Invalid)
+
+		exploitStatusPercentage = append(exploitStatusPercentage, FlagExploitStatusBreakdown{
+			Name:          filepath.Base(row.ExploitName),
+			Total:         row.Total,
+			Queued:        percentage(queued, row.Total),
+			Accepted:      percentage(accepted, row.Total),
+			Denied:        percentage(denied, row.Total),
+			Error:         percentage(errorCount, row.Total),
+			Invalid:       percentage(invalid, row.Total),
+			QueuedCount:   queued,
+			AcceptedCount: accepted,
+			DeniedCount:   denied,
+			ErrorCount:    errorCount,
+			InvalidCount:  invalid,
+		})
+	}
+
+	return c.JSON(ResponseChartStats{
+		TickSeries:              tickSeries,
+		ExploitShare:            exploitShare,
+		ExploitTickSeries:       exploitTickSeries,
+		ExploitStatusPercentage: exploitStatusPercentage,
+		TotalFlags:              totalFlags,
+	})
+}
+
 // HandleGetPaginatedFlags returns paginated and filtered flags.
 //
 // @Summary List flags (paginated)
@@ -120,21 +262,18 @@ func (h *Handler) HandleGetStats(c fiber.Ctx) error {
 // @Failure 500 {object} ResponseError
 // @Router /flags/{limit} [get]
 func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
-	limit, err := fiber.Params[int](c, "limit", config.DefaultLimit), error(nil)
-	if err != nil || limit <= 0 {
+	limit := fiber.Params[int](c, "limit", config.DefaultLimit)
+	if limit <= 0 {
 		logger.Log.Warn().Msg("Invalid or missing limit parameter")
 		limit = config.DefaultLimit
-	}
-	offset := fiber.Query[int](c, "offset", config.DefaultOffset)
-	if offset < 0 {
-		logger.Log.Warn().Msg("Invalid offset parameter, using default")
-		offset = config.DefaultOffset
 	}
 
 	// Build filter options from query parameters
 	optsStatus := int64(fiber.Query[int](c, "status", 5))
 	optsService := strings.TrimSpace(c.Query("service", ""))
 	teamStr := strings.TrimSpace(c.Query("team", ""))
+	searchStr := strings.TrimSpace(c.Query("search", ""))
+	searchField := strings.TrimSpace(c.Query("search_field", ""))
 
 	var serviceNull sql.NullString
 	if optsService != "" {
@@ -153,44 +292,48 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 		}
 	}
 
-	opts := database.GetFilteredFlagsParams{
-		Status: sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		TeamID: sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
+	cursorTime, cursorID := database.ParseCursor(c.Query("cursor", ""))
+	opts := database.FlagsQuery{
+		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5},
+		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
+		ServiceName: serviceNull,
 		Search: sql.NullString{
-			String: strings.TrimSpace(c.Query("search", "")),
-			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
-		}, // Value of the search query
+			String: "%" + searchStr + "%",
+			Valid:  searchStr != "",
+		},
 		SearchField: sql.NullString{
-			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
-			Valid:  true,
-		}, // Field to apply the search query to (default: flag_code)
-		Limit:  sql.NullInt64{Int64: int64(limit), Valid: true},
-		Offset: sql.NullInt64{Int64: int64(offset), Valid: true},
+			String: searchField,
+			Valid:  searchStr != "" && searchField != "",
+		},
+		Limit:      sql.NullInt64{Int64: int64(limit), Valid: true},
+		CursorTime: cursorTime,
+		CursorID:   cursorID,
 	}
 
-	flags, err := h.store.Queries.GetFilteredFlags(c.RequestCtx(), opts)
+	logger.Log.Debug().
+		// Int64("status", opts.Status.Int64).
+		// Int64("team_id", opts.TeamID.Int64).
+		Int64("limit", int64(limit)).
+		Int64("cursor id", cursorID.Int64).
+		Int64("cursor time", cursorTime.Int64).
+		Msg("Fetching paginated flags with filters")
+
+	flags, err := h.store.QueryFlagsParams(c.RequestCtx(), opts)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to fetch filtered flags")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
-	optsCount := database.CountFilteredFlagsParams{
-		Status:      sql.NullInt64{Int64: optsStatus, Valid: optsStatus != 5}, // Simple filter for the status (SUBMITTED/UNSUBMITTED/ACCEPTED/DENIED/ERROR)
-		ServiceName: serviceNull,                                              // Filter by service name
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},  // Filter by team ID (0 means not provided)
-		Search: sql.NullString{
-			String: strings.TrimSpace(c.Query("search", "")),
-			Valid:  strings.TrimSpace(c.Query("search", "")) != "",
-		}, // Value of the search query
-		SearchField: sql.NullString{
-			String: strings.TrimSpace(c.Query("search_field", "flag_code")),
-			Valid:  true,
-		}, // Field to apply the search query (default: flag_code)
+	h.store.QueryFlagsParams(c, opts)
 
+	var nextCursor string
+	if len(flags) == limit {
+		last := flags[len(flags)-1]
+		nextCursor = database.EncodeCursor(int64(last.SubmitTime), last.ID)
 	}
 
 	// Get filtered count for accurate pagination
-	nFlags, err := h.store.Queries.CountFilteredFlags(c.RequestCtx(), optsCount)
+	nFlags, err := h.store.CountFlags(c.RequestCtx(), opts)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("Failed to count filtered flags")
 		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
@@ -202,6 +345,7 @@ func (h *Handler) HandleGetPaginatedFlags(c fiber.Ctx) error {
 
 	return c.JSON(ResponseFlags{
 		Nflags: nFlags,
+		Next:   nextCursor,
 		Flags:  flags,
 	})
 }
@@ -222,8 +366,8 @@ func (*Handler) HandleGetProtocols(c fiber.Ctx) error {
 	}
 
 	var protocolNames []string
-	for _, path := range searchPaths {
-		if protocols, err := os.ReadDir(path); err == nil {
+	for _, exploitPath := range searchPaths {
+		if protocols, err := os.ReadDir(exploitPath); err == nil {
 			for _, entry := range protocols {
 				if entry.IsDir() {
 					protocolNames = append(protocolNames, strings.Split(entry.Name(), ".")[0])
@@ -266,11 +410,10 @@ func (h *Handler) HandlePostFlags(c fiber.Ctx) error {
 		logger.Log.Error().Err(err).Msg("Invalid SubmitFlags payload")
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(ResponseError{Error: err.Error()})
 	}
-	for _, flag := range payload.Flags {
-		if err := h.store.Queries.AddFlag(c.RequestCtx(), database.MapFromFlagToDBParams(flag)); err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to insert flags")
-			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
-		}
+
+	if err := h.store.BulkInsertFlags(c, payload.Flags); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to insert flags")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
 	return c.JSON(ResponseSuccess{Message: "Flags submitted successfully"})
@@ -345,11 +488,9 @@ func (h *Handler) HandlePostFlagsStandalone(c fiber.Ctx) error {
 		return c.Status(fiber.StatusUnprocessableEntity).JSON(ResponseError{Error: err.Error()})
 	}
 
-	for _, flag := range payload.Flags {
-		if err := h.store.Queries.AddFlag(c.RequestCtx(), database.MapFromFlagToDBParams(flag)); err != nil {
-			logger.Log.Error().Err(err).Msg("Failed to insert single flag")
-			return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
-		}
+	if err := h.store.BulkInsertFlags(c.RequestCtx(), payload.Flags); err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to insert single flag")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{Error: err.Error()})
 	}
 
 	if h.config.GetURLFlagChecker() == "" {
@@ -412,7 +553,7 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 	h.config.SetFullConfig(nextConfig)
 	h.config.SetConfigured(true)
 
-	h.runner.Run()
+	h.runner.Submission()
 
 	cfgJSON, err := json.Marshal(h.config.GetShared())
 	if err != nil {
@@ -423,15 +564,8 @@ func (h *Handler) HandlePostConfig(c fiber.Ctx) error {
 		})
 	}
 
-	event := websockets.Event{
-		Type:    websockets.ConfigMessage,
-		Payload: cfgJSON,
-	}
-
-	if websockets.GlobalManager != nil {
-		for client := range websockets.GlobalManager.Clients {
-			client.Egress <- event
-		}
+	for _, conn := range h.connections.GetAll() {
+		ckp.HandlerConfig(conn, append(cfgJSON, byte('\n')))
 	}
 
 	return c.JSON(ResponseSuccess{Message: "Configuration updated successfully"})
@@ -467,4 +601,150 @@ func (h *Handler) HandleDeleteFlag(c fiber.Ctx) error {
 	return c.JSON(ResponseSuccess{Message: "Flag deleted successfully"})
 }
 
-// fiber:context-methods migrated
+// @Summary List exploits
+// @Description Returns all stored exploits.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Success 200 {object} map[string]any
+// @Failure 500 {object} ResponseError
+// @Router /exploits [get]
+func (h *Handler) HandleGetExploits(c fiber.Ctx) error {
+	exploits, err := h.store.Queries.GetAllExploits(c.RequestCtx())
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to fetch exploits")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploits",
+		})
+	}
+
+	if exploits == nil {
+		exploits = []database.Exploit{}
+	}
+
+	return c.JSON(fiber.Map{
+		"exploits": exploits,
+		"count":    len(exploits),
+	})
+}
+
+// @Summary Get exploit by name
+// @Description Returns exploit(s) with content by name.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param name path string true "Exploit name"
+// @Success 200 {array} ExploitWithContent
+// @Failure 400 {object} ResponseError
+// @Failure 404 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{name} [get]
+func (h *Handler) HandleGetExploit(c fiber.Ctx) error {
+	exploitName := c.Params("name")
+	if exploitName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit name",
+		})
+	}
+
+	exploits, err := h.store.Queries.GetExploitsByName(c.RequestCtx(), exploitName)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to fetch exploit",
+		})
+	}
+
+	if len(exploits) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(ResponseError{
+			Error: "Exploit not found",
+		})
+	}
+
+	exploitsWContent := exploit.BuildExploitPayload(exploits)
+	return c.JSON(exploitsWContent)
+}
+
+// @Summary Upload exploit
+// @Description Uploads a new exploit file.
+// @Tags exploits
+// @Accept multipart/form-data
+// @Produce json
+// @Security CookieAuth
+// @Param file formData file true "Exploit file"
+// @Success 200 {object} map[string]any
+// @Failure 400 {object} ResponseError
+// @Failure 401 {object} ResponseError
+// @Failure 413 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit [post]
+func (h *Handler) HandlePostExploit(c fiber.Ctx) error {
+	token := c.Cookies("token", "")
+	jwtParsed, err := VerifyToken(token)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(ResponseError{Error: "Invalid token"})
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("No file provided in request")
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{Error: "Missing file upload (field name: 'file')"})
+	}
+
+	fileHeader, err = exploit.SanitizeExploit(c, fileHeader)
+	if err != nil {
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
+	}
+
+	username := jwtParsed.Claims.(jwt.MapClaims)["username"].(string)
+	exploitS, err := exploit.CreateExploit(c, h.store, fileHeader, username)
+	if err != nil {
+		return c.Status(exploit.GetStatusCodeByErr(err)).JSON(ResponseError{Error: err.Error()})
+	}
+
+	err = h.store.Queries.CreateExploit(c, exploitS)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "cannot save exploit metadata"})
+	}
+
+	return c.JSON(fiber.Map{
+		"message":      "uploaded successfully",
+		"exploit_name": fileHeader.Filename,
+		"hash":         exploitS.Hash,
+		"version":      exploitS.Version,
+	})
+}
+
+// @Summary Delete exploit
+// @Description Deletes an exploit by ID.
+// @Tags exploits
+// @Produce json
+// @Security CookieAuth
+// @Param id path int true "Exploit ID"
+// @Success 200 {object} ResponseSuccess
+// @Failure 400 {object} ResponseError
+// @Failure 500 {object} ResponseError
+// @Router /exploit/{id} [delete]
+func (h *Handler) HandleDeleteExploit(c fiber.Ctx) error {
+	exploitID := c.Params("id")
+	if exploitID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Missing exploit ID",
+		})
+	}
+
+	id, err := strconv.ParseInt(exploitID, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(ResponseError{
+			Error: "Invalid exploit ID",
+		})
+	}
+	err = h.store.Queries.DeleteExploitByID(c.RequestCtx(), id)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Failed to delete exploit")
+		return c.Status(fiber.StatusInternalServerError).JSON(ResponseError{
+			Error: "Failed to delete exploit",
+		})
+	}
+
+	return c.JSON(ResponseSuccess{Message: "Exploit deleted successfully"})
+}

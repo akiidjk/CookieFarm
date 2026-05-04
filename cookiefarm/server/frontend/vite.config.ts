@@ -1,48 +1,22 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import react from '@vitejs/plugin-react-swc'
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        plugins: [["babel-plugin-react-compiler", {}]],
-      },
-    }),
+    react(),
     tailwindcss(),
   ],
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) {
-            return undefined;
-          }
-
-          if (id.includes("echarts")) {
-            return "vendor-echarts";
-          }
-
-          if (id.includes("@cloudflare/kumo")) {
-            return "vendor-kumo";
-          }
-
-          if (id.includes("react-router")) {
-            return "vendor-router";
-          }
-
-          if (id.includes("react")) {
-            return "vendor-react";
-          }
-
-          if (id.includes("ansi-to-html")) {
-            return "vendor-ops";
-          }
-
-          return "vendor";
-        },
+    target: "esnext",
+    minify: 'esbuild',
+    terserOptions: {
+      compress: {
+        drop_console: true,
       },
     },
+    sourcemap: false,
+    chunkSizeWarningLimit: 1200,
   },
   resolve: {
     alias: {

@@ -1,6 +1,6 @@
-import { use } from "react";
+import useSWR from "swr";
 import { z } from "zod";
-import { apiFetch, cached } from "./client";
+import { apiFetch } from "./client";
 
 export const serviceSchema = z.object({
   name: z.string(),
@@ -12,14 +12,12 @@ export type Service = z.infer<typeof serviceSchema>;
 
 const servicesSchema = z.array(serviceSchema);
 
-export async function fetchServices(): Promise<Service[]> {
-  return apiFetch("/services", {}, servicesSchema);
-}
+export const servicesKey = "/services";
 
-export function readServices(): Promise<Service[]> {
-  return cached("services:list", fetchServices);
+export async function fetchServices(): Promise<Service[]> {
+  return apiFetch(servicesKey, {}, servicesSchema);
 }
 
 export function useServices() {
-  return use(readServices());
+  return useSWR(servicesKey, fetchServices, { suspense: true });
 }

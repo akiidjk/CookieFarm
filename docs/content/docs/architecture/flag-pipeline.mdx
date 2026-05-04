@@ -33,12 +33,12 @@ Files: `cookiefarm/client/internal/exploit/parse.go`, `run.go`.
 
 Two modes:
 
-1. WebSocket (default): `ckc exploit run`
+1. CKP TCP (default): `ckc exploit run`
 2. Direct HTTP: `ckc exploit run -S`
 
-WebSocket event type: `flag`.
+CKP sends compact binary flag frames to TCP port `7777`.
 
-Server files: `server/internal/websockets/event.go`, `server/api/handler_api.go`.
+Server files: `server/internal/ckp/handler.go`, `server/internal/ckp/ckp.go`, `server/api/handler_api.go`.
 
 ## 4. Buffering and persistence
 
@@ -88,12 +88,13 @@ Action:
 - always use helper `log_status` in Python runtime
 - verify shared `regex_flag` config
 
-## Unstable WebSocket link
+## Unstable CKP link
 
-Symptom: frequent reconnects, throughput drop.
+Symptom: send retries, reconnects, or throughput drop.
 
 Action:
-- verify auth cookie/session
+- verify TCP reachability to port `7777`
+- verify server CKP listener is running
 - use temporary `-S` fallback during incident response
 
 ## Checker slow or unavailable

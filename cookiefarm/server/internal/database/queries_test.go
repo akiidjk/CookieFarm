@@ -256,121 +256,7 @@ func TestGetFirstNFlagCodes_EmptyDB_ReturnsEmpty(t *testing.T) {
 
 // --- GetPagedFlags ------------------------------------------------------------
 
-func TestGetPagedFlags_FirstPage_ReturnsCorrectWindow(t *testing.T) {
-	q := newTestQueries(t)
-	insertFlags(t, q, []Flag{
-		sampleFlag("FLAG{page_001}"),
-		sampleFlag("FLAG{page_002}"),
-		sampleFlag("FLAG{page_003}"),
-	})
-
-	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 2, Offset: 0})
-	assertNoError(t, err, "GetPagedFlags page 1")
-	assertFlagSliceLen(t, 2, got, "GetPagedFlags page 1")
-}
-
-func TestGetPagedFlags_SecondPage_ReturnsRemainder(t *testing.T) {
-	q := newTestQueries(t)
-	insertFlags(t, q, []Flag{
-		sampleFlag("FLAG{page2_001}"),
-		sampleFlag("FLAG{page2_002}"),
-		sampleFlag("FLAG{page2_003}"),
-	})
-
-	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 2, Offset: 2})
-	assertNoError(t, err, "GetPagedFlags page 2")
-	assertFlagSliceLen(t, 1, got, "GetPagedFlags page 2")
-}
-
-func TestGetPagedFlags_OffsetBeyondTotal_ReturnsEmpty(t *testing.T) {
-	q := newTestQueries(t)
-	insertFlags(t, q, []Flag{sampleFlag("FLAG{paged_solo}")})
-
-	got, err := q.GetPagedFlags(context.Background(), GetPagedFlagsParams{Limit: 10, Offset: 999})
-	assertNoError(t, err, "GetPagedFlags offset>total")
-	assertFlagSliceLen(t, 0, got, "GetPagedFlags offset beyond total")
-}
-
 // --- GetPagedFlagCodes --------------------------------------------------------
-
-func TestGetPagedFlagCodes_FirstPage(t *testing.T) {
-	q := newTestQueries(t)
-	insertFlags(t, q, []Flag{
-		sampleFlag("FLAG{pcode_001}"),
-		sampleFlag("FLAG{pcode_002}"),
-		sampleFlag("FLAG{pcode_003}"),
-	})
-
-	codes, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Limit: 2, Offset: 0})
-	assertNoError(t, err, "GetPagedFlagCodes page 1")
-	assertStringSliceLen(t, 2, codes, "GetPagedFlagCodes page 1")
-}
-
-func TestGetPagedFlagCodes_OffsetBeyondTotal_ReturnsEmpty(t *testing.T) {
-	q := newTestQueries(t)
-	insertFlags(t, q, []Flag{sampleFlag("FLAG{pcode_solo}")})
-
-	codes, err := q.GetPagedFlagCodes(context.Background(), GetPagedFlagCodesParams{Limit: 10, Offset: 999})
-	assertNoError(t, err, "GetPagedFlagCodes offset>total")
-	assertStringSliceLen(t, 0, codes, "GetPagedFlagCodes offset beyond total")
-}
-
-// --- GetFlagsByTeam -----------------------------------------------------------
-
-func TestGetFlagsByTeam_ReturnsOnlyRequestedTeam(t *testing.T) {
-	q := newTestQueries(t)
-
-	team1Flag := sampleFlag("FLAG{team_t1}")
-	team1Flag.TeamID = 1
-
-	team2Flag := sampleFlag("FLAG{team_t2}")
-	team2Flag.TeamID = 2
-
-	insertFlags(t, q, []Flag{team1Flag, team2Flag})
-
-	got, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{
-		TeamID: 1,
-		Limit:  10,
-		Offset: 0,
-	})
-	assertNoError(t, err, "GetFlagsByTeam team=1")
-	assertFlagSliceLen(t, 1, got, "GetFlagsByTeam team=1 result")
-	if got[0].TeamID != 1 {
-		t.Errorf("expected TeamID=1, got %d", got[0].TeamID)
-	}
-}
-
-func TestGetFlagsByTeam_TeamWithNoFlags_ReturnsEmpty(t *testing.T) {
-	q := newTestQueries(t)
-	flag := sampleFlag("FLAG{team_only1}")
-	flag.TeamID = 1
-	insertFlag(t, q, flag)
-
-	got, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{
-		TeamID: 99,
-		Limit:  10,
-		Offset: 0,
-	})
-	assertNoError(t, err, "GetFlagsByTeam non-existent team")
-	assertFlagSliceLen(t, 0, got, "GetFlagsByTeam non-existent team result")
-}
-
-func TestGetFlagsByTeam_PaginationWorks(t *testing.T) {
-	q := newTestQueries(t)
-	for i := range 5 {
-		f := sampleFlag("FLAG{team_paged_" + string(rune('A'+i)) + "}")
-		f.TeamID = 7
-		insertFlag(t, q, f)
-	}
-
-	page1, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{TeamID: 7, Limit: 3, Offset: 0})
-	assertNoError(t, err, "GetFlagsByTeam page1")
-	assertFlagSliceLen(t, 3, page1, "GetFlagsByTeam page1")
-
-	page2, err := q.GetFlagsByTeam(context.Background(), GetFlagsByTeamParams{TeamID: 7, Limit: 3, Offset: 3})
-	assertNoError(t, err, "GetFlagsByTeam page2")
-	assertFlagSliceLen(t, 2, page2, "GetFlagsByTeam page2")
-}
 
 // --- GetUnsubmittedFlags ------------------------------------------------------
 
@@ -658,139 +544,13 @@ func TestCountFlags_AfterInserts_ReturnsCorrectCount(t *testing.T) {
 	assertInt64Equal(t, 3, count, "CountFlags after 3 inserts")
 }
 
-// --- GetFilteredFlags ---------------------------------------------------------
-
-// buildFilteredParams builds a GetFilteredFlagsParams with sane defaults for
-// the nullable / interface fields so callers only override what they need.
-func buildFilteredParams(teamID uint16, status int64, search, searchField string, limit, offset int64) GetFilteredFlagsParams {
-	return GetFilteredFlagsParams{
-		TeamID:      sql.NullInt64{Int64: int64(teamID), Valid: teamID != 0},
-		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
-		Search:      nullOrValue(search),
-		SearchField: nullOrValue(searchField),
-		SearchLike:  sql.NullString{String: "%" + search + "%", Valid: search != ""},
-		Limit:       sql.NullInt64{Int64: limit, Valid: true},
-		Offset:      sql.NullInt64{Int64: offset, Valid: true},
-	}
-}
-
 // nullOrValue returns nil when s is empty, otherwise the string itself.
-// This matches the sqlc convention for nullable interface{} arguments.
+// Used by buildCountFilteredParams to match the sqlc interface{} convention.
 func nullOrValue(s string) any {
 	if s == "" {
 		return nil
 	}
 	return s
-}
-
-func TestGetFilteredFlags_ByTeam_ReturnsOnlyThatTeam(t *testing.T) {
-	q := newTestQueries(t)
-
-	f1 := sampleFlag("FLAG{filt_t1_001}")
-	f1.TeamID = 10
-	f2 := sampleFlag("FLAG{filt_t2_001}")
-	f2.TeamID = 20
-	insertFlags(t, q, []Flag{f1, f2})
-
-	params := buildFilteredParams(10, 0, "", "", 10, 0)
-	got, err := q.GetFilteredFlags(context.Background(), params)
-	assertNoError(t, err, "GetFilteredFlags by team")
-	assertFlagSliceLen(t, 1, got, "GetFilteredFlags by team result")
-	if got[0].TeamID != 10 {
-		t.Errorf("expected TeamID=10, got %d", got[0].TeamID)
-	}
-}
-
-func TestGetFilteredFlags_ByStatus_ReturnsOnlyMatchingStatus(t *testing.T) {
-	q := newTestQueries(t)
-
-	accepted := sampleFlag("FLAG{filt_acc}")
-	accepted.Status = 1
-	denied := sampleFlag("FLAG{filt_den}")
-	denied.Status = 2
-	insertFlags(t, q, []Flag{accepted, denied})
-
-	params := buildFilteredParams(0, 1, "", "", 10, 0)
-	got, err := q.GetFilteredFlags(context.Background(), params)
-	assertNoError(t, err, "GetFilteredFlags by status")
-	for _, f := range got {
-		if f.Status != 1 {
-			t.Errorf("expected Status=ACCEPTED, got %d", f.Status)
-		}
-	}
-}
-
-func TestGetFilteredFlags_SearchByFlagCode_ReturnsMatching(t *testing.T) {
-	q := newTestQueries(t)
-
-	target := sampleFlag("FLAG{search_target_xyz}")
-	other := sampleFlag("FLAG{search_other_abc}")
-	insertFlags(t, q, []Flag{target, other})
-
-	params := buildFilteredParams(0, 0, "FLAG{search_target_xyz}", "flag_code", 10, 0)
-	got, err := q.GetFilteredFlags(context.Background(), params)
-	assertNoError(t, err, "GetFilteredFlags search by flag_code")
-	assertFlagSliceLen(t, 1, got, "GetFilteredFlags search by flag_code result")
-	if len(got) > 0 && got[0].FlagCode != target.FlagCode {
-		t.Errorf("expected FlagCode %q, got %q", target.FlagCode, got[0].FlagCode)
-	}
-}
-
-func TestGetFilteredFlags_SearchByServiceName_ReturnsMatching(t *testing.T) {
-	q := newTestQueries(t)
-
-	f1 := sampleFlag("FLAG{filt_svc_001}")
-	f1.ServiceName = "specialservice"
-	f2 := sampleFlag("FLAG{filt_svc_002}")
-	f2.ServiceName = "normalservice"
-	insertFlags(t, q, []Flag{f1, f2})
-
-	params := buildFilteredParams(0, 0, "special", "service_name", 10, 0)
-	got, err := q.GetFilteredFlags(context.Background(), params)
-	assertNoError(t, err, "GetFilteredFlags search by service_name")
-	assertFlagSliceLen(t, 1, got, "GetFilteredFlags search by service_name result")
-}
-
-func TestGetFilteredFlags_SearchAll_MatchesAcrossColumns(t *testing.T) {
-	q := newTestQueries(t)
-
-	f1 := sampleFlag("FLAG{filt_all_001}")
-	f1.ExploitName = "magic_exploit"
-	f2 := sampleFlag("FLAG{filt_all_002}")
-	f2.ExploitName = "normal_exploit"
-	insertFlags(t, q, []Flag{f1, f2})
-
-	params := buildFilteredParams(0, 0, "magic", "exploit_name", 10, 0)
-	got, err := q.GetFilteredFlags(context.Background(), params)
-	assertNoError(t, err, "GetFilteredFlags search all")
-	assertFlagSliceLen(t, 1, got, "GetFilteredFlags search all result")
-}
-
-func TestGetFilteredFlags_Pagination_LimitOffset(t *testing.T) {
-	q := newTestQueries(t)
-	for i := range 5 {
-		f := sampleFlag("FLAG{filt_pag_" + string(rune('A'+i)) + "}")
-		insertFlag(t, q, f)
-	}
-
-	page1, err := q.GetFilteredFlags(context.Background(),
-		buildFilteredParams(0, 0, "", "", 2, 0))
-	assertNoError(t, err, "GetFilteredFlags pagination page1")
-	assertFlagSliceLen(t, 2, page1, "GetFilteredFlags page1")
-
-	page3, err := q.GetFilteredFlags(context.Background(),
-		buildFilteredParams(0, 0, "", "", 2, 4))
-	assertNoError(t, err, "GetFilteredFlags pagination page3")
-	assertFlagSliceLen(t, 1, page3, "GetFilteredFlags page3 (last partial)")
-}
-
-func TestGetFilteredFlags_EmptyDB_ReturnsEmpty(t *testing.T) {
-	q := newTestQueries(t)
-
-	params := buildFilteredParams(0, 0, "", "", 10, 0)
-	got, err := q.GetFilteredFlags(context.Background(), params)
-	assertNoError(t, err, "GetFilteredFlags empty DB")
-	assertFlagSliceLen(t, 0, got, "GetFilteredFlags empty DB result")
 }
 
 // --- CountFilteredFlags -------------------------------------------------------
@@ -803,7 +563,6 @@ func buildCountFilteredParams(teamID uint16, status int64, search, searchField s
 		Status:      sql.NullInt64{Int64: status, Valid: status != 0},
 		Search:      nullOrValue(search),
 		SearchField: nullOrValue(searchField),
-		SearchLike:  sql.NullString{String: "%" + search + "%", Valid: search != ""},
 	}
 }
 
@@ -892,7 +651,295 @@ func TestCountFilteredFlags_SearchByFlagCode_CountsMatching(t *testing.T) {
 	insertFlags(t, q, []Flag{match1, match2, nomatch})
 
 	count, err := q.CountFilteredFlags(context.Background(),
-		buildCountFilteredParams(0, 0, "search_xyz", "flag_code"))
+		buildCountFilteredParams(0, 0, "%search_xyz%", "flag_code"))
 	assertNoError(t, err, "CountFilteredFlags search by flag_code")
 	assertInt64Equal(t, 2, count, "CountFilteredFlags search by flag_code — should count 2")
+}
+
+// --- BulkInsertFlags ---------------------------------------------------------
+
+// buildStoreQuery constructs a FlagsQuery for Store method tests.
+// Pass 0 / "" for any field you do not want to filter on.
+// limit=0 leaves Limit.Valid=false (QueryFlagsParams then uses its default of 40).
+func buildStoreQuery(teamID, status int64, serviceName, search, searchField string, limit int64) FlagsQuery {
+	q := FlagsQuery{
+		Limit: sql.NullInt64{Int64: limit, Valid: limit > 0},
+	}
+	if teamID != 0 {
+		q.TeamID = sql.NullInt64{Int64: teamID, Valid: true}
+	}
+	if status != 0 {
+		q.Status = sql.NullInt64{Int64: status, Valid: true}
+	}
+	if serviceName != "" {
+		q.ServiceName = sql.NullString{String: serviceName, Valid: true}
+	}
+	if search != "" {
+		q.Search = sql.NullString{String: search, Valid: true}
+		if searchField != "" {
+			q.SearchField = sql.NullString{String: searchField, Valid: true}
+		}
+	}
+	return q
+}
+
+func TestBulkInsertFlags_EmptySlice_NoError(t *testing.T) {
+	store := newTestStore(t)
+
+	err := store.BulkInsertFlags(context.Background(), []Flag{})
+	assertNoError(t, err, "BulkInsertFlags empty slice")
+
+	count, err := store.Queries.CountFlags(context.Background())
+	assertNoError(t, err, "CountFlags after empty BulkInsertFlags")
+	assertInt64Equal(t, 0, count, "count after empty BulkInsertFlags")
+}
+
+func TestBulkInsertFlags_SingleFlag_Inserted(t *testing.T) {
+	store := newTestStore(t)
+	flag := sampleFlag("FLAG{bulk_single_001}")
+
+	err := store.BulkInsertFlags(context.Background(), []Flag{flag})
+	assertNoError(t, err, "BulkInsertFlags single flag")
+
+	got := mustGetFlag(t, store.Queries, flag.FlagCode)
+	assertFlagsEqual(t, flag, got)
+}
+
+func TestBulkInsertFlags_MultipleFlags_AllInserted(t *testing.T) {
+	store := newTestStore(t)
+	flags := []Flag{
+		sampleFlag("FLAG{bulk_multi_001}"),
+		sampleFlag("FLAG{bulk_multi_002}"),
+		sampleFlag("FLAG{bulk_multi_003}"),
+	}
+
+	err := store.BulkInsertFlags(context.Background(), flags)
+	assertNoError(t, err, "BulkInsertFlags multiple flags")
+
+	count, err := store.Queries.CountFlags(context.Background())
+	assertNoError(t, err, "CountFlags after BulkInsertFlags multiple")
+	assertInt64Equal(t, int64(len(flags)), count, "count after BulkInsertFlags multiple")
+}
+
+func TestBulkInsertFlags_DuplicateInBatch_SilentlyIgnored(t *testing.T) {
+	store := newTestStore(t)
+	original := sampleFlag("FLAG{bulk_dup_001}")
+
+	// Both rows share the same primary key — INSERT OR IGNORE should keep only one.
+	err := store.BulkInsertFlags(context.Background(), []Flag{original, original})
+	assertNoError(t, err, "BulkInsertFlags duplicate in same batch")
+
+	count, err := store.Queries.CountFlags(context.Background())
+	assertNoError(t, err, "CountFlags after BulkInsertFlags duplicate")
+	assertInt64Equal(t, 1, count, "duplicate in same batch should be silently ignored")
+}
+
+func TestBulkInsertFlags_AlreadyExistingFlag_SilentlyIgnored(t *testing.T) {
+	store := newTestStore(t)
+	flag := sampleFlag("FLAG{bulk_exist_001}")
+	insertFlag(t, store.Queries, flag) // pre-insert via Queries
+
+	err := store.BulkInsertFlags(context.Background(), []Flag{flag})
+	assertNoError(t, err, "BulkInsertFlags flag already in DB")
+
+	count, err := store.Queries.CountFlags(context.Background())
+	assertNoError(t, err, "CountFlags after BulkInsertFlags existing")
+	assertInt64Equal(t, 1, count, "pre-existing flag should be silently ignored")
+}
+
+// --- QueryFlagsParams --------------------------------------------------------
+
+func TestQueryFlagsParams_EmptyDB_ReturnsEmpty(t *testing.T) {
+	store := newTestStore(t)
+
+	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 0, "", "", "", 10))
+	assertNoError(t, err, "QueryFlagsParams empty DB")
+	assertFlagSliceLen(t, 0, got, "QueryFlagsParams empty DB result")
+}
+
+func TestQueryFlagsParams_NoFilters_ReturnsAll(t *testing.T) {
+	store := newTestStore(t)
+	insertFlags(t, store.Queries, []Flag{
+		sampleFlag("FLAG{qfp_all_001}"),
+		sampleFlag("FLAG{qfp_all_002}"),
+		sampleFlag("FLAG{qfp_all_003}"),
+	})
+
+	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 0, "", "", "", 10))
+	assertNoError(t, err, "QueryFlagsParams no filters")
+	assertFlagSliceLen(t, 3, got, "QueryFlagsParams no filters result")
+}
+
+func TestQueryFlagsParams_SearchByFlagCode_ReturnsMatching(t *testing.T) {
+	store := newTestStore(t)
+
+	target := sampleFlag("FLAG{qfp_search_target_xyz}")
+	other := sampleFlag("FLAG{qfp_search_other_abc}")
+	insertFlags(t, store.Queries, []Flag{target, other})
+
+	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 0, "", "search_target", "flag_code", 10))
+	assertNoError(t, err, "QueryFlagsParams search by flag_code")
+	assertFlagSliceLen(t, 1, got, "QueryFlagsParams search by flag_code result")
+	if len(got) > 0 && got[0].FlagCode != target.FlagCode {
+		t.Errorf("expected FlagCode %q, got %q", target.FlagCode, got[0].FlagCode)
+	}
+}
+
+func TestQueryFlagsParams_LimitRespected(t *testing.T) {
+	store := newTestStore(t)
+	for i := range 5 {
+		insertFlag(t, store.Queries, sampleFlag("FLAG{qfp_lim_"+string(rune('A'+i))+"}"))
+	}
+
+	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 0, "", "", "", 3))
+	assertNoError(t, err, "QueryFlagsParams limit")
+	assertFlagSliceLen(t, 3, got, "QueryFlagsParams limit=3 with 5 flags inserted")
+}
+
+func TestQueryFlagsParams_CursorPagination(t *testing.T) {
+	store := newTestStore(t)
+	for i := range 5 {
+		insertFlag(t, store.Queries, sampleFlag("FLAG{qfp_pag_"+string(rune('A'+i))+"}"))
+	}
+
+	// Page 1: first 2 items (no cursor — defaults to max int64 sentinel).
+	page1, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 0, "", "", "", 2))
+	assertNoError(t, err, "QueryFlagsParams cursor page1")
+	assertFlagSliceLen(t, 2, page1, "QueryFlagsParams cursor page1")
+
+	// Build cursor from the last item on page 1.
+	last1 := page1[len(page1)-1]
+	p2 := buildStoreQuery(0, 0, "", "", "", 2)
+	p2.CursorTime = sql.NullInt64{Int64: int64(last1.SubmitTime), Valid: true}
+	p2.CursorID = sql.NullInt64{Int64: last1.ID, Valid: true}
+
+	// Page 2: next 2 items.
+	page2, err := store.QueryFlagsParams(context.Background(), p2)
+	assertNoError(t, err, "QueryFlagsParams cursor page2")
+	assertFlagSliceLen(t, 2, page2, "QueryFlagsParams cursor page2")
+
+	// Build cursor from the last item on page 2.
+	last2 := page2[len(page2)-1]
+	p3 := buildStoreQuery(0, 0, "", "", "", 2)
+	p3.CursorTime = sql.NullInt64{Int64: int64(last2.SubmitTime), Valid: true}
+	p3.CursorID = sql.NullInt64{Int64: last2.ID, Valid: true}
+
+	// Page 3: remaining 1 item.
+	page3, err := store.QueryFlagsParams(context.Background(), p3)
+	assertNoError(t, err, "QueryFlagsParams cursor page3")
+	assertFlagSliceLen(t, 1, page3, "QueryFlagsParams cursor page3 (last partial)")
+}
+
+func TestQueryFlagsParams_OrderedBySubmitTimeDesc(t *testing.T) {
+	store := newTestStore(t)
+
+	baseTime := uint64(time.Now().Unix())
+	flags := []Flag{
+		sampleFlag("FLAG{qfp_ord_001}"),
+		sampleFlag("FLAG{qfp_ord_002}"),
+		sampleFlag("FLAG{qfp_ord_003}"),
+	}
+	for i := range flags {
+		flags[i].SubmitTime = baseTime + uint64(i)
+	}
+	insertFlags(t, store.Queries, flags)
+
+	got, err := store.QueryFlagsParams(context.Background(), buildStoreQuery(0, 0, "", "", "", 10))
+	assertNoError(t, err, "QueryFlagsParams ordering")
+	if len(got) < 2 {
+		t.Fatalf("expected at least 2 flags, got %d", len(got))
+	}
+	for i := 1; i < len(got); i++ {
+		if got[i-1].SubmitTime < got[i].SubmitTime {
+			t.Errorf("flags not ordered DESC: got[%d].SubmitTime=%d < got[%d].SubmitTime=%d",
+				i-1, got[i-1].SubmitTime, i, got[i].SubmitTime)
+		}
+	}
+}
+
+// --- Store.CountFlags --------------------------------------------------------
+
+func TestStoreCountFlags_EmptyDB_ReturnsZero(t *testing.T) {
+	store := newTestStore(t)
+
+	count, err := store.CountFlags(context.Background(), FlagsQuery{})
+	assertNoError(t, err, "Store.CountFlags empty DB")
+	assertInt64Equal(t, 0, count, "Store.CountFlags empty DB")
+}
+
+func TestStoreCountFlags_NoFilters_CountsAllRows(t *testing.T) {
+	store := newTestStore(t)
+	insertFlags(t, store.Queries, []Flag{
+		sampleFlag("FLAG{scf_all_001}"),
+		sampleFlag("FLAG{scf_all_002}"),
+		sampleFlag("FLAG{scf_all_003}"),
+	})
+
+	count, err := store.CountFlags(context.Background(), FlagsQuery{})
+	assertNoError(t, err, "Store.CountFlags no filters")
+	assertInt64Equal(t, 3, count, "Store.CountFlags no filters — should count all rows")
+}
+
+func TestStoreCountFlags_ByStatus_CountsOnlyMatching(t *testing.T) {
+	store := newTestStore(t)
+
+	for i := range 3 {
+		f := sampleFlag("FLAG{scf_status_acc_" + string(rune('A'+i)) + "}")
+		f.Status = 1
+		insertFlag(t, store.Queries, f)
+	}
+	denied := sampleFlag("FLAG{scf_status_den}")
+	denied.Status = 2
+	insertFlag(t, store.Queries, denied)
+
+	count, err := store.CountFlags(context.Background(), buildStoreQuery(0, 1, "", "", "", 0))
+	assertNoError(t, err, "Store.CountFlags by status=1")
+	assertInt64Equal(t, 3, count, "Store.CountFlags by status=1 — should count 3")
+}
+
+func TestStoreCountFlags_ByTeam_CountsOnlyThatTeam(t *testing.T) {
+	store := newTestStore(t)
+
+	for i := range 4 {
+		f := sampleFlag("FLAG{scf_team_t10_" + string(rune('A'+i)) + "}")
+		f.TeamID = 10
+		insertFlag(t, store.Queries, f)
+	}
+	other := sampleFlag("FLAG{scf_team_t20}")
+	other.TeamID = 20
+	insertFlag(t, store.Queries, other)
+
+	count, err := store.CountFlags(context.Background(), buildStoreQuery(10, 0, "", "", "", 0))
+	assertNoError(t, err, "Store.CountFlags by team=10")
+	assertInt64Equal(t, 4, count, "Store.CountFlags by team=10 — should count 4")
+}
+
+func TestStoreCountFlags_ByService_CountsOnlyMatching(t *testing.T) {
+	store := newTestStore(t)
+
+	for i := range 2 {
+		f := sampleFlag("FLAG{scf_svc_target_" + string(rune('A'+i)) + "}")
+		f.ServiceName = "target-service"
+		insertFlag(t, store.Queries, f)
+	}
+	other := sampleFlag("FLAG{scf_svc_other}")
+	other.ServiceName = "other-service"
+	insertFlag(t, store.Queries, other)
+
+	count, err := store.CountFlags(context.Background(), buildStoreQuery(0, 0, "target-service", "", "", 0))
+	assertNoError(t, err, "Store.CountFlags by service")
+	assertInt64Equal(t, 2, count, "Store.CountFlags by service — should count 2")
+}
+
+func TestStoreCountFlags_SearchByFlagCode_CountsMatching(t *testing.T) {
+	store := newTestStore(t)
+
+	match1 := sampleFlag("FLAG{scf_search_xyz_001}")
+	match2 := sampleFlag("FLAG{scf_search_xyz_002}")
+	nomatch := sampleFlag("FLAG{scf_search_abc_003}")
+	insertFlags(t, store.Queries, []Flag{match1, match2, nomatch})
+
+	count, err := store.CountFlags(context.Background(), buildStoreQuery(0, 0, "", "search_xyz", "flag_code", 0))
+	assertNoError(t, err, "Store.CountFlags search by flag_code")
+	assertInt64Equal(t, 2, count, "Store.CountFlags search by flag_code — should count 2")
 }

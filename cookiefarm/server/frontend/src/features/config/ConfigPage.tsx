@@ -24,7 +24,7 @@ export function ConfigPage() {
           </Breadcrumbs>
         }
         title="Configuration"
-        description="Real server/shared configuration as defined by the Go config manager and `config.yml`."
+        description="Server/Shared configuration as defined by the Go config manager and `config.yml`."
       />
 
       <section className="rounded-2xl border border-kumo-line bg-kumo-base p-5">

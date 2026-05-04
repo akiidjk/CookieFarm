@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -95,6 +98,32 @@ func (c *Client) get(endpoint string, authed bool) (*http.Response, []byte, erro
 
 func (c *Client) postJSON(endpoint string, body []byte, authed bool) (*http.Response, []byte, error) {
 	return c.doRequest(http.MethodPost, endpoint, body, authed, "application/json")
+}
+
+func (c *Client) uploadFile(endpoint string, filePath string, authed bool) (*http.Response, []byte, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open file: %v", err)
+	}
+	defer file.Close()
+
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create form file: %v", err)
+	}
+
+	if _, err := io.Copy(part, file); err != nil {
+		return nil, nil, fmt.Errorf("failed to copy file content: %v", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		return nil, nil, fmt.Errorf("failed to close writer: %v", err)
+	}
+
+	return c.doRequest(http.MethodPost, endpoint, body.Bytes(), authed, writer.FormDataContentType())
 }
 
 func (c *Client) postForm(endpoint string, data url.Values, authed bool) (*http.Response, []byte, error) {

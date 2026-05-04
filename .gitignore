@@ -33,7 +33,7 @@ main
 # OS X generated file
 .DS_Store
 
-cookiefarm.db
+cookiefarm.db*
 
 # ------------- Python -------------
 
@@ -82,7 +82,7 @@ ipython_config.py
 .spyproject
 
 # compose useless
-./tests/docker-compose.yml
+./tests/compose.yml
 
 # Binaries
 tailwindcss
@@ -138,3 +138,6 @@ yarn-error.log*
 next-env.d.ts
 .next
 .env.just
+
+# exploits
+cookiefarm/exploits/save/*.py

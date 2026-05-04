@@ -91,7 +91,7 @@ export function Nav() {
         <nav className="flex items-center gap-6">
           <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
             <Link
-              href="/docs"
+              href={{ pathname: "/docs" }}
               className="font-mono text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               Docs
@@ -162,7 +162,7 @@ function Hero() {
           className="mb-14 flex flex-wrap items-center gap-3"
         >
           <Link
-            href="/docs"
+            href={{ pathname: "/docs" }}
             className="group inline-flex items-center gap-2 rounded-md bg-(--green) px-5 py-2.5 font-mono text-sm font-semibold text-[oklch(0.1_0_0)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_4px_oklch(0.55_0.15_145_/_0.3)]"
           >
             Get Started
@@ -563,7 +563,7 @@ function FooterCTA() {
             transition={{ duration: 0.5, delay: 0.3, type: "spring" }}
           >
             <Link
-              href="/docs"
+              href={{ pathname: "/docs" }}
               className="group inline-flex items-center gap-2 rounded-md bg-(--green) px-6 py-3 font-mono text-sm font-semibold text-[oklch(0.1_0_0)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_24px_6px_oklch(0.55_0.15_145_/_0.35)]"
             >
               Read the Docs

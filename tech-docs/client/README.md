@@ -14,7 +14,7 @@ Before you begin, make sure you have:
 To install the CookieFarm client, run the following command:
 
 ```bash
-pip install cookiefarm
+pip install --upgrade cookiefarm requests
 ```
 
 After installation, the `ckc` command will be globally available in your terminal. By default, it will launch in interactive TUI (Text User Interface) mode.
@@ -76,9 +76,9 @@ The CookieFarm client has two interface modes:
 ## 🧪 Exploitation Workflow
 
 1. **Install the client** using pip:
-   ```bash
-   pip install cookiefarm
-   ```
+```bash
+pip install --upgrade cookiefarm requests
+```
 
 2. **Log in** to the server:
    ```bash

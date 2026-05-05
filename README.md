@@ -34,7 +34,7 @@ bash -c "$(curl -sSL cookiefarm.bytethecookies.org/install.sh)"
 ## Client
 
 ```
-pip install cookiefarm
+pip install --upgrade cookiefarm requests
 ```
 
 >[!TIP]
@@ -116,7 +116,7 @@ docker compose -f compose.yml up --build
 
 1. Run the installation :
 ```bash
-pip install cookiefarm
+pip install --upgrade cookiefarm requests
 ```
 > [!NOTE]
 > After installation, the `ckc` command is available globally in your terminal (or in your virtual environment if you are using one).

@@ -385,7 +385,7 @@ function CodeShowcase() {
                 {"\n"}
                 <span className="text-[oklch(0.7_0.12_260)]">def</span>
                 <span className="text-[oklch(0.85_0.14_90)]"> exploit</span>
-                <span className="text-foreground">{"(ip: str, port: int, name: str):"}</span>
+                <span className="text-foreground">{"(ip: str, port: int, name: str, flag_ids:str):"}</span>
                 {"\n"}
                 <span className="text-foreground">{"    base_url = f\"http://{ip}:{port}\""}</span>
                 {"\n\n"}

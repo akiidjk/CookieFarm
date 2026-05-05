@@ -2,8 +2,8 @@ name: Release (Go)
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 permissions:
   contents: write # needed to write releases

@@ -2,8 +2,8 @@ name: Publish Python package to PyPI
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 jobs:
   build-go:

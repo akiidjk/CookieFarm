@@ -9,6 +9,7 @@ services:
     restart: unless-stopped
     ports:
       - ${PORT}:${PORT}
+      - 7777:7777
     environment:
       PASSWORD: ${PASSWORD}
       CONFIG_FILE: ${CONFIG_FILE}

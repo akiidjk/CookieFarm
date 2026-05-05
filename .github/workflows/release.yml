@@ -2,8 +2,8 @@ name: Release (Go)
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*' # Trigger on version tags like v1.2.3
 
 permissions:
   contents: write # needed to write releases

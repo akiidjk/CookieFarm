@@ -12,9 +12,6 @@ fi
 
 SOURCE_BRANCH="release/$version"
 git switch $SOURCE_BRANCH
-git commit -m "Pulizia file non destinati alla produzione"
 git flow release publish "$version"
 git push
 git flow release finish "$version" --nodevelopmerge -Fp
-
-git switch main

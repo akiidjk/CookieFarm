@@ -21,7 +21,7 @@ ARGS="-P ${PASSWORD}"
 ARGS="$ARGS -p ${PORT}"
 
 if [ -n "$CONFIG_FILE" ]; then
-    ARGS="$ARGS -c"
+    ARGS="$ARGS -c ${CONFIG_FILE}"
 fi
 
 if [ "$DEBUG" = "true" ]; then

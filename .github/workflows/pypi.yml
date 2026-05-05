@@ -1,0 +1,129 @@
+name: Publish Python package to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-go:
+    name: Build Go binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Install goreleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          install-only: true
+
+      - name: Build with goreleaser
+        working-directory: cookiefarm
+        run: goreleaser build --snapshot --clean
+
+      - name: Upload Go dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-dist
+          path: cookiefarm/dist/
+
+  build-python:
+    name: Build Python package
+    needs: build-go
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Go dist
+        uses: actions/download-artifact@v4
+        with:
+          name: go-dist
+          path: cookiefarm/dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync binaries into Python package
+        working-directory: exploiter
+        run: |
+          echo "[*] Syncing Go binaries into Python package..."
+          rm -rf python/src/cookiefarm/bin
+          mkdir -p python/src/cookiefarm/bin
+
+          mkdir -p python/src/cookiefarm/bin/amd64/linux
+          cp ../cookiefarm/dist/client_linux_amd64*/ckc python/src/cookiefarm/bin/amd64/linux/ckc || true
+
+          mkdir -p python/src/cookiefarm/bin/arm64/linux
+          cp ../cookiefarm/dist/client_linux_arm64*/ckc python/src/cookiefarm/bin/arm64/linux/ckc || true
+
+          mkdir -p python/src/cookiefarm/bin/amd64/darwin
+          cp ../cookiefarm/dist/client_darwin_amd64*/ckc python/src/cookiefarm/bin/amd64/darwin/ckc || true
+
+          mkdir -p python/src/cookiefarm/bin/arm64/darwin
+          cp ../cookiefarm/dist/client_darwin_arm64*/ckc python/src/cookiefarm/bin/arm64/darwin/ckc || true
+
+          mkdir -p python/src/cookiefarm/bin/amd64/windows
+          cp ../cookiefarm/dist/client_windows_amd64*/ckc.exe python/src/cookiefarm/bin/amd64/windows/ckc.exe || true
+
+          mkdir -p python/src/cookiefarm/bin/arm64/windows
+          cp ../cookiefarm/dist/client_windows_arm64*/ckc.exe python/src/cookiefarm/bin/arm64/windows/ckc.exe || true
+
+          echo "[+] Sync complete"
+
+      - name: Build wheel + sdist
+        working-directory: exploiter/python
+        run: uv build
+
+      - name: Upload dists
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dists
+          path: exploiter/python/dist/
+
+  publish-test:
+    name: Publish to TestPyPI
+    needs: build-python
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/cookiefarm
+    permissions:
+      id-token: write # OIDC Trusted Publishing
+    steps:
+      - name: Download dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dists
+          path: dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Publish to TestPyPI
+        run: uv publish --publish-url https://test.pypi.org/legacy/
+
+  publish-prod:
+    name: Publish to PyPI
+    needs: publish-test # aspetta che TestPyPI vada a buon fine
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/cookiefarm
+    permissions:
+      id-token: write
+    steps:
+      - name: Download dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dists
+          path: dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Publish to PyPI
+        run: uv publish

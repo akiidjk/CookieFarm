@@ -6,7 +6,7 @@ This document describes the communication protocol used to interact with the **F
 
 ### 🔧 File Structure and Template
 
-Create the file in the `server/protocols` directory and use the following template as a starting point:
+Create the file in the `pkg/protocols` directory and use the following template as a starting point:
 
 ```go
 //go:build ignore
@@ -14,11 +14,11 @@ Create the file in the `server/protocols` directory and use the following templa
 package main
 
 import (
-	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"protocols"
 )
 
 // Submit function sends flags to the Flag Checker service and returns a response.
-func Submit(host string, team_token string, flags []string) ([]protocols.ResponseProtocol, error) {
+func Submit(host string, teamToken string, flags []string) ([]protocols.ResponseProtocol, error) {
 	// Your implementation here
 	return nil, nil
 }
@@ -96,10 +96,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ByteTheCookies/cookieserver/internal/models"
+	"protocols"
 )
 
-func Submit(host string, team_token string, flags []string) ([]protocols.ResponseProtocol, error) {
+func Submit(host string, teamToken string, flags []string) ([]protocols.ResponseProtocol, error) {
 	jsonData, err := json.Marshal(flags)
 	if err != nil {
 		return nil, fmt.Errorf("error during marshalling: %w", err)
@@ -112,7 +112,7 @@ func Submit(host string, team_token string, flags []string) ([]protocols.Respons
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Team-Token", team_token)
+	req.Header.Set("X-Team-Token", teamToken)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

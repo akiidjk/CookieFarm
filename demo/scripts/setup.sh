@@ -3,10 +3,9 @@
 set -e
 
 # === CONFIG ===
-VENV_ACTIVATE=".venv/bin/activate"
-FLAGCHECKER_SCRIPT="tests/flagchecker.py"
+VENV_ACTIVATE="../.venv/bin/activate"
+FLAGCHECKER_SCRIPT="flagchecker.py"
 SCRIPTS_DIR="scripts"
-TESTS_DIR="tests"
 REQUIREMENTS="requirements.txt"
 
 # === USAGE CHECK ===
@@ -31,6 +30,8 @@ trap cleanup SIGINT
 
 cd ..
 
+source $VENV_ACTIVATE
+
 # === REQUIREMENTS ===
 echo "📦 Installing Python dependencies..."
 pip install --upgrade pip > /dev/null
@@ -39,7 +40,7 @@ pip install -r "$REQUIREMENTS" > /dev/null
 # === FLAGCHECKER ===
 echo "🚩 Starting Flagchecker..."
 chmod +x "$FLAGCHECKER_SCRIPT"
-kitty --title "flagchecker" bash -c "source $VENV_ACTIVATE && $FLAGCHECKER_SCRIPT $1; exec bash" &
+kitty --title "flagchecker" bash -c "source $VENV_ACTIVATE && ./$FLAGCHECKER_SCRIPT $1; exec bash" &
 echo "✅ Flagchecker launched in a separate terminal! 🎉"
 
 # === SERVER ===
@@ -49,13 +50,20 @@ echo "✅ Server started!"
 
 # === SERVICES ===
 echo "🚀 Starting services..."
-cd "$TESTS_DIR"
 chmod +x ./start_containers.sh
 kitty --title "service" bash -c "./start_containers.sh $1; exec bash" &
 echo "✅ Services started!"
 
 # === COMPLETION ===
 echo -e "\n🎯 Cookie Farm Server ready to use!"
+
+echo ""
+echo "Report:"
+echo "- Server started at localhost:808"
+echo "- Started $1 container(s) with a service called CookieServer at port 8081"
+echo "- Test command:"
+echo '  `ckc login -P password`'
+echo '  `ckc exploit run -e exploit -n CookieService`'
 
 read -p "🔻 Press ENTER to close all terminals started by this script..."
 cleanup

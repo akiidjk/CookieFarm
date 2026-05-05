@@ -4,87 +4,98 @@ package api
 
 import (
 	"fmt"
+	"io/fs"
 	"logger"
+	"os"
 	"strings"
 	"time"
 
 	"server/config"
-	"server/ui"
 
 	"github.com/bytedance/sonic"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/compress"
+	"github.com/gofiber/fiber/v3/middleware/static"
+)
+
+const (
+	frontendIndexPath = "./server/frontend/dist/index.html"
 )
 
 // newConfig returns a configured Fiber config struct.
 // It adapts settings depending on the debug mode (e.g. logging, strict routing).
 func newConfig(debug bool) fiber.Config {
-	views := ui.InitTemplateEngine(!debug)
-
 	cfg := fiber.Config{
-		Views:       views,
 		JSONEncoder: sonic.Marshal,
 		JSONDecoder: sonic.Unmarshal,
 	}
 
 	if debug {
 		cfg.AppName = "CookieFarm Server (Dev)"
-		cfg.DisableStartupMessage = false
 		cfg.CaseSensitive = false
 		cfg.StrictRouting = false
-		cfg.EnablePrintRoutes = true
 	} else {
 		cfg.AppName = "CookieFarm Server"
-		cfg.DisableStartupMessage = false
 		cfg.CaseSensitive = true
 		cfg.StrictRouting = true
-		cfg.EnablePrintRoutes = false
 	}
 
-	cfg.Prefork = false        // Disable prefork mode (multi-process); not needed here.
 	cfg.ServerHeader = "Fiber" // Custom server header.
 
 	return cfg
 }
 
 func PrepareStatic(app *fiber.App) error {
-	// Serve static assets from public folders with compression and caching
+	frontendFS := os.DirFS("./server/frontend/dist")
+	publicFS := os.DirFS("./server/public")
 
-	type staticRoute struct {
-		route string
-		dir   string
+	assetsFS, err := fs.Sub(frontendFS, "assets")
+	if err != nil {
+		return err
 	}
 
-	routes := []staticRoute{
-		{"/css", "./internal/server/public/css"},
-		{"/js", "./internal/server/public/js"},
-		{"/images", "./internal/server/public/images"},
+	imagesFS, err := fs.Sub(publicFS, "images")
+	if err != nil {
+		return err
 	}
 
-	var staticCfg fiber.Static
-	if config.Cache {
-		staticCfg = fiber.Static{
-			Compress:      true,
-			CacheDuration: 10 * time.Second,
-			MaxAge:        3600,
-		}
-	} else {
-		staticCfg = fiber.Static{
-			Compress: true,
-		}
-	}
+	app.Use("/assets", static.New("", static.Config{
+		FS:            assetsFS,
+		Compress:      true,
+		MaxAge:        31536000,
+		CacheDuration: 10 * time.Second,
+	}))
 
-	for _, r := range routes {
-		app.Static(r.route, r.dir, staticCfg)
-	}
+	app.Use("/images", static.New("", static.Config{
+		FS:            imagesFS,
+		Compress:      true,
+		MaxAge:        3600,
+		CacheDuration: 10 * time.Second,
+	}))
+
+	app.Use("/", static.New("", static.Config{
+		FS:            frontendFS,
+		IndexNames:    []string{"index.html"},
+		Compress:      true,
+		MaxAge:        0,
+		CacheDuration: 10 * time.Second,
+	}))
 
 	return nil
+}
+
+func ServeFrontendIndex(c fiber.Ctx) error {
+	if _, err := os.Stat(frontendIndexPath); err != nil {
+		return c.Status(fiber.StatusNotFound).SendString("frontend build not found")
+	}
+
+	return c.SendFile(frontendIndexPath)
 }
 
 // NewApp initializes and returns a new Fiber app instance,
 // setting up static file routes, debug middleware, and template engine.
 func NewApp() (*fiber.App, error) {
-	staticPrefixes := []string{"/css", "/js", "/images", "/static"}
+	staticPrefixes := []string{"/css", "/js", "/images", "/assets", "/static"}
 	cfg := newConfig(config.Debug)
 	app := fiber.New(cfg)
 
@@ -102,7 +113,7 @@ func NewApp() (*fiber.App, error) {
 
 	// Log static file requests in debug mode
 	if config.Debug {
-		app.Use(func(c *fiber.Ctx) error {
+		app.Use(func(c fiber.Ctx) error {
 			for _, prefix := range staticPrefixes {
 				if strings.HasPrefix(c.Path(), prefix) {
 					logger.Log.Debug().Str("path", c.Path()).Msg("Serving static asset")

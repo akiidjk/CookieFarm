@@ -1,0 +1,75 @@
+---
+title: Server Configuration
+description: Real CookieFarm server configuration using `.env` and `config.yml`.
+---
+
+# Server Configuration
+
+CookieFarm uses two configuration sources:
+
+1. `.env` (server runtime settings)
+2. `config.yml` (A/D and shared runtime settings)
+
+## `.env`
+
+Minimal example:
+
+```text
+PORT=8080
+PASSWORD=SuperSecret
+CONFIG_FILE=config.yml
+DEBUG=false
+```
+
+Fields:
+- `PORT`: server HTTP port
+- `PASSWORD`: dashboard/client login password
+- `CONFIG_FILE`: if `config.yml`, load config from file at boot
+- `DEBUG`: verbose logging
+
+## `config.yml`
+
+Example:
+
+```yaml
+configured: true
+
+server:
+  url_flag_checker: "http://127.0.0.1:5001/flags"
+  team_token: "team-token"
+  submit_flag_checker_time: 120
+  max_flag_batch_size: 500
+  protocol: "cc_http"
+  tick_time: 120
+  start_time: "00:00:00"
+  end_time: "23:59:59"
+  flag_ttl: 5
+
+shared:
+  configured: true
+  services:
+    CookieService: 8081
+  regex_flag: "[A-Z0-9]{31}="
+  format_ip_teams: "10.10.{}.1"
+  my_team_id: 1
+  nop_team: 0
+  range_ip_teams: 20
+  url_flag_ids: "http://127.0.0.1:5002/flagids"
+  flagids_format: "[service].[team].[id]"
+```
+
+## Most important competition fields
+
+- `server.submit_flag_checker_time`: checker submit frequency
+- `server.max_flag_batch_size`: checker batch size
+- `server.protocol`: submit protocol plugin
+- `shared.regex_flag`: regex used by exploit runtime
+- `shared.services`: service-to-port map
+- `shared.url_flag_ids`: flag IDs endpoint
+- `shared.flagids_format`: flag IDs structure
+
+## Operational notes
+
+- If `url_flag_checker` is empty, server stores flags but cannot forward them.
+- `flag_ttl` is in ticks (`flag_ttl * tick_time` seconds).
+- `flagids_format`: flag IDs structure that defines how flags are formatted (e.g., `[service].[team].[id]` means flags follow a pattern with service name, team number, and flag ID separated by dots)

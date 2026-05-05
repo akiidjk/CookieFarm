@@ -1,14 +1,9 @@
-#
-# Releaser workflow setup
-# https://goreleaser.com/ci/actions/
-#
-name: release
+name: Release (Go)
 
-# run only on tags
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 permissions:
   contents: write # needed to write releases
@@ -22,16 +17,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # this is important, otherwise it won't checkout the full tree (i.e. no previous tags)
+          fetch-depth: 0
+
       - uses: actions/setup-go@v5
         with:
           go-version: stable
-      - uses: sigstore/cosign-installer@v3.8.2 # installs cosign
-      - uses: anchore/sbom-action/download-syft@v0.20.0 # installs syft
-      - uses: goreleaser/goreleaser-action@v6 # run goreleaser
+
+      - uses: sigstore/cosign-installer@v3.8.2
+
+      - uses: anchore/sbom-action/download-syft@v0.20.0
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --clean
+          workdir: cookiefarm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DISCORD_WEBHOOK_ID: ${{ secrets.DISCORD_WEBHOOK_ID }}

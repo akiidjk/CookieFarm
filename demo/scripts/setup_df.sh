@@ -20,16 +20,16 @@ cleanup() {
 trap cleanup SIGINT
 
 # Install requirements
-pip install --upgrade pip > /dev/null
-pip install -r ../requirements.txt > /dev/null
+pip install --upgrade pip >/dev/null
+pip install -r ../requirements.txt >/dev/null
 
-activate_venv="source ../venv/bin/activate"
+activate_venv="source ../../.venv/bin/activate"
 
 # Run Flagchecker
 echo "🚩 Starting Flagchecker..."
 
-chmod +x ../tests/flagchecker.py
-kitty --title "flagchecker" bash -c "${activate_venv} && ../tests/flagchecker.py; exec bash" &
+chmod +x ../flagchecker.py
+kitty --title "flagchecker" bash -c "${activate_venv} && ../flagchecker.py; exec bash" &
 
 echo "✅ Flagchecker launched in a separate terminal! 🎉"
 echo ""
@@ -37,7 +37,7 @@ echo ""
 # Run Services
 echo "🚀 Starting Services..."
 
-cd ../tests
+cd ..
 chmod +x ./start_containers.sh
 kitty --title "service" bash -c "./start_containers.sh $1; exec bash" &
 
@@ -46,8 +46,8 @@ echo "🚀 Services started!"
 # Run DestructiveFarm
 echo "🚀 Starting DestructiveFarm..."
 
-cd ../scripts/
-cat ./config_df.py > $2/server/config.py
+cd ./scripts/
+cat ./config_df.py >$2/server/config.py
 chmod +x $2/server/start_server.sh
 kitty --title "destructivefarm" bash -c "$2/server/start_server.sh; exec bash" &
 
@@ -58,6 +58,4 @@ echo "🎯 DF environment is ready to use!"
 # Wait for input to close all kitty terminals
 read -p "🔻 Press ENTER to close all terminals started by the script..."
 
-cleanup()
-
-echo "🧹 All terminals have been closed!"
+cleanup() echo "🧹 All terminals have been closed!"

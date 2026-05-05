@@ -1,0 +1,41 @@
+---
+title: Concepts
+description: Essential A/D concepts for using CookieFarm effectively.
+---
+
+# Concepts
+
+## Tick
+
+Periodic exploit execution interval.
+
+In CookieFarm this is controlled by client `-t` and server config (`tick_time`, `submit_flag_checker_time`).
+
+## Flag lifecycle
+
+`captured -> unsubmitted -> accepted/denied/error`
+
+Your goal is to minimize time from capture to accepted.
+
+## NOP team
+
+Special team used for safe exploit validation.
+
+`ckc exploit test` uses this flow.
+
+## Throughput vs stability
+
+More threads do not always mean more points.
+
+If you saturate network/checker, denied/error rates increase.
+
+## Shared config
+
+Shared runtime parameters used by exploit engine:
+
+- flag regex
+- service map
+- team IP format
+- flag IDs URL
+
+If these values are wrong, good exploits still fail to produce accepted flags.

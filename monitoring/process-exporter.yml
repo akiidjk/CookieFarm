@@ -15,4 +15,4 @@ process_names:
 
   - name: "df_client"
     cmdline:
-      - "python3 ./start_sploit.py"
+      - "python3 /tmp/DestructiveFarm/client/benchmark.py"

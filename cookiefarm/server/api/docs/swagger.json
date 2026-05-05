@@ -1,0 +1,1078 @@
+{
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "CookieFarm REST API for authentication, configuration, flags, and stats.",
+        "title": "CookieFarm Server API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/": {
+            "get": {
+                "description": "Returns a simple status response to confirm the server is online.",
+                "tags": [
+                    "system"
+                ],
+                "summary": "API status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Authenticates a user and issues a JWT cookie.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "Credentials",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SigninRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify": {
+            "get": {
+                "description": "Verifies if JWT cookie token is valid and not expired.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Verify token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/config": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns current server and shared configuration.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "config"
+                ],
+                "summary": "Get full config",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSharedConfig"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Updates server/shared configuration and restarts background runner loops.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "config"
+                ],
+                "summary": "Update full config",
+                "parameters": [
+                    {
+                        "description": "Full config payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSuccess"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/delete-flag": {
+            "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Deletes one flag by `flag` query parameter (flag code).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "flags"
+                ],
+                "summary": "Delete flag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Flag code",
+                        "name": "flag",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploit": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Uploads a new exploit file.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "Upload exploit",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Exploit file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "413": {
+                        "description": "Request Entity Too Large",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploit/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Deletes an exploit by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "Delete exploit",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Exploit ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploit/{name}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns exploit(s) with content by name.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "Get exploit by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Exploit name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.ExploitWithContent"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/exploits": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns all stored exploits.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploits"
+                ],
+                "summary": "List exploits",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/flags": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns all stored flags.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "flags"
+                ],
+                "summary": "List flags",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseFlags"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/flags/{limit}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns paginated flags with optional status/team/search filters.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "flags"
+                ],
+                "summary": "List flags (paginated)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page size",
+                        "name": "limit",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Status filter",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Service filter",
+                        "name": "service",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Team filter",
+                        "name": "team",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search text",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search field",
+                        "name": "search_field",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseFlags"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/protocols": {
+            "get": {
+                "description": "Returns protocol plugins available on server.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "protocols"
+                ],
+                "summary": "List protocols",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Returns aggregated server/flags statistics (grouped counts by service/status).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stats"
+                ],
+                "summary": "Get stats",
+                "responses": {
+                    "200": {
+                        "description": "{\"flags_stats\": [{\"service\":\"svc\",\"status\":1,\"count\":10}, ...] }",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submit-flag": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Stores one flag and attempts checker submission immediately.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submit"
+                ],
+                "summary": "Submit one flag",
+                "parameters": [
+                    {
+                        "description": "Flag payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SubmitFlagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSuccess"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submit-flags": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Stores a batch of flags without immediate external checker submission.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submit"
+                ],
+                "summary": "Submit flag batch (store only)",
+                "parameters": [
+                    {
+                        "description": "Flags payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SubmitFlagsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSuccess"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/submit-flags-standalone": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "description": "Stores a batch and attempts checker submission immediately.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submit"
+                ],
+                "summary": "Submit flag batch (standalone)",
+                "parameters": [
+                    {
+                        "description": "Flags payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SubmitFlagsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseSuccess"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/swagger": {
+            "get": {
+                "description": "Returns a simple Swagger UI page for browsing the API.",
+                "tags": [
+                    "docs"
+                ],
+                "summary": "Swagger UI",
+                "responses": {
+                    "200": {
+                        "description": "html",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/swagger/doc.json": {
+            "get": {
+                "description": "Returns the generated Swagger/OpenAPI JSON document.",
+                "tags": [
+                    "docs"
+                ],
+                "summary": "Swagger document",
+                "responses": {
+                    "200": {
+                        "description": "swagger json",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.ExploitWithContent": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "submit_time": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.ResponseError": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "description": "Details for the error response",
+                    "type": "string"
+                },
+                "error": {
+                    "description": "Error message for the error response",
+                    "type": "string"
+                }
+            }
+        },
+        "api.ResponseFlags": {
+            "type": "object",
+            "properties": {
+                "flags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/database.Flag"
+                    }
+                },
+                "n_flags": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.ResponseSharedConfig": {
+            "type": "object",
+            "properties": {
+                "configured": {
+                    "type": "boolean"
+                },
+                "server": {
+                    "$ref": "#/definitions/config.Config"
+                },
+                "shared": {
+                    "$ref": "#/definitions/sharedconfig.Shared"
+                }
+            }
+        },
+        "api.ResponseSuccess": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Message for the success response",
+                    "type": "string"
+                }
+            }
+        },
+        "api.SigninRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username for authentication",
+                    "type": "string"
+                }
+            }
+        },
+        "api.UpdateConfigRequest": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/config.FullConfig"
+                }
+            }
+        },
+        "config.Config": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "flag_ttl": {
+                    "type": "integer"
+                },
+                "max_flag_batch_size": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "submit_flag_checker_time": {
+                    "type": "integer"
+                },
+                "team_token": {
+                    "type": "string"
+                },
+                "tick_time": {
+                    "type": "integer"
+                },
+                "url_flag_checker": {
+                    "type": "string"
+                }
+            }
+        },
+        "config.FullConfig": {
+            "type": "object",
+            "properties": {
+                "configured": {
+                    "type": "boolean"
+                },
+                "server": {
+                    "$ref": "#/definitions/config.Config"
+                },
+                "shared": {
+                    "$ref": "#/definitions/sharedconfig.Shared"
+                }
+            }
+        },
+        "database.Flag": {
+            "type": "object",
+            "properties": {
+                "exploit_name": {
+                    "type": "string"
+                },
+                "flag_code": {
+                    "type": "string"
+                },
+                "msg": {
+                    "type": "string"
+                },
+                "port_service": {
+                    "type": "integer"
+                },
+                "response_time": {
+                    "type": "integer"
+                },
+                "service_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "submit_time": {
+                    "type": "integer"
+                },
+                "team_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SubmitFlagRequest": {
+            "type": "object",
+            "properties": {
+                "flag": {
+                    "description": "Flag to submit",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/database.Flag"
+                        }
+                    ]
+                }
+            }
+        },
+        "models.SubmitFlagsRequest": {
+            "type": "object",
+            "properties": {
+                "flags": {
+                    "description": "Flags to submit",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/database.Flag"
+                    }
+                }
+            }
+        },
+        "sharedconfig.Shared": {
+            "type": "object",
+            "properties": {
+                "configured": {
+                    "description": "True if configuration has been loaded and validated",
+                    "type": "boolean"
+                },
+                "format_ip_teams": {
+                    "description": "Format string for generating team IPs",
+                    "type": "string"
+                },
+                "my_team_id": {
+                    "description": "ID of the current team",
+                    "type": "integer"
+                },
+                "nop_team": {
+                    "description": "The id of the nop team in the ctf",
+                    "type": "integer"
+                },
+                "range_ip_teams": {
+                    "description": "Number of teams / IP range",
+                    "type": "integer"
+                },
+                "regex_flag": {
+                    "description": "Regex used to identify flags in output",
+                    "type": "string"
+                },
+                "services": {
+                    "description": "List of services to exploit",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                },
+                "url_flag_ids": {
+                    "description": "URLFlagIds is the where the flagsId server is running",
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Use `Bearer \u003cjwt-token\u003e`.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        },
+        "CookieAuth": {
+            "description": "Session JWT cookie returned by `/api/v1/auth/login`.",
+            "type": "apiKey",
+            "name": "token",
+            "in": "cookie"
+        }
+    }
+}

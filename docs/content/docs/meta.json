@@ -1,0 +1,14 @@
+{
+  "title": "CookieFarm Documentation",
+  "pages": [
+    "index",
+    "getting-started",
+    "server",
+    "client",
+    "exploits",
+    "dashboard",
+    "architecture",
+    "contributing",
+    "faq"
+  ]
+}

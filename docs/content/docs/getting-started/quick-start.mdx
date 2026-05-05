@@ -1,0 +1,32 @@
+---
+title: Quick Start
+description: Fast 5-step setup for CookieFarm in Attack/Defense competitions.
+---
+
+## Login client [step]
+
+```bash
+ckc config reset # Not required, but recommended for first-time setup
+ckc config edit -H 127.0.0.1 -p 8080 -u team01 # The username is optional and not required
+ckc login -u team01 -P SuperSecret # The username is optional and not required
+```
+
+## Create, test, run exploit [step]
+
+```bash
+ckc exploit create -n first
+ckc exploit test -e first -n CookieService -t 30 -T 5
+ckc exploit run -e first -n CookieService -t 60 -T 15
+```
+
+Open dashboard: `http://127.0.0.1:8080/dashboard`.
+
+![exploit dashboard](/docs/exploit_dashboard.png)
+
+## Edit and list all exploits [step]
+
+```bash
+ckc exploit list
+```
+
+![exploit list](/docs/exploit_list.png)

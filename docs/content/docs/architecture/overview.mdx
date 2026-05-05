@@ -1,0 +1,95 @@
+---
+title: Architecture Overview
+description: Real CookieFarm architecture components, data flow, and practical A/D decisions.
+---
+
+# Architecture Overview
+
+CookieFarm is built around 4 core blocks:
+
+1. `cks` (Go server)
+2. `ckc` (Go client)
+3. Python `cookiefarm` exploiter runtime
+4. web dashboard (React/Vite SPA)
+
+## A/D Operational Flow
+
+1. Write a Python exploit with `@exploit_manager`.
+2. Start it with `ckc exploit run` or `ckc exploit test`.
+3. The client launches the exploit process and parses each JSON line from Python runtime output.
+4. Valid flags are forwarded to server:
+   - CKP over TCP port `7777` (default)
+   - direct HTTP with `-S`
+5. Server persists flags in SQLite.
+6. Server runner sends batches to the external flag checker via configured protocol.
+7. Dashboard displays accepted/denied/error/unsubmitted state.
+
+## Components and Responsibilities
+
+## `ckc` client
+
+- CLI commands (`config`, `exploit`)
+- local session handling (`~/.config/cookiefarm/session`)
+- exploit process execution with stdout/stderr streaming
+- exploit output parsing and flag forwarding
+
+Key files:
+- `cookiefarm/client/cmd/*`
+- `cookiefarm/client/internal/exploit/*`
+- `cookiefarm/client/internal/ckp/*`
+- `cookiefarm/client/internal/submitter/*`
+
+## Python exploit runtime
+
+- runtime argument parser (`-s -t -T -p -n -x`)
+- shared config fetch from server (`/api/v1/config`)
+- concurrent execution over target teams
+- structured JSON events (`success`, `failed`, `stats`, `error`)
+
+Key files:
+- `exploiter/python/cookiefarm/exploiter_manager.py`
+- `exploiter/python/cookiefarm/exploit_executor.py`
+- `exploiter/python/cookiefarm/logger.py`
+
+## `cks` server
+
+- REST API (`/api/v1/*`)
+- cookie-based JWT auth
+- CKP and HTTP flag ingestion
+- SQLite persistence (`flags`)
+- periodic submit loop to external checker
+- optional TTL cleanup
+
+Key files:
+- `cookiefarm/server/api/*`
+- `cookiefarm/server/internal/ckp/*`
+- `cookiefarm/server/internal/core/*`
+- `cookiefarm/server/internal/database/*`
+
+## Dashboard
+
+- React/Vite single page application
+- REST API data loading for flags, stats, charts, config, and exploit metadata
+- manual flag submit/delete
+- server/shared configuration page
+
+Key files:
+- `cookiefarm/server/frontend/src/*`
+- `cookiefarm/server/frontend/src/api/*`
+
+## End-to-End Data Path
+
+```text
+Python exploit -> ckc parser -> flags channel
+                        -> CKP TCP/http -> cks CKP/API
+                        -> collector -> sqlite flags
+                        -> runner submit loop -> flagchecker
+                        -> status update in DB -> dashboard
+```
+
+## Practical Competition Decisions
+
+- Keep CKP as default for continuous ingestion.
+- Always run `ckc exploit test` before full run.
+- Keep `tick_time` and `thread_count` conservative; network saturation reduces accepted rate.
+- Track `submit_time` vs `response_time` delta to detect checker slowdown or backlog.

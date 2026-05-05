@@ -1,0 +1,43 @@
+package submitter
+
+import (
+	"logger"
+	"server/database"
+
+	"client/api"
+)
+
+const batchSize = 50
+
+func SubmitFlags(flagsChan <-chan database.Flag) {
+	logger.Log.Info().Msg("Starting submission loop to the cookiefarm server with direct submitter (http)")
+	buffer := make([]database.Flag, 0, 50)
+
+	for flag := range flagsChan {
+		buffer = append(buffer, flag)
+
+		if len(buffer) >= batchSize {
+			sendBatch(buffer)
+			buffer = buffer[:0]
+		}
+	}
+}
+
+func SubmitFlag(flag database.Flag) (string, error) {
+	err := api.SubmitFlag(flag)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("Error submitting flag")
+		return "", err
+	}
+
+	return "Flag submitted successfully", nil
+}
+
+func sendBatch(batch []database.Flag) {
+	if err := api.SubmitBatchDirect(batch); err != nil {
+		logger.Log.Error().Err(err).Msg("batch submit failed")
+		return
+	}
+
+	logger.Log.Info().Msg("batch submitted")
+}

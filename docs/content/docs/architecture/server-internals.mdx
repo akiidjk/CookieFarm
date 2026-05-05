@@ -1,0 +1,113 @@
+---
+title: Server Internals
+description: CookieFarm server internals process lifecycle, API, CKP, DB and submission loops.
+---
+
+# Server Internals
+
+## Boot Sequence (`cks`)
+
+1. load env/config and logger
+2. initialize SQLite DB + store
+3. initialize runner (`core.Runner`)
+4. start CKP TCP server on port `7777`
+5. create Fiber app and static frontend fallback
+6. register API routes
+7. start HTTP server and graceful shutdown handlers
+
+Files: `cookiefarm/server/cmd/root.go`, `server/api/server.go`.
+
+## Authentication Model
+
+- login via `POST /api/v1/auth/login`
+- JWT stored in cookie `token`
+- JWT accepted from cookie or `Authorization: Bearer`
+
+Protected API endpoints reject unauthenticated requests. The frontend handles login state through the API.
+
+## Essential Route Map
+
+Public:
+- `GET /api/v1/`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+- `GET /api/v1/auth/verify`
+- `GET /api/v1/protocols`
+- `GET /api/v1/swagger`
+- `GET /api/v1/swagger/doc.json`
+
+Private (JWT):
+- `GET /api/v1/config`
+- `GET /api/v1/config/full`
+- `POST /api/v1/config`
+- `POST /api/v1/submit-flag`
+- `POST /api/v1/submit-flags`
+- `POST /api/v1/submit-flags-standalone`
+- `DELETE /api/v1/delete-flag`
+- `GET /api/v1/flags*`
+- `GET /api/v1/stats`
+- `GET /api/v1/exploits`
+- `GET /api/v1/exploit/:name`
+- `POST /api/v1/exploit/upload`
+- `DELETE /api/v1/exploit/:id`
+
+Frontend:
+- `GET /*` serves the React/Vite app unless the path is an API/static asset path.
+
+## Concurrency Model
+
+## HTTP path
+
+Fiber handles concurrent requests; DB store is shared safely through Go SQL driver primitives.
+
+## CKP path
+
+CKP is the default live flag ingestion path:
+
+- raw TCP listener on port `7777`
+- compact binary flag frames delimited by `0xBB 0x54 0xCC`
+- worker pool for accepted TCP connections
+- connected clients registry for config broadcasts
+- newline-delimited shared config JSON from server to client after `POST /api/v1/config`
+
+## Flag collector path
+
+`FlagCollector` uses mutex + timer + conditional flush.
+
+Flush triggers:
+- buffer full
+- periodic timer
+- collector stop
+
+## Runner internals
+
+`core.Runner` starts two cancellable loops:
+
+1. submit loop (`StartFlagProcessingLoop`)
+2. optional TTL cleanup (`ValidateFlagTTL`)
+
+When config is updated from dashboard (`POST /api/v1/config`), runner restarts with a new context.
+
+## DB Model
+
+Main table: `flags`.
+
+Key fields:
+- `flag_code` PK
+- `status`
+- `submit_time`
+- `response_time`
+- `service_name`, `team_id`, `exploit_name`
+
+Dedup semantics: `INSERT OR IGNORE` by `flag_code`.
+
+## Frontend
+
+The server serves the React/Vite frontend from `cookiefarm/server/frontend`. Data is loaded through REST endpoints under `/api/v1`.
+
+## Operational Notes
+
+- `CONFIG_FILE=config.yml` enables `config.yml` bootstrap.
+- If web config is incomplete (`url_flag_checker` empty), submit API stores flags but cannot forward them to checker.
+- `flag_ttl` is in ticks, not absolute seconds.
+- CKP has no transport authentication or encryption; expose port `7777` only on trusted networks or through a controlled tunnel.

@@ -1,0 +1,33 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        VERSION: ${VERSION:-dev}
+    restart: unless-stopped
+    ports:
+      - ${PORT}:${PORT}
+      - 7777:7777
+    environment:
+      PASSWORD: ${PASSWORD}
+      CONFIG_FILE: ${CONFIG_FILE}
+      PORT: ${PORT}
+      DEBUG: ${DEBUG}
+    env_file:
+      - .env
+    volumes:
+      - sqlite_bp:/app/database
+      - ./config.yml:/app/config.yml
+    networks:
+      - cookiefarm-network
+
+volumes:
+  sqlite_bp:
+    driver: local
+
+networks:
+  cookiefarm-network:
+    driver: bridge
+    name: cookiefarm-network

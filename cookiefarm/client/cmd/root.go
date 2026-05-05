@@ -1,47 +1,93 @@
 package cmd
 
 import (
-	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"logger"
-	"models"
 	"os"
+	"strings"
 
+	"client/api"
 	"client/config"
 
-	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
 )
 
-// RootCmd represents the base command when called without any subcommands
-// Exported for TUI usage
-var RootCmd = &cobra.Command{
-	Use:     "ckc",
-	Short:   "CLI client for interacting with the CookieFarm exploit framework",
-	Long:    `CookieFarm is an automated exploitation framework developed by the ByteTheCookies team for the CyberChallenge competition. This CLI client connects to the CookieFarm server to deploy and manage exploits against target teams. To launch the terminal-based user interface (TUI), simply run the command "ckc" without any arguments.`, //nolint:revive
-	Version: models.VERSION,
-}
-
-func Execute() {
-	theme := logger.CookieCLIColorSchema
-	if err := fang.Execute(context.TODO(), RootCmd, fang.WithVersion(models.VERSION), fang.WithTheme(theme)); err != nil {
-		os.Exit(1)
+func configCheck(cm *config.ConfigManager) error {
+	remoteCfg, err := api.GetConfig()
+	if err != nil {
+		return fmt.Errorf("error receiving shared configs: %w", err)
 	}
+
+	remoteConfigStr, err := json.Marshal(remoteCfg)
+	if err != nil {
+		return err
+	}
+
+	currentShc, err := json.Marshal(cm.Get().Shared)
+	if err != nil {
+		return err
+	}
+
+	if strings.TrimSpace(string(currentShc)) != strings.TrimSpace(string(remoteConfigStr)) {
+		return errors.New("shared configuration has changed, update the config doing `ckc login`")
+	}
+
+	return nil
 }
 
-func init() {
-	var debug, useBanner bool
+var rootCmd = &cobra.Command{
+	Use:   "ckc",
+	Short: "CLI client for interacting with the CookieFarm exploit framework",
+	Long:  `CookieFarm is an automated exploitation framework developed by the ByteTheCookies team for the CyberChallenge competition. This CLI client connects to the CookieFarm server to deploy and manage exploits against target teams. To launch the terminal-based user interface (TUI), simply run the command "ckc" without any arguments.`, //nolint:revive
+}
 
-	RootCmd.AddCommand(ConfigCmd)
-	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
-	RootCmd.PersistentFlags().BoolVarP(&useBanner, "no-banner", "B", false, "Remove banner on startup")
+func buildCmd(useTUI *bool) *cobra.Command {
+	var debug bool
+	var useBanner bool
 
-	RootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		cm := config.GetConfigManager()
-		cm.SetUseBanner(useBanner)
+	if len(os.Args) != 1 {
+		*useTUI = false
+	}
+
+	rootCmd.AddCommand(buildConfigCmd())
+	rootCmd.AddCommand(buildExploitCmd())
+
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false, "Enable debug logging")
+	rootCmd.PersistentFlags().BoolVarP(&useBanner, "banner", "B", false, "Show banner on startup")
+
+	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		if !logger.IsCompletionCommand() {
+			logger.PrintBanner(!useBanner, "client")
+		}
+
 		if debug {
 			logger.Setup("debug", true)
 		} else {
 			logger.Setup("info", true)
 		}
+
+		logger.Log.Debug().Msgf("Running command: %s", cmd.CalledAs())
+		if cmd.CalledAs() == "completion" || cmd.CalledAs() == "help" || cmd.CalledAs() == "edit" {
+			return
+		}
+
+		cm := config.GetInstance()
+		cm.Read()
+		checkErr := configCheck(cm)
+		if checkErr != nil {
+			if strings.Contains(checkErr.Error(), "Shared configuration has changed") {
+				fmt.Fprintf(os.Stderr, "\n\033[1;33m[!] %v\033[0m\n", checkErr)
+			} else {
+				if strings.Contains(checkErr.Error(), "connect: connection refused") {
+					fmt.Fprintf(os.Stderr, "\n\033[1;31m[+] Error connecting to server: %v\033[0m\n", checkErr)
+					os.Exit(1)
+				}
+				fmt.Fprintf(os.Stderr, "\n\033[1;31m[+] Error checking configuration: %v\033[0m\n", checkErr)
+			}
+		}
 	}
+
+	return rootCmd
 }

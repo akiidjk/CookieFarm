@@ -1,0 +1,9 @@
+{
+  "title": "Dashboard",
+  "pages": [
+    "overview",
+    "monitoring",
+    "exploit-management",
+    "config-management"
+  ]
+}

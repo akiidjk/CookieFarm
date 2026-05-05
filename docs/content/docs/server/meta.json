@@ -1,0 +1,11 @@
+{
+  "title": "Server",
+  "pages": [
+    "overview",
+    "configuration",
+    "deployment",
+    "protocol-development",
+    "api-reference",
+    "openapi"
+  ]
+}

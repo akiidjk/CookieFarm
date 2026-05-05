@@ -1,46 +1,92 @@
-import random
-import uuid
-import time
+import base64
 import json
-import string
-from shitcurl import send_post_request, login
+import random
 
-def random_flag_code(length=30):
-    charset = string.ascii_uppercase + string.digits
-    return "FLAG{" + ''.join(random.choices(charset, k=length)) + "}"
+from shitcurl import login, send_post_request
+
+
+def random_flag_code(length=32):
+    random_bytes = bytes(random.randint(0, 255) for _ in range(length))
+    return base64.b64encode(random_bytes).decode("utf-8")[:length].upper()
+
 
 # login
 s = login("password")
+if not s or "token" not in s.cookies:
+    raise RuntimeError("Login failed or missing token cookie")
 
-headers = {
-    'Content-Type': 'application/json',
-    'Cookie': f"token={s.cookies['token']}"
-}
+headers = {"Content-Type": "application/json", "Cookie": f"token={s.cookies['token']}"}
 
-batch_size = 4_000
-total_flags = 100_000
+# Simulation parameters
+# Number of 120-second windows ("tickets") to emulate
+tickets_to_emulate = 400
+window_seconds = 120
+min_flags_per_window = 200
+max_flags_per_window = 600
 
-for i in range(total_flags // batch_size):
-    print(f"Processing batch {i+1}")
+services = ["http", "ssh", "dns", "smtp", "ftp", "redis", "mysql", "postgres"]
 
-    # crea flags freschi per ogni batch
-    flags_batch = []
-    for _ in range(batch_size):
-        flags_batch.append({
-            "status": "unsubmitted",
-            "id": str(uuid.uuid4()),
-            "team_id": random.randint(1, 80),
-            "port_service": random.randint(1, 65535),
-            "service_name": "diocane",
-            "flag_code": random_flag_code(50),
-            "response_time": 0,
-            "submit_time": random.randint(1, 1000000000)
-        })
+exploits = [
+    "sqli_blind",
+    "rce_template_injection",
+    "path_traversal",
+    "auth_bypass",
+    "deserialization_rce",
+    "command_injection",
+    "ssrf",
+    "buffer_overflow",
+]
 
-    body = json.dumps({"flags": flags_batch})  # JSON corretto per il batch
+batch_size = 10_000
+base_submit_time = random.randint(1_700_000_000, 1_750_000_000)
 
+flags_batch = []
+total_generated = 0
+
+for ticket in range(tickets_to_emulate):
+    submit_time = base_submit_time + (ticket * window_seconds)
+    flags_in_window = random.randint(min_flags_per_window, max_flags_per_window)
+
+    for _ in range(flags_in_window):
+        service_name = random.choice(services)
+        exploit_name = random.choice(exploits)
+
+        flags_batch.append(
+            {
+                "status": random.randint(0, 2),
+                "team_id": random.randint(1, 80),
+                "port_service": random.randint(1, 65535),
+                "service_name": service_name,
+                "flag_code": random_flag_code(50),
+                "response_time": submit_time + random.randint(1, 8),
+                "submit_time": submit_time,
+                "msg": random.choice(
+                    ["", "queued", "submitted", "invalid", "duplicate"]
+                ),
+                "username": f"team{random.randint(1, 80)}",
+                "exploit_name": exploit_name,
+            }
+        )
+        total_generated += 1
+
+        if len(flags_batch) >= batch_size:
+            body = json.dumps({"flags": flags_batch})
+            res = send_post_request("api/v1/submit-flags", headers, body)
+            if res and res.status_code == 200:
+                print(f"Batch sent successfully! total_generated={total_generated}")
+            else:
+                print(
+                    f"Failed to send batch: {res.status_code if res else 'No Response'}"
+                )
+            flags_batch = []
+
+# Flush remaining flags
+if flags_batch:
+    body = json.dumps({"flags": flags_batch})
     res = send_post_request("api/v1/submit-flags", headers, body)
     if res and res.status_code == 200:
-        print("Batch sent successfully!")
+        print(f"Final batch sent successfully! total_generated={total_generated}")
     else:
-        print(f"Failed to send batch {i+1}: {res.status_code if res else 'No Response'}")
+        print(
+            f"Failed to send final batch: {res.status_code if res else 'No Response'}"
+        )

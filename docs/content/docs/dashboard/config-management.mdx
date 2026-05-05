@@ -1,0 +1,51 @@
+---
+title: Config & Manual Operations
+description: Manual operations currently available in the CookieFarm dashboard.
+---
+
+# Config & Manual Operations
+
+The current dashboard focuses on operational visibility and configuration, and does not yet provide advanced exploit lifecycle features (like upload or versioning).
+
+This page documents the manual operations available in the new React SPA.
+
+## 1. Live configuration
+
+From the dedicated **Config page** (`/config`) you can update:
+
+- server parameters (`team_token`, `protocol`, `tick_time`, `flag_ttl`, ...)
+- shared client config (`services`, `regex_flag`, `format_ip_teams`, ...)
+
+Save behavior:
+- endpoint: `POST /api/v1/config`
+- effect: server runner loops restart with the new config, and connected clients receive updates through CKP.
+
+## 2. Manual flag submit
+
+From the main **Dashboard** view (`/`):
+
+- enter a flag in the "Manual Flag" input
+- click `Submit`
+- endpoint: `POST /api/v1/submit-flag`
+
+Use cases:
+- quick retry for a high-value flag
+- checker connectivity validation
+
+## 3. Manual flag delete
+
+From the main **Dashboard** view (`/`):
+
+- enter the specific flag code in the same input field
+- click `Delete`
+- endpoint: `DELETE /api/v1/delete-flag?flag=<flag_code>`
+
+Use case:
+- cleanup of invalid test flags
+
+## 4. Reload and auto-reload
+
+- manual table/pagination reload via the `Reload` buttons on the Dashboard and Flags views
+- auto-reload intervals: 5s / 10s / 1m / 2m (configurable on both Dashboard and Flags pages)
+
+Competition tip: keep 10s as the default auto-refresh interval to avoid unnecessary request load while maintaining adequately fresh data.

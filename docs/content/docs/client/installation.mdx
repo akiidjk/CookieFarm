@@ -1,0 +1,40 @@
+---
+title: Client Installation
+description: Install the `ckc` client from the Python package `cookiefarm`.
+---
+
+# Client Installation
+
+`ckc` is distributed through the Python package `cookiefarm`.
+
+## Prerequisites
+
+- Python 3.13+
+- `pip`
+
+## Recommended Installation (venv)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install --upgrade cookiefarm requests
+```
+
+Verify:
+
+```bash
+ckc --version
+ckc --help
+```
+
+## Upgrade
+
+```bash
+pip install --upgrade cookiefarm
+```
+
+## Practical Notes
+
+- If `ckc` is not found, make sure your virtual environment is active.
+- In CI, always use a dedicated virtual environment.

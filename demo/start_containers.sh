@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
 if [[ $# -ne 1 ]]; then
-	printf "Usage:\n  ./start_containers.sh <num_containers>"
-	exit
+    printf "Usage:\n  ./start_containers.sh <num_containers>"
+    exit
 fi
 
 i=0
@@ -27,7 +27,7 @@ s+="        - subnet: 10.10.0.0/16\n"
 s+="          ip_range: 10.10.0.0/16\n"
 s+="          gateway: 10.10.0.254\n"
 
-printf "$s" > ./docker-compose.yml
+printf "$s" >./compose.yml
 
 docker compose build
 docker compose up

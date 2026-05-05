@@ -1,0 +1,48 @@
+---
+title: Server Deployment
+description: Practical CookieFarm server deployment with Docker Compose.
+---
+
+# Server Deployment
+
+## Available compose files
+
+Repository includes:
+
+- `cookiefarm/compose.yml` (prebuilt image)
+- `cookiefarm/compose.build.yml` (local build)
+
+## Quick start
+
+```bash
+cd cookiefarm
+docker compose up -d
+```
+
+Local build mode:
+
+```bash
+docker compose -f compose.build.yml up -d --build
+```
+
+## Recommended persistence
+
+Mount volumes for:
+
+- SQLite DB
+- `config.yml`
+- `.env`
+
+## Post-deploy check
+
+```bash
+curl -i --max-time 5 http://127.0.0.1:8080/api/v1/
+```
+
+Expected: JSON response indicating server is online.
+
+## Minimum hardening
+
+- use a strong `.env` password
+- restrict dashboard/API access to team network
+- schedule regular SQLite backups

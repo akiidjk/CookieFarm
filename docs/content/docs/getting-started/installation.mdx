@@ -1,0 +1,42 @@
+---
+title: Installation
+description: Install CookieFarm server and client for competition use.
+---
+
+# Installation
+
+## Server
+
+### Automatic method
+
+```bash
+bash -c "$(curl -sSL cookiefarm.bytethecookies.org/install.sh)"
+```
+
+### Manual method
+
+```bash
+git clone https://github.com/ByteTheCookies/CookieFarm.git
+cd CookieFarm/cookiefarm
+```
+
+Configure `.env` and `config.yml`, then start:
+
+```bash
+docker compose up -d
+```
+
+## Client
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install --upgrade cookiefarm requests
+```
+
+Verify:
+
+```bash
+ckc --version
+```

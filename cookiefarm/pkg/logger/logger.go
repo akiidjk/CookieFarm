@@ -1,4 +1,3 @@
-// Package logger provides functions to manage the CookieFarm client logging.
 package logger
 
 import (
@@ -159,6 +158,10 @@ func IsCompletionCommand() bool {
 		}
 	}
 	return false
+}
+
+func IsEnabled() bool {
+	return LogLevel != zerolog.Disabled
 }
 
 var CookieCLIColorSchema = fang.ColorScheme{

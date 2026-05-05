@@ -326,7 +326,6 @@ nop_team=""
 url_flag_ids=""
 flagids_format=""
 
-
 # Tracked output paths (set during write_env / gum_ask_config)
 ENV_FILE=""
 CFG_FILE=""
@@ -474,17 +473,17 @@ print((datetime.now(timezone.utc) + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M
         "Custom")"
 
     case "$flagids_format_choice" in
-        "CyberChallenge Template")
-            flagids_format="[service].[team].[id]"
-            ;;
-        "Faust Template")
-            flagids_format="flag_ids.[service].[team].[id]"
-            ;;
-        "Custom")
-            flagids_format="$(gum_input "flagids_format" \
-                --value "[service].[team].[id]" \
-                --placeholder "Enter custom template (e.g., custom.[service].[teams].[id])")"
-            ;;
+    "CyberChallenge Template")
+        flagids_format="[service].[team].[id]"
+        ;;
+    "Faust Template")
+        flagids_format="flag_ids.[service].[team].[id]"
+        ;;
+    "Custom")
+        flagids_format="$(gum_input "flagids_format" \
+            --value "[service].[team].[id]" \
+            --placeholder "Enter custom template (e.g., custom.[service].[teams].[id])")"
+        ;;
     esac
 
     # ── Write config.yml ──────────────────────────────────────────────────────
@@ -635,7 +634,7 @@ if [ "$mode" = "build" ]; then
 
     cd cookiefarm
     gum_spin "Building and starting containers (this may take a while)..." \
-        sh -c 'docker compose -f compose.yml up --build -d 2>&1'
+        sh -c 'docker compose -f compose.build.yml up --build -d 2>&1'
 
 # ── Compose-only mode: download + docker up ───────────────────────────────────
 else
@@ -654,7 +653,7 @@ else
     confirm
 
     gum_spin "Starting containers..." \
-    sh -c 'docker compose -f compose.yml pull && docker compose -f compose.yml up --build --pull always -d 2>&1'
+        sh -c 'docker compose -f compose.yml pull && docker compose -f compose.yml up --build --pull always -d 2>&1'
 fi
 
 # ── Success banner ────────────────────────────────────────────────────────────

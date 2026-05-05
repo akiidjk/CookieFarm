@@ -1,11 +1,41 @@
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"logger"
 	"os"
+	"strings"
+
+	"client/api"
+	"client/config"
 
 	"github.com/spf13/cobra"
 )
+
+func configCheck(cm *config.ConfigManager) error {
+	remoteCfg, err := api.GetConfig()
+	if err != nil {
+		return fmt.Errorf("error receiving shared configs: %w", err)
+	}
+
+	remoteConfigStr, err := json.Marshal(remoteCfg)
+	if err != nil {
+		return err
+	}
+
+	currentShc, err := json.Marshal(cm.Get().Shared)
+	if err != nil {
+		return err
+	}
+
+	if strings.TrimSpace(string(currentShc)) != strings.TrimSpace(string(remoteConfigStr)) {
+		return errors.New("shared configuration has changed, update the config doing `ckc login`")
+	}
+
+	return nil
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "ckc",
@@ -36,6 +66,26 @@ func buildCmd(useTUI *bool) *cobra.Command {
 			logger.Setup("debug", true)
 		} else {
 			logger.Setup("info", true)
+		}
+
+		logger.Log.Debug().Msgf("Running command: %s", cmd.CalledAs())
+		if cmd.CalledAs() == "completion" || cmd.CalledAs() == "help" || cmd.CalledAs() == "edit" {
+			return
+		}
+
+		cm := config.GetInstance()
+		cm.Read()
+		checkErr := configCheck(cm)
+		if checkErr != nil {
+			if strings.Contains(checkErr.Error(), "Shared configuration has changed") {
+				fmt.Fprintf(os.Stderr, "\n\033[1;33m[!] %v\033[0m\n", checkErr)
+			} else {
+				if strings.Contains(checkErr.Error(), "connect: connection refused") {
+					fmt.Fprintf(os.Stderr, "\n\033[1;31m[+] Error connecting to server: %v\033[0m\n", checkErr)
+					os.Exit(1)
+				}
+				fmt.Fprintf(os.Stderr, "\n\033[1;31m[+] Error checking configuration: %v\033[0m\n", checkErr)
+			}
 		}
 	}
 

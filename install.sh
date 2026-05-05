@@ -228,7 +228,11 @@ gum_confirm() {
 }
 
 gum_choose() {
-    "$GUM_BIN" choose  "$@"
+    "$GUM_BIN" choose \
+        --header.foreground "$GC_TITLE" \
+        --cursor.foreground "$GC_DIM" \
+        --cursor="🍪 " \
+        "$@"
 }
 
 format_command() {
@@ -605,7 +609,7 @@ GUM_BIN="$(ensure_gum)" || {
     exit 1
 }
 
-mode=$("$GUM_BIN" choose --limit 1 remote build --header Mode)
+mode=$(gum_choose remote build --header Mode)
 
 # ── Build mode: clone + docker build ─────────────────────────────────────────
 if [ "$mode" = "build" ]; then

@@ -57,7 +57,7 @@ snapshot-goroutine:
 [working-directory('cookiefarm')]
 cookiefarm-release:
     @echo Creating branch for release...
-    @./.github/release.sh release v{{ VERSION }} || { echo -e "{{ RED }}[!] .github/release.sh failed. Aborting release.{{ RESET }}"; exit 1; }
+    @./.github/release.sh release {{ VERSION }} || { echo -e "{{ RED }}[!] .github/release.sh failed. Aborting release.{{ RESET }}"; exit 1; }
     @goreleaser healthcheck || { echo -e "{{ RED }}[!] goreleaser healthcheck failed. Aborting release.{{ RESET }}"; exit 1; }
     @goreleaser release || { echo -e "{{ RED }}[!] goreleaser failed. Aborting release.{{ RESET }}"; exit 1; }
     @echo Release branch created and binaries built! Please review the release and publish it on GitHub.

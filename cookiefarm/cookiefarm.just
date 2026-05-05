@@ -24,7 +24,7 @@ server-build:
 [group('build')]
 [working-directory('cookiefarm')]
 server-run: server-build server-build-plugins
-    @{{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} -c -D
+    @{{ SERVER_BIN_DIR }}{{ PATHSEP }}{{ SERVER_BINARY_NAME }} -c config.yml -D
 
 # Run the server in development mode
 [group('build')]

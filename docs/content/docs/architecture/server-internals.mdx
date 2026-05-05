@@ -107,7 +107,7 @@ The server serves the React/Vite frontend from `cookiefarm/server/frontend`. Dat
 
 ## Operational Notes
 
-- `CONFIG_FILE=true` enables `config.yml` bootstrap.
+- `CONFIG_FILE=config.yml` enables `config.yml` bootstrap.
 - If web config is incomplete (`url_flag_checker` empty), submit API stores flags but cannot forward them to checker.
 - `flag_ttl` is in ticks, not absolute seconds.
 - CKP has no transport authentication or encryption; expose port `7777` only on trusted networks or through a controlled tunnel.

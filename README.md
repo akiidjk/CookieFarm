@@ -66,7 +66,7 @@ cd CookieFarm
 # Server configuration
 DEBUG=false                   # Enable debug mode for verbose logging
 PASSWORD=SuperSecret  # Set a strong password for authentication
-CONFIG_FILE=true  # Set if the server takes the config from config.yml in the filesystem; otherwise, do not set the variable
+CONFIG_FILE=config.yml  # Set if the server takes the config from config.yml in the filesystem; otherwise, do not set the variable
 PORT=8080            # Define the port the server will listen on
 ```
 

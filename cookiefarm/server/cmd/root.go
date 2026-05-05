@@ -74,7 +74,7 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&config.Debug, "debug", "D", false, "Enable debug logging")
 	RootCmd.PersistentFlags().BoolVarP(&enablePprof, "pprof", "b", false, "Enable pprof for profiling")
 
-	RootCmd.PersistentFlags().BoolVarP(&config.UseConfigFile, "config", "c", false, "Use configuration file instead of web config")
+	RootCmd.PersistentFlags().StringVarP(&config.ConfigFile, "config", "c", "", "Use configuration file instead of web config")
 	RootCmd.PersistentFlags().StringVarP(&config.Password, "password", "P", "password", "Password for authentication")
 	RootCmd.PersistentFlags().StringVarP(&config.ServerPort, "port", "p", "8080", "Port for server")
 
@@ -124,9 +124,9 @@ func setupPassword() {
 }
 
 func loadConfig(runner *core.Runner) {
-	if config.UseConfigFile {
+	if config.ConfigFile != "" {
 		logger.Log.Info().Msg("Using file config...")
-		err := runner.LoadConfig(config.ConfigPath)
+		err := runner.LoadConfig(config.ConfigFile)
 		if err != nil {
 			logger.Log.Warn().Err(err).Msg("Config file not found or corrupted using web config")
 		}

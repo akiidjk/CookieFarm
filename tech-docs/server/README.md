@@ -98,7 +98,7 @@ Create a `.env` file with the following content:
 
 ```
 DEBUG=true
-CONFIG_FILE=true
+CONFIG_FILE=config.yml
 PASSWORD=SuperSecret
 PORT=8080
 ```

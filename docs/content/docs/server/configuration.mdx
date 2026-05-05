@@ -17,14 +17,14 @@ Minimal example:
 ```text
 PORT=8080
 PASSWORD=SuperSecret
-CONFIG_FILE=true
+CONFIG_FILE=config.yml
 DEBUG=false
 ```
 
 Fields:
 - `PORT`: server HTTP port
 - `PASSWORD`: dashboard/client login password
-- `CONFIG_FILE`: if `true`, load config from file at boot
+- `CONFIG_FILE`: if `config.yml`, load config from file at boot
 - `DEBUG`: verbose logging
 
 ## `config.yml`
@@ -55,7 +55,7 @@ shared:
   nop_team: 0
   range_ip_teams: 20
   url_flag_ids: "http://127.0.0.1:5002/flagids"
-  flagids_format: "[service].[team].[id]"  
+  flagids_format: "[service].[team].[id]"
 ```
 
 ## Most important competition fields

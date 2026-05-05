@@ -341,8 +341,11 @@ gum_ask_basic() {
     PORT="$(gum_input_int "Server PORT" "8080")"
     PASSWORD="$(gum_input "Server PASSWORD" --value "password" --placeholder "password")"
 
-    if gum_confirm --default "Use a config file (CONFIG_FILE)?"; then
-        CONFIG_FILE="true"
+    if gum_confirm "Use a config file (CONFIG_FILE)?"; then
+        CONFIG_FILE="$(gum_input "CONFIG_FILE path" --value "config.yml" --placeholder "config.yml")"
+        if [ -z "${CONFIG_FILE:-}" ]; then
+            CONFIG_FILE="config.yml"
+        fi
     else
         CONFIG_FILE="false"
     fi
@@ -370,7 +373,7 @@ gum_ask_config() {
     fi
     CFG_FILE="$dest"
 
-    [ "${CONFIG_FILE}" = "true" ] || return 0
+    [ "${CONFIG_FILE}" != "false" ] || return 0
 
     gum_section "  CONFIGURATION FILE  "
 

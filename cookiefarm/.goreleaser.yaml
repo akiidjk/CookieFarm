@@ -67,7 +67,7 @@ release:
   footer: |
     **Full Changelog**: https://github.com/ByteTheCookies/CookieFarm/compare/{{.PreviousTag}}...{{.Tag}}
 
-    Make by ByteTheCookies with ❤️ and cookies
+    Made by ByteTheCookies with ❤️ and cookies
 
 report_sizes: true
 

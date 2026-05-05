@@ -475,14 +475,14 @@ print((datetime.now(timezone.utc) + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M
 
     case "$flagids_format_choice" in
         "CyberChallenge Template")
-            flagids_format="[service].[teams].[id]"
+            flagids_format="[service].[team].[id]"
             ;;
         "Faust Template")
-            flagids_format="flag_ids.[service].[teams].[id]"
+            flagids_format="flag_ids.[service].[team].[id]"
             ;;
         "Custom")
             flagids_format="$(gum_input "flagids_format" \
-                --value "[service].[teams].[id]" \
+                --value "[service].[team].[id]" \
                 --placeholder "Enter custom template (e.g., custom.[service].[teams].[id])")"
             ;;
     esac
